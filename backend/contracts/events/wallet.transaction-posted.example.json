@@ -1,0 +1,21 @@
+{
+  "eventId": "evt_01HZX9checkoutpurchase01",
+  "eventType": "wallet.transaction.posted",
+  "occurredAt": "2026-06-20T03:06:00.000Z",
+  "transactionId": "ckl1tx0000checkoutpurchase01",
+  "transactionType": "checkout_purchase",
+  "referenceType": "checkout",
+  "referenceId": "7f09c693-e18e-4a67-b50a-9d297e28b8cf",
+  "entries": [
+    {
+      "accountKey": "user:9a75908e-5b12-4217-ba6e-cc7887e5b56a:available:IC",
+      "amount": "-1000",
+      "currency": "IC"
+    },
+    {
+      "accountKey": "system:revenue:IC",
+      "amount": "1000",
+      "currency": "IC"
+    }
+  ]
+}

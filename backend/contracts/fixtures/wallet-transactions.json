@@ -1,0 +1,52 @@
+{
+  "transactions": [
+    {
+      "id": "ckl1tx0000checkoutpurchase01",
+      "idempotencyKey": "checkout:commit:7f09c693-e18e-4a67-b50a-9d297e28b8cf",
+      "type": "checkout_purchase",
+      "referenceType": "checkout",
+      "referenceId": "7f09c693-e18e-4a67-b50a-9d297e28b8cf",
+      "description": "Checkout session committed",
+      "createdAt": "2026-06-20T03:06:00.000Z",
+      "entries": [
+        {
+          "id": "ckl1en0000availabledebit01",
+          "amount": "-1000",
+          "balanceAfter": "1250",
+          "account": {
+            "key": "user:9a75908e-5b12-4217-ba6e-cc7887e5b56a:available:IC",
+            "type": "available",
+            "currency": "IC"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ckl1tx0000topupcredit0001",
+      "idempotencyKey": "topup:sandbox:ref-abc123",
+      "type": "wallet_credit",
+      "referenceType": "external",
+      "referenceId": "ref-abc123",
+      "description": "Sandbox top-up credited",
+      "createdAt": "2026-06-20T02:50:00.000Z",
+      "entries": [
+        {
+          "id": "ckl1en0000availablecredit01",
+          "amount": "2250",
+          "balanceAfter": "2250",
+          "account": {
+            "key": "user:9a75908e-5b12-4217-ba6e-cc7887e5b56a:available:IC",
+            "type": "available",
+            "currency": "IC"
+          }
+        }
+      ]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 2,
+    "totalPages": 1
+  }
+}

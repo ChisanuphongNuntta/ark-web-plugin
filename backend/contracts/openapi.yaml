@@ -434,6 +434,104 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '409': { $ref: '#/components/responses/BadRequest' }
+  /products:
+    get:
+      operationId: listProducts
+      tags: [Catalog]
+      description: Public product catalog. Only active products are returned. price is an integer Iris Coin amount.
+      parameters:
+        - { in: query, name: categoryId, schema: { type: integer } }
+        - { in: query, name: search, schema: { type: string } }
+        - { in: query, name: minPrice, schema: { type: integer, minimum: 0 } }
+        - { in: query, name: maxPrice, schema: { type: integer, minimum: 0 } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Paginated list of active products.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [products, pagination]
+                properties:
+                  products:
+                    type: array
+                    items: { $ref: '#/components/schemas/Product' }
+                  pagination: { $ref: '#/components/schemas/Pagination' }
+  /products/featured:
+    get:
+      operationId: listFeaturedProducts
+      tags: [Catalog]
+      description: Up to 10 active, featured products for the home/discover surface.
+      responses:
+        '200':
+          description: Featured products (no pagination).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [products]
+                properties:
+                  products:
+                    type: array
+                    items: { $ref: '#/components/schemas/Product' }
+  /products/categories:
+    get:
+      operationId: listCategories
+      tags: [Catalog]
+      description: Active categories with active-product counts, ordered by sortOrder.
+      responses:
+        '200':
+          description: Category list.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [categories]
+                properties:
+                  categories:
+                    type: array
+                    items: { $ref: '#/components/schemas/Category' }
+  /products/{id}:
+    get:
+      operationId: getProductById
+      tags: [Catalog]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: A single active product.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [product]
+                properties:
+                  product: { $ref: '#/components/schemas/Product' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /servers:
+    get:
+      operationId: listServers
+      tags: [Catalog]
+      description: >-
+        Public-safe server directory for server-selection and live-status surfaces.
+        Secrets (apiKey, webhookUrl) are never exposed. isOnline is a DERIVED field:
+        true when lastHeartbeat is within the freshness window, otherwise false.
+        playerCount/maxPlayers/mode are NOT yet produced by the backend and must not
+        be relied upon until a future contract version adds them.
+      responses:
+        '200':
+          description: Public server list.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [servers]
+                properties:
+                  servers:
+                    type: array
+                    items: { $ref: '#/components/schemas/ServerStatus' }
 
 components:
   securitySchemes:
@@ -607,3 +705,60 @@ components:
         expiresAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    Category:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: [string, 'null'] }
+        icon: { type: [string, 'null'] }
+        sortOrder: { type: integer }
+        isActive: { type: boolean }
+        _count:
+          type: object
+          description: Present on the categories list endpoint.
+          properties:
+            products: { type: integer }
+    Product:
+      type: object
+      required: [id, name, price, itemBlueprint, quantity, quality, isBlueprint]
+      properties:
+        id: { type: integer }
+        categoryId: { type: [integer, 'null'] }
+        name: { type: string }
+        description: { type: [string, 'null'] }
+        price:
+          type: integer
+          description: Iris Coin price. Catalog prices are integers; the wallet ledger serializes balances as decimal strings.
+        itemBlueprint: { type: string }
+        quantity: { type: integer }
+        quality: { type: integer, description: '0=Primitive to 5=Ascendant' }
+        isBlueprint: { type: boolean }
+        imageUrl: { type: [string, 'null'] }
+        isActive: { type: boolean }
+        isFeatured: { type: boolean }
+        sortOrder: { type: integer }
+        maxPerUser: { type: [integer, 'null'], description: 'null = unlimited' }
+        stock: { type: [integer, 'null'], description: 'null = unlimited' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        category:
+          oneOf:
+            - { $ref: '#/components/schemas/Category' }
+            - { type: 'null' }
+    ServerStatus:
+      type: object
+      required: [id, name, isActive, isOnline]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        map: { type: [string, 'null'] }
+        isActive: { type: boolean }
+        isOnline:
+          type: boolean
+          description: Derived from lastHeartbeat recency; not a stored column.
+        lastHeartbeat: { type: [string, 'null'], format: date-time }
+        chatTag: { type: [string, 'null'] }
+        chatColor: { type: [string, 'null'] }
+        chatIcon: { type: [string, 'null'] }
