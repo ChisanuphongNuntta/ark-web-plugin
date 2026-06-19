@@ -5,6 +5,7 @@ import prisma from '../config/database.js';
 import { AppError } from './errorHandler.js';
 import { encryptDeterministic } from '../utils/encryption.js';
 import redis from '../config/redis.js';
+import pluginCredentialService from '../services/pluginCredential.service.js';
 
 // User Role Types
 export enum UserRole {
@@ -400,14 +401,16 @@ export const authenticateSignedPlugin = async (
   next: NextFunction
 ) => {
   try {
-    const apiKey = req.headers['x-plugin-key-id'] as string;
+    // X-Plugin-Key-Id is the credential IDENTIFIER (keyId), NOT the secret. The HMAC secret
+    // is resolved server-side from the keyId (see resolution below) and never travels the wire.
+    const keyId = req.headers['x-plugin-key-id'] as string;
     const version = req.headers['x-plugin-version'] as string;
     const timestampStr = req.headers['x-request-timestamp'] as string;
     const nonce = req.headers['x-request-nonce'] as string;
     const contentSha = req.headers['x-content-sha256'] as string;
     const signature = req.headers['x-signature'] as string;
 
-    if (!apiKey || !timestampStr || !nonce || !contentSha || !signature) {
+    if (!keyId || !timestampStr || !nonce || !contentSha || !signature) {
       throw new AppError('Missing required signed plugin headers', 401);
     }
 
@@ -427,27 +430,53 @@ export const authenticateSignedPlugin = async (
       throw new AppError('Duplicate request (nonce replayed)', 401);
     }
 
-    // Lookup user by encrypted API Key
-    const encryptedKey = encryptDeterministic(apiKey);
-    const user = await prisma.user.findUnique({
-      where: { apiKey: encryptedKey },
-      select: {
-        id: true,
-        discordId: true,
-        discordUsername: true,
-        steamId: true,
-        apiKey: true,
-        apiKeyIp: true,
-        isBanned: true,
-      },
-    });
+    // ── Resolve keyId -> signing secret ──────────────────────────────────────────────
+    // PRIMARY (M2 hardening): a scoped ServerCredential whose keyId != secret. We verify the
+    // HMAC against the resolved per-credential secret and bind the request to the credential's
+    // server scope. FALLBACK (overlap window): a legacy User.apiKey where the same value acted
+    // as both identifier and secret — kept working so plugins already in the field do not break
+    // while operators migrate to issued {keyId, secret} pairs.
+    let signingSecret: string | null = null;
+    let credentialId: string | null = null;
+    let scopedServerId: number | null = null;
+    let pluginUser: any = null;
 
-    if (!user) {
-      throw new AppError('Invalid API key', 401);
-    }
+    const credential = await pluginCredentialService.resolve(keyId);
+    if (credential) {
+      signingSecret = credential.secret;
+      credentialId = credential.id;
+      scopedServerId = credential.serverId;
+    } else {
+      // Legacy overlap path: treat the keyId value as a User.apiKey (identifier == secret).
+      const encryptedKey = encryptDeterministic(keyId);
+      const user = await prisma.user.findUnique({
+        where: { apiKey: encryptedKey },
+        select: {
+          id: true,
+          discordId: true,
+          discordUsername: true,
+          steamId: true,
+          apiKey: true,
+          apiKeyIp: true,
+          isBanned: true,
+        },
+      });
 
-    if (user.isBanned) {
-      throw new AppError('User account is banned', 403);
+      if (!user) {
+        throw new AppError('Invalid API key', 401);
+      }
+      if (user.isBanned) {
+        throw new AppError('User account is banned', 403);
+      }
+
+      console.warn(
+        `[Plugin Auth][DEPRECATION] Signed request using legacy User.apiKey as HMAC secret ` +
+        `(keyId acted as secret) for user ${user.discordUsername ?? user.id}. ` +
+        `Migrate this server to an issued {keyId, secret} ServerCredential.`
+      );
+
+      signingSecret = keyId; // legacy: the wire value doubled as the secret
+      pluginUser = user;
     }
 
     // Validate body SHA256
@@ -463,8 +492,8 @@ export const authenticateSignedPlugin = async (
     const pathAndQuery = req.originalUrl;
     const canonicalString = `${req.method}\n${pathAndQuery}\n${timestampStr}\n${nonce}\n${contentSha}`;
 
-    // Verify signature using the plain text apiKey as secret
-    const calculatedSignature = crypto.createHmac('sha256', apiKey)
+    // Verify signature using the RESOLVED secret (never the keyId, except on the legacy path).
+    const calculatedSignature = crypto.createHmac('sha256', signingSecret!)
       .update(canonicalString)
       .digest('hex');
 
@@ -475,14 +504,28 @@ export const authenticateSignedPlugin = async (
       throw new AppError('Invalid request signature', 401);
     }
 
-    // Server verification
-    const serverIdStr = (req.headers['x-server-id'] as string) || (req.query.serverId as string) || (req.body?.serverId?.toString());
-    if (!serverIdStr) {
-      throw new AppError('Server ID required', 400);
-    }
-    const serverId = parseInt(serverIdStr, 10);
-    if (isNaN(serverId) || serverId <= 0) {
-      throw new AppError('Invalid Server ID', 400);
+    // Server verification. With a resolved ServerCredential the scope is FIXED to the
+    // credential's server; any X-Server-Id/body serverId that disagrees is rejected so a
+    // credential cannot act on a server it was not issued for.
+    const requestedServerIdStr = (req.headers['x-server-id'] as string) || (req.query.serverId as string) || (req.body?.serverId?.toString());
+
+    let serverId: number;
+    if (scopedServerId != null) {
+      serverId = scopedServerId;
+      if (requestedServerIdStr) {
+        const requested = parseInt(requestedServerIdStr, 10);
+        if (!isNaN(requested) && requested !== scopedServerId) {
+          throw new AppError('Server ID does not match credential scope', 403);
+        }
+      }
+    } else {
+      if (!requestedServerIdStr) {
+        throw new AppError('Server ID required', 400);
+      }
+      serverId = parseInt(requestedServerIdStr, 10);
+      if (isNaN(serverId) || serverId <= 0) {
+        throw new AppError('Invalid Server ID', 400);
+      }
     }
 
     const server = await prisma.server.findUnique({
@@ -498,27 +541,67 @@ export const authenticateSignedPlugin = async (
       throw new AppError(`Server ID ${serverId} is inactive`, 403);
     }
 
-    // IP validation (same as normal plugin auth)
-    const pluginIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
-      req.socket.remoteAddress ||
-      req.ip;
+    // IP validation only applies to the legacy user-bound path (User.apiKeyIp). Issued
+    // ServerCredentials are scoped to a server and IP policy is enforced at the gateway layer.
+    if (pluginUser) {
+      const pluginIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
+        req.socket.remoteAddress ||
+        req.ip;
 
-    const bypassIpCheck = process.env.BYPASS_PLUGIN_IP_CHECK === 'true' || process.env.NODE_ENV === 'development';
+      const bypassIpCheck = process.env.BYPASS_PLUGIN_IP_CHECK === 'true' || process.env.NODE_ENV === 'development';
 
-    if (!user.apiKeyIp && pluginIp) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { apiKeyIp: pluginIp },
-      });
-    } else if (user.apiKeyIp && user.apiKeyIp !== pluginIp && !bypassIpCheck) {
-      throw new AppError('IP mismatch', 403);
+      if (!pluginUser.apiKeyIp && pluginIp) {
+        await prisma.user.update({
+          where: { id: pluginUser.id },
+          data: { apiKeyIp: pluginIp },
+        });
+      } else if (pluginUser.apiKeyIp && pluginUser.apiKeyIp !== pluginIp && !bypassIpCheck) {
+        throw new AppError('IP mismatch', 403);
+      }
     }
 
-    (req as any).pluginUser = user;
+    if (credentialId) {
+      void pluginCredentialService.markUsed(credentialId);
+    }
+
+    (req as any).pluginUser = pluginUser;
+    (req as any).pluginCredential = credentialId ? { id: credentialId, keyId, serverId } : null;
     (req as any).serverId = serverId;
     (req as any).server = server;
     next();
   } catch (error) {
     next(error);
   }
+};
+
+// Flexible plugin auth for legacy endpoints during the HMAC migration (CR-PLUGIN-006).
+//
+// The contract now declares `hmacAuth` for the legacy plugin endpoints (/verify, /stats,
+// /player/:steamId, /protection/**, chat/plugin, market/plugin). To avoid breaking plugins
+// already deployed in the field with `X-API-Key`, this middleware accepts BOTH during the
+// overlap window:
+//   - If signed-request headers (X-Signature + X-Plugin-Key-Id) are present, verify via the
+//     HMAC path (authenticateSignedPlugin).
+//   - Otherwise fall back to the legacy X-API-Key path (authenticatePlugin) and log a
+//     deprecation warning so operators can track which servers still need to migrate.
+// Once every plugin has migrated, the route can be switched to `authenticateSignedPlugin`
+// directly and this shim removed.
+export const authenticatePluginFlexible = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const hasSignedHeaders = Boolean(req.headers['x-signature']) && Boolean(req.headers['x-plugin-key-id']);
+  if (hasSignedHeaders) {
+    return authenticateSignedPlugin(req, res, next);
+  }
+
+  if (req.headers['x-api-key']) {
+    console.warn(
+      `[Plugin Auth][DEPRECATION] Legacy endpoint ${req.method} ${req.originalUrl} authenticated ` +
+      `with X-API-Key. This endpoint now supports hmacAuth (X-Signature + X-Plugin-Key-Id); ` +
+      `migrate to signed requests before the overlap window closes.`
+    );
+  }
+  return authenticatePlugin(req, res, next);
 };

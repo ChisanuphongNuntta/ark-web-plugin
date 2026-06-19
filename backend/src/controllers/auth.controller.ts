@@ -288,6 +288,79 @@ export class AuthController {
     }
   };
 
+  // GET /auth/identities — IRIS ID linked-providers view for the Account Center.
+  // Shape matches contracts/fixtures/linked-identities.json (LinkedIdentitiesResponse). Every
+  // configured provider (discord, steam, epic) is reported; unlinked providers appear with null
+  // fields and canUnlink=false. `canUnlink` enforces the "at least one provider must remain
+  // linked" rule (same invariant as the unlink endpoints).
+  getLinkedIdentities = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: {
+          id: true,
+          discordId: true,
+          discordUsername: true,
+          steamId: true,
+          epicId: true,
+          createdAt: true,
+        },
+      });
+      if (!user) throw new AppError('User not found', 404);
+
+      const discordLinked = !!user.discordId;
+      const steamLinked = !!user.steamId;
+      const epicLinked = !!user.epicId;
+      const linkedCount = [discordLinked, steamLinked, epicLinked].filter(Boolean).length;
+
+      // canUnlink: provider is linked AND removing it would still leave >= 1 linked provider.
+      const canUnlink = (linked: boolean) => linked && linkedCount > 1;
+
+      const identities = [
+        {
+          provider: 'discord',
+          providerAccountId: discordLinked ? user.discordId : null,
+          displayName: user.discordUsername ?? null,
+          linkedAt: discordLinked ? user.createdAt.toISOString() : null,
+          proofMethod: discordLinked ? 'discord_oauth' : null,
+          isPrimary: discordLinked,
+          canUnlink: canUnlink(discordLinked),
+        },
+        {
+          provider: 'steam',
+          providerAccountId: steamLinked ? user.steamId : null,
+          displayName: null,
+          linkedAt: steamLinked ? user.createdAt.toISOString() : null,
+          proofMethod: steamLinked ? 'steam_openid' : null,
+          isPrimary: false,
+          canUnlink: canUnlink(steamLinked),
+        },
+        {
+          provider: 'epic',
+          providerAccountId: epicLinked ? user.epicId : null,
+          displayName: null,
+          linkedAt: epicLinked ? user.createdAt.toISOString() : null,
+          proofMethod: epicLinked ? 'epic_oauth' : null,
+          isPrimary: false,
+          canUnlink: canUnlink(epicLinked),
+        },
+      ];
+
+      res.json({
+        userId: user.id,
+        identities,
+        rules: {
+          autoMergeByEmailOrName: false,
+          proofOfControlRequired: true,
+          minimumLinkedProviders: 1,
+          note: 'At least one provider must remain linked. Linking always requires proof-of-control; email/name are never used to merge accounts.',
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // Logout
   logout = async (req: AuthRequest, res: Response) => {
     // Log logout if user is authenticated

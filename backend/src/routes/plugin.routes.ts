@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PluginController } from '../controllers/plugin.controller.js';
-import { authenticatePlugin, authenticateSignedPlugin } from '../middlewares/auth.js';
+import { authenticatePluginFlexible, authenticateSignedPlugin } from '../middlewares/auth.js';
 
 const router = Router();
 const pluginController = new PluginController();
@@ -19,9 +19,15 @@ router.post('/deliveries/:deliveryKey/release', authenticateSignedPlugin as any,
 router.post('/market/prepare-lock', authenticateSignedPlugin as any, pluginController.prepareLock as any);
 router.post('/market/confirm-lock', authenticateSignedPlugin as any, pluginController.confirmLock as any);
 
-// --- LEGACY SUITE ---
-// All other routes require standard plugin authentication (API key)
-router.use(authenticatePlugin);
+// Game companion (read-only, server-scoped) — CR-PLUGIN-007 / 008
+router.get('/player/:steamId/wallet', authenticateSignedPlugin as any, pluginController.getPlayerWallet as any);
+router.get('/player/:steamId/pending-deliveries', authenticateSignedPlugin as any, pluginController.getPlayerPendingDeliveries as any);
+router.get('/wallet/events', authenticateSignedPlugin as any, pluginController.getWalletEvents as any);
+
+// --- LEGACY SUITE (CR-PLUGIN-006) ---
+// These endpoints now accept hmacAuth (signed requests) AND, during the migration overlap
+// window, the legacy X-API-Key (logged as a deprecation). See authenticatePluginFlexible.
+router.use(authenticatePluginFlexible);
 
 // Verify license and register IP
 router.get('/verify', pluginController.verifyLicense as any);

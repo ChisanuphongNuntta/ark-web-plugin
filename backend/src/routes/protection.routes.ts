@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ProtectionController } from '../controllers/protection.controller.js';
-import { authenticate, authenticatePlugin, requireAdmin } from '../middlewares/auth.js';
+import { authenticate, authenticatePluginFlexible, requireAdmin } from '../middlewares/auth.js';
 
 const router = Router();
 const protectionController = new ProtectionController();
@@ -8,8 +8,9 @@ const protectionController = new ProtectionController();
 // ==========================================
 // Plugin API - เรียกจาก ARK Plugin (ใช้ API Key)
 // ==========================================
+// CR-PLUGIN-006: hmacAuth-capable with X-API-Key backward-compat during overlap.
 const pluginRouter = Router();
-pluginRouter.use(authenticatePlugin);
+pluginRouter.use(authenticatePluginFlexible);
 
 // ตรวจสอบ protection ของผู้เล่น
 pluginRouter.get('/player/:steamId', protectionController.checkPlayerProtection as any);

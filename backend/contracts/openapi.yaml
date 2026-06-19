@@ -56,6 +56,23 @@ paths:
                 properties:
                   user: { $ref: '#/components/schemas/User' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/identities:
+    get:
+      operationId: getLinkedIdentities
+      tags: [Auth]
+      description: >-
+        IRIS ID linked-providers view for the Account Center. Reports every provider (discord,
+        steam, epic); unlinked providers appear with null fields and `canUnlink: false`.
+        `canUnlink` enforces the invariant that at least one provider must remain linked.
+        Mirrors `contracts/fixtures/linked-identities.json`.
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200':
+          description: Linked identities and IRIS ID linking rules.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LinkedIdentitiesResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
   /auth/link-steam:
     post:
       operationId: linkSteam
@@ -344,6 +361,140 @@ paths:
                   listingId: { type: string }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+  /plugin/player/{steamId}/wallet:
+    get:
+      operationId: getPlayerWallet
+      tags: [Plugin]
+      description: >-
+        Read-only IRIS Wallet balance for a linked player, for the in-game `/iris` companion
+        (CR-PLUGIN-007). Server-scoped: the steamId MUST be linked to an IRIS account and
+        associated with the calling credential's server, else 403/404. Amounts are decimal
+        strings. Signed with `hmacAuth`.
+      security: [{ hmacAuth: [] }]
+      parameters:
+        - { in: path, name: steamId, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Wallet balances for the player (decimal strings).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WalletBalance' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /plugin/player/{steamId}/pending-deliveries:
+    get:
+      operationId: getPlayerPendingDeliveries
+      tags: [Plugin]
+      description: >-
+        Count of not-yet-completed delivery jobs for a linked player on the calling credential's
+        server (CR-PLUGIN-007). Server-scoped and read-only. Signed with `hmacAuth`.
+      security: [{ hmacAuth: [] }]
+      parameters:
+        - { in: path, name: steamId, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Pending delivery count for the player on this server.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pending]
+                properties:
+                  pending: { type: integer, minimum: 0 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /plugin/wallet/events:
+    get:
+      operationId: getWalletEvents
+      tags: [Plugin]
+      description: >-
+        Server-scoped wallet event feed for the in-game companion (CR-PLUGIN-008). Returns
+        `wallet.transaction.posted` events (see contracts/events) for players associated with the
+        calling credential's server, with ADDITIVE `playerSteamId` + `userId` attribution fields.
+        Cursor pagination: pass the previous `lastTimestamp` as `?since=`. Read-only, signed with
+        `hmacAuth`.
+      security: [{ hmacAuth: [] }]
+      parameters:
+        - in: query
+          name: since
+          required: false
+          schema: { type: string, format: date-time }
+          description: Return events strictly after this timestamp (the previous response's lastTimestamp).
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        '200':
+          description: A page of wallet events plus the cursor to resume from.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, events, lastTimestamp]
+                properties:
+                  success: { type: boolean }
+                  events:
+                    type: array
+                    items: { $ref: '#/components/schemas/WalletEvent' }
+                  lastTimestamp: { type: [string, 'null'], format: date-time }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /plugin/verify:
+    get:
+      operationId: pluginVerifyLicense
+      tags: [Plugin]
+      description: >-
+        Legacy plugin license verification + IP registration (CR-PLUGIN-006). The migration
+        target is `hmacAuth`; `legacyApiKeyAuth` (X-API-Key) is accepted during the overlap window
+        and logged as a deprecation.
+      security: [{ hmacAuth: [] }, { legacyApiKeyAuth: [] }]
+      responses:
+        '200': { description: License verified. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /plugin/orders/pending:
+    get:
+      operationId: pluginGetPendingOrders
+      tags: [Plugin]
+      description: 'Legacy pending-orders poll (CR-PLUGIN-006). hmacAuth target; X-API-Key accepted during overlap.'
+      security: [{ hmacAuth: [] }, { legacyApiKeyAuth: [] }]
+      responses:
+        '200': { description: Pending orders for this server. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /plugin/stats:
+    post:
+      operationId: pluginUpdatePlayerStats
+      tags: [Plugin]
+      description: 'Legacy player-stats upsert (CR-PLUGIN-006). hmacAuth target; X-API-Key accepted during overlap.'
+      security: [{ hmacAuth: [] }, { legacyApiKeyAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [players]
+              properties:
+                players: { type: array, items: { type: object } }
+      responses:
+        '200': { description: Stats processed. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /plugin/player/{steamId}:
+    get:
+      operationId: pluginGetPlayerBySteamId
+      tags: [Plugin]
+      description: >-
+        Legacy player lookup by Steam ID (CR-PLUGIN-006). hmacAuth target; X-API-Key accepted
+        during overlap. NOTE: this is distinct from the read-only companion routes
+        `/plugin/player/{steamId}/wallet` and `/plugin/player/{steamId}/pending-deliveries`.
+      security: [{ hmacAuth: [] }, { legacyApiKeyAuth: [] }]
+      parameters:
+        - { in: path, name: steamId, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Player info + pending order count. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /cart:
     get:
       operationId: getCart
@@ -574,6 +725,15 @@ components:
   securitySchemes:
     cookieAuth: { type: apiKey, in: cookie, name: token }
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    legacyApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: >-
+        DEPRECATED legacy plugin auth (per-user API key + X-Server-Id + IP whitelist). Accepted
+        ONLY during the CR-PLUGIN-006 migration overlap window so plugins already in the field do
+        not break; each use is logged as a deprecation. New deployments MUST use `hmacAuth`. Will
+        be removed once all servers have migrated to signed requests.
     hmacAuth:
       type: apiKey
       in: header
@@ -620,14 +780,23 @@ components:
 
         - Clock skew: verifiers must allow +/- 300000 ms drift on `X-Request-Timestamp`.
 
-        NOTE: the live verifier currently keys the HMAC by the plain credential value rather
-        than resolving keyId->secret; treat the keyId/secret separation above as the contract
-        target the live middleware migrates to (additive, no wire-format change).
+        - Server scope: a resolved credential is bound to the server it was issued for. Its scope
+          is fixed to that `serverId`; an `X-Server-Id` (or body/query serverId) that disagrees is
+          rejected (403). Issue/rotate/revoke pairs via `scripts/issue-plugin-credential.ts`.
+
+        Live verifier: the middleware resolves `X-Plugin-Key-Id` -> the per-credential HMAC
+        secret (stored encrypted-at-rest) and verifies `X-Signature` against that resolved
+        secret — NOT against the keyId. During the rotation/overlap window a legacy plugin that
+        has not yet migrated to an issued `{ keyId, secret }` pair is still accepted by falling
+        back to the legacy `X-API-Key` value as the HMAC secret (logged as a deprecation); new
+        deployments must use issued credentials.
   responses:
     Unauthorized:
       description: Authentication required
     BadRequest:
       description: Invalid request parameters or state conflict
+    Forbidden:
+      description: Authenticated but not permitted (e.g. out of server/credential scope)
     NotFound:
       description: Resource not found
   schemas:
@@ -684,6 +853,37 @@ components:
           type: string
           enum: [steam_openid, epic_oauth, discord_oauth, provider_callback]
       additionalProperties: true
+    LinkedIdentity:
+      type: object
+      required: [provider, providerAccountId, linkedAt, proofMethod, isPrimary, canUnlink]
+      properties:
+        provider: { type: string, enum: [discord, steam, epic] }
+        providerAccountId: { type: [string, 'null'] }
+        displayName: { type: [string, 'null'] }
+        linkedAt: { type: [string, 'null'], format: date-time }
+        proofMethod: { type: [string, 'null'] }
+        isPrimary: { type: boolean }
+        canUnlink:
+          type: boolean
+          description: >-
+            True only when the provider is linked AND unlinking it would still leave at least one
+            linked provider (minimumLinkedProviders invariant).
+    LinkedIdentitiesResponse:
+      type: object
+      required: [userId, identities, rules]
+      properties:
+        userId: { type: string }
+        identities:
+          type: array
+          items: { $ref: '#/components/schemas/LinkedIdentity' }
+        rules:
+          type: object
+          required: [autoMergeByEmailOrName, proofOfControlRequired, minimumLinkedProviders]
+          properties:
+            autoMergeByEmailOrName: { type: boolean, const: false }
+            proofOfControlRequired: { type: boolean, const: true }
+            minimumLinkedProviders: { type: integer, const: 1 }
+            note: { type: string }
     RecoveryRequest:
       type: object
       required: [provider, providerAccountId]
@@ -748,6 +948,37 @@ components:
           type: object
           additionalProperties: { type: string, pattern: '^-?[0-9]+$' }
         total: { type: string, pattern: '^-?[0-9]+$' }
+    WalletEvent:
+      type: object
+      description: >-
+        A posted wallet ledger transaction surfaced to the plugin companion. Superset of the
+        `wallet.transaction-posted` event payload (events/) with ADDITIVE server-scoped
+        attribution fields `playerSteamId` + `userId`. Consumers must ignore unknown fields.
+      required: [eventId, eventType, occurredAt, transactionId, transactionType, entries]
+      properties:
+        eventId: { type: string }
+        eventType: { type: string, const: wallet.transaction.posted }
+        occurredAt: { type: string, format: date-time }
+        transactionId: { type: string }
+        transactionType: { type: string }
+        referenceType: { type: [string, 'null'] }
+        referenceId: { type: [string, 'null'] }
+        playerSteamId:
+          type: [string, 'null']
+          description: Additive — steamId of the player this event is attributed to on this server.
+        userId:
+          type: [string, 'null']
+          description: Additive — IRIS user id this event is attributed to.
+        entries:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [accountKey, amount, currency]
+            properties:
+              accountKey: { type: string }
+              amount: { type: string, pattern: '^-?[0-9]+$' }
+              currency: { type: string, const: IC }
     LedgerEntry:
       type: object
       required: [id, amount, balanceAfter, account]

@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "events": [
+    {
+      "eventId": "evt_ckl1tx0000checkoutpurchase01",
+      "eventType": "wallet.transaction.posted",
+      "occurredAt": "2026-06-20T03:06:00.000Z",
+      "transactionId": "ckl1tx0000checkoutpurchase01",
+      "transactionType": "checkout_purchase",
+      "referenceType": "checkout",
+      "referenceId": "7f09c693-e18e-4a67-b50a-9d297e28b8cf",
+      "playerSteamId": "76561198000000001",
+      "userId": "9a75908e-5b12-4217-ba6e-cc7887e5b56a",
+      "entries": [
+        {
+          "accountKey": "user:9a75908e-5b12-4217-ba6e-cc7887e5b56a:available:IC",
+          "amount": "-1000",
+          "currency": "IC"
+        }
+      ]
+    },
+    {
+      "eventId": "evt_ckl1tx0001topupcredit02",
+      "eventType": "wallet.transaction.posted",
+      "occurredAt": "2026-06-20T04:15:30.000Z",
+      "transactionId": "ckl1tx0001topupcredit02",
+      "transactionType": "topup_credit",
+      "referenceType": "external",
+      "referenceId": "pi_abc123",
+      "playerSteamId": "76561198000000001",
+      "userId": "9a75908e-5b12-4217-ba6e-cc7887e5b56a",
+      "entries": [
+        {
+          "accountKey": "user:9a75908e-5b12-4217-ba6e-cc7887e5b56a:available:IC",
+          "amount": "5000",
+          "currency": "IC"
+        }
+      ]
+    }
+  ],
+  "lastTimestamp": "2026-06-20T04:15:30.000Z"
+}

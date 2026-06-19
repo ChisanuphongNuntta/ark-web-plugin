@@ -126,11 +126,24 @@ vi.mock('../src/config/database.js', () => ({
       create: vi.fn(),
       update: vi.fn(),
       upsert: vi.fn(),
+      count: vi.fn(),
     },
     dinoAssetLock: {
       findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+    },
+    serverCredential: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+    },
+    playerStats: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      upsert: vi.fn(),
     },
     cart: {
       findUnique: vi.fn(),

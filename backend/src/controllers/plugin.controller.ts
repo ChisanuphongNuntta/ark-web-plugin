@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
+import pluginCompanionService from '../services/pluginCompanion.service.js';
 
 interface PluginRequest extends Request {
   pluginUser?: {
@@ -678,6 +679,42 @@ export class PluginController {
         success: true,
         listingId: listing.id,
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // ── Game companion (signed, server-scoped, read-only) — CR-PLUGIN-007 / 008 ───────────
+
+  // GET /api/plugin/player/:steamId/wallet -> WalletBalance (decimal strings)
+  getPlayerWallet = async (req: PluginRequest, res: Response, next: NextFunction) => {
+    try {
+      const { steamId } = req.params;
+      const balance = await pluginCompanionService.getPlayerWallet(steamId, req.serverId!);
+      res.json(balance);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // GET /api/plugin/player/:steamId/pending-deliveries -> { pending: <int> }
+  getPlayerPendingDeliveries = async (req: PluginRequest, res: Response, next: NextFunction) => {
+    try {
+      const { steamId } = req.params;
+      const result = await pluginCompanionService.getPendingDeliveries(steamId, req.serverId!);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // GET /api/plugin/wallet/events?since=<cursor> -> { success, events, lastTimestamp }
+  getWalletEvents = async (req: PluginRequest, res: Response, next: NextFunction) => {
+    try {
+      const since = req.query.since as string | undefined;
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const result = await pluginCompanionService.getWalletEvents(req.serverId!, since, limit);
+      res.json(result);
     } catch (error) {
       next(error);
     }

@@ -292,8 +292,35 @@ model Server {
   chatRanks        ChatRank[]
   deliveryJobs     DeliveryJob[]
   cartItems        CartItem[]
+  credentials      ServerCredential[]
 
   @@map("servers")
+}
+
+// Scoped, rotatable server/plugin signing credential (CR-PLUGIN / M2 hardening).
+// The HMAC SIGNING IDENTITY (keyId) is separate from the SIGNING SECRET. Plugins send
+// only `keyId` on the wire (X-Plugin-Key-Id); the backend resolves keyId -> secret here
+// to verify X-Signature. The secret is stored encrypted-at-rest (deterministic AES) and
+// never returned by any read endpoint. Rotation issues a new {keyId, secret} pair and the
+// old keyId can be revoked independently; an overlap window may keep both active so
+// rotation is zero-downtime.
+model ServerCredential {
+  id        String   @id @default(uuid())
+  serverId  Int      @map("server_id")
+  keyId     String   @unique @map("key_id")
+  // Encrypted HMAC secret (deterministic AES-256-CBC, same scheme as User.apiKey).
+  secretEnc String   @map("secret_enc")
+  label     String?
+  status    String   @default("active") // "active" | "revoked"
+  createdAt DateTime @default(now()) @map("created_at")
+  rotatedAt DateTime? @map("rotated_at")
+  revokedAt DateTime? @map("revoked_at")
+  lastUsedAt DateTime? @map("last_used_at")
+
+  server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@index([serverId, status])
+  @@map("server_credentials")
 }
 
 // คำสั่งซื้อ

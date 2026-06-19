@@ -169,6 +169,23 @@ async function main() {
   console.log(`✅ Created server: ${server.name}`);
   console.log(`   API Key: ${server.apiKey}`);
 
+  // Issue a signed-plugin credential {keyId, secret} for this server (M2 hardening).
+  // keyId is the public identifier sent in X-Plugin-Key-Id; secret is the HMAC signing key.
+  // The secret is stored ENCRYPTED; we print the plaintext here ONCE for the operator to copy
+  // into the plugin configuration. It is never recoverable from the DB in plaintext again.
+  const existingCredential = await prisma.serverCredential.findFirst({
+    where: { serverId: server.id, status: 'active' },
+  });
+  if (!existingCredential) {
+    const { default: pluginCredentialService } = await import('../src/services/pluginCredential.service.js');
+    const issued = await pluginCredentialService.issue(server.id, 'seed-dev-credential');
+    console.log('✅ Issued signed-plugin credential (store the secret in the plugin config):');
+    console.log(`   X-Plugin-Key-Id (keyId): ${issued.keyId}`);
+    console.log(`   HMAC secret (copy now):  ${issued.secret}`);
+  } else {
+    console.log('ℹ️  Active signed-plugin credential already exists for this server (skipping issue).');
+  }
+
   console.log('\n🎉 Database seeding completed!');
 }
 

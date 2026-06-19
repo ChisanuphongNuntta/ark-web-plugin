@@ -34,6 +34,9 @@ router.post('/recovery', authController.requestRecovery as any);
 // Get current user
 router.get('/me', authenticate as any, authController.getCurrentUser as any);
 
+// Linked identities (IRIS ID Account Center view)
+router.get('/identities', authenticate as any, authController.getLinkedIdentities as any);
+
 // Logout (optional auth for audit logging)
 router.post('/logout', optionalAuthenticate as any, authController.logout as any);
 
