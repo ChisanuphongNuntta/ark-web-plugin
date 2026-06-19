@@ -1,0 +1,186 @@
+{
+  "Debug": false,
+  "AccountKey": "", (Your License key when you activate the plugin)
+  "SpeedCryo": { (No waikting for cryo)
+    "Enabled": true,
+    "OnlyForPermissions": [ "Default" ]
+  },
+  "GrowCommand": { (Command to turn babies into adults)
+    "Enabled": true,
+    "Command": "/grow",
+    "Msg_NoPermission": "You are not allowed to use this command.",
+    "Msg_Cooldown": "You need to wait<RichColor Color=\"1, 0, 0, 1\">{}</> more seconds before using this command again.",
+    "Msg_NotEnough": "You need <RichColorColor=\"1, 0, 0, 1\">{}</> to grow up a dino.",
+    "Msg_NoBabyDino": "Look at a baby dino to use this command.",
+    "Msg_Success_Free": "Your <RichColorColor=\"1, 0, 0, 1\">{}</> has been grown up.",
+    "Msg_Success_For": "You have paid <RichColorColor=\"1, 0, 0, 1\">{}</> to grow up <RichColorColor=\"1, 0, 0, 1\">{}</>.",
+    "PermissionConfigs": [
+      {
+        "Group": "Default",
+        "CostType": "Points",
+        "CostValStr": "",
+        "CostValNum": 20,
+        "Cooldown": 60,
+        "ImprintOnGrow": false
+      },
+      {
+        "Group": "Donator",
+        "CostType": "Points",
+        "CostValStr": "",
+        "CostValNum": 10,
+        "Cooldown": 30,
+        "ImprintOnGrow": true (Auto imprint 100% when grown)
+      }
+    ]
+  },
+  "HatchCommand": { (Command to hatch fertilized eggs)
+    "Enabled": true,
+    "ClaimOnHatch": true,
+    "Command": "/hatch",
+    "Msg_NoPermission": "You are not allowed to use this command.",
+    "Msg_Cooldown": "You need to wait<RichColor Color=\"1, 0, 0, 1\">{}</> more seconds before using this command again.",
+    "Msg_NotEnough": "You need <RichColorColor=\"1, 0, 0, 1\">{}</> to grow up a dino.",
+    "Msg_NoEgg": "Look at a fertalized egg to use this command.",
+    "Msg_Success_Free": "Your <RichColorColor=\"1, 0, 0, 1\">{}</> has been hatched!",
+    "Msg_Success_For": "You have paid <RichColorColor=\"1, 0, 0, 1\">{}</> to hatch <RichColorColor=\"1, 0, 0, 1\">{}</>!",
+    "PermissionConfigs": [
+      {
+        "Group": "Default",
+        "CostType": "Points",
+        "CostValStr": "",
+        "CostValNum": 20,
+        "Cooldown": 5
+      },
+      {
+        "Group": "Donator",
+        "CostType": "Points",
+        "CostValStr": "",
+        "CostValNum": 10,
+        "Cooldown": 0
+      }
+    ]
+  },
+  "MateCommand": {
+    "Enabled": true, (enables the use of /mate and /nomate)
+    "PermissionsAllowedToUse": [ "Default" ], (restrict to certain permissions)
+    "StartCommand": "/mate", (Optionally change the command for starting mating)
+    "StopCommand": "/nomate", (Optionally change the command for stoping mating)
+    "DefaultRange": 10, (default range in foundations)
+    "MaxRange": 50, (max range in foundations)
+    "Msg_NoDinos": "No tribe dinos found within {} foundations.",
+    "Msg_NoPermission": "You don't have permission to use this command.",
+    "Msg_InvalidRange": "Invalid range, please try something like<RichColor Color=\"1, 0, 0, 1\">{} 20</>. (1-{})",
+    "Msg_Mating": "All your dinos within {} foundations are now mating. Use <RichColor Color=\"0, 1, 0, 1\">{}</> to stop.",
+    "Msg_Stop_Mating": "All your dinos within {} foundations have stopped mating. Use <RichColor Color=\"0, 1, 0, 1\">{}</> to start again."
+  },
+  "ClaimCommand": {
+    "Enabled": true, (enables the use of /claim)
+    "PermissionsAllowedToUse": [ "Default" ], (restrict to certain permissions)
+    "Command": "/claim", (Optionally change the command for claiming dinos)
+    "AutoCryoClaimed": true,  (Enable true/false if you want your claimed dinos to be automatically cryod when claimed)
+    "RequireCryopodsInInventory": true, (enable true/false if players are requred to have cryopod in inventory, if true then if you dont have enough cryos they will just be claimed and not cryod)
+    "DefaultRange": 10, (default range in foundations)
+    "MaxRange": 50, (max range in foundations)
+    "Msg_NoDinos": "No unclaimed dinos found within {} foundations.",
+    "Msg_NoPermission": "You don't have permission to use this command.",
+    "Msg_InvalidRange": "Invalid range, please try something like<RichColor Color=\"1, 0, 0, 1\">{} 20</>. (1-{})",
+    "Msg_TameLimit": "You have reached {} and cannot claim all the unclaimed dinos around.",
+    "Msg_Claimed": "All unclaimed dinos<RichColor Color=\"0, 1, 0, 1\">({})</> within {} foundations have been claimed.",
+    "Msg_Cryod": "All unclaimed dinos<RichColor Color=\"0, 1, 0, 1\">({})</> within {} foundations have been cyrod into your inventory.",
+    "Msg_Both": "All unclaimed dinos<RichColor Color=\"0, 1, 0, 1\">({})</> within {} foundations have been claimed, and as many as possible <RichColor Color=\"0, 1, 0, 1\">({})</> were cryod into your inventory."
+  },
+  "MutateCommand": {
+    "Enabled": true, (enables the use of /mutate)
+    "Command": "/mutate", (Optionally change the command for mutating dinos)
+    "AllowMultipleFromOnePersonAtOnce": true, (false if players should wait for their bubble to disappear before using command again)
+    "MaxMultiplierChanceIncrease_Stacked": 10.0, (The absolute max multiplier will be applied from mutation bubbles)
+    "Msg_NoPermission": "You are not allowed to use this command.",
+    "Msg_NoDinos": "There are no dinos nearby to mutate.",
+    "Msg_Cooldown": "You need to wait<RichColor Color=\"1, 0, 0, 1\">{}</> more seconds before spawning another mutation bubble.",
+    "Msg_NotEnough": "You need <RichColorColor=\"1, 0, 0, 1\">{}</> to spawn a mutation bubble.",
+    "Msg_Mutated_For": "You have paid<RichColor Color=\"0, 1, 0, 1\">{}</> to spawn a mutation bubble. The chance to mutate will be increased for any baby or egg inside.",
+    "Msg_Mutated_Free": "You have spawned a mutation bubble. The chance to mutate will be increased for any baby or egg inside.",
+    "DefaultConfig": { (mutation bubble config for everyone, also default for the PermissionConfigs)
+      "AllowedToUse": false, (true/false if players should be able to use this command without permissions groups)
+      "CostType": "Items", (Items/Points/Tokens/Free)
+      "CostValStr": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Resources/PrimalItemResource_Element.PrimalItemResource_Element_C'", (Items: Blueprint path of item to require, Points: unused, Tokens: TokenType, Free: unused)
+      "CostValNum": 10, (Items: Count of item to require, Points: amount of points, Tokens: Amount of tokens, Free: unused)
+      "BubbleSize": 5, (Size in foundations of mutation bubble)
+      "MutationChanceIncreaseTimeSecs": 300, (How long the bubble lasts)
+      "MutationChanceIncrease_PerStack": 1.0, (each bubble will add 1x, 1 bubble = 2x, 3 bubbles = 4x, etc)
+      "CooldownSecs": 30 (How long FROM WHEN THE BUBBLE STARTS should the command be on cooldown)
+    },
+    "PermissionConfigs": [ (Optional per permission group overrides for the DefaultConfig)
+      { (This will let Vip use the command unlike Default, but it will use the rest of DefaultConfig, i.e. costing 10 element and lasting 300 seconds)
+        "Group": "Vip", 
+        "AllowedToUse": true
+      },
+      { (Donators will also be allowed to use, but it will only cost them 10 points instead of 10 element)
+        "Group": "Donator",
+        "AllowedToUse": true,
+        "CostType": "Points",
+        "CostValStr": "",
+        "CostValNum": 10
+      },
+      { (Admins can use the command for free, have no cooldown, and their bubble adds 4x instead of 1x (so 1 bubble = 5.0, 2 bubble = 9.0)
+        "Group": "Admins",
+        "AllowedToUse": true,
+        "CostType": "Free",
+	    "CooldownSecs": 0,
+	    "MutationChanceIncrease_PerStack": 4.0
+      }
+    ]
+  },
+  "GlobalConfig": { (Config Applied to all dinos not overriden in the SpecificOverides)
+    "MutationOverride": {
+      "MutationRateMultiplier": 1.0, (Default mutation rate is 2.5%, 3.0 here would make that 7.5%)
+      "TwinRateMultiplier": 1.0, (Vanilla Twin Rate is 10%, 3.0 here would make that 30%)
+      "TripletRateMultiplier": 1.0, (Vanilla Triplet rate is 2%, 3.0 here would make that 6%)
+      "LevelsPerMutation": 2, (Vanilla levels per mutation is 2 ARK currently wont let this go higher, but you can change to 1 to slow down mutations)
+      "MutationRolls": 3, (Vanilla mutations rolls is 3, that means 1 baby can level up 0, 2, 4, or 6 levels based on the result of 3 rolls with 2.5% * MutationRateMultiplier)
+			  (ARK caps this at 4 rolls, but you could reduce it lower as well)
+      "MaxMutations": 20  (This is the vanilla mom/dad mutation cap set at 20 by default)
+    },
+    "AutoNaming": {
+      "AutoNameBabies": true, (When you claim a baby should it be auto named?)
+      "AutoNameTamed": true,  (When you tame a new dino should it be auto named?)
+      "AutoPassive": true,    (Auto Passive when claiming/taiming?)
+      "AutoNoLook": true,     (Auto No Ally Look when claiming/taiming?)
+      "Type": "Random",       (Random, Template, or None)
+      "Value": "babynames.txt" (if Random should be relative path to a text file with a name per line, None wont do anything with baby names)
+	(Template can be anything you set and will replace variables in the name, Possible variables are:
+	SEX, SEX_SHORT, OWNER_NAME, OWNER_INITAL, MUT_COUNT, STAT_DMG, STAT_HP, STAT_STAM, STAT_OXY, STAT_FOOD, STAT_WATER, STAT_MOVE, STAT_WEIGHT)
+    },
+    "Imprinting": {
+      "FullImprintOnClaim": false,	(true if should add 100% imprint on claim)
+      "DisableBabyImprintForWalking": false, (true if you never want to have to walk a baby to imprint)
+      "DisableBabyImprintForItems": false, (true if you never want to have to give a baby items to imprint)
+      "DisableBabyImprintForCuddle": false, (true if you never want to cuddle for imprint; WILL DEFAULT TO TRUE IF ALL ARE FALSE)
+      "CuddleAmountMultiplier": 1.0 (Multiplier for the % gain when imprinting)
+    }
+  },
+  "SpecificOverides": [ (Config overrides per dino, if something is not specified it will default to the GlobalConfig value)
+    { (This would make Gigas never have twins or triplets, And auto be named something like "M - Muts 10 - Dmg 65")
+      "Dinos": [ "Giga_BP" ],
+      "MutationOverride": {
+        "TwinRateMultiplier": 0,
+        "TripletRateMultiplier": 0
+      },
+      "AutoNaming": {
+        "AutoNameBabies": true,
+        "AutoNameTamed": true,
+        "AutoPassive": true,
+        "Type": "Template",
+        "Value": "{SEX_SHORT} - Muts {MUT_COUNT} - Dmg {STAT_DMG}"
+      }
+    },
+    { (This would make wyverns need element instead of wyvern milk to imprint, and give 10x the imprinting % for it)
+      "Dinos": [ "Wyvern_BP" ],
+      "Imprinting": {
+        "FullImprintOnClaim": false,
+        "CuddleAmountMultiplier": 10.0,
+        "OverrideImprintItems": [ "Blueprint'/Game/PrimalEarth/CoreBlueprints/Resources/PrimalItemResource_Element.PrimalItemResource_Element_C'" ]
+      }
+    }
+  ]
+}

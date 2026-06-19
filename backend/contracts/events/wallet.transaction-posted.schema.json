@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iris-th.cloud/contracts/events/wallet.transaction-posted.schema.json",
+  "title": "WalletTransactionPosted",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "eventType", "occurredAt", "transactionId", "transactionType", "entries"],
+  "properties": {
+    "eventId": { "type": "string" },
+    "eventType": { "const": "wallet.transaction.posted" },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "transactionId": { "type": "string" },
+    "transactionType": { "type": "string" },
+    "referenceType": { "type": ["string", "null"] },
+    "referenceId": { "type": ["string", "null"] },
+    "entries": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["accountKey", "amount", "currency"],
+        "properties": {
+          "accountKey": { "type": "string" },
+          "amount": { "type": "string", "pattern": "^-?[0-9]+$" },
+          "currency": { "const": "IC" }
+        }
+      }
+    }
+  }
+}

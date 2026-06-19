@@ -1,0 +1,279 @@
+{
+	"ItemCollector":{
+		"Enabled": true,  // enables the plugin
+		"PlayerHelpCommand": "/collectorhelp",  // displays commands and prices to the player
+		"PlayerHelpCommandCooldownInSeconds": 60,  // cooldown for using the help command
+		"ShowPlayerHelpInChat": true,  // default is to show in the tab console, but you can also show in chat window
+		"RangeBubbleTrigger": "test",  // this is the trigger for showing the range bubble for collector commands for example /collectpooptest with show the poop collector range bubble for 10 seconds
+		"DiscordWebHook": "",   // webhook for logging
+		
+		"DatabaseSaveIntervalMinutes": 15,		// the interval in which to save all map data to te database
+       
+	    // these are staggered to prevent the plugin from doing alot of work at once
+   
+		"PasteCheckIntervalSeconds": 55,     
+        "PoopCheckIntervalSeconds": 60,    
+		"PelletsCheckIntervalSeconds": 65,		
+		"EggFertCheckIntervalSeconds": 70,		
+		"CrystalCheckIntervalSeconds": 80,				
+		"EggCheckIntervalSeconds": 85,
+		"PearlCheckIntervalSeconds": 90,		
+		"OilCheckIntervalSeconds": 110,,
+		"PolymerCheckIntervalSeconds": 115,
+		
+		"GroupPermission": {
+			"Admins":{
+				"Priority": 1  				// create your admin profile here
+				
+			},				
+			"Default":{
+				"Priority": 99,
+
+				"CollectCrystalsEnabled": true,   // enables crystal cracker command
+				"CollectCrystalsUseTokens": false, // true uses tokens for price, false uses shop points
+				"CollectCrystalsLimit": 2,        // how many per tribe
+				"CollectCrystalsPrice": 0,        
+				
+				
+				"CollectEggsFertEnabled": true,  // enable fertilized egg collector command
+				"CollectEggsFertUseTokens": false,
+				"CollectEggsFertLimit": 2, 
+				"CollectEggsFertPrice": 0,
+
+
+				"CollectEggsEnabled":  true,  // enable dropped egg collector
+				"CollectEggsUseTokens":  true,  // enable dropped egg collector
+				"CollectEggsLimit": 2,
+				"CollectEggsPrice": 0,
+
+
+				"CollectOilEnabled": true, // enable oil collector
+				"CollectOilUseTokens": false,
+				"CollectOilLimit": 2,
+				"CollectOilPrice": 0,
+				
+				"CollectPasteEnabled": true,    // enable paste collector
+				"CollectPasteUseTokens": false,
+				"CollectPasteLimit": 2,
+				"CollectPastePrice": 0,
+				
+				
+				"CollectPearlsEnabled": true,    // enable pearl collector
+				"CollectPearlsUseTokens": false,
+				"CollectPearlsLimit": 2,
+				"CollectPearlsPrice": 0,
+				
+				"CollectPolymerEnabled": true,  // enable collect polymer chat command				
+				"CollectPolymerUseTokens": false,
+				"CollectPolymerLimit": 2,
+				"CollectPolymerPrice": 0,
+				
+				"CollectPoopEnabled":  true,     // enable poop collector
+				"CollectPoopUseTokens": false,     
+				"CollectPoopLimit": 2,
+				"CollectPoopPrice": 0,
+
+
+				"CollectPelletsEnabled": true,     // enable pellet collector
+				"CollectPelletsUseTokens": false,
+				"CollectPelletsLimit": 2,
+				"CollectPelletsPrice": 0
+			}
+		},		
+
+		"CollectCrystals":{   // collects Gacha Crystals
+			"Enabled": true,
+			"Description": "[force the vault you are looking at to collect Gacha crystals]",
+			"ChatCommand": "/collectcrystals",
+			"TokenName": "CollectCrystals",
+			"CommandCooldownInSeconds": 5,  // the cooldown to use the command again
+			"FoundationDistanceLimit": 5,  // how far away to use the command
+			"FoundationRange": 20     // the range in which to search for crystals, larger ranges could create more server lag
+		},
+		
+		"CollectEggsFert":{  // collects fertilized eggs
+			"Enabled": true,
+			"Description": "[force the vault you are looking at to collect fertilized eggs]",
+			"ChatCommand": "/collecteggsfert",
+			"TokenName": "CollectEggsFert",
+			"CommandCooldownInSeconds": 5,
+			"FoundationDistanceLimit": 5,
+			"FoundationRange": 30
+		},
+		
+		"CollectEggs":{  // collects normal eggs
+			"Enabled": true,
+			"Description": "[force the vault you are looking at to collect dropped eggs]",
+			"ChatCommand": "/collecteggs",
+			"TokenName": "CollectEggs",
+			"CommandCooldownInSeconds": 5,
+			"FoundationDistanceLimit": 5,
+			"FoundationRange": 20
+		},
+				
+		"CollectOil":{
+			"Enabled": true,
+			"Description": "[force the vault you are looking at to collect oil]",
+			"ChatCommand": "/collectoil",
+			"TokenName": "CollectOil",
+			"CommandCooldownInSeconds": 5,
+			"FoundationDistanceLimit": 5,
+			"FoundationRange": 20
+		},
+		
+		"CollectPaste":{  // collect Achita paste
+			"Enabled": true,
+			"Description": "[force the vault you are looking at to collect paste]",			
+			"ChatCommand": "/collectpaste",
+			"TokenName": "CollectPaste",
+			"CommandCooldownInSeconds": 5,
+			"FoundationDistanceLimit": 5,
+			"FoundationRange": 20
+		},
+		
+		"CollectPearls":{  // collect Pheonix pearls
+			"Enabled": true,
+			"Description": "[force the vault you are looking at to collect pearls]",			
+			"ChatCommand": "/collectpearls",
+			"TokenName": "CollectPearls",
+			"CommandCooldownInSeconds": 5,
+			"FoundationDistanceLimit": 5,
+			"FoundationRange": 20
+		},
+	
+		"CollectPolymer":{
+			"Enabled": true,
+			"Description": "[force the vault you are looking at to collect polymer]",
+			"ConvertOrganic": true,  // convert organic poly to regular polymer when collecting
+			"ChatCommand": "/collectpoly",
+			"TokenName": "CollectPolymer",
+			"CommandCooldownInSeconds": 5,
+			"FoundationDistanceLimit": 5,
+			"FoundationRange": 20
+		},
+		
+		"CollectPoop":{ // collects feces
+			"Enabled": true,
+			"Description": "[force the vault you are looking at to collect poop]",			
+			"ChatCommand": "/collectpoop",
+			"TokenName": "CollectPoop",
+			"CommandCooldownInSeconds": 5,
+			"FoundationDistanceLimit": 5,
+			"FoundationRange": 20
+		},
+		"CollectPellets":{   // collects snow owl pellets
+			"Enabled": true,
+			"Description": "[force the vault you are looking at to collect pellets]",			
+			"ChatCommand": "/collectpellets",
+			"TokenName": "CollectPellets",
+			"CommandCooldownInSeconds": 5,
+			"FoundationDistanceLimit": 5,
+			"FoundationRange": 20
+		},
+		
+		// structures used to collect things		
+		"Collectors": {
+			"Pearl": [
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Huge.StorageBox_Huge'",
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Large.StorageBox_Large'"
+			],			
+			"Paste": [
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Huge.StorageBox_Huge'",
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Large.StorageBox_Large'"
+			],
+			"Crystal": [
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Huge.StorageBox_Huge'",
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Large.StorageBox_Large'"
+			],	
+			"EggFert": [
+				"Blueprint'/Game/PrimalEarth/Structures/Electric/IceBox.IceBox'",				
+				"Blueprint'/Game/PrimalEarth/Structures/PreservingBin/PreservingBin.PreservingBin'"
+			],
+			"Egg": [
+				"Blueprint'/Game/PrimalEarth/Structures/Electric/IceBox.IceBox'",				
+				"Blueprint'/Game/PrimalEarth/Structures/PreservingBin/PreservingBin.PreservingBin'"
+			],
+			"Poop": [
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Huge.StorageBox_Huge'",
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Large.StorageBox_Large'"
+			],
+			"Pellet": [
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Huge.StorageBox_Huge'",
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Large.StorageBox_Large'"
+			],
+			"Oil": [
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Huge.StorageBox_Huge'",
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Large.StorageBox_Large'"
+			],
+			"Polymer": [
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Huge.StorageBox_Huge'",
+				"Blueprint'/Game/PrimalEarth/Structures/StorageBox_Large.StorageBox_Large'"
+			]
+		},
+				
+		
+		"Messages":{
+			"GroupPermission": {
+				"Default":{
+					"Priority": 99,
+					
+					"PlayerInventoryFull": "You inventory is full",
+					"NoPermission": "You do not have permission to use this command",
+					"PlayerHelpCommand": "All your available commands for Item Collector have been printed out for you in the tab console. Press your tab twice to see the results.",
+					"PlayerHelpCommandResults": "Command: {} for {} {}",
+					"SenderNameInChat": "SERVER",
+					"NotEnabled": "This feature is not enabled on the server",
+					"NotEnoughTokens": "You don't have enough tokens to use this command",
+					"NoPoints": "You do not have enough points ({} needed)",
+					"CommandPurchased": "Command purchased for {} points",
+					"CollectFail": "This structure is already being used as a collector",
+					"CollectEggsFert": "This structure will now collect fertilized eggs",
+					"CollectEggs": "This structure will now collect eggs",
+					"CollectOil": "This structure will now collect Oil",
+					"CollectPolymer": "This structure will now collect Polymer",
+					"CollectPaste": "This structure will now collect Achatina Paste",
+					"CollectPearls": "This structure will now collect Silica and Black Pearls",
+					"CollectPoop": "This structure will now collect poop",
+					"CollectPellets": "This structure will now collect pellets",
+					"CollectCrystals": "This structure will now collect Gacha Crystals",
+					"CollectEggsFertOff": "This structure is no longer collecting fertilized eggs",
+					"CollectEggsOff": "This structure is no longer collecting eggs",					
+					"CollectOilOff": "This structure is no longer collecting Oil",
+					"CollectPolymerOff": "This structure is no longer collecting Polymer",
+					"CollectPasteOff": "This structure is no longer collecting Achatina Paste",
+					"CollectPearlsOff": "This structure is no longer collecting Silica or Black Pearls",
+					"CollectPoopOff": "This structure is no longer collecting poop",
+					"CollectPelletsOff": "This structure is no longer collecting snow owl pellets",
+					"CollectCrystalsOff": "This structure is no longer collecting Gacha Crystals",
+					"CommandCooldown": "You cannot use this command so quickly, try again in a moment",
+					"CollectEggsFertMax": "You have reached the max limit for Fertilized Egg Collectors on this map",
+					"CollectEggsMax": "You have reached the max limit for Egg Collectors on this map",					
+					"CollectOilMax": "You have reached the max limit for Oil Collectors on this map",
+					"CollectPolymerMax": "You have reached the max limit for Polymer Collectors on this map",
+					"CollectPasteMax": "You have reached the max limit for Achatina Paste Collectors on this map",
+					"CollectPearlsMax": "You have reached the max limit for Pearl Collectors on this map",
+                    "CollectPoopMax": "You have reached the max limit for Poop Collectors on this map",
+                    "CollectPelletsMax": "You have reached the max limit for Snow Owl Pellet Collectors on this map",
+					"CollectCrystalsMax": "You have reached the max limit for Crystal Collectors on this map",
+					"GetCloser": "You are too far away to use this command",
+					"NoTarget": "You must be looking at a valid structure",
+					"NoTarget2": "You must be looking at your structure",
+					"NoTarget3": "You must be looking at the correct structure for this command",
+					"Collecting": "Collecting",
+					"Crystals": "Gacha Crystals",
+					"EggsFert": "Fertilized Eggs",
+					"Eggs": "Eggs",
+					"Oil": "Oil",
+					"Polymer": "Polymer",
+					"Paste": "Achatina Paste",
+					"Pearls": "Pearls",
+					"Poop": "Poop",
+					"Pellets": "Pellets",
+					"Points": "Points",
+					"Tokens": "Tokens",
+					"Free": "Free"
+				}
+			}			
+		}
+	}
+}

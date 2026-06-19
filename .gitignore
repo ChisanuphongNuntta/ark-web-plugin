@@ -1,0 +1,92 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+
+# Database
+*.sql.backup
+
+# Docker volumes (local)
+postgres_data/
+redis_data/
+
+# ARK Plugin build
+ark-plugin/build/
+ark-plugin/*.dll
+ark-plugin/*.pdb
+
+# Lockfiles (using Docker/Bun)
+package-lock.json
+bun.lockb
+
+# Windows artifacts
+nul
+Thumbs.db
+
+# Backup files
+*.backup
+*_backup*
+*.bak
+*.orig
+
+# Security - NEVER commit these
+docker/certs/
+*.key
+*.pem
+*.crt
+*.csr
+!docker/certs/.gitkeep
+
+# Security reports
+tests/security/security-reports/
+
+# Anomaly detection data
+docker/monitoring/data/
+
+# === C++ plugin: build outputs & vendored SDKs (keep baseline source-only) ===
+ark-plugin/build-canonical/
+ark-plugin/build-verify/
+ark-plugin/deps/
+ark-plugin/ASE-Plugins-master/
+x64/
+Debug/
+Release/
+.vs/
+*.obj
+*.lib
+*.exe
+*.exp
+*.ilk
+*.iobj
+*.ipdb
+*.pdb
+*.dll

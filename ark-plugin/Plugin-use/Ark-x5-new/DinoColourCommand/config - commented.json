@@ -1,0 +1,101 @@
+{
+  "General": {
+    "CDC-Command": "/cdc",  \\ used to change the colour of a dino using its name, duplicate names will result in random selection
+    "SDC-Command": "/sdc",  \\ used to change the colour of a dino while looking at it
+    "RequireAdmin": false,  \\ Needs admin permission to use, true = yes
+    "NeuterAfterUse": false,  \\ Will Neuter/Spay a dino after colouring 
+    "Permission": {
+      "Enable": true,   \\ if true will check first if user has permission below 
+      "Name": "DinoColourCommand" \\ permission that will be checked for when using colour commands
+    },
+    "TokenBank": {
+      "Enable": true, \\ If true will use tokens to colour dino
+      "Cost": 3,
+      "Type": "DinoColor" \\ Token group name for colouring dino
+    },
+    "ArkShop": {
+      "Enable": true, \\ if true will use ark shop points when colouring dinos
+      "Cost": 3
+    }\\ colouring works in this order - Permission enabled = true, TokenBank enable = true, Arkshop enable = true, if user has perm but no tokens it will use points. 
+  },
+  "Messages": {
+    "NoPermission": {
+      "Message": "You don't have permissions to use this command",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "NotEnoughTokens": {
+      "Message": "You don't have enough Tokens to use this command",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "NotEnoughPoints": {
+      "Message": "You don't have enough Points to use this command",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "IncorrectSyntax_CDC": {
+      "Message": "Incorrect Syntax: /cdc <Name> <Region> <Colour>",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "IncorrectSyntax_SDC": {
+      "Message": "Incorrect Syntax: /sdc <Region> <Colour>",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "IncorrectColours": {
+      "Message": "Dino Colour must be 1 - 100 | 201-226 OR Red, Blue, Yellow, DarkRed. You find more colors at by going to https://ark.gamepedia.com/Color_IDs",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "IncorrectRegion": {
+      "Message": "Dino Region must be 0-5 or Body, Face, Side, Legs, Top or Under.",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "IncorrectTeam": {
+      "Message": "That is not your dinosaur!",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "IncorrectTargeting": {
+      "Message": "Please face the middle of your screen towards the dino you want to color!",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "IntegrationErrorPermissions": {
+      "Message": "Something went wrong with the permission integration. please try again or contact an admin!",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "IntegrationErrorTokenBank": {
+      "Message": "Something went wrong with the TokenBank integration. please try again or contact an admin!",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "IntegrationErrorArkShop": {
+      "Message": "Something went wrong with the ArkShop integration. please try again or contact an admin!",
+      "Colors": [ 255, 0, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    },
+    "Confirmation": {
+      "Message": "{} Color updated!",
+      "Colors": [ 0, 255, 0 ],
+      "DisplayTime": 10,
+      "DisplayScale": 0.5
+    }
+  }
+}

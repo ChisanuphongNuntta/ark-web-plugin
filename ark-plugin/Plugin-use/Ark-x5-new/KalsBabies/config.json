@@ -1,0 +1,181 @@
+{
+  "Debug": true,
+  "AccountKey": "saiifarr.gaming@gmail.com",
+  "GrowCommand": {
+    "Enabled": false,
+    "Command": "/grow",
+    "Msg_NoPermission": "You are not allowed to use this command.",
+    "Msg_Cooldown": "You need to wait<RichColor Color=\"1, 0, 0, 1\">{}</> more seconds before using this command again.",
+    "Msg_NotEnough": "You need <RichColorColor=\"1, 0, 0, 1\">{}</> to grow up a dino.",
+    "Msg_NoBabyDino": "Look at a baby dino to use this command.",
+    "Msg_Success_Free": "Your <RichColorColor=\"1, 0, 0, 1\">{}</> has been grown up.",
+    "Msg_Success_For": "You have paid <RichColorColor=\"1, 0, 0, 1\">{}</> to grow up <RichColorColor=\"1, 0, 0, 1\">{}</>.",
+    "PermissionConfigs": [
+      {
+        "Group": "Default",
+        "CostType": "Points",
+        "CostValStr": "",
+        "CostValNum": 20,
+        "Cooldown": 60,
+        "ImprintOnGrow": false
+      },
+      {
+        "Group": "Donator",
+        "CostType": "Points",
+        "CostValStr": "",
+        "CostValNum": 10,
+        "Cooldown": 30,
+        "ImprintOnGrow": true
+      }
+    ]
+  },
+  "HatchCommand": {
+    "Enabled": false,
+    "ClaimOnHatch": true,
+    "Command": "/hatch2",
+    "Msg_NoPermission": "You are not allowed to use this command.",
+    "Msg_Cooldown": "You need to wait<RichColor Color=\"1, 0, 0, 1\">{}</> more seconds before using this command again.",
+    "Msg_NotEnough": "You need <RichColorColor=\"1, 0, 0, 1\">{}</> to grow up a dino.",
+    "Msg_NoEgg": "Look at a fertalized egg to use this command.",
+    "Msg_Success_Free": "Your <RichColorColor=\"1, 0, 0, 1\">{}</> has been hatched!",
+    "Msg_Success_For": "You have paid <RichColorColor=\"1, 0, 0, 1\">{}</> to hatch <RichColorColor=\"1, 0, 0, 1\">{}</>!",
+    "PermissionConfigs": [
+      {
+        "Group": "Default",
+        "CostType": "Points",
+        "CostValStr": "",
+        "CostValNum": 20,
+        "Cooldown": 5
+      },
+      {
+        "Group": "Donator",
+        "CostType": "Points",
+        "CostValStr": "",
+        "CostValNum": 10,
+        "Cooldown": 0
+      }
+    ]
+  },
+  "MateCommand": {
+    "Enabled": false,
+    "PermissionsAllowedToUse": [
+      "Default"
+    ],
+    "StartCommand": "/mate2",
+    "StopCommand": "/nomate",
+    "DefaultRange": 10,
+    "MaxRange": 50,
+    "Msg_NoPermission": "You don't have permission to use this command.",
+    "Msg_InvalidRange": "Invalid range, please try something like<RichColor Color=\"1, 0, 0, 1\">{} 20</>. (1-{})",
+    "Msg_Mating": "All your dinos within {} foundations are now mating. Use <RichColor Color=\"0, 1, 0, 1\">{}</> to stop.",
+    "Msg_Stop_Mating": "All your dinos within {} foundations have stopped mating. Use <RichColor Color=\"0, 1, 0, 1\">{}</> to start again."
+  },
+  "NeuterCommand": {
+    "Enabled": false,
+    "PermissionsAllowedToUse": [
+      "Default"
+    ],
+    "Command": "/neuter2",
+    "MaxRange": 50,
+    "Msg_NoPermission": "You don't have permission to use this command.",
+    "Msg_InvalidRange": "Invalid range, please try something like<RichColor Color=\"1, 0, 0, 1\">{} 5</>. (1-{})",
+    "Msg_NoDinos": "There are no dinos nearby to neuter.",
+    "Msg_NoTargetDino": "You must either look at a dino or specify a range like<RichColor Color=\"1, 0, 0, 1\">{} 5</>. (1-{})",
+    "Msg_TargetIsNotYours": "You can only neuter your own tribes dinos.",
+    "Msg_AlreadyNeutered": "The dino is already neutered.",
+    "Msg_Neutered": "Neutured <RichColor Color=\"1, 0, 0, 1\">{}</> nearby dinos."
+  },
+  "ClaimCommand": {
+    "Enabled": false,
+    "PermissionsAllowedToUse": [
+      "Default"
+    ],
+    "Command": "/claim2",
+    "AutoCryoClaimed": true,
+    "RequireCryopodsInInventory": true,
+    "DefaultRange": 10,
+    "MaxRange": 50,
+    "Msg_NoPermission": "You don't have permission to use this command.",
+    "Msg_InvalidRange": "Invalid range, please try something like<RichColor Color=\"1, 0, 0, 1\">{} 20</>. (1-{})",
+    "Msg_TameLimit": "You have reached {} and cannot claim all the unclaimed dinos around.",
+    "Msg_Claimed": "All unclaimed dinos<RichColor Color=\"0, 1, 0, 1\">({})</> within {} foundations have been claimed.",
+    "Msg_Cryod": "All unclaimed dinos<RichColor Color=\"0, 1, 0, 1\">({})</> within {} foundations have been cyrod into your inventory.",
+    "Msg_Both": "All unclaimed dinos<RichColor Color=\"0, 1, 0, 1\">({})</> within {} foundations have been claimed, and as many as possible <RichColor Color=\"0, 1, 0, 1\">({})</> were cryod into your inventory."
+  },
+  "MutateCommand": {
+    "Enabled": true,
+    "Command": "/mutate",
+    "AllowMultipleFromOnePersonAtOnce": true,
+    "MaxMultiplierChanceIncrease_Stacked": 13.0,
+    "Msg_NoPermission": "You are not allowed to use this command.",
+    "Msg_NoDinos": "There are no dinos nearby to mutate.",
+    "Msg_Cooldown": "You need to wait<RichColor Color=\"1, 0, 0, 1\">{}</> more seconds before spawning another mutation bubble.",
+    "Msg_NotEnough": "You need <RichColorColor=\"1, 0, 0, 1\">{}</> to spawn a mutation bubble.",
+    "Msg_Mutated_For": "You have paid<RichColor Color=\"0, 1, 0, 1\">{}</> to spawn a mutation bubble. The chance to mutate will be increased for any baby or egg inside.",
+    "Msg_Mutated_Free": "You have spawned a mutation bubble. The chance to mutate will be increased for any baby or egg inside.",
+    "DefaultConfig": {
+      "AllowedToUse": true,
+      "CostType": "Points",
+      "BubbleSize": 5,
+      "MutationChanceIncrease_PerStack": 9.0,
+      "MutationChanceIncreaseTimeSecs": 200,
+      "CostValNum": 500,
+      "CooldownSecs": 300
+    },
+    "PermissionConfigs": [
+      {
+        "Group": "IrisALL",
+        "AllowedToUse": true,
+        "CostType": "Free",
+        "BubbleSize": 7,
+        "MutationChanceIncrease_PerStack": 12.0,
+        "MutationChanceIncreaseTimeSecs": 300
+      }
+    ]
+  },
+  "GlobalConfig": {
+    "DisableUnclaiming": false,
+    "DestroyOnUnclaim": false,
+    "DisableBreeding": false,
+    "MutationOverride": {
+      "MutationRateMultiplier": 2.0,
+      "TwinRateMultiplier": 2.0,
+      "TripletRateMultiplier": 2.0,
+      "LevelsPerMutation": 2,
+      "MutationRolls": 3,
+      "MaxMutations": 40
+    },
+    "AutoNaming": {
+      "AutoPassive": true,
+      "AutoNoWander": true,
+      "AutoNoLook": true,
+      "AutoNameBabies": true,
+      "AutoNameTamed": true,
+      "AutoNoFollow": true,
+      "Type": "Random",
+      "Value": "babynames.txt"
+    },
+    "Imprinting": {
+      "FullImprintOnClaim": false,
+      "DisableBabyImprintForWalking": false,
+      "DisableBabyImprintForItems": false,
+      "DisableBabyImprintForCuddle": false,
+      "CuddleAmountMultiplier": 1.0
+    }
+  },
+  "SpecificOverides": [
+    {
+      "Dinos": [
+        "Blueprint'/Game/PrimalEarth/Dinos/Giganotosaurus/Gigant_Character_BP.Gigant_Character_BP'",
+        "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Gigant_Character_BP_Rockwell.Gigant_Character_BP_Rockwell'"
+      ],
+      "AutoNaming": {
+        "AutoNameBabies": true,
+        "AutoNameTamed": true,
+        "AutoPassive": true,
+        "Type": "Template",
+        "Value": "{SEX_SHORT} - Muts {MUT_COUNT} - Dmg {STAT_DMG}"
+      }
+    }
+  ]
+}

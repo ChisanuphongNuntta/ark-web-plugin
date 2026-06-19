@@ -1,0 +1,63 @@
+{
+  "UpdateTextEvery": 25,
+  "MaxTrackPerPlayer": 8,
+  "MaxTrackPerGroup": {
+    "IrisALL": 20,
+    "Admins": 40
+  },
+
+  "Commands": {
+    "TrackWildDinos": {
+      "Enabled": true,
+      "Command": "/twd",
+      "AllowedGroups": [ "IrisALL","Admins" ],
+      "MaxTrackRange": 300
+    },
+    "TrackTribeDinos": {
+      "Enabled": true,
+      "Command": "/ttd",
+      "AllowedGroups": [ "IrisALL", "Admins" ],
+      "MaxTrackRange": 300
+    },
+    "TrackTribeMembers": {
+      "Enabled": true,
+      "Command": "/ttm",
+      "AllowedGroups": [ "IrisALL", "Admins" ],
+      "MaxTrackRange": 300
+    },
+    "FindDinos": {
+      "Enabled": true,
+      "Command": "/finddinos",
+      "AllowedGroups": [ "IrisALL", "Admins" ]
+    },
+    "StopTrack": {
+      "Enabled": true,
+      "Command": "/stoptrack"
+    }
+  },
+  "Messages": {
+    "MessageSender": "Iris Track",
+    "NoPermissions": "You don't have permissions to run this command.",
+    "TrackLimitReached": "You have reached your track limit!",
+    "InvalidDinoLimitInput": "Invalid dinoLevel input!",
+    "NoDinosFound": "No dinos named {} found",
+    "TrackingDinosWithLevel": "Tracking {} - Lvl {} (Max of {})",
+    "TrackingDinosNoLevel": "Tracking {} (Max of {})",
+    "DinoTrackerEnabled": "Dino tracker enabled!",
+    "DinoTrackerDisabled": "Dino tracker disabled!",
+    "TribeDinoTrackerEnabled": "Tribe dino tracker enabled!",
+    "TribeDinoTrackerDisabled": "Tribe dino tracker disabled!",
+    "TribeTrackerEnabled": "Tribe tracker enabled!",
+    "TribeTrackerDisabled": "Tribe tracker disabled!",
+    "StopTrackingSuccess": "Successfully stopped dino tracking!",
+    "TrackWildDinosUseHelp": "Use: {} <dinoName> <dinoLevel>",
+    "TrackTribeDinosUseHelp": "Use: {} on/off",
+    "TrackTribeMembersUseHelp": "Use: {} on/off",
+    "FindDinosUseHelp": "Use: {} <dinoName> <dinoLevel>"
+  },
+  "FloatingTexts": {
+    "TrackTribeMembersText": "{playerName} - {playerDistance}m",
+    "TrackTribeDinosText": "{dinoName}\n{spaces}{dinoDistance}m",
+    "TrackWildDinosText": "{dinoName} - Lvl {dinoLevel} - {dinoDistance}m"
+  }
+}

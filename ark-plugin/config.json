@@ -1,0 +1,49 @@
+{
+  "HeartShop": {
+    "ApiUrl": "https://localhost/api/plugin",
+    "ApiKey": "your-server-api-key-here",
+    "ServerId": 1,
+    "Security": {
+      "AllowInvalidCertificates": false
+    },
+    "PollInterval": 30,
+    "StatsInterval": 300,
+    "HeartbeatInterval": 60,
+    "Messages": {
+      "Prefix": "[HeartShop]",
+      "ClaimSuccess": "You received: {item} x{quantity}",
+      "ClaimEmpty": "You have no pending items to claim",
+      "ClaimError": "Failed to claim items. Please try again later",
+      "PointsBalance": "Your balance: {points} Points",
+      "NotLinked": "Your account is not linked. Visit our website to link your Steam ID",
+      "ShopUrl": "Visit {url} to purchase items",
+      "ProtectionGranted": "Welcome! You have been granted {days} days of new player protection!",
+      "ProtectionActive": "You still have new player protection active!",
+      "ProtectionStatus": "Protection Status: {status} - Remaining: {time}",
+      "ProtectionExpired": "Your protection has expired",
+      "ProtectionNone": "You do not have active protection",
+      "DamageBlocked": "Damage blocked by protection!",
+      "SellSuccess": "Successfully listed {dino} for {price} points!",
+      "SellUsage": "Usage: /sell <price> - Look at your tamed dino to list it for sale",
+      "SellError": "Failed to create listing. Please try again.",
+      "SellNotOwned": "You can only sell dinos that belong to your tribe.",
+      "SellNoDino": "You must be looking at or riding a tamed dino to sell it.",
+      "ClaimDinoEmpty": "You have no pending dino purchases to claim.",
+      "ClaimDinoSuccess": "Received: {dino} (Level {level})",
+      "ClaimDinoError": "Error claiming dinos. Please try again.",
+      "MarketUrl": "Visit {url} to browse and buy dinos!"
+    },
+    "Protection": {
+      "Enabled": true,
+      "ProtectionDays": 7,
+      "NotifyOnDamageBlocked": false
+    },
+    "PointsReward": {
+      "Enabled": true,
+      "PlaytimeMinutes": 60,
+      "PlaytimePoints": 10,
+      "DinoKillPoints": 1,
+      "HarvestPer1000Points": 1
+    }
+  }
+}

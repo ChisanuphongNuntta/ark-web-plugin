@@ -1,0 +1,6 @@
+{
+  "FullName": "Tribe Log Relay",
+  "Description": "(V2.20) Allows Tribes to send their tribe logs to their own Discord channel!",
+  "Version": 2.20,
+  "MinApiVersion": 3.51
+}

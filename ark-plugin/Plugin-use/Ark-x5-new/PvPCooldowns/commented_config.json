@@ -1,0 +1,161 @@
+{
+  "ShowBlueprintPaths": false, //True will output the blueprint path of anything the plugin is interacting with which can be added directly into the config for use.
+  "IgnoreAllies": false, //True will not PVP flag if the player is an Alliance member
+  "WorldPVPFlag": {
+    "Enabled": true, //enables World PVP checks
+    "FlagRemovedAfter": 30, //After X seconds the PVP flag will be removed each damage event puts this back to X seconds it will not stack higher than this number of seconds
+    "FlagBothPlayers": true, //true will flag the attacking and victim players //false will only flag the attacking player
+    "IgnoreStructures": [ //Items in this list will be ignored if damaged/destroyed for PVP flagging
+      "Campfire",
+      "SleepingBag"
+    ]
+  },
+  "WorldPvPBlocked": {
+    "Enabled": true, //enables World PVP restrictions
+    "Commands": [ //while PVP flagged these commands will not be useable
+      "/suicide",
+      "/shop",
+      "/buy",
+      "/kit",
+      "/buykit",
+      "/sell",
+      "/upload",
+      "/download"
+    ],
+    "BlockUsing": [ //while PVP flagged these items and/or structures will not be useable
+      "PrimalItem_AwesomeTeleporters_Remote",
+      "SoulGun"
+    ],
+    "BlockPlacing": [ //while PVP flagged these structures will not be placeable
+
+    ],
+    "BlockPickup": [ //while PVP flagged these structures cannot be picked up
+
+    ],
+    "BlockTransmitterUse": false, //while PVP flagged Transmitters of any kind will not be useable
+    "BlockTurretCopySettings": false //while PVP flagged the ability to copy turret settings will not be useable
+  },
+  "RaidPvPBlocked": { //Requires LethalORP for Raid Detection
+    "Enabled": true, //enables RAID PVP restrictions
+    "Commands": [ //while RAID flagged these commands will not be useable in addition to the World PvP settings
+      "/setorp",
+      "/removeorp",
+      "/showorp",
+      "/suicide",
+      "/shop",
+      "/buy",
+      "/kit",
+      "/buykit",
+      "/sell",
+      "/upload",
+      "/download"
+    ],
+    "BlockUsing": [ //while RAID flagged these items and/or structures will not be useable in addition to the World PvP settings
+      "PrimalItem_PersonalTeleporter",
+      "BP_TeleporterPlus",
+      "PrimalItem_DemoGun",
+      "TekTeleporter",
+      "AwesomeTeleporters_Teleporter",
+      "PrimalItem_AwesomeTeleporters_Remote",
+      "SoulGun"
+    ],
+    "BlockPlacing": [ //while RAID flagged these structures will not be placeable in addition to the World PvP settings
+      "BP_Foundation_Tek",
+      "Floor_Tek"
+    ],
+    "BlockPickup": [ //while RAID flagged these structures cannot be picked up in addition to the World PvP settings
+      "BP_Foundation_Tek",
+      "Floor_Tek"
+    ],
+    "BlockTransmitterUse": true, //while RAID flagged Transmitters of any kind will not be useable
+    "BlockTurretCopySettings": false, //while RAID flagged the ability to copy turret settings will not be useable
+    "BlockPopcorning": { //while RAID flagged these popcorn setting will be used
+      "Enabled": true, //enables the feature
+      "AllowDropAll": false, //Allow or block using drop all inventory on players/dinos/structures
+      "MaxStackSize": 100, //Max Stack Size that you can drop at one time
+      "DropInterval": 5, //Delay in seconds that must pass before allowed to drop another item
+      "IgnoreItems": [ //Items in this list will bypass popcorning checks using partial or full blueprint path. Does not apply to Drop All or Transfer All only dropping a single item slot.
+        "Blueprint'/Game/PrimalEarth/CoreBlueprints/Resources/PrimalItemResource_Fibers.PrimalItemResource_Fibers'", //Example (Allows Fiber full bp)
+        "PrimalItemResource_Fibers", //Example (allows fiber partial bp)
+        "PrimalItemResource_" //Example (allows all resource items partial bp)
+      ]
+    }
+  },
+  "Messages": {
+    "Sender": {
+      "Message": "PvP Cooldowns"
+    },
+    "Error": {
+      "Message": "Something went wrong!",
+      "Scale": 2.3,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "CommandBlockedFor": {
+      "Message": "{} is blocked for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "StructureBlockedFor": {
+      "Message": "{} cannot be used for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "ItemUseBlockedFor": {
+      "Message": "{} cannot be used for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "PickupBlockedFor": {
+      "Message": "{} cannot be picked up for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "UnableToPlaceFor": {
+      "Message": "Unable to place {} for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "DropAllBlocked": {
+      "Message": "Unable to use drop all for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "DropStackSize": {
+      "Message": "Cannot drop stacks larger than {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "DropCooldown": {
+      "Message": "You must wait {} before dropping another item!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "PVPFlagAdded": {
+      "Message": "You are now World PVP flagged!\nSome actions have been restricted!",
+      "Scale": 1.8,
+      "DisplayTime": 10.0,
+      "Color": "Yellow"
+    },
+    "PVPFlagRemoved": {
+      "Message": "You are no longer World PVP flagged!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Green"
+    },
+    "CopySettingsBlockedFor": {
+      "Message": "{} copy settings blocked for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    }
+  }
+}

@@ -1,0 +1,70 @@
+# HeartShop Backend Production Dockerfile
+# Multi-stage build for security and minimal image size
+
+# Stage 1: Build
+FROM oven/bun:1.2-debian AS builder
+
+WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies
+COPY package.json bun.lockb* ./
+RUN bun install --frozen-lockfile 2>/dev/null || bun install
+
+# Copy prisma schema and generate client
+COPY prisma ./prisma
+RUN bunx prisma generate
+
+# Copy source code
+COPY . .
+
+# Build TypeScript (if needed)
+RUN bun build src/index.ts --target=bun --outdir=dist || true
+
+# Stage 2: Production
+FROM oven/bun:1.2-debian AS production
+
+# Create non-root user for security
+RUN groupadd -r heartshop && useradd -r -g heartshop heartshop
+
+WORKDIR /app
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    curl \
+    dumb-init \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy built application
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/package.json ./
+
+# Create directories
+RUN mkdir -p /app/logs /app/certs && \
+    chown -R heartshop:heartshop /app
+
+# Security: Remove shell and other unnecessary binaries
+RUN rm -rf /bin/sh /bin/bash /usr/bin/wget 2>/dev/null || true
+
+# Switch to non-root user
+USER heartshop
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3001/health || exit 1
+
+# Environment
+ENV NODE_ENV=production
+ENV PORT=3001
+
+EXPOSE 3001
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["bun", "run", "src/index.ts"]

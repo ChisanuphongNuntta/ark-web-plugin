@@ -1,0 +1,31 @@
+{
+  "id": "8b9db8d7-048a-4422-9df7-f6558e0a300d",
+  "userId": "9a75908e-5b12-4217-ba6e-cc7887e5b56a",
+  "createdAt": "2026-06-20T03:00:00.000Z",
+  "updatedAt": "2026-06-20T03:05:00.000Z",
+  "items": [
+    {
+      "id": "e939a3f2-1b6d-4952-ba63-5ffc4d3bc30f",
+      "cartId": "8b9db8d7-048a-4422-9df7-f6558e0a300d",
+      "productId": 1,
+      "serverId": 1,
+      "quantity": 2,
+      "createdAt": "2026-06-20T03:01:00.000Z",
+      "updatedAt": "2026-06-20T03:05:00.000Z",
+      "product": {
+        "id": 1,
+        "name": "Ascendant Longneck Rifle",
+        "price": 500,
+        "itemBlueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponOneShotRifle.PrimalItem_WeaponOneShotRifle'",
+        "quantity": 1,
+        "quality": 5,
+        "isBlueprint": false
+      },
+      "server": {
+        "id": 1,
+        "name": "ARK Server 1 - The Island",
+        "map": "TheIsland"
+      }
+    }
+  ]
+}

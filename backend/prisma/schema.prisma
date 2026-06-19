@@ -1,0 +1,1069 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Roles
+enum UserRole {
+  user
+  admin
+  server_admin
+  root
+}
+
+enum WalletAccountType {
+  available
+  held
+  promotional
+  refundable
+  system_issuance
+  platform_revenue
+  system_clearing
+}
+
+enum WalletAccountStatus {
+  active
+  frozen
+  closed
+}
+
+enum PaymentIntentStatus {
+  pending
+  processing
+  completed
+  failed
+  expired
+  refunded
+}
+
+// ผู้ใช้งาน - เชื่อม Steam/Epic + Discord
+model User {
+  id String @id @default(uuid())
+
+  // Game IDs
+  steamId String? @unique @map("steam_id")
+  epicId  String? @unique @map("epic_id")
+
+  // Discord
+  discordId       String  @unique @map("discord_id")
+  discordUsername String? @map("discord_username")
+  discordAvatar   String? @map("discord_avatar")
+
+  // Points
+  pointsBalance BigInt @default(0) @map("points_balance")
+  totalSpent    BigInt @default(0) @map("total_spent")
+
+  // Status
+  isBanned Boolean  @default(false) @map("is_banned")
+  isAdmin  Boolean  @default(false) @map("is_admin")
+  role     UserRole @default(user)
+
+  // Plugin API Key (สำหรับ ARK Server)
+  apiKey          String?   @unique @map("api_key")
+  apiKeyIp        String?   @map("api_key_ip")
+  apiKeyCreatedAt DateTime? @map("api_key_created_at")
+
+  // API Key Usage Tracking
+  apiKeyServerId   Int?      @map("api_key_server_id")
+  apiKeyServerName String?   @map("api_key_server_name")
+  apiKeyServerMap  String?   @map("api_key_server_map")
+  apiKeyServerPort Int?      @map("api_key_server_port")
+  apiKeyLastUsed   DateTime? @map("api_key_last_used")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  orders            Order[]
+  pointTransactions PointTransaction[]
+  donations         Donation[]
+  playerStats       PlayerStats[]
+  consents          UserConsent[]
+  dataRequests      DataRequest[]
+  dinoListings      DinoListing[]      @relation("DinoSeller")
+  dinoPurchases     DinoListing[]      @relation("DinoBuyer")
+  walletAccounts    WalletAccount[]
+  paymentIntents    PaymentIntent[]
+  sessions          UserSession[]
+  cart              Cart?
+  checkoutSessions  CheckoutSession[]
+
+  @@map("users")
+}
+
+model PaymentPackage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  priceThb    Decimal  @map("price_thb") @db.Decimal(10, 2)
+  points      BigInt
+  bonusPoints BigInt   @default(0) @map("bonus_points")
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  intents PaymentIntent[]
+
+  @@map("payment_packages")
+}
+
+model PaymentIntent {
+  id               String              @id @default(cuid())
+  userId           String              @map("user_id")
+  packageId        String              @map("package_id")
+  provider         String
+  providerIntentId String?             @unique @map("provider_intent_id")
+  reference        String              @unique
+  idempotencyKey   String              @unique @map("idempotency_key")
+  amountThb        Decimal             @map("amount_thb") @db.Decimal(10, 2)
+  pointsAmount     BigInt              @map("points_amount")
+  status           PaymentIntentStatus @default(pending)
+  paymentUrl       String?             @map("payment_url")
+  qrPayload        String?             @map("qr_payload")
+  expiresAt        DateTime            @map("expires_at")
+  completedAt      DateTime?           @map("completed_at")
+  metadata         Json?
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+  user          User                  @relation(fields: [userId], references: [id])
+  package       PaymentPackage        @relation(fields: [packageId], references: [id])
+  webhookEvents PaymentWebhookEvent[]
+
+  @@index([userId, createdAt])
+  @@index([status, expiresAt])
+  @@map("payment_intents")
+}
+
+model PaymentWebhookEvent {
+  id              String    @id @default(cuid())
+  provider        String
+  providerEventId String    @map("provider_event_id")
+  paymentIntentId String?   @map("payment_intent_id")
+  signature       String?
+  payload         Json
+  status          String    @default("received")
+  error           String?
+  processedAt     DateTime? @map("processed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  paymentIntent PaymentIntent? @relation(fields: [paymentIntentId], references: [id])
+
+  @@unique([provider, providerEventId])
+  @@index([paymentIntentId])
+  @@map("payment_webhook_events")
+}
+
+// Immutable double-entry wallet. Account.balance is a rebuildable projection;
+// LedgerEntry is the financial source of truth and entries per transaction sum to zero.
+model WalletAccount {
+  id        String              @id @default(cuid())
+  key       String              @unique
+  userId    String?             @map("user_id")
+  type      WalletAccountType
+  currency  String              @default("IC")
+  status    WalletAccountStatus @default(active)
+  balance   BigInt              @default(0)
+  version   Int                 @default(0)
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+
+  user    User?         @relation(fields: [userId], references: [id])
+  entries LedgerEntry[]
+
+  @@index([userId, type])
+  @@map("wallet_accounts")
+}
+
+model LedgerTransaction {
+  id             String   @id @default(cuid())
+  idempotencyKey String   @unique @map("idempotency_key")
+  type           String
+  referenceType  String?  @map("reference_type")
+  referenceId    String?  @map("reference_id")
+  description    String?
+  metadata       Json?
+  createdBy      String?  @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  entries LedgerEntry[]
+
+  @@index([referenceType, referenceId])
+  @@index([createdAt])
+  @@map("ledger_transactions")
+}
+
+model LedgerEntry {
+  id            String   @id @default(cuid())
+  transactionId String   @map("transaction_id")
+  accountId     String   @map("account_id")
+  amount        BigInt
+  balanceAfter  BigInt   @map("balance_after")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  transaction LedgerTransaction @relation(fields: [transactionId], references: [id])
+  account     WalletAccount     @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, createdAt])
+  @@index([transactionId])
+  @@map("ledger_entries")
+}
+
+// หมวดหมู่สินค้า
+model Category {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  icon        String?
+  sortOrder   Int     @default(0) @map("sort_order")
+  isActive    Boolean @default(true) @map("is_active")
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+// สินค้า
+model Product {
+  id         Int  @id @default(autoincrement())
+  categoryId Int? @map("category_id")
+
+  // Basic Info
+  name        String
+  description String?
+  price       Int // Points price
+
+  // ARK Item Data
+  itemBlueprint String  @map("item_blueprint") // Blueprint path
+  quantity      Int     @default(1)
+  quality       Int     @default(0) // 0=Primitive to 5=Ascendant
+  isBlueprint   Boolean @default(false) @map("is_blueprint")
+
+  // Display
+  imageUrl   String? @map("image_url")
+  isActive   Boolean @default(true) @map("is_active")
+  isFeatured Boolean @default(false) @map("is_featured")
+  sortOrder  Int     @default(0) @map("sort_order")
+
+  // Limits
+  maxPerUser Int? @map("max_per_user") // NULL = unlimited
+  stock      Int? // NULL = unlimited
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  category Category? @relation(fields: [categoryId], references: [id])
+  orders   Order[]
+  cartItems CartItem[]
+
+  @@map("products")
+}
+
+// เซิร์ฟเวอร์ ARK
+model Server {
+  id            Int       @id @default(autoincrement())
+  name          String
+  map           String? // TheIsland, Ragnarok, etc.
+  apiKey        String    @unique @map("api_key")
+  webhookUrl    String?   @map("webhook_url") // Discord webhook
+  isActive      Boolean   @default(true) @map("is_active")
+  lastHeartbeat DateTime? @map("last_heartbeat")
+
+  // Chat Display Settings
+  chatTag   String? @map("chat_tag") // "[PVP5]" - short tag for chat
+  chatColor String? @map("chat_color") // "#FF5722" - hex color
+  chatIcon  String? @map("chat_icon") // "⚔️" - emoji icon
+
+  // Relations
+  orders           Order[]
+  playerStats      PlayerStats[]
+  tribeProtections TribeProtection[]
+  chatMessages     ChatMessage[]
+  chatChannels     ChatChannel[]
+  chatRanks        ChatRank[]
+  deliveryJobs     DeliveryJob[]
+  cartItems        CartItem[]
+
+  @@map("servers")
+}
+
+// คำสั่งซื้อ
+model Order {
+  id        String @id @default(uuid())
+  userId    String @map("user_id")
+  productId Int    @map("product_id")
+  serverId  Int    @map("server_id")
+
+  quantity   Int @default(1)
+  totalPrice Int @map("total_price")
+
+  // Status: pending, queued, delivered, failed, refunded
+  status String @default("pending")
+
+  // Delivery tracking
+  deliveredAt      DateTime? @map("delivered_at")
+  deliveryAttempts Int       @default(0) @map("delivery_attempts")
+  lastError        String?   @map("last_error")
+  
+  checkoutSessionId String?  @map("checkout_session_id")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  server  Server  @relation(fields: [serverId], references: [id])
+
+  @@map("orders")
+}
+
+// ประวัติ Points
+model PointTransaction {
+  id     Int    @id @default(autoincrement())
+  userId String @map("user_id")
+
+  amount       Int // +/- value
+  balanceAfter BigInt @map("balance_after")
+
+  // Type: earn_playtime, earn_action, purchase, donation, admin, refund
+  type        String
+  description String?
+  referenceId String? @map("reference_id") // order_id, donation_id, etc.
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("point_transactions")
+}
+
+// Donation/Payment
+model Donation {
+  id     Int    @id @default(autoincrement())
+  userId String @map("user_id")
+
+  amountThb     Decimal @map("amount_thb") @db.Decimal(10, 2)
+  pointsGranted Int     @map("points_granted")
+
+  paymentMethod String? @map("payment_method") // promptpay, truemoney, bank
+  paymentRef    String? @map("payment_ref")
+
+  // Status: pending, completed, failed, refunded
+  status String @default("pending")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("donations")
+}
+
+// Player Game Stats (สำหรับ earn points)
+model PlayerStats {
+  id       Int    @id @default(autoincrement())
+  userId   String @map("user_id")
+  serverId Int    @map("server_id")
+
+  playtimeMinutes    Int    @default(0) @map("playtime_minutes")
+  dinosKilled        Int    @default(0) @map("dinos_killed")
+  resourcesHarvested BigInt @default(0) @map("resources_harvested")
+
+  lastPointsClaim DateTime? @map("last_points_claim")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id])
+  server Server @relation(fields: [serverId], references: [id])
+
+  @@unique([userId, serverId])
+  @@map("player_stats")
+}
+
+// ==========================================
+// ISO 9001 / ISO 27001 / PDPA Compliance
+// ==========================================
+
+// Audit Log - บันทึกการกระทำทั้งหมด (ISO 9001, ISO 27001)
+model AuditLog {
+  id Int @id @default(autoincrement())
+
+  // Who
+  userId    String? @map("user_id")
+  userEmail String? @map("user_email")
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  // What
+  action     String // login, logout, create, update, delete, export, etc.
+  resource   String // user, product, order, etc.
+  resourceId String? @map("resource_id")
+
+  // Details
+  oldValue String? @map("old_value") @db.Text
+  newValue String? @map("new_value") @db.Text
+  metadata String? @db.Text // JSON additional info
+
+  // Result
+  status       String  @default("success") // success, failure
+  errorMessage String? @map("error_message")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// User Consent - การยินยอม PDPA
+model UserConsent {
+  id     Int    @id @default(autoincrement())
+  userId String @map("user_id")
+
+  // Consent Types
+  consentType String @map("consent_type") // privacy_policy, terms, marketing, analytics, cookies
+  version     String // version of the policy consented to
+
+  // Status
+  granted   Boolean   @default(false)
+  grantedAt DateTime? @map("granted_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  // Metadata
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, consentType])
+  @@map("user_consents")
+}
+
+// Data Subject Request - คำขอจากเจ้าของข้อมูล (PDPA)
+model DataRequest {
+  id     Int    @id @default(autoincrement())
+  userId String @map("user_id")
+
+  // Request Type: access, rectification, deletion, portability, objection
+  requestType String @map("request_type")
+
+  // Status: pending, processing, completed, rejected
+  status String @default("pending")
+
+  // Details
+  description String? @db.Text
+  response    String? @db.Text
+
+  // Processing
+  processedBy String?   @map("processed_by") // Admin user ID
+  processedAt DateTime? @map("processed_at")
+
+  // Files
+  exportUrl String?   @map("export_url") // For data portability
+  expiresAt DateTime? @map("expires_at") // Export link expiry
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("data_requests")
+}
+
+// Privacy Policy Version - เก็บ version ของ policy
+model PolicyVersion {
+  id Int @id @default(autoincrement())
+
+  type      String // privacy_policy, terms_of_service, cookie_policy
+  version   String
+  content   String  @db.Text
+  contentTh String? @map("content_th") @db.Text // Thai version
+
+  effectiveAt DateTime @map("effective_at")
+  isActive    Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([type, version])
+  @@map("policy_versions")
+}
+
+// Security Event Log - บันทึกเหตุการณ์ด้านความปลอดภัย (ISO 27001)
+model SecurityEvent {
+  id Int @id @default(autoincrement())
+
+  // Event Type
+  eventType String @map("event_type") // login_success, login_failed, password_change, suspicious_activity, etc.
+  severity  String @default("info") // info, warning, critical
+
+  // Who
+  userId    String? @map("user_id")
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  // Details
+  description String  @db.Text
+  metadata    String? @db.Text
+
+  // Response
+  blocked  Boolean @default(false)
+  notified Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([eventType])
+  @@index([severity])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("security_events")
+}
+
+// ==========================================
+// Dynamic Content Builder (WordPress-like)
+// ==========================================
+
+// Dynamic Page - หน้าที่สร้างแบบ Dynamic
+model DynamicPage {
+  id Int @id @default(autoincrement())
+
+  // Page Info
+  slug        String  @unique // URL path e.g., "promotion", "event-summer"
+  title       String
+  description String? @db.Text
+
+  // Page Type: home, promotion, event, info, custom
+  pageType String @default("custom") @map("page_type")
+
+  // Status
+  isPublished Boolean   @default(false) @map("is_published")
+  publishedAt DateTime? @map("published_at")
+
+  // SEO
+  metaTitle       String? @map("meta_title")
+  metaDescription String? @map("meta_description") @db.Text
+  ogImage         String? @map("og_image")
+
+  // Layout Settings
+  layout   String  @default("default") // default, full-width, sidebar
+  settings String? @db.Text // JSON for additional settings
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  // Relations
+  blocks ContentBlock[]
+
+  @@index([slug])
+  @@index([pageType])
+  @@index([isPublished])
+  @@map("dynamic_pages")
+}
+
+// Content Block - บล็อคเนื้อหาใน Page
+model ContentBlock {
+  id     Int @id @default(autoincrement())
+  pageId Int @map("page_id")
+
+  // Block Type: heading, text, image, gallery, grid, button, divider, spacer, html, banner, product-list
+  blockType String @map("block_type")
+
+  // Content (JSON format based on blockType)
+  content String @db.Text // JSON content
+
+  // Styling
+  settings String? @db.Text // JSON for styling/settings
+
+  // Order
+  sortOrder Int @default(0) @map("sort_order")
+
+  // Visibility
+  isVisible Boolean @default(true) @map("is_visible")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  page DynamicPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@index([sortOrder])
+  @@map("content_blocks")
+}
+
+// Media Library - รูปภาพและไฟล์
+model MediaFile {
+  id Int @id @default(autoincrement())
+
+  // File Info
+  filename     String
+  originalName String @map("original_name")
+  mimeType     String @map("mime_type")
+  size         Int // bytes
+
+  // Storage
+  url  String
+  path String // Storage path
+
+  // Image Dimensions
+  width  Int?
+  height Int?
+
+  // Metadata
+  alt     String?
+  caption String?
+
+  // Organization
+  folder String? @default("uploads")
+
+  // Timestamps
+  createdAt  DateTime @default(now()) @map("created_at")
+  uploadedBy String?  @map("uploaded_by")
+
+  @@index([folder])
+  @@index([mimeType])
+  @@map("media_files")
+}
+
+// ==========================================
+// New Player Protection System
+// ==========================================
+
+// Player Protection - การ protect ผู้เล่นใหม่ (Cluster-wide, รายบุคคล)
+model PlayerProtection {
+  id Int @id @default(autoincrement())
+
+  // Player identification
+  steamId String @unique @map("steam_id")
+
+  // Protection settings
+  protectionDays    Int      @default(7) @map("protection_days")
+  protectionStartAt DateTime @default(now()) @map("protection_start_at")
+  protectionEndAt   DateTime @map("protection_end_at")
+
+  // Type: new_player, admin_granted
+  protectionType String @default("new_player") @map("protection_type")
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Admin who granted (if admin_granted)
+  grantedBy     String? @map("granted_by")
+  grantedReason String? @map("granted_reason")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tribeProtection TribeProtection?
+
+  @@index([steamId])
+  @@index([protectionEndAt])
+  @@index([isActive])
+  @@map("player_protections")
+}
+
+// Tribe Protection - การ protect เผ่า (แมพเดียว, เผ่าแรกเท่านั้น)
+model TribeProtection {
+  id Int @id @default(autoincrement())
+
+  // Tribe identification
+  tribeId   BigInt  @map("tribe_id")
+  serverId  Int     @map("server_id")
+  tribeName String? @map("tribe_name")
+
+  // Owner - ผู้เล่นที่ให้ protection กับเผ่านี้
+  ownerSteamId      String @map("owner_steam_id")
+  ownerProtectionId Int    @unique @map("owner_protection_id")
+
+  // Protection settings (inherit from owner)
+  protectionEndAt DateTime @map("protection_end_at")
+
+  // Type: new_player, admin_granted
+  // admin_granted = protect ทั้งเผ่า ออกจากเผ่าหมด protection
+  protectionType String @default("new_player") @map("protection_type")
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  server          Server           @relation(fields: [serverId], references: [id])
+  ownerProtection PlayerProtection @relation(fields: [ownerProtectionId], references: [id])
+
+  @@unique([tribeId, serverId])
+  @@index([tribeId])
+  @@index([serverId])
+  @@index([ownerSteamId])
+  @@index([protectionEndAt])
+  @@index([isActive])
+  @@map("tribe_protections")
+}
+
+// Protection Log - ประวัติการ protect/โจมตี
+model ProtectionLog {
+  id Int @id @default(autoincrement())
+
+  serverId Int @map("server_id")
+
+  // Event type: protection_started, protection_ended, damage_blocked, tribe_protected, admin_grant, admin_revoke
+  eventType String @map("event_type")
+
+  // Involved parties
+  steamId String? @map("steam_id")
+  tribeId BigInt? @map("tribe_id")
+
+  // For damage_blocked events
+  attackerSteamId String? @map("attacker_steam_id")
+  attackerTribeId BigInt? @map("attacker_tribe_id")
+
+  // Details
+  details String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([serverId])
+  @@index([eventType])
+  @@index([steamId])
+  @@index([createdAt])
+  @@map("protection_logs")
+}
+
+// ==========================================
+// Dino Marketplace System
+// ==========================================
+
+// Dino Listing - ประกาศขายไดโน
+model DinoListing {
+  id String @id @default(cuid())
+
+  // Seller
+  sellerId String @map("seller_id")
+
+  // Dino Basic Info
+  species       String // "Rex", "Giga", "Argentavis"
+  blueprintPath String  @map("blueprint_path") // Full blueprint path
+  dinoName      String? @map("dino_name")
+  level         Int // Total level
+  gender        String // "Male" / "Female"
+
+  // Base Stats (Wild levels)
+  baseHealth  Int @default(0) @map("base_health")
+  baseStamina Int @default(0) @map("base_stamina")
+  baseOxygen  Int @default(0) @map("base_oxygen")
+  baseFood    Int @default(0) @map("base_food")
+  baseWeight  Int @default(0) @map("base_weight")
+  baseDamage  Int @default(0) @map("base_damage")
+  baseSpeed   Int @default(0) @map("base_speed")
+
+  // Added Stats (Tamed levels)
+  addedHealth  Int @default(0) @map("added_health")
+  addedStamina Int @default(0) @map("added_stamina")
+  addedOxygen  Int @default(0) @map("added_oxygen")
+  addedFood    Int @default(0) @map("added_food")
+  addedWeight  Int @default(0) @map("added_weight")
+  addedDamage  Int @default(0) @map("added_damage")
+  addedSpeed   Int @default(0) @map("added_speed")
+
+  // Imprint
+  imprintQuality Float   @default(0) @map("imprint_quality") // 0.0 - 1.0
+  imprinterName  String? @map("imprinter_name")
+
+  // Colors (6 regions, -1 = default)
+  colorRegion0 Int @default(-1) @map("color_region_0")
+  colorRegion1 Int @default(-1) @map("color_region_1")
+  colorRegion2 Int @default(-1) @map("color_region_2")
+  colorRegion3 Int @default(-1) @map("color_region_3")
+  colorRegion4 Int @default(-1) @map("color_region_4")
+  colorRegion5 Int @default(-1) @map("color_region_5")
+
+  // Mutations
+  maternalMutations Int @default(0) @map("maternal_mutations")
+  paternalMutations Int @default(0) @map("paternal_mutations")
+
+  // Ancestry
+  motherName String? @map("mother_name")
+  fatherName String? @map("father_name")
+
+  // Cryopod Data (serialized for respawning)
+  cryopodData Bytes? @map("cryopod_data")
+
+  // Listing Info
+  price       Int // Points price
+  description String? @db.Text
+  imageUrl    String? @map("image_url")
+
+  // Status: listed, sold, cancelled, expired
+  status String @default("listed")
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  soldAt    DateTime? @map("sold_at")
+  expiresAt DateTime? @map("expires_at")
+
+  // Buyer (after sold)
+  buyerId String? @map("buyer_id")
+
+  // Delivery tracking
+  deliveryStatus   String?   @map("delivery_status") // pending, delivered, failed
+  deliveredAt      DateTime? @map("delivered_at")
+  deliveryServerId Int?      @map("delivery_server_id")
+
+  // Relations
+  seller User  @relation("DinoSeller", fields: [sellerId], references: [id])
+  buyer  User? @relation("DinoBuyer", fields: [buyerId], references: [id])
+
+  @@index([sellerId])
+  @@index([buyerId])
+  @@index([species])
+  @@index([status])
+  @@index([price])
+  @@index([createdAt])
+  @@map("dino_listings")
+}
+
+// Dino Trade History - ประวัติการซื้อขาย
+model DinoTradeHistory {
+  id Int @id @default(autoincrement())
+
+  listingId String @map("listing_id")
+  sellerId  String @map("seller_id")
+  buyerId   String @map("buyer_id")
+
+  // Dino snapshot
+  species  String
+  level    Int
+  dinoName String? @map("dino_name")
+
+  // Transaction
+  price          Int
+  sellerReceived Int @map("seller_received") // After fee
+  platformFee    Int @map("platform_fee")
+
+  // Timestamps
+  tradedAt DateTime @default(now()) @map("traded_at")
+
+  @@index([sellerId])
+  @@index([buyerId])
+  @@index([tradedAt])
+  @@map("dino_trade_history")
+}
+
+// ==========================================
+// Cross-Chat System
+// ==========================================
+
+// Chat Message - ข้อความจาก Game/Discord/Web
+model ChatMessage {
+  id String @id @default(cuid())
+
+  // Source info
+  source   String // "game", "discord", "web"
+  serverId Int?   @map("server_id") // null = global, number = specific server
+
+  // Sender info
+  senderType   String  @map("sender_type") // "player", "discord_user", "web_user"
+  senderId     String  @map("sender_id") // Steam ID, Discord ID, or User ID
+  senderName   String  @map("sender_name")
+  senderAvatar String? @map("sender_avatar")
+
+  // Message content
+  content String
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  server Server? @relation(fields: [serverId], references: [id])
+
+  @@index([serverId, createdAt])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+// Chat Channel - Discord channel mapping
+model ChatChannel {
+  id               Int     @id @default(autoincrement())
+  discordChannelId String  @unique @map("discord_channel_id")
+  discordGuildId   String? @map("discord_guild_id")
+  serverId         Int?    @map("server_id") // null = global chat
+  channelType      String  @map("channel_type") // "global", "server"
+  isActive         Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  server Server? @relation(fields: [serverId], references: [id])
+
+  @@map("chat_channels")
+}
+
+// Chat Rank - Styling for permission groups
+model ChatRank {
+  id Int @id @default(autoincrement())
+
+  // Rank identification
+  name     String // Display name: "VIP", "Admin", "Moderator"
+  groupKey String @map("group_key") // Key from Permissions plugin: "VIP", "Admins"
+
+  // Display settings
+  color    String // Hex color: "#FFD700"
+  icon     String? // Emoji icon: "👑"
+  priority Int     @default(0) // Higher = more important, shown first
+
+  // Scope: null = global (all servers), number = specific server only
+  serverId Int? @map("server_id")
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  server Server? @relation(fields: [serverId], references: [id])
+
+  @@unique([groupKey, serverId])
+  @@index([priority])
+  @@map("chat_ranks")
+}
+
+enum DeliveryJobStatus {
+  pending
+  leased
+  completed
+  failed
+}
+
+model UserSession {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  token      String   @unique
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  expiresAt  DateTime @map("expires_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+  @@index([userId])
+}
+
+model DeliveryJob {
+  id             String            @id @default(uuid())
+  serverId       Int               @map("server_id")
+  playerSteamId  String            @map("player_steam_id")
+  deliveryType   String            @map("delivery_type") // "order" or "dino_marketplace"
+  referenceId    String            @map("reference_id") // Order ID or DinoListing ID
+  payload        Json
+  payloadHash    String            @map("payload_hash")
+  status         DeliveryJobStatus @default(pending)
+  leaseToken     String?           @map("lease_token")
+  leaseExpiresAt DateTime?         @map("lease_expires_at")
+  attempts       Int               @default(0)
+  receiptId      String?           @map("receipt_id")
+  error          String?
+  gameTimestamp  DateTime?         @map("game_timestamp")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  server         Server            @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_jobs")
+  @@index([serverId, status])
+  @@index([playerSteamId, status])
+}
+
+model DinoAssetLock {
+  id               String   @id @default(uuid())
+  species          String
+  level            Int
+  sellerSteamId    String   @map("seller_steam_id")
+  status           String   @default("prepared") // "prepared", "confirmed", "expired"
+  assetFingerprint String?  @map("asset_fingerprint")
+  price            Int?
+  listingId        String?  @map("listing_id")
+  expiresAt        DateTime @map("expires_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("dino_asset_locks")
+  @@index([sellerSteamId])
+  @@index([expiresAt, status])
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique @map("user_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  items     CartItem[]
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String   @map("cart_id")
+  productId Int      @map("product_id")
+  serverId  Int      @map("server_id")
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@map("cart_items")
+  @@unique([cartId, productId, serverId])
+}
+
+model CheckoutSession {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  cartSnapshot   Json     @map("cart_snapshot")
+  totalAmount    BigInt   @map("total_amount")
+  status         String   @default("pending") // "pending", "completed", "expired"
+  idempotencyKey String   @unique @map("idempotency_key")
+  expiresAt      DateTime @map("expires_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("checkout_sessions")
+}

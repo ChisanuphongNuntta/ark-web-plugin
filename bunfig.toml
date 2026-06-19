@@ -1,0 +1,13 @@
+# Bun configuration for HeartShop project
+
+[install]
+# Use exact versions for reproducible builds
+exact = true
+
+[install.lockfile]
+# Save lockfile in text format for better compatibility
+save = true
+
+[run]
+# Silent mode for cleaner output
+silent = false

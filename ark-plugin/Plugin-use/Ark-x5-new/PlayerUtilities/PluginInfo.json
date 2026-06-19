@@ -1,0 +1,9 @@
+{
+  "FullName": "Player Utilities",
+  "Description": "Player utilities and more!",
+  "Version": 1.13,
+  "MinApiVersion": 3.54,
+  "Dependencies": [
+    "Permissions"
+  ]
+}

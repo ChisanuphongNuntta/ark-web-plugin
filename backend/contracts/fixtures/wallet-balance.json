@@ -1,0 +1,10 @@
+{
+  "currency": "IC",
+  "accounts": {
+    "available": "1250",
+    "held": "300",
+    "promotional": "50",
+    "refundable": "0"
+  },
+  "total": "1600"
+}

@@ -1,0 +1,7 @@
+{
+  "FullName": "HeartShop",
+  "Description": "ARK Shop integration plugin for HeartShop web store",
+  "Version": 1.0,
+  "MinApiVersion": 3.54,
+  "Dependencies": []
+}

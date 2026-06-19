@@ -1,0 +1,7 @@
+{
+  "FullName":"Iris Dino Colour",
+  "Description":"Ability to colour dino's as a player",
+  "Version":2.4,
+  "MinApiVersion":3.54,
+  "ResourceId":3
+}

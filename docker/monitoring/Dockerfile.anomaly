@@ -1,0 +1,18 @@
+# HeartShop Anomaly Detection Service
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir \
+    numpy \
+    scikit-learn \
+    pandas \
+    watchdog \
+    requests \
+    python-dateutil
+
+COPY anomaly_detector.py ./
+COPY models/ ./models/
+
+CMD ["python", "anomaly_detector.py"]

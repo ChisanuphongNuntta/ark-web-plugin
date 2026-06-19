@@ -1,0 +1,18 @@
+# Certificate Manager Container
+FROM alpine:3.19
+
+RUN apk add --no-cache \
+    bash \
+    openssl \
+    curl \
+    jq \
+    docker-cli \
+    tzdata
+
+WORKDIR /app
+
+COPY generate-certs.sh rotate-certs.sh ./
+RUN chmod +x generate-certs.sh rotate-certs.sh
+
+# Generate initial certificates on first run
+ENTRYPOINT ["/app/rotate-certs.sh", "--daemon"]

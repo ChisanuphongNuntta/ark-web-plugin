@@ -1,0 +1,14 @@
+﻿{
+    "plugin":  {
+                   "name":  "HeartShop",
+                   "version":  "1.0",
+                   "minApiVersion":  "3.54"
+               },
+    "target":  "windows-x64",
+    "configuration":  "Release",
+    "cmake":  "cmake version 4.2.1",
+    "compiler":  "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64/cl.exe (19.38.33133.0)",
+    "artifact":  "HeartShop.dll",
+    "sha256":  "86992a5f0a389782e6996680c133c53c671fb48431e2dd4f7cab148f4f5e1346",
+    "generatedAtUtc":  "2026-06-19T20:03:31.7637467Z"
+}

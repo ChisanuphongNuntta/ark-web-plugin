@@ -1,0 +1,179 @@
+{
+  "General": {
+    "ServerName": "CustomServerName", //This will appear at the beginning of all discord messages to identify the server the message comes from.
+    "ServerNameFormat": "{0} - {1}", //0=ServerName, 1=MapName
+    //"{0}" will only show the ServerName
+    //"{1}" will only show the MapName
+    "ForceTribeMembership": true //Will force solo players into a solo tribe. Ensures everything they do can be logged and enforced.
+  },
+  "MapNames": { //Change the mapnames you want to output to discord
+    "Ragnarok": "Rag",
+    "Valguero_P": "Val",
+    "Aberration_P": "AB",
+    "TheCenter": "Cen",
+    "TheIsland": "Isl",
+    "ScorchedEarth_P": "SE",
+    "Genesis": "Gen",
+    "Extinction": "Ext",
+    "CrystalIsles": "CI",
+    "Gen2": "Gen2"
+  },
+  "Commands": {
+    "CommandText": "/TLR", //Player command to set the tribe discord webhook (default without "UsePermissions:true" is the tribe owner)
+    "UsePermissions": false, //Turns on permission settings which will control who can use the "CommandText" command
+    "PermissionName": "TLR.Add" //Permission name needed for the "CommandText" to work.
+  },
+  "Discord": {
+    "UseAdminLogging": false, //This will turn on the admin logging feature to send all tribe logs to AdminDiscordWebhook.
+    "AdminDiscordWebhook": "", //webhook for your discord admin channel
+    "AdminDiscordWebhookGenesis": "", //If "AdminDiscordWebhook" is blank it will attempt to find a setting like this that ends with the map name for single installation servers.
+    "AdminPublicDiscordWebhook": "", //Second webhook meant to be used for admins to display a portion of events in a public channel
+    "AdminPublicDiscordWebhookGenesis": "", //If "AdminPublicDiscordWebhook" is blank it will attempt to find a setting like this that ends with the map name for single installation servers.
+    "DiscordLinkFormat": "https:\/\/discord(?:app)?.com\/api\/webhooks\/[^\/]+\/[^\/]+", //This is regex that verifies the format of the discord webhook is correct. You do not need to change this setting.
+    "DiscordPingCooldown": 0, //Setting to 60 for instance is the number of seconds that must pass before another @everyone can be sent to discord. The message will still be delivered during the "cooldown" period minus the @everyone.
+    "UseTribeID": true, //(Only affects Admin Logging) Setting to true will display the Tribe Name and Tribe Id // Setting to false will only display the TribeName
+    "TribeFormat": "{1}:{0}", //This allows you to customize in the admin logging how to display the tribe info.
+    //{0} = TribeName and {1} = TribeId
+    //TribeFormat must contain both of the above values if UseTribeID is true
+    //Examples using Tribe Name "LethalTribe" and Tribe Id "1234567890" with "UseTribeId" set to true
+    //    "{0}::{1}" will display as (LethalTribe::1234567890)
+    //    "{1}::{0}" will display as (1234567890::LethalTribe)
+    //    "Id:{1} Name:{0}" will display as (Id:1234567890:LethalTribe)
+    "AddCodeBlocks": true //Formats the text slightly different and adds some coloring
+  },
+  "Detection": {
+    "DetectEggHatching": true, //Adds tribe log entry for eggs hatching
+    "DetectCyrofreeze": true,
+    "DetectCyroUnfreeze": true,
+    "CryoItems": "PrimalItem_WeaponEmptyCryopod_C", //Any cryo items put here
+    "DetectTribenameChange": true,
+    "DetectTribeOwnerChange": true,
+    "DetectTribeLogin": true,
+    "DetectTribeLogoff": true,
+    "LoginLogoffIncludeNetworkID": false
+  },
+  "KeywordMatching": {
+    "UseKeywordMatching": true, //This will send only tribe log messages that match entries in the Keywords list below. Admin logging does not use this feature and logs everything.
+    "Keywords": [ //These keywords will send normal messages // Add or remove anything (language must match in game messaging to trigger a discord message)
+      "Your Tribe killed ",
+      " demolished a ",
+      " claimed ",
+      " unclaimed ",
+      " was added to the Tribe!",
+      " was removed from the Tribe!",
+      " destroyed their ",
+      "Tamed a",
+      " was promoted ",
+      " was demoted ",
+      " set to Rank Group ",
+      " uploaded ",
+      " downloaded ",
+      " froze ",
+      " unfroze ",
+      " destroyed your ",
+      "Tribe name changed ",
+      "Tribe owner changed ",
+      " now online!",
+      " gone offline!",
+      " transferred to ",
+      " transferred from "
+    ],
+    "KeywordsPingUsing": "@here", //Keywords that Ping/Mention use method @here or @everyone
+    "KeywordsPing": [ //These keywords will have @here or @everyone depending on "KeywordsPingUsing"
+      " was killed",
+      " was auto-decay destroyed!",
+      " starved to death!",
+      " was destroyed!",
+      " has been born.",
+      " has been hatched."
+    ]
+  },
+  "AdminKeywordMatching": { //Same as above however I recommend leaving this one set to FALSE so all events are sent
+    "UseKeywordMatching": false,
+    "Keywords": [
+      "Your Tribe killed ",
+      " was killed",
+      " demolished a ",
+      " was added to the Tribe!",
+      " was removed from the Tribe!",
+      " destroyed their ",
+      " destroyed your ",
+      "Tribe name changed ",
+      "Tribe owner changed "
+    ],
+    "KeywordsPingUsing": "@here", //Keywords that Ping/Mention use method @here or @everyone
+    "KeywordsPing": [ //These keywords will have @here or @everyone depending on "KeywordsPingUsing"
+
+    ]
+  },
+  "AdminPublicKeywordMatching": { //same again used for a Public community channel to show some events from tribes
+    "UseKeywordMatching": true,
+    "Keywords": [
+      "Your Tribe killed ",
+      " was killed",
+      " now online!",
+      " gone offline!",
+      " transferred to ",
+      " transferred from "
+    ],
+    "KeywordsPingUsing": "@here", //Keywords that Ping/Mention use method @here or @everyone
+    "KeywordsPing": [ //These keywords will have @here or @everyone depending on "KeywordsPingUsing"
+
+    ]
+  },
+  "Localization": { //Allows you to customze the additional logging features provided in this plugin. So the message can be in the native language of your server. Anything in curl brackets must be kept if you change them.
+    "TribeOwnerChanged": "Tribe owner changed from {0} to {1}",
+    "TribeNameChanged": "Tribe name changed to ({0})",
+    "UnCryo": "{0} unfroze {1}",
+    "Cryo": "{0} froze {1}",
+    "Login": "{0} is now online!",
+    "LoginWithID": "{0} ({1}) joined this ARK!",
+    "Logoff": "{0} has gone offline!",
+    "LogoffWithID": "{0} ({1}) left this ARK!",
+    "NewBaby": "'Baby {0}' has been born.",
+    "EggHatched": "'{0}' has been hatched.",
+    "TransferLeave": "{0} transferred to another ARK!",
+    "TransferLeaveWithID": "{0} ({1}) transferred to another ARK!",
+    "TransferJoin": "{0} transferred from another ARK!",
+    "TransferJoinWithID": "{0} ({1}) transferred from another ARK!"
+  },
+  "Messages": { //These are just used for providing in-game feedback to users. Make sure based on the config options you are using the messaging makes sense to a user. If you change the /command make sure it is noted in the messages etc.
+    "Sender": "TribeLogRelay",
+    "ChangedWebhook": "Successfully set your tribes Discord Webhook!",
+    "Invalid": "<RichColor Color=\"1, 0, 0, 1\">Webhook appears to be an invalid discord webhook!</>",
+    "Error": "<RichColor Color=\"1, 0, 0, 1\">Webhook did not get updated, try again!</>",
+    "NotAllowed": "<RichColor Color=\"1, 0, 0, 1\">Only the tribe owner is allowed to use this feature!</>",
+    "NotFound": "<RichColor Color=\"1, 0, 0, 1\">Unable to locate your tribe entry! Contact the server admin.</>",
+    "Usage": "\nTribe Owners Only!\nUsage: /tlr <discord webhook>\nVisit https://bit.ly/33Jw8i5 for information about Discord Webhooks.",
+    "ForceTribe": "Tribe membership is required. You have been added to your own tribe."
+  },
+  "Notifications": {
+    "NotificationDisplayTime": 10.0,
+    "NotificationScale": 1.3
+  },
+  "TextTransformer": {
+    "Enabled": false, //Enables this feature however "AddCodeBlocks":true will prevent discord emoji's from displaying
+    "TribeMessages": true, //Will modify tribe messages
+    "AdminMessages": true, //Will modify admin messages
+    "AdminPublicMessages": true, //Will modify adamin public messages
+    "EnableRegex": true, //Enable advanced regex feature
+    "Regex": { //If a match is found it will not process anything from the "Replace" list
+      "^(.*:)\\s(\\w+)\\sunclaimed\\s('.*')!$": "$1 __$3__ was unclaimed by **$2**!"
+    },
+    "Replace": { //Keyword (left) will be replaced the keyword (right)
+      " froze ": " :cold_face: **froze** ",
+      " killed ": " :knife: ",
+      " killed!": " :knife:!",
+      " baby ": " :baby: baby :baby: ",
+      " unfroze ": " :hotsprings: __unfroze__ "
+    }
+  },
+  "Mysql": { //These settings will only be used if you plan to use a MySQL database otherwise ignore this section
+    "UseMysql": false,
+    "MysqlHost": "154.84.153.54",
+    "MysqlPort": 3306,
+    "MysqlUser": "user",
+    "MysqlPass": "pass",
+    "MysqlDB": "dbname"
+  }
+}

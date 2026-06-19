@@ -1,0 +1,9 @@
+{
+  "FullName": "Item Collector (FREE)",
+  "Description": "Automatically collect fertilized eggs, poop, pellets and much more!",
+  "Version": 1.11,
+  "MinApiVersion": 3.54,
+  "Dependencies":[
+    "Permissions"
+  ]
+}

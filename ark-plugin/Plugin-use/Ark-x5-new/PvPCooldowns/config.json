@@ -1,0 +1,246 @@
+{
+  "ShowBlueprintPaths": false,
+  "IgnoreAllies": false,
+  "WorldPVPFlag": {
+    "Enabled": true,
+    "FlagRemovedAfter": 120,
+    "FlagBothPlayers": true,
+    "IgnoreStructures": [
+      "Campfire",
+      "SleepingBag"
+    ]
+  },
+  "WorldPvPBlocked": {
+    "Enabled": true,
+    "Commands": [
+      "/suicide",
+      "/shop",
+      "/buy",
+      "/kit",
+      "/buykit",
+      "/sell",
+      "/upload",
+      "/download",
+      "/setorp",
+      "/removeorp",
+      "/showorp",
+      "/kill",
+      "/wake",
+      "/turretmode",
+      "/resetmating",
+      "/renamedinos",
+      "/raisebaby",
+      "/nomatedinos",
+      "/neuterdinos",
+      "/neuter",
+      "/dmindwipe",
+      "/matenow",
+      "/matedinos",
+      "/dkill",
+      "/imprintchange",
+      "/imprint",
+      "/givebirth",
+      "/hatch",
+      "/finishclone",
+      "/fertiledinos",
+      "/fertile",
+      "/feed",
+      "/pod",
+      "/pods",
+      "/copycolordinos",
+      "/colordinos",
+      "/colordino",
+      "/claimbabies",
+      "/cg",
+      "/engrams",
+      "/transfergun",
+      "/repairgun",
+      "/repair",
+      "/renametribe",
+      "/rename",
+      "/pickupgun",
+      "/makeowner",
+      "/clear",
+      "/getbags",
+      "/enemyscan",
+      "/demogun",
+      "/completemission",
+      "/charwipe"
+    ],
+    "BlockUsing": [
+      "PrimalItem_AwesomeTeleporters_Remote",
+      "SoulGun"
+    ],
+    "BlockPlacing": [
+
+    ],
+    "BlockPickup": [
+
+    ],
+    "BlockTransmitterUse": false,
+    "BlockTurretCopySettings": false
+  },
+  "RaidPvPBlocked": {
+    "Enabled": true,
+    "Commands": [
+      "/setorp",
+      "/removeorp",
+      "/showorp",
+      "/suicide",
+      "/shop",
+      "/buy",
+      "/kit",
+      "/buykit",
+      "/sell",
+      "/upload",
+      "/download",
+      "/kill",
+      "/wake",
+      "/turretmode",
+      "/resetmating",
+      "/renamedinos",
+      "/raisebaby",
+      "/nomatedinos",
+      "/neuterdinos",
+      "/neuter",
+      "/dmindwipe",
+      "/matenow",
+      "/matedinos",
+      "/dkill",
+      "/imprintchange",
+      "/imprint",
+      "/givebirth",
+      "/hatch",
+      "/finishclone",
+      "/fertiledinos",
+      "/fertile",
+      "/feed",
+      "/pod",
+      "/pods",
+      "/copycolordinos",
+      "/colordinos",
+      "/colordino",
+      "/claimbabies",
+      "/cg",
+      "/engrams",
+      "/transfergun",
+      "/repairgun",
+      "/repair",
+      "/renametribe",
+      "/rename",
+      "/pickupgun",
+      "/makeowner",
+      "/clear",
+      "/getbags",
+      "/enemyscan",
+      "/demogun",
+      "/completemission",
+      "/charwipe"
+    ],
+    "BlockUsing": [
+      "PrimalItem_PersonalTeleporter",
+      "BP_TeleporterPlus",
+      "PrimalItem_DemoGun",
+      "TekTeleporter",
+      "AwesomeTeleporters_Teleporter",
+      "PrimalItem_AwesomeTeleporters_Remote",
+      "SoulGun"
+    ],
+    "BlockPlacing": [
+      "BP_Foundation_Tek",
+      "Floor_Tek"
+    ],
+    "BlockPickup": [
+      "BP_Foundation_Tek",
+      "Floor_Tek"
+    ],
+    "BlockTransmitterUse": true,
+    "BlockTurretCopySettings": true,
+    "BlockPopcorning": {
+      "Enabled": false,
+      "AllowDropAll": false,
+      "MaxStackSize": 100,
+      "DropInterval": 5,
+      "IgnoreItems": [
+        "PrimalItemResource_Fibers"
+      ]
+    }
+  },
+  "Messages": {
+    "Sender": {
+      "Message": "Iris Cooldowns"
+    },
+    "Error": {
+      "Message": "Something went wrong!",
+      "Scale": 2.3,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "CommandBlockedFor": {
+      "Message": "{} is blocked for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "StructureBlockedFor": {
+      "Message": "{} cannot be used for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "ItemUseBlockedFor": {
+      "Message": "{} cannot be used for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "PickupBlockedFor": {
+      "Message": "{} cannot be picked up for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "UnableToPlaceFor": {
+      "Message": "Unable to place {} for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "DropAllBlocked": {
+      "Message": "Unable to use drop all for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "DropStackSize": {
+      "Message": "Cannot drop stacks larger than {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "DropCooldown": {
+      "Message": "You must wait {} before dropping another item!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    },
+    "PVPFlagAdded": {
+      "Message": "You are now World PVP flagged!\nSome actions have been restricted!",
+      "Scale": 1.8,
+      "DisplayTime": 10.0,
+      "Color": "Yellow"
+    },
+    "PVPFlagRemoved": {
+      "Message": "You are no longer World PVP flagged!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Green"
+    },
+    "CopySettingsBlockedFor": {
+      "Message": "{} copy settings blocked for {}!",
+      "Scale": 1.8,
+      "DisplayTime": 5.0,
+      "Color": "Red"
+    }
+  }
+}

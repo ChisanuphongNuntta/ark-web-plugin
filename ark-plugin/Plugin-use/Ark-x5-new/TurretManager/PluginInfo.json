@@ -1,0 +1,9 @@
+{
+  "FullName": "Turret Manager FREE",
+  "Description": "Easily fill and manage the turrets on your server",
+  "Version": 1.11,
+  "MinApiVersion": 3.54,
+  "Dependencies":[
+    "Permissions"
+  ]
+}

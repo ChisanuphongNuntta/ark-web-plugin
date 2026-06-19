@@ -1,0 +1,22 @@
+{
+  "id": "7f09c693-e18e-4a67-b50a-9d297e28b8cf",
+  "userId": "9a75908e-5b12-4217-ba6e-cc7887e5b56a",
+  "cartSnapshot": [
+    {
+      "productId": 1,
+      "serverId": 1,
+      "quantity": 2,
+      "price": 500,
+      "name": "Ascendant Longneck Rifle",
+      "itemBlueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponOneShotRifle.PrimalItem_WeaponOneShotRifle'",
+      "quality": 5,
+      "isBlueprint": false
+    }
+  ],
+  "totalAmount": "1000",
+  "status": "pending",
+  "idempotencyKey": "idem-checkout-123456",
+  "expiresAt": "2026-06-20T03:20:00.000Z",
+  "createdAt": "2026-06-20T03:05:00.000Z",
+  "updatedAt": "2026-06-20T03:05:00.000Z"
+}

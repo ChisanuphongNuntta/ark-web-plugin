@@ -1,0 +1,54 @@
+{
+  "servers": [
+    {
+      "id": 1,
+      "name": "IRIS-PVE-TheIsland-01",
+      "map": "TheIsland",
+      "mode": "PVE",
+      "isOnline": true,
+      "playerCount": 24,
+      "maxPlayers": 70,
+      "lastHeartbeat": "2026-06-20T03:10:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "IRIS-PVE-ScorchedEarth-01",
+      "map": "ScorchedEarth",
+      "mode": "PVE",
+      "isOnline": true,
+      "playerCount": 12,
+      "maxPlayers": 50,
+      "lastHeartbeat": "2026-06-20T03:10:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "IRIS-PVPVE-Ragnarok-01",
+      "map": "Ragnarok",
+      "mode": "PVPVE",
+      "isOnline": true,
+      "playerCount": 45,
+      "maxPlayers": 70,
+      "lastHeartbeat": "2026-06-20T03:09:50.000Z"
+    },
+    {
+      "id": 4,
+      "name": "IRIS-PVE-Aberration-01",
+      "map": "Aberration",
+      "mode": "PVE",
+      "isOnline": false,
+      "playerCount": 0,
+      "maxPlayers": 50,
+      "lastHeartbeat": "2026-06-20T02:45:00.000Z"
+    },
+    {
+      "id": 5,
+      "name": "IRIS-PVE-Extinction-01",
+      "map": "Extinction",
+      "mode": "PVE",
+      "isOnline": true,
+      "playerCount": 8,
+      "maxPlayers": 50,
+      "lastHeartbeat": "2026-06-20T03:10:00.000Z"
+    }
+  ]
+}

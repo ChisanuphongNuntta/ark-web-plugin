@@ -1,0 +1,81 @@
+{
+	
+	"TurretManager":{
+		"AccountID": "FREE",
+		"Enabled": true,		
+		"RangeBubbleTrigger": "iristest",		
+		"DisableAutoReloadTurretsFromAmmoBoxes": false,		
+		"PlayerJoinServerCooldownInSeconds": 60,
+		"GroupPermission": {  
+			"Default":{
+				"Priority": 99
+			},
+			"IrisALL":{
+				"Priority": 98,
+
+				"FillTurretsEnabled": true,
+				"FillTurretsUseTokens": false,
+				"FillTurretsCommandCooldownInSeconds": 5,
+				"FillTurretsPrice": 0,
+				"FillTurretsRangeInFoundations": 80,
+				"FillTurretsBlacklist": [],
+
+				"TurretControlEnabled": true,
+				"TurretControlUseTokens": false,
+				"TurretControlCommandCooldownInSeconds": 5,
+				"TurretControlPrice": 0,
+				"TurretControlRangeInFoundations": 80,
+				"TurretControlBlacklist": []
+			}
+		},		
+
+		"FillTurrets":{
+			"Enabled": true,
+			"ChatCommand": "/fill",
+			"TokenName": "FillTurrets",			
+			"MasterBlacklist": []
+		},	
+	
+		"TurretControl":{
+			"Enabled": true,
+			"ChatCommand": "/turrets",			
+			"TokenName": "TurretControl",			
+			"MasterBlacklist": []
+		},
+		
+		"Messages":{
+			"GroupPermission": {
+				"Default":{
+					"Priority": 99,
+					
+					"NoPermission": "You do not have permission to use this command",
+					"PlayerHelpCommand": "All your available commands for Turret Manager have been printed out for you in the tab console. Press your tab twice to see the results.",
+					"PlayerHelpCommandResults": "Command: {} for {} {}",
+					"CommandCooldown": "You cannot use this command so quickly, try again in a moment ({} seconds)",
+					"PlayerJoinCommandCooldown": "You cannot use this command yet because you just joined the server, try again in a moment ({} seconds)",
+					"SenderNameInChat": "IRIS Turret",
+					"NotEnabled": "This feature is not enabled on the server",
+					"NotEnoughTokens": "You don't have enough tokens to use this command",
+					"NoPoints": "You do not have enough points ({} needed)",
+					"CommandPurchased": "Command purchased for {} points",
+					"NoTurretsFound": "No turrets were found in your area",
+					"NoAmmo": "No ammo or not enough ammo was found in your inventory to fill turrets",
+					"NoAmmoNeeded": "The turrets in your area are already full",
+					"FillSuccess": "Filled {} turrets each with {} {}",
+					"TurretControlUsage": "Turret Manager Usage:\n/fill\n/fill heavy\n/turrets on\n/turrets off\n/turrets heavy on\n/turrets heavy off",
+					"Points": "Points",
+					"Tokens": "Tokens",
+					"Free": "Free",
+					"TurretLabel": "Turret",
+					"TurretsOn": "Turned on {} turrets",
+					"TurretsOff": "Turned off {} turrets",					
+
+					"ControlCommands": {
+						"on": "on",
+						"off": "off"
+					}
+				}
+			}			
+		}
+	}
+}

@@ -1,0 +1,609 @@
+openapi: 3.1.0
+info:
+  title: IRIS Enterprise Commerce API
+  version: 0.1.0
+  description: Source-of-truth contract owned by the backend team.
+servers:
+  - url: /api
+paths:
+  /wallet:
+    get:
+      operationId: getWalletBalance
+      tags: [Wallet]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200':
+          description: Wallet balances. Integer amounts are strings to avoid precision loss.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WalletBalance' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /wallet/transactions:
+    get:
+      operationId: listWalletTransactions
+      tags: [Wallet]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Immutable transaction history scoped to the authenticated user.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions, pagination]
+                properties:
+                  transactions:
+                    type: array
+                    items: { $ref: '#/components/schemas/LedgerTransaction' }
+                  pagination: { $ref: '#/components/schemas/Pagination' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [Auth]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200':
+          description: User profile and linked identities.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/link-steam:
+    post:
+      operationId: linkSteam
+      tags: [Auth]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [steamId]
+              properties:
+                steamId: { type: string }
+      responses:
+        '200':
+          description: Steam account linked successfully.
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/unlink-steam:
+    post:
+      operationId: unlinkSteam
+      tags: [Auth]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200':
+          description: Steam account unlinked successfully.
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/link-epic:
+    post:
+      operationId: linkEpic
+      tags: [Auth]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [epicId]
+              properties:
+                epicId: { type: string }
+      responses:
+        '200':
+          description: Epic Games account linked successfully.
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/unlink-epic:
+    post:
+      operationId: unlinkEpic
+      tags: [Auth]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200':
+          description: Epic Games account unlinked successfully.
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/unlink-discord:
+    post:
+      operationId: unlinkDiscord
+      tags: [Auth]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200':
+          description: Discord account unlinked successfully.
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/sessions:
+    get:
+      operationId: listSessions
+      tags: [Auth]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200':
+          description: Active sessions for the user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/UserSession' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/sessions/{id}:
+    delete:
+      operationId: revokeSession
+      tags: [Auth]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Session revoked successfully.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /plugin/heartbeat:
+    post:
+      operationId: pluginHeartbeat
+      tags: [Plugin]
+      security: [{ hmacAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/HeartbeatRequest' }
+      responses:
+        '200':
+          description: Heartbeat received.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /plugin/deliveries/claim:
+    post:
+      operationId: claimDeliveries
+      tags: [Plugin]
+      security: [{ hmacAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [serverId]
+              properties:
+                serverId: { type: integer }
+      responses:
+        '200':
+          description: List of claimed delivery jobs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DeliveryJob' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /plugin/deliveries/{deliveryKey}/complete:
+    post:
+      operationId: completeDelivery
+      tags: [Plugin]
+      security: [{ hmacAuth: [] }]
+      parameters:
+        - { in: path, name: deliveryKey, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeliveryReceipt' }
+      responses:
+        '200':
+          description: Delivery marked as completed.
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /plugin/deliveries/{deliveryKey}/fail:
+    post:
+      operationId: failDelivery
+      tags: [Plugin]
+      security: [{ hmacAuth: [] }]
+      parameters:
+        - { in: path, name: deliveryKey, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [leaseToken, error]
+              properties:
+                leaseToken: { type: string }
+                error: { type: string }
+      responses:
+        '200':
+          description: Delivery marked as failed.
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /plugin/deliveries/{deliveryKey}/release:
+    post:
+      operationId: releaseDelivery
+      tags: [Plugin]
+      security: [{ hmacAuth: [] }]
+      parameters:
+        - { in: path, name: deliveryKey, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [leaseToken]
+              properties:
+                leaseToken: { type: string }
+      responses:
+        '200':
+          description: Delivery lease released back to the queue.
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /plugin/market/prepare-lock:
+    post:
+      operationId: prepareLock
+      tags: [Plugin]
+      security: [{ hmacAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [species, level, sellerSteamId]
+              properties:
+                species: { type: string }
+                level: { type: integer }
+                sellerSteamId: { type: string }
+      responses:
+        '200':
+          description: Lock prepared.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [assetLockId, expiresAt]
+                properties:
+                  assetLockId: { type: string }
+                  expiresAt: { type: string, format: date-time }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /plugin/market/confirm-lock:
+    post:
+      operationId: confirmLock
+      tags: [Plugin]
+      security: [{ hmacAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetLockId, assetFingerprint, price]
+              properties:
+                assetLockId: { type: string }
+                assetFingerprint: { type: string }
+                price: { type: integer }
+      responses:
+        '200':
+          description: Lock confirmed and listing created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, listingId]
+                properties:
+                  success: { type: boolean }
+                  listingId: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /cart:
+    get:
+      operationId: getCart
+      tags: [Cart]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200':
+          description: User's shopping cart.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /cart/items:
+    post:
+      operationId: addToCart
+      tags: [Cart]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, serverId]
+              properties:
+                productId: { type: integer }
+                serverId: { type: integer }
+                quantity: { type: integer, minimum: 1, default: 1 }
+      responses:
+        '200':
+          description: Updated cart.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      operationId: updateCartItem
+      tags: [Cart]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, serverId, quantity]
+              properties:
+                productId: { type: integer }
+                serverId: { type: integer }
+                quantity: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: Updated cart.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      operationId: removeFromCart
+      tags: [Cart]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, serverId]
+              properties:
+                productId: { type: integer }
+                serverId: { type: integer }
+      responses:
+        '200':
+          description: Updated cart.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /checkout/session:
+    post:
+      operationId: createCheckoutSession
+      tags: [Checkout]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idempotencyKey]
+              properties:
+                idempotencyKey: { type: string }
+      responses:
+        '200':
+          description: Created checkout session.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckoutSession' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /checkout/session/{id}/commit:
+    post:
+      operationId: commitCheckoutSession
+      tags: [Checkout]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Checkout session committed and paid. Orders created and deliveries queued.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, orderIds, totalSpent]
+                properties:
+                  success: { type: boolean }
+                  orderIds:
+                    type: array
+                    items: { type: string }
+                  totalSpent: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/BadRequest' }
+
+components:
+  securitySchemes:
+    cookieAuth: { type: apiKey, in: cookie, name: token }
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    hmacAuth:
+      type: apiKey
+      in: header
+      name: X-Signature
+      description: HMAC-SHA256 signature verification using the plugin credentials.
+  responses:
+    Unauthorized:
+      description: Authentication required
+    BadRequest:
+      description: Invalid request parameters or state conflict
+    NotFound:
+      description: Resource not found
+  schemas:
+    User:
+      type: object
+      required: [id, discordId, pointsBalance, role, createdAt]
+      properties:
+        id: { type: string }
+        steamId: { type: [string, 'null'] }
+        epicId: { type: [string, 'null'] }
+        discordId: { type: string }
+        discordUsername: { type: [string, 'null'] }
+        discordAvatar: { type: [string, 'null'] }
+        pointsBalance: { type: string }
+        role: { type: string }
+        createdAt: { type: string, format: date-time }
+    UserSession:
+      type: object
+      required: [id, token, expiresAt, createdAt]
+      properties:
+        id: { type: string }
+        token: { type: string }
+        ipAddress: { type: [string, 'null'] }
+        userAgent: { type: [string, 'null'] }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        lastUsedAt: { type: string, format: date-time }
+    HeartbeatRequest:
+      type: object
+      required: [playerCount, pluginVersion, buildSha256, arkApiVersion, capabilities, queueDepth, circuitBreakerState]
+      properties:
+        playerCount: { type: integer }
+        pluginVersion: { type: string }
+        buildSha256: { type: string }
+        arkApiVersion: { type: string }
+        capabilities:
+          type: array
+          items: { type: string }
+        queueDepth: { type: integer }
+        circuitBreakerState: { type: string }
+    DeliveryJob:
+      type: object
+      required: [deliveryKey, leaseToken, leaseExpiresAt, playerSteamId, deliveryType, payloadHash, payload]
+      properties:
+        deliveryKey: { type: string }
+        leaseToken: { type: string }
+        leaseExpiresAt: { type: string, format: date-time }
+        playerSteamId: { type: string }
+        deliveryType: { type: string }
+        payloadHash: { type: string }
+        payload: { type: object }
+    DeliveryReceipt:
+      type: object
+      required: [leaseToken, playerSteamId, payloadHash, localJournalReceiptId, outcome, gameTimestamp]
+      properties:
+        leaseToken: { type: string }
+        playerSteamId: { type: string }
+        payloadHash: { type: string }
+        localJournalReceiptId: { type: string }
+        outcome: { type: string, enum: [success] }
+        gameTimestamp: { type: string, format: date-time }
+    WalletBalance:
+      type: object
+      required: [currency, accounts, total]
+      properties:
+        currency: { type: string, const: IC }
+        accounts:
+          type: object
+          additionalProperties: { type: string, pattern: '^-?[0-9]+$' }
+        total: { type: string, pattern: '^-?[0-9]+$' }
+    LedgerEntry:
+      type: object
+      required: [id, amount, balanceAfter, account]
+      properties:
+        id: { type: string }
+        amount: { type: string, pattern: '^-?[0-9]+$' }
+        balanceAfter: { type: string, pattern: '^-?[0-9]+$' }
+        account:
+          type: object
+          required: [key, type, currency]
+          properties:
+            key: { type: string }
+            type: { type: string }
+            currency: { type: string }
+    LedgerTransaction:
+      type: object
+      required: [id, idempotencyKey, type, createdAt, entries]
+      properties:
+        id: { type: string }
+        idempotencyKey: { type: string }
+        type: { type: string }
+        referenceType: { type: [string, 'null'] }
+        referenceId: { type: [string, 'null'] }
+        description: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        entries:
+          type: array
+          items: { $ref: '#/components/schemas/LedgerEntry' }
+    Pagination:
+      type: object
+      required: [page, limit, total, totalPages]
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+    Cart:
+      type: object
+      required: [id, userId, items]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CartItem' }
+    CartItem:
+      type: object
+      required: [id, cartId, productId, serverId, quantity]
+      properties:
+        id: { type: string }
+        cartId: { type: string }
+        productId: { type: integer }
+        serverId: { type: integer }
+        quantity: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        product:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            price: { type: integer }
+            itemBlueprint: { type: string }
+            quantity: { type: integer }
+            quality: { type: integer }
+            isBlueprint: { type: boolean }
+        server:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            map: { type: [string, 'null'] }
+    CheckoutSession:
+      type: object
+      required: [id, userId, cartSnapshot, totalAmount, status, idempotencyKey, expiresAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        cartSnapshot: { type: object }
+        totalAmount: { type: string, pattern: '^[0-9]+$' }
+        status: { type: string, enum: [pending, completed, expired] }
+        idempotencyKey: { type: string }
+        expiresAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }

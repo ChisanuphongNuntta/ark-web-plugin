@@ -1,0 +1,6 @@
+{
+  "FullName": "PvP Cooldowns",
+  "Description": "(v1.31) Prevents commands or actions during PvP/Raid Combat",
+  "Version": 1.31,
+  "MinApiVersion": 3.51
+}

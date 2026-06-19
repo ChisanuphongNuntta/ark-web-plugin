@@ -1,0 +1,54 @@
+The following steps will help build new regex messages and hopefully understand capture groups which make this work.
+
+Open https://regex101.com
+
+Paste the following log entry into the "TEST STRING" box.
+(TestServer - Valguero_P) (1135239186:Lethal Tribe) Day 115, 16:06: Lethal claimed 'Baby Lethal - Lvl 436 (Sabertooth)'!
+
+Your regex string will always begin with the following
+^(.*:)\s
+The above small amount of text should highlight GREEN and on the right you should see "Group 1." with the text it found.
+Now we just need to add additional regex to build the additonal capture groups that we need to reformat the message as we want.
+
+Next we want to capture my name "Lethal"
+(\w+)\s
+You should see "Lethal" turn pink/red and show as "Group 2." on the right with "Lethal" shown as the detected text.
+The (\w+) captures the word "Lethal" and the \s represents a space but you can also just use a space instead if you prefer.
+
+Next we need to put the action so it knows we are matching on the proper text.
+We don't need to capture this text though so we won't be using any parenthesis.
+claimed\s
+The text will be blue meaning its part of the full match group.
+
+Next we want to grab the dino the actiton was taken on.
+('.*')
+This basically says grab everything between the apostrophe's and assign it to a capture group and in this case "Group 3.".
+
+Last up is the puncuation to end the full match needed for this to work.
+!$
+This will tell the regex the very last thing it should see is an exclamation mark. $ means end of the text which is our log entry.
+
+When we put all these pieces together it will look like this (https://regex101.com/r/QkSR36/1)
+^(.*:)\s(\w+)\sclaimed\s('.*')!$
+
+Now that we have our regex built we need to put it in a form that is JSON friendly.
+Using https://www.freeformatter.com/json-escape.html paste in the regex built above into this tool and click "ESCAPE"
+It should give you an new box called "Escaped string:" and contain the following escaped regex
+^(.*:)\\s(\\w+)\\sclaimed\\s('.*')!$
+
+Once you have this you can move to adding this to the TribeLogRelay config.json file.
+You need to wrap the escaped regex in quotations like this and buld the output format to the right of it.
+"^(.*:)\\s(\\w+)\\sclaimed\\s('.*')!$":"$0"
+
+Now we are back to looking at capture groups.
+$0 = Full match "(TestServer - Valguero_P) (1135239186:Lethal Tribe) Day 115, 16:06: Lethal claimed 'Baby Lethal - Lvl 436 (Sabertooth)'!"
+$1 = "(TestServer - Valguero_P) (1135239186:Lethal Tribe) Day 115, 16:06:"
+$2 = "Lethal"
+$3 = "'Baby Lethal - Lvl 436 (Sabertooth)'"
+
+With this information we can now craft how we want the output to look.
+"$1 $2 claimed $3!" is the same as just using $0 I built the exact same output using the capture groups.
+"$1 $3 was claimed by $2!" will read "(TestServer - Valguero_P) (1135239186:Lethal Tribe) Day 115, 16:06: 'Baby Lethal - Lvl 436 (Sabertooth)' was claimed by Lethal!"
+
+We will use the last one to refomat the text so the entry in the config.json would look like so
+"^(.*:)\\s(\\w+)\\sclaimed\\s('.*')!$":"$1 $3 was claimed by $2!"

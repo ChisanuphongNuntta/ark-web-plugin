@@ -1,0 +1,583 @@
+# HeartShop Docker Compose - Performance Optimized
+# Usage:
+#   Development: docker compose --env-file .env.dev --profile dev up -d
+#   Production:  docker compose --env-file .env.prod --profile prod up -d
+
+x-common-env: &common-env
+  TZ: Asia/Bangkok
+
+# Optimized healthcheck - less frequent for better performance
+x-healthcheck-dev: &dev-healthcheck
+  interval: 60s
+  timeout: 5s
+  retries: 3
+  start_period: 10s
+
+x-healthcheck-prod: &prod-healthcheck
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 30s
+
+services:
+  # ===========================================
+  # REVERSE PROXY - Nginx (Production only)
+  # ===========================================
+  nginx:
+    image: nginx:1.28-alpine # Stable version
+    container_name: heartshop-nginx
+    restart: unless-stopped
+    profiles: [ "prod" ]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/certs:/etc/nginx/certs:ro
+      - ./docker/nginx/ssl-params.conf:/etc/nginx/ssl-params.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    networks:
+      - heartshop-frontend
+    environment:
+      <<: *common-env
+    healthcheck:
+      <<: *prod-healthcheck
+      test: [ "CMD", "nginx", "-t" ]
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
+  # ===========================================
+  # PostgreSQL - Development (Optimized)
+  # ===========================================
+  postgres:
+    image: postgres:17-alpine # Latest stable 17.x
+    container_name: heartshop-postgres
+    restart: unless-stopped
+    profiles: [ "dev" ]
+    environment:
+      <<: *common-env
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # Performance tuning
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - heartshop-backend
+    healthcheck:
+      <<: *dev-healthcheck
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+    # Performance: shared memory and tuning
+    shm_size: 256mb
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=128MB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=64MB"
+      - "-c"
+      - "effective_cache_size=256MB"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "synchronous_commit=off"
+      - "-c"
+      - "wal_level=minimal"
+      - "-c"
+      - "max_wal_senders=0"
+      - "-c"
+      - "fsync=off"
+      - "-c"
+      - "full_page_writes=off"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  # ===========================================
+  # PostgreSQL - Production (HA)
+  # ===========================================
+  postgres-primary:
+    image: postgres:17-alpine # Latest stable 17.x
+    container_name: heartshop-postgres-primary
+    restart: unless-stopped
+    profiles: [ "prod" ]
+    environment:
+      <<: *common-env
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_primary_data:/var/lib/postgresql/data
+      - ./docker/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./docker/certs/postgres:/tmp/certs:ro
+    entrypoint:
+      - sh
+      - -c
+      - |
+        mkdir -p /var/lib/postgresql/certs
+        cp /tmp/certs/* /var/lib/postgresql/certs/
+        chmod 600 /var/lib/postgresql/certs/*.key
+        chown postgres:postgres /var/lib/postgresql/certs/*.key
+        exec docker-entrypoint.sh "$@"
+    command: >
+      postgres -c config_file=/etc/postgresql/postgresql.conf -c hba_file=/etc/postgresql/pg_hba.conf -c ssl=on -c ssl_cert_file=/var/lib/postgresql/certs/server.crt -c ssl_key_file=/var/lib/postgresql/certs/server.key -c ssl_ca_file=/var/lib/postgresql/certs/ca.crt
+    networks:
+      - heartshop-backend
+    healthcheck:
+      <<: *prod-healthcheck
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+    shm_size: 512mb
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+
+  postgres-replica:
+    image: postgres:17-alpine # Latest stable 17.x
+    container_name: heartshop-postgres-replica
+    restart: unless-stopped
+    profiles: [ "prod" ]
+    environment:
+      <<: *common-env
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+      - ./docker/certs/postgres:/tmp/certs:ro
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    networks:
+      - heartshop-backend
+    shm_size: 512mb
+    command: >
+      sh -c "
+        mkdir -p /var/lib/postgresql/certs
+        cp /tmp/certs/* /var/lib/postgresql/certs/
+        chmod 600 /var/lib/postgresql/certs/*.key
+        chown postgres:postgres /var/lib/postgresql/certs/*.key
+
+        until pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U ${POSTGRES_USER} -Fp -Xs -P -R; do
+          echo 'Waiting for primary...'
+          sleep 5
+        done
+        exec postgres
+      "
+
+  # ===========================================
+  # Redis - Development (Optimized)
+  # ===========================================
+  redis:
+    image: redis:7.4-alpine # Latest 7.x (BSD licensed)
+    container_name: heartshop-redis
+    restart: unless-stopped
+    profiles: [ "dev" ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - heartshop-backend
+    healthcheck:
+      <<: *dev-healthcheck
+      test: [ "CMD", "redis-cli", "ping" ]
+    # Performance: in-memory only for dev, no persistence
+    command: >
+      redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --save "" --appendonly no --tcp-keepalive 60 --timeout 0
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # ===========================================
+  # Redis - Production (TLS + HA)
+  # ===========================================
+  redis-primary:
+    image: redis:7.4-alpine # Latest 7.x (BSD licensed)
+    container_name: heartshop-redis-primary
+    restart: unless-stopped
+    profiles: [ "prod" ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_primary_data:/data
+      - ./docker/redis/redis-prod.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./docker/certs/redis:/tmp/certs:ro
+    entrypoint:
+      - sh
+      - -c
+      - |
+        mkdir -p /etc/redis/certs
+        cp /tmp/certs/* /etc/redis/certs/
+        chmod 600 /etc/redis/certs/*.key
+        chown redis:redis /etc/redis/certs/*.key
+        exec docker-entrypoint.sh "$@"
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - heartshop-backend
+    environment:
+      <<: *common-env
+    healthcheck:
+      <<: *prod-healthcheck
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  redis-sentinel:
+    image: redis:7.4-alpine # Latest 7.x (BSD licensed)
+    container_name: heartshop-redis-sentinel
+    restart: unless-stopped
+    profiles: [ "prod" ]
+    entrypoint:
+      - sh
+      - -c
+      - |
+        cp /tmp/sentinel.conf /usr/local/etc/redis/sentinel.conf
+        exec redis-sentinel /usr/local/etc/redis/sentinel.conf
+    volumes:
+      - ./docker/redis/sentinel.conf:/tmp/sentinel.conf:ro
+      - sentinel_data:/usr/local/etc/redis
+    depends_on:
+      redis-primary:
+        condition: service_healthy
+    networks:
+      - heartshop-backend
+    environment:
+      <<: *common-env
+
+  # ===========================================
+  # Backend - Development (Hot Reload)
+  # ===========================================
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: heartshop-backend-dev
+    restart: unless-stopped
+    profiles: [ "dev" ]
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      PORT: ${PORT}
+      NODE_ENV: development
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DISCORD_CALLBACK_URL: ${DISCORD_CALLBACK_URL}
+      STEAM_API_KEY: ${STEAM_API_KEY}
+      STEAM_REALM: ${STEAM_REALM}
+      STEAM_RETURN_URL: ${STEAM_RETURN_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      PLUGIN_MASTER_KEY: ${PLUGIN_MASTER_KEY}
+      # Performance: disable Prisma telemetry
+      PRISMA_HIDE_UPDATE_MESSAGE: "true"
+      CHECKPOINT_DISABLE: "1"
+    volumes:
+      # Use delegated for better write performance on Windows/Mac
+      - ./backend/src:/app/src:delegated
+      - ./backend/prisma:/app/prisma:delegated
+      # Cache node_modules in named volume for speed
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - heartshop-frontend
+      - heartshop-backend
+    command: sh -c "bunx prisma db push && bun --watch run src/index.ts"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+
+  # ===========================================
+  # Backend - Production
+  # ===========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+      args:
+        - NODE_ENV=production
+    # No container_name when using replicas
+    restart: unless-stopped
+    profiles: [ "prod" ]
+    expose:
+      - "3001"
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-primary:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis-primary:6379
+      PORT: ${PORT}
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DISCORD_CALLBACK_URL: ${DISCORD_CALLBACK_URL}
+      STEAM_API_KEY: ${STEAM_API_KEY}
+      STEAM_REALM: ${STEAM_REALM}
+      STEAM_RETURN_URL: ${STEAM_RETURN_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      PLUGIN_MASTER_KEY: ${PLUGIN_MASTER_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      SECURITY_LEVEL: maximum
+      ENABLE_ANOMALY_DETECTION: "true"
+    volumes:
+      - ./docker/certs/backend:/app/certs:ro
+      - backend_logs:/app/logs
+      - ./ark-plugin:/ark-plugin:ro
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis-primary:
+        condition: service_healthy
+    networks:
+      - heartshop-frontend
+      - heartshop-backend
+    healthcheck:
+      <<: *prod-healthcheck
+      test: [ "CMD", "curl", "-f", "http://localhost:3001/health" ]
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # ===========================================
+  # Frontend - Development (Hot Reload)
+  # ===========================================
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: heartshop-frontend-dev
+    restart: unless-stopped
+    profiles: [ "dev" ]
+    ports:
+      - "3000:3000"
+    environment:
+      <<: *common-env
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      # Performance: disable telemetry
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      # Use delegated for better performance
+      - ./frontend/src:/app/src:delegated
+      - ./frontend/public:/app/public:delegated
+      # Cache in named volumes
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+    depends_on:
+      - backend-dev
+    networks:
+      - heartshop-frontend
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+
+  # ===========================================
+  # Frontend - Production
+  # ===========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    # No container_name when using replicas
+    restart: unless-stopped
+    profiles: [ "prod" ]
+    expose:
+      - "3000"
+    environment:
+      <<: *common-env
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    networks:
+      - heartshop-frontend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  # ===========================================
+  # Security & Monitoring (Production only)
+  # ===========================================
+  cert-manager:
+    build:
+      context: ./docker/scripts
+      dockerfile: Dockerfile.certmanager
+    container_name: heartshop-cert-manager
+    restart: unless-stopped
+    profiles: [ "prod" ]
+    volumes:
+      - ./docker/certs:/certs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      <<: *common-env
+      CERT_ROTATION_DAYS: 7
+      DOMAIN: ${DOMAIN:-localhost}
+      NOTIFICATION_WEBHOOK: ${SLACK_WEBHOOK:-}
+    networks:
+      - heartshop-backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
+
+  anomaly-detector:
+    build:
+      context: ./docker/monitoring
+      dockerfile: Dockerfile.anomaly
+    container_name: heartshop-anomaly-detector
+    restart: unless-stopped
+    profiles: [ "prod" ]
+    volumes:
+      - backend_logs:/logs:ro
+      - anomaly_data:/data
+    environment:
+      <<: *common-env
+      LOG_PATH: /logs
+      ALERT_WEBHOOK: ${SLACK_WEBHOOK:-}
+      SENSITIVITY: high
+    networks:
+      - heartshop-backend
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  fail2ban:
+    image: crazymax/fail2ban:1.1.0 # Pinned stable
+    container_name: heartshop-fail2ban
+    restart: unless-stopped
+    profiles: [ "prod" ]
+    volumes:
+      - ./docker/monitoring/fail2ban:/data
+      - backend_logs:/var/log/heartshop:ro
+    environment:
+      <<: *common-env
+      F2B_LOG_TARGET: STDOUT
+      F2B_LOG_LEVEL: INFO
+      F2B_DB_PURGE_AGE: 7d
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    network_mode: host
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+
+  security-scanner:
+    image: aquasec/trivy:0.58.2 # Pinned stable
+    container_name: heartshop-security-scanner
+    profiles: [ "prod" ]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - security_reports:/reports
+    command: [ "image", "--format", "json", "-o", "/reports/scan.json", "heartshop-backend" ]
+    environment:
+      <<: *common-env
+
+  # ===========================================
+  # Database UI (Dev only)
+  # ===========================================
+  adminer:
+    image: adminer:5.4.1 # Pinned stable
+    container_name: heartshop-adminer
+    restart: unless-stopped
+    profiles: [ "dev" ]
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: pepa-linha-dark
+    depends_on:
+      - postgres
+    networks:
+      - heartshop-backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+
+networks:
+  heartshop-frontend:
+    driver: bridge
+  heartshop-backend:
+    driver: bridge
+    internal: true
+
+volumes:
+  # Development volumes
+  postgres_data:
+  redis_data:
+  backend_node_modules:
+  frontend_node_modules:
+  frontend_next:
+
+  # Production volumes
+  postgres_primary_data:
+  postgres_replica_data:
+  redis_primary_data:
+  sentinel_data:
+  backend_logs:
+  anomaly_data:
+  security_reports:

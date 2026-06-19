@@ -1,0 +1,101 @@
+{
+    "General": {
+        "TimedRewards": {
+            "Enabled": true,
+            "Interval": 60,
+            "Groups": {
+                "Default": {
+                    "Amount": 5
+                },
+                "Premiums": {
+                    "Amount": 10
+                }
+            }
+        },
+        "ItemsPerPage": 15,
+        "ShopDisplayTime": 15.0,
+        "ShopTextSize": 1.3,
+        "DbPathOverride": ""
+    },
+    "HeartShop": {
+        "ApiUrl": "https://YOUR_DOMAIN/api/plugin",
+        "ApiKey": "CHANGE_ME",
+        "ServerId": 1,
+        "PollInterval": 30,
+        "WebStoreEnabled": true,
+        "CrossChatEnabled": true
+    },
+    "Kits": {
+        "starter": {
+            "DefaultAmount": 1,
+            "Price": 0,
+            "Description": "Starter Kit",
+            "Items": [
+                {
+                    "Amount": 1,
+                    "Quality": 0,
+                    "ForceBlueprint": false,
+                    "Blueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponStoneHatchet.PrimalItem_WeaponStoneHatchet'"
+                }
+            ]
+        }
+    },
+    "ShopItems": {
+        "tools": {
+            "Type": "category",
+            "Description": "Tools",
+            "Items": {
+                "hatchet": {
+                    "Type": "item",
+                    "Description": "Metal Hatchet",
+                    "Price": 20,
+                    "Amount": 1,
+                    "Quality": 0,
+                    "ForceBlueprint": false,
+                    "Blueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponMetalHatchet.PrimalItem_WeaponMetalHatchet'"
+                }
+            }
+        }
+    },
+    "SellItems": {
+        "gold": {
+            "Type": "item",
+            "Description": "Gold Bar",
+            "Price": 100,
+            "Amount": 1,
+            "Blueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Resources/PrimalItemResource_Gold.PrimalItemResource_Gold'"
+        }
+    },
+    "Mysql": {
+        "UseMysql": true,
+        "MysqlHost": "localhost",
+        "MysqlUser": "root",
+        "MysqlPass": "password",
+        "MysqlDB": "arkshop",
+        "MysqlPort": 3306,
+        "MysqlPlayersTable": "ArkShopPlayers"
+    },
+    "Messages": {
+        "Sender": "HeartShop",
+        "BoughtItem": "You have bought <RichColor Color=\"0, 1, 0, 1\">{item}</> for <RichColor Color=\"0, 1, 0, 1\">{amount}</> points",
+        "SoldItem": "You have sold <RichColor Color=\"0, 1, 0, 1\">{item}</> for <RichColor Color=\"0, 1, 0, 1\">{amount}</> points",
+        "ReceivedPoints": "You have received <RichColor Color=\"0, 1, 0, 1\">{amount}</> points! (Total: {total_points})",
+        "HavePoints": "You have <RichColor Color=\"0, 1, 0, 1\">{amount}</> points",
+        "NoPoints": "You don't have enough points!",
+        "WrongId": "Wrong ID",
+        "NoPermissions": "You don't have permission to use this logic",
+        "Kits": "Available kits:",
+        "AvailableKit": "Name: {kit} - Amount: {amount} - Price: {price}",
+        "KitBought": "You have bought kit \"{kit}\"",
+        "KitCooldown": "You have to wait {time} before you can use this kit again",
+        "ClaimSuccess": "Sent {quantity}x {item} to your inventory!",
+        "PointsCmd": "/points",
+        "TradeCmd": "/trade",
+        "BuyCmd": "/buy",
+        "SellCmd": "/sell",
+        "ShopCmd": "/shop",
+        "KitCmd": "/kit",
+        "BuyKitCmd": "/buykit",
+        "SellKitCmd": "/sellkit"
+    }
+}
