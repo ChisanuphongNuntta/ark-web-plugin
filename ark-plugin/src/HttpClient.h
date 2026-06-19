@@ -19,6 +19,7 @@ namespace HeartShop
         HttpClient(
             const std::string& ApiUrl,
             const std::string& ApiKey,
+            const std::string& KeyId,
             int ServerId,
             bool AllowInvalidCertificates = false);
         ~HttpClient();
@@ -36,6 +37,16 @@ namespace HeartShop
         void SendHeartbeat(int PlayerCount, HttpCallback Callback);
         void UpdatePlayerStats(const nlohmann::json& PlayersData, HttpCallback Callback);
         void GetPlayerInfo(const std::string& SteamId, HttpCallback Callback);
+
+        // Companion (read-only). Wallet balances and pending deliveries are projections owned
+        // by the backend ledger/queue. The plugin only displays them; it never computes or
+        // caches balances locally.
+        void GetWalletBalance(const std::string& SteamId, HttpCallback Callback);
+        void GetPendingDeliveries(const std::string& SteamId, HttpCallback Callback);
+
+        // Poll the backend for wallet.transaction-posted events newer than `Since`
+        // (server outbox projection). Used to sync in-game wallet notifications. Read-only.
+        void GetWalletEvents(const std::string& Since, HttpCallback Callback);
         
         // Lease-based Delivery API
         void ClaimDeliveries(int ServerId, HttpCallback Callback);
@@ -81,7 +92,8 @@ namespace HeartShop
         void DoPost(const std::string& Endpoint, const nlohmann::json& Body, HttpCallback Callback);
 
         std::string m_BaseUrl;
-        std::string m_ApiKey;
+        std::string m_ApiKey;   // HMAC shared secret; never transmitted, only used to sign
+        std::string m_KeyId;    // rotatable credential identifier sent in X-Plugin-Key-Id
         int m_ServerId;
         bool m_AllowInvalidCertificates;
         std::shared_ptr<RequestState> m_RequestState;

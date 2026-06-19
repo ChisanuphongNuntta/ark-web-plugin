@@ -8,6 +8,7 @@
 #include "Config.h"
 #include "HttpClient.h"
 #include "DeliveryJournal.h"
+#include "WalletNotifications.h"
 
 namespace HeartShop
 {
@@ -29,9 +30,16 @@ namespace HeartShop
     void PollChatMessages();
     void BroadcastChatMessage(const std::string& Source, const std::string& SenderName, const std::string& Content);
 
+    // Wallet notification sync (consumes wallet.transaction-posted events by polling).
+    void PollWalletNotifications();
+
     // Chat state
     extern std::string LastChatTimestamp;
     extern bool ChatEnabled;
+
+    // Wallet notification sync state
+    extern std::string LastWalletEventTimestamp;
+    extern WalletNotifications WalletNotifier;
 
     // Player helpers
     void SendMessage(AShooterPlayerController* Player, const FString& Message);

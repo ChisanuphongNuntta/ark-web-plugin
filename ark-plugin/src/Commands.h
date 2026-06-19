@@ -20,5 +20,8 @@ namespace Commands
     void SellDinoCommand(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode);
     void MarketCommand(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode);
     void ClaimDinoCommand(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode);
+
+    // Unified ecosystem companion (read-only): wallet balance + pending deliveries.
+    void IrisCommand(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode);
 }
 }

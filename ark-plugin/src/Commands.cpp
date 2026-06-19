@@ -36,6 +36,9 @@ namespace Commands
         ArkApi::GetCommands().AddChatCommand(L"/market", &MarketCommand);
         ArkApi::GetCommands().AddChatCommand(L"/claimdino", &ClaimDinoCommand);
 
+        // Unified ecosystem companion
+        ArkApi::GetCommands().AddChatCommand(L"/iris", &IrisCommand);
+
         Log::GetLog()->info("HeartShop commands registered");
     }
 
@@ -51,6 +54,9 @@ namespace Commands
         ArkApi::GetCommands().RemoveChatCommand(L"/sell");
         ArkApi::GetCommands().RemoveChatCommand(L"/market");
         ArkApi::GetCommands().RemoveChatCommand(L"/claimdino");
+
+        // Unified ecosystem companion
+        ArkApi::GetCommands().RemoveChatCommand(L"/iris");
 
         Log::GetLog()->info("HeartShop commands unregistered");
     }
@@ -493,6 +499,115 @@ namespace Commands
 
         SendMessage(Player, L"Checking for pending deliveries...");
         PollPendingOrders();
+    }
+
+    // ==========================================
+    // Unified Ecosystem Companion (read-only)
+    // ==========================================
+    //
+    // /iris [companion]
+    //   Shows the player's IRIS Wallet balance and pending deliveries.
+    //
+    // STRICT READ-ONLY: every value displayed here is owned by the backend
+    // (wallet ledger projection + delivery queue). The plugin renders the
+    // backend-supplied amounts verbatim as strings and never performs any
+    // arithmetic, currency conversion, caching, or local balance tracking.
+    // See ENTERPRISE_REDESIGN_PLAN_TH.md sections 14 and 20.
+    void IrisCommand(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode)
+    {
+        if (!Player)
+            return;
+
+        if (!CheckLicense(Player))
+            return;
+
+        uint64 SteamId = GetSteamId(Player);
+        std::string SteamIdStr = std::to_string(SteamId);
+
+        Log::GetLog()->info("Player {} used /iris companion command", SteamIdStr);
+
+        SendMessage(Player, L"IRIS Companion - fetching your wallet and deliveries...");
+
+        // 1) Wallet balance (read-only projection of the ledger).
+        Http->GetWalletBalance(SteamIdStr, [Player, SteamIdStr](bool Success, const nlohmann::json& Response) {
+            if (!Player)
+                return;
+
+            if (!Success || !Response.is_object())
+            {
+                std::string NotLinkedMsgStr = PluginConfig->GetMessage("NotLinked");
+                FString NotLinkedMsg = FString(ArkApi::Tools::Utf8Decode(NotLinkedMsgStr).c_str());
+                SendMessage(Player, NotLinkedMsg);
+                return;
+            }
+
+            try
+            {
+                // Per the wallet contract, balances are decimal STRINGS. Display verbatim;
+                // do not parse to a number or compute totals client-side.
+                std::string Currency = Response.value("currency", "IC");
+                std::string Available = "0";
+                std::string Total = "0";
+
+                if (Response.contains("accounts") && Response["accounts"].is_object())
+                {
+                    const auto& Accounts = Response["accounts"];
+                    Available = Accounts.value("available", std::string("0"));
+                }
+                Total = Response.value("total", Available);
+
+                std::string WalletLine = "IRIS Wallet: " + Available + " " + Currency +
+                    " available (total " + Total + " " + Currency + ")";
+                FString WalletMsg = FString(ArkApi::Tools::Utf8Decode(WalletLine).c_str());
+                SendMessage(Player, WalletMsg);
+            }
+            catch (const std::exception& e)
+            {
+                Log::GetLog()->warn("IrisCommand wallet parse error: {}", e.what());
+                SendMessage(Player, L"Wallet is temporarily unavailable. Please try again later.");
+            }
+        });
+
+        // 2) Pending deliveries (read-only count from the delivery queue projection).
+        Http->GetPendingDeliveries(SteamIdStr, [Player](bool Success, const nlohmann::json& Response) {
+            if (!Player)
+                return;
+
+            if (!Success || !Response.is_object())
+            {
+                // Non-fatal: the wallet line above already told the player something.
+                return;
+            }
+
+            try
+            {
+                int Pending = 0;
+                if (Response.contains("pending") && Response["pending"].is_number_integer())
+                {
+                    Pending = Response["pending"].get<int>();
+                }
+                else if (Response.contains("deliveries") && Response["deliveries"].is_array())
+                {
+                    Pending = static_cast<int>(Response["deliveries"].size());
+                }
+
+                FString Line;
+                if (Pending > 0)
+                {
+                    Line = L"Pending deliveries: " + FString::FromInt(Pending) +
+                        L" - type /claim to receive items or /claimdino for dinos.";
+                }
+                else
+                {
+                    Line = L"Pending deliveries: none.";
+                }
+                SendMessage(Player, Line);
+            }
+            catch (const std::exception& e)
+            {
+                Log::GetLog()->warn("IrisCommand pending-deliveries parse error: {}", e.what());
+            }
+        });
     }
 }
 }

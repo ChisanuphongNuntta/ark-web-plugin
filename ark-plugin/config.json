@@ -1,7 +1,8 @@
 {
   "HeartShop": {
     "ApiUrl": "https://localhost/api/plugin",
-    "ApiKey": "your-server-api-key-here",
+    "ApiKey": "your-server-hmac-secret-here",
+    "KeyId": "your-server-key-id-here",
     "ServerId": 1,
     "Security": {
       "AllowInvalidCertificates": false

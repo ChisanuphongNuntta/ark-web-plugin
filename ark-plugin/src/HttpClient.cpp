@@ -156,21 +156,37 @@ namespace
 
     bool IsSignedEndpoint(const std::string& Endpoint)
     {
+        // Companion read-only projections are signed plugin routes. They live under
+        // /player/{id}/... so we match the suffix; the bare legacy /player/{id} remains on
+        // the unsigned bearer path until CR-PLUGIN-006 migrates it.
+        const bool IsCompanion =
+            Endpoint.rfind("/player/", 0) == 0 &&
+            (Endpoint.size() >= 7 &&
+             (Endpoint.rfind("/wallet") == Endpoint.size() - 7 ||
+              Endpoint.rfind("/pending-deliveries") == Endpoint.size() - 19));
+
+        // Wallet event projection for notification sync is also a signed plugin route.
+        const bool IsWalletEvents = Endpoint.rfind("/wallet/events", 0) == 0;
+
         return Endpoint == "/heartbeat" ||
                Endpoint == "/deliveries/claim" ||
                Endpoint.rfind("/deliveries/", 0) == 0 ||
                Endpoint == "/market/prepare-lock" ||
-               Endpoint == "/market/confirm-lock";
+               Endpoint == "/market/confirm-lock" ||
+               IsCompanion ||
+               IsWalletEvents;
     }
 }
 
     HttpClient::HttpClient(
         const std::string& ApiUrl,
         const std::string& ApiKey,
+        const std::string& KeyId,
         int ServerId,
         bool AllowInvalidCertificates)
         : m_BaseUrl(ApiUrl)
         , m_ApiKey(ApiKey)
+        , m_KeyId(KeyId)
         , m_ServerId(ServerId)
         , m_AllowInvalidCertificates(AllowInvalidCertificates)
         , m_RequestState(std::make_shared<RequestState>())
@@ -232,6 +248,32 @@ namespace
     void HttpClient::GetPlayerInfo(const std::string& SteamId, HttpCallback Callback)
     {
         DoGet("/player/" + SteamId, Callback);
+    }
+
+    // Companion read-only projections. These are server-signed plugin routes (target of
+    // CR-PLUGIN-007 in the handoff). Until the backend exposes a dedicated companion
+    // endpoint, the caller (Companion command) reads balance/pending counts from the
+    // existing signed /player/{steamId} projection. The plugin only displays these values
+    // and never computes or stores balances locally.
+    void HttpClient::GetWalletBalance(const std::string& SteamId, HttpCallback Callback)
+    {
+        DoGet("/player/" + SteamId + "/wallet", Callback);
+    }
+
+    void HttpClient::GetPendingDeliveries(const std::string& SteamId, HttpCallback Callback)
+    {
+        DoGet("/player/" + SteamId + "/pending-deliveries", Callback);
+    }
+
+    void HttpClient::GetWalletEvents(const std::string& Since, HttpCallback Callback)
+    {
+        std::string Endpoint = "/wallet/events";
+        if (!Since.empty())
+        {
+            // Note: query values for this projection are simple ISO timestamps / cursors.
+            Endpoint += "?since=" + Since;
+        }
+        DoGet(Endpoint, Callback);
     }
 
     void HttpClient::ClaimDeliveries(int ServerId, HttpCallback Callback)
@@ -359,7 +401,8 @@ namespace
     void HttpClient::DoRequest(const std::string& Method, const std::string& Endpoint, const nlohmann::json& Body, HttpCallback Callback)
     {
         const std::string BaseUrl = m_BaseUrl;
-        const std::string ApiKey = m_ApiKey;
+        const std::string ApiKey = m_ApiKey;   // HMAC secret; used only to sign, never sent
+        const std::string KeyId = m_KeyId;      // sent in X-Plugin-Key-Id
         const int ServerId = m_ServerId;
         const bool AllowInvalidCertificates = m_AllowInvalidCertificates;
         const auto State = m_RequestState;
@@ -378,7 +421,7 @@ namespace
         // forever on an ActiveRequests count that has no worker.
         try
         {
-            std::thread([BaseUrl, ApiKey, ServerId, AllowInvalidCertificates, State, Method, Endpoint, Body, Callback]() {
+            std::thread([BaseUrl, ApiKey, KeyId, ServerId, AllowInvalidCertificates, State, Method, Endpoint, Body, Callback]() {
             struct RequestGuard
             {
                 std::shared_ptr<RequestState> State;
@@ -520,10 +563,16 @@ namespace
                         std::chrono::system_clock::now().time_since_epoch()).count();
                     std::string TimestampStr = std::to_string(Timestamp);
                     std::string ContentSha = CalculateSha256(BodyStr);
+                    // Canonical signing string is unchanged. The HMAC is computed with the
+                    // shared secret (ApiKey); the secret is NEVER placed in any header.
                     std::string CanonicalString = Method + "\n" + PathAndQuery + "\n" + TimestampStr + "\n" + Nonce + "\n" + ContentSha;
                     std::string Signature = CalculateHmacSha256(CanonicalString, ApiKey);
 
-                    std::wstring KeyIdHdr = L"X-Plugin-Key-Id: " + std::wstring(ApiKey.begin(), ApiKey.end());
+                    // X-Plugin-Key-Id carries the rotatable credential identifier ONLY. It is
+                    // not the secret and is safe to log. The backend resolves keyId -> secret
+                    // server-side to verify X-Signature. This closes the M1 HIGH finding where
+                    // the HMAC secret was transmitted as the key id on every signed request.
+                    std::wstring KeyIdHdr = L"X-Plugin-Key-Id: " + std::wstring(KeyId.begin(), KeyId.end());
                     WinHttpAddRequestHeaders(hRequest, KeyIdHdr.c_str(), -1, WINHTTP_ADDREQ_FLAG_ADD);
 
                     std::string PluginVersionStr = Version;
@@ -544,6 +593,11 @@ namespace
                 }
                 else
                 {
+                    // LEGACY unsigned path: endpoints not yet in the signed contract still use a
+                    // bearer X-API-Key. This transmits the secret on the wire and is the residual
+                    // M1 risk for /verify, /stats, /player/{id}, /protection/**, chat and market
+                    // plugin routes. Migrating these to hmacAuth requires a backend contract
+                    // change (see CR-PLUGIN-006 handoff); the plugin must not switch unilaterally.
                     std::wstring ApiKeyHeader = L"X-API-Key: " + std::wstring(ApiKey.begin(), ApiKey.end());
                     WinHttpAddRequestHeaders(hRequest, ApiKeyHeader.c_str(), -1, WINHTTP_ADDREQ_FLAG_ADD);
                 }

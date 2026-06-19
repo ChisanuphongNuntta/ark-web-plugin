@@ -89,6 +89,10 @@ namespace HeartShop
     std::string LastChatTimestamp = "";
     bool ChatEnabled = true;
 
+    // Wallet notification sync state
+    std::string LastWalletEventTimestamp = "";
+    WalletNotifications WalletNotifier;
+
     // Chat message callback function
     DECLARE_HOOK(AShooterGameMode_SendChatMessage, void, AShooterGameMode*, FString*, FString*, EChatSendMode::Type, bool, int, int);
 
@@ -171,6 +175,7 @@ namespace HeartShop
             Log::GetLog()->info("HeartShop: Creating HTTP client...");
             std::string apiUrl = PluginConfig ? PluginConfig->GetApiUrl() : "";
             std::string apiKey = PluginConfig ? PluginConfig->GetApiKey() : "";
+            std::string keyId = PluginConfig ? PluginConfig->GetKeyId() : "";
             int serverId = PluginConfig ? PluginConfig->GetServerId() : 1;
             bool allowInvalidCertificates = PluginConfig
                 ? PluginConfig->GetAllowInvalidCertificates()
@@ -178,6 +183,7 @@ namespace HeartShop
             Http = std::make_unique<HttpClient>(
                 apiUrl,
                 apiKey,
+                keyId,
                 serverId,
                 allowInvalidCertificates);
             Log::GetLog()->info("HeartShop: HTTP client created");
@@ -320,6 +326,34 @@ namespace HeartShop
             Log::GetLog()->error("Chat timer setup exception: {}", e.what());
         }
 
+        // STEP 6b: Setup Wallet Notification Sync Timer (every 5 seconds)
+        try
+        {
+            Log::GetLog()->info("HeartShop: Setting up wallet notification sync (every 5s)...");
+
+            ArkApi::GetCommands().AddOnTimerCallback(
+                L"HeartShop_PollWalletEvents",
+                [](){
+                    static int walletCounter = 0;
+                    walletCounter++;
+                    if (walletCounter >= 5) // Every 5 seconds
+                    {
+                        walletCounter = 0;
+                        if (LicenseVerified)
+                        {
+                            PollWalletNotifications();
+                        }
+                    }
+                }
+            );
+
+            Log::GetLog()->info("HeartShop: Wallet notification sync timer started");
+        }
+        catch (const std::exception& e)
+        {
+            Log::GetLog()->error("Wallet sync timer setup exception: {}", e.what());
+        }
+
         // STEP 7: Register Chat Hook
         try
         {
@@ -401,6 +435,7 @@ namespace HeartShop
         {
             ArkApi::GetCommands().RemoveOnTimerCallback(L"HeartShop_PollOrders");
             ArkApi::GetCommands().RemoveOnTimerCallback(L"HeartShop_PollChat");
+            ArkApi::GetCommands().RemoveOnTimerCallback(L"HeartShop_PollWalletEvents");
             Log::GetLog()->info("HeartShop: Timers removed");
         }
         catch (...) {}
@@ -764,6 +799,87 @@ namespace HeartShop
             catch (const std::exception& e)
             {
                 Log::GetLog()->warn("Error processing chat messages: {}", e.what());
+            }
+        });
+    }
+
+    void PollWalletNotifications()
+    {
+        Http->GetWalletEvents(LastWalletEventTimestamp, [](bool Success, const nlohmann::json& Response) {
+            if (!Success || !Response.is_object())
+            {
+                return; // Silent fail; this is a non-critical projection poll.
+            }
+
+            try
+            {
+                if (Response.contains("success") && !Response["success"].get<bool>())
+                {
+                    return;
+                }
+
+                if (!Response.contains("events") || !Response["events"].is_array())
+                {
+                    return;
+                }
+
+                for (const auto& Event : Response["events"])
+                {
+                    if (!Event.is_object())
+                        continue;
+
+                    // The backend wallet-events projection annotates each event with the
+                    // target playerSteamId for routing (additive field; see CR-PLUGIN-008).
+                    // The double-entry payload itself is keyed by the backend userId, also
+                    // annotated for matching.
+                    std::string PlayerSteamId = Event.value("playerSteamId", "");
+                    std::string UserId = Event.value("userId", "");
+                    if (PlayerSteamId.empty() || UserId.empty())
+                    {
+                        continue;
+                    }
+
+                    // WalletNotifier handles per-eventId idempotency + message formatting.
+                    // It surfaces only the entry belonging to this user and never computes
+                    // any balance locally.
+                    auto Notification = WalletNotifier.ConsumeEvent(Event, UserId);
+                    if (!Notification.has_value())
+                    {
+                        continue;
+                    }
+
+                    // Route to the matching online player only.
+                    uint64 TargetSteamId = 0;
+                    try
+                    {
+                        TargetSteamId = std::stoull(PlayerSteamId);
+                    }
+                    catch (...)
+                    {
+                        continue;
+                    }
+
+                    auto& Players = ArkApi::GetApiUtils().GetWorld()->PlayerControllerListField();
+                    for (int i = 0; i < Players.Num(); i++)
+                    {
+                        AShooterPlayerController* PC = static_cast<AShooterPlayerController*>(Players[i].Get());
+                        if (PC && GetSteamId(PC) == TargetSteamId)
+                        {
+                            FString Msg = FString(ArkApi::Tools::Utf8Decode(Notification->Message).c_str());
+                            SendMessage(PC, Msg);
+                            break;
+                        }
+                    }
+                }
+
+                if (Response.contains("lastTimestamp") && !Response["lastTimestamp"].is_null())
+                {
+                    LastWalletEventTimestamp = Response["lastTimestamp"].get<std::string>();
+                }
+            }
+            catch (const std::exception& e)
+            {
+                Log::GetLog()->warn("Error processing wallet events: {}", e.what());
             }
         });
     }

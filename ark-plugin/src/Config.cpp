@@ -50,6 +50,32 @@ namespace HeartShop
 
             m_ApiKey = Config.value("ApiKey", "");
             m_ServerId = Config.value("ServerId", 1);
+
+            // X-Plugin-Key-Id is a rotatable, loggable credential identifier that is
+            // strictly separate from the HMAC secret (ApiKey). The secret must NEVER be
+            // transmitted on the wire. When KeyId is not explicitly configured we derive a
+            // non-secret, stable placeholder from the server id instead of falling back to
+            // the secret value. Operators should configure an explicit KeyId issued with the
+            // credential so the backend can resolve keyId -> secret and support rotation.
+            m_KeyId = Config.value("KeyId", "");
+            if (m_KeyId.empty())
+            {
+                m_KeyId = "server-" + std::to_string(m_ServerId);
+                Log::GetLog()->warn(
+                    "HeartShop KeyId is not configured; using non-secret placeholder '{}'. "
+                    "Configure a backend-issued KeyId to enable credential rotation. "
+                    "The HMAC secret is never sent on the wire.",
+                    m_KeyId);
+            }
+            if (m_KeyId == m_ApiKey && !m_ApiKey.empty())
+            {
+                // Guard against an operator pasting the secret into KeyId, which would
+                // leak the secret in every signed request and in logs.
+                Log::GetLog()->error(
+                    "HeartShop KeyId must not equal the HMAC secret (ApiKey); "
+                    "refusing to transmit the secret as a key id");
+                return false;
+            }
             m_AllowInvalidCertificates = Config.value("Security", nlohmann::json::object())
                 .value("AllowInvalidCertificates", false);
 
@@ -70,6 +96,7 @@ namespace HeartShop
             Log::GetLog()->info("Config loaded successfully");
             Log::GetLog()->info("  API URL: {}", m_ApiUrl);
             Log::GetLog()->info("  Server ID: {}", m_ServerId);
+            Log::GetLog()->info("  Plugin Key Id: {}", m_KeyId);
             Log::GetLog()->info("  Poll Interval: {}s", m_PollInterval);
             if (m_AllowInvalidCertificates)
             {

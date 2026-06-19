@@ -20,6 +20,8 @@ set(SOURCES
     src/GameThreadDispatcher.h
     src/DeliveryJournal.cpp
     src/DeliveryJournal.h
+    src/WalletNotifications.cpp
+    src/WalletNotifications.h
     src/Config.cpp
     src/Config.h
     src/Protection.cpp
@@ -102,4 +104,18 @@ if(BUILD_TESTING)
         target_link_options(DeliveryJournalTests PRIVATE /Brepro)
     endif()
     add_test(NAME DeliveryJournalTests COMMAND DeliveryJournalTests)
+
+    add_executable(WalletNotificationsTests
+        tests/WalletNotificationsTests.cpp
+        src/WalletNotifications.cpp
+        src/WalletNotifications.h
+    )
+    target_include_directories(WalletNotificationsTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/json-3.12.0/single_include
+    )
+    if(MSVC)
+        target_compile_options(WalletNotificationsTests PRIVATE /utf-8)
+        target_link_options(WalletNotificationsTests PRIVATE /Brepro)
+    endif()
+    add_test(NAME WalletNotificationsTests COMMAND WalletNotificationsTests)
 endif()
