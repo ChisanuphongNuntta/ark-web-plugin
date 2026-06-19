@@ -24,9 +24,12 @@ router.post('/unlink-epic', authenticate as any, authController.unlinkEpic as an
 // Unlink Discord
 router.post('/unlink-discord', authenticate as any, authController.unlinkDiscord as any);
 
-// Device Sessions
+// Device Sessions (list includes risk-based login flags)
 router.get('/sessions', authenticate as any, authController.listSessions as any);
 router.delete('/sessions/:id', authenticate as any, authController.revokeSession as any);
+
+// Account recovery (proof-of-control challenge; stub). Public: must not require an active session.
+router.post('/recovery', authController.requestRecovery as any);
 
 // Get current user
 router.get('/me', authenticate as any, authController.getCurrentUser as any);

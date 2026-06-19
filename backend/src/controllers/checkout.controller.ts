@@ -228,18 +228,11 @@ export class CheckoutController {
           });
           orderIds.push(order.id);
 
-          // For backward compatibility, record PointTransaction log
-          const currentUser = await tx.user.findUniqueOrThrow({ where: { id: session.userId } });
-          await tx.pointTransaction.create({
-            data: {
-              userId: session.userId,
-              amount: -totalPrice,
-              balanceAfter: currentUser.pointsBalance,
-              type: 'purchase',
-              description: `Purchased ${item.name} x${item.quantity}`,
-              referenceId: order.id,
-            },
-          });
+          // NOTE: No legacy PointTransaction is written here. The IRIS Wallet double-entry
+          // ledger (the walletService.post above) is the SINGLE source of truth for money
+          // movement. User.pointsBalance is a read-only projection of the available ledger
+          // account, kept in sync inside walletService.post. Writing a second PointTransaction
+          // ledger would re-introduce the dual-write/divergence problem M2 removes.
 
           // Queue DeliveryJob
           const payload = {

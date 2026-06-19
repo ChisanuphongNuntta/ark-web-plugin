@@ -255,5 +255,50 @@ describe('Cart & Checkout System', () => {
         totalSpent: '200',
       });
     });
+
+    it('does NOT write a legacy PointTransaction (ledger is the single source of truth)', async () => {
+      const mockSession = {
+        id: 'cs2',
+        userId: 'u1',
+        totalAmount: 100n,
+        status: 'pending',
+        expiresAt: new Date(Date.now() + 100000),
+        cartSnapshot: [
+          { productId: 1, serverId: 1, quantity: 1, price: 100, name: 'Rifle', itemBlueprint: 'bp', quality: 1, isBlueprint: false },
+        ],
+      };
+
+      db.checkoutSession.findUnique.mockResolvedValueOnce(mockSession);
+
+      const mockTx: any = {
+        user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'u1', steamId: 'steam-123' }) },
+        product: {
+          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'Rifle', isActive: true, stock: 10, maxPerUser: null }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        order: { create: vi.fn().mockResolvedValue({ id: 'o2' }) },
+        pointTransaction: { create: vi.fn().mockResolvedValue({}) },
+        deliveryJob: { create: vi.fn().mockResolvedValue({}) },
+        cartItem: { deleteMany: vi.fn().mockResolvedValue({}) },
+        checkoutSession: { update: vi.fn().mockResolvedValue({}) },
+        $queryRaw: vi.fn().mockResolvedValue([]),
+      };
+
+      db.$transaction.mockImplementationOnce((callback: any) => callback(mockTx));
+
+      const req: any = { user: { id: 'u1' }, params: { id: 'cs2' } };
+      const res: any = { json: vi.fn() };
+      const next = vi.fn();
+
+      await checkoutController.commitCheckoutSession(req, res, next);
+
+      // The legacy dual-write ledger must be gone.
+      expect(mockTx.pointTransaction.create).not.toHaveBeenCalled();
+      // The wallet double-entry ledger is still the money record.
+      expect(vi.mocked(walletService.post)).toHaveBeenCalledWith(expect.objectContaining({
+        idempotencyKey: 'checkout:commit:cs2',
+        type: 'checkout_purchase',
+      }), mockTx);
+    });
   });
 });

@@ -1,0 +1,38 @@
+{
+  "userId": "b3f1c2a4-1111-4d2e-9a8b-000000000001",
+  "identities": [
+    {
+      "provider": "discord",
+      "providerAccountId": "284736510028374016",
+      "displayName": "IrisPlayerOne",
+      "linkedAt": "2026-05-01T09:12:00.000Z",
+      "proofMethod": "discord_oauth",
+      "isPrimary": true,
+      "canUnlink": true
+    },
+    {
+      "provider": "steam",
+      "providerAccountId": "76561198000000001",
+      "displayName": null,
+      "linkedAt": "2026-05-03T14:40:00.000Z",
+      "proofMethod": "steam_openid",
+      "isPrimary": false,
+      "canUnlink": true
+    },
+    {
+      "provider": "epic",
+      "providerAccountId": null,
+      "displayName": null,
+      "linkedAt": null,
+      "proofMethod": null,
+      "isPrimary": false,
+      "canUnlink": false
+    }
+  ],
+  "rules": {
+    "autoMergeByEmailOrName": false,
+    "proofOfControlRequired": true,
+    "minimumLinkedProviders": 1,
+    "note": "At least one provider must remain linked. Linking always requires proof-of-control; email/name are never used to merge accounts."
+  }
+}

@@ -164,6 +164,10 @@ export class WalletService {
         await tx.ledgerEntry.create({
           data: { transactionId: transaction.id, accountId: account.id, amount: entry.amount, balanceAfter: current.balance },
         });
+        // User.pointsBalance is a READ-ONLY PROJECTION of the available WalletAccount.
+        // The double-entry ledger is the single source of truth; this keeps the cached
+        // projection in sync inside the same atomic transaction. Nothing else may write
+        // pointsBalance for wallet movements that flow through the ledger.
         if (current.userId && current.type === WalletAccountType.available) {
           await tx.user.update({ where: { id: current.userId }, data: { pointsBalance: current.balance } });
         }
@@ -211,6 +215,45 @@ export class WalletService {
         { accountKey: userAccountKey(userId, 'held'), amount },
       ],
     });
+  }
+
+  // Recompute the available-account balance directly from immutable ledger entries.
+  // This is the authoritative projection source: sum of all LedgerEntry.amount for the
+  // user's available account. Used to prove that the cached balance/pointsBalance is correct.
+  async ledgerProjectionForAvailable(
+    userId: string,
+    client: Prisma.TransactionClient | typeof prisma = prisma,
+  ): Promise<bigint> {
+    const aggregate = await client.ledgerEntry.aggregate({
+      where: { account: { userId, type: WalletAccountType.available, currency: 'IC' } },
+      _sum: { amount: true },
+    });
+    return aggregate._sum.amount ?? 0n;
+  }
+
+  // Verify that the read-only projection (User.pointsBalance and WalletAccount.balance)
+  // exactly equals the value rebuilt from the immutable ledger. Returns the three views so
+  // callers/tests can assert equality. Throws 404 if the user has no available account yet.
+  async verifyProjection(userId: string): Promise<{
+    pointsBalance: bigint;
+    accountBalance: bigint;
+    ledgerProjection: bigint;
+    matches: boolean;
+  }> {
+    const [user, account, ledgerProjection] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { pointsBalance: true } }),
+      prisma.walletAccount.findUnique({ where: { key: userAccountKey(userId, 'available') }, select: { balance: true } }),
+      this.ledgerProjectionForAvailable(userId),
+    ]);
+    if (!user) throw new AppError('User not found', 404);
+    if (!account) throw new AppError('Wallet account not found', 404);
+
+    return {
+      pointsBalance: user.pointsBalance,
+      accountBalance: account.balance,
+      ledgerProjection,
+      matches: user.pointsBalance === account.balance && account.balance === ledgerProjection,
+    };
   }
 }
 

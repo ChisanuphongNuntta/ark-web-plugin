@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import userApiRoutes from './routes/user-api.routes.js';
 import productRoutes from './routes/product.routes.js';
+import serverRoutes from './routes/server.routes.js';
 import orderRoutes from './routes/order.routes.js';
 import pluginRoutes from './routes/plugin.routes.js';
 import adminRoutes from './routes/admin.routes.js';
@@ -88,6 +89,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/user', userApiRoutes); // User API Key Management
 app.use('/api/products', productRoutes);
+app.use('/api/servers', serverRoutes); // Public server directory (ServerStatus, isOnline derived from lastHeartbeat)
 app.use('/api/orders', orderRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/cart', cartRoutes);

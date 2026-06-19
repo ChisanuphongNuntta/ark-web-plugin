@@ -60,6 +60,12 @@ paths:
     post:
       operationId: linkSteam
       tags: [Auth]
+      description: >-
+        Link a Steam identity to the authenticated IRIS ID. Linking requires
+        proof-of-control of the provider (Steam OpenID assertion verified server-side or via
+        the provider callback). IRIS ID NEVER auto-merges accounts by email or display name.
+        `proof` is optional in development (the verified callback cookie is used) but REQUIRED
+        in production.
       security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       requestBody:
         required: true
@@ -70,6 +76,7 @@ paths:
               required: [steamId]
               properties:
                 steamId: { type: string }
+                proof: { $ref: '#/components/schemas/LinkProof' }
       responses:
         '200':
           description: Steam account linked successfully.
@@ -89,6 +96,10 @@ paths:
     post:
       operationId: linkEpic
       tags: [Auth]
+      description: >-
+        Link an Epic Games identity to the authenticated IRIS ID. Requires proof-of-control
+        of the provider (Epic OAuth verified server-side). IRIS ID NEVER auto-merges accounts
+        by email or display name. `proof` is optional in development but REQUIRED in production.
       security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       requestBody:
         required: true
@@ -99,6 +110,7 @@ paths:
               required: [epicId]
               properties:
                 epicId: { type: string }
+                proof: { $ref: '#/components/schemas/LinkProof' }
       responses:
         '200':
           description: Epic Games account linked successfully.
@@ -128,15 +140,19 @@ paths:
     get:
       operationId: listSessions
       tags: [Auth]
+      description: >-
+        Active device sessions for the user. Each item carries risk-based login flags derived
+        from the requesting device: `isCurrent`, `riskFlag` (true on a new IP/device), and
+        `riskReasons`. The frontend can surface a security prompt for any flagged session.
       security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       responses:
         '200':
-          description: Active sessions for the user.
+          description: Active sessions for the user, with derived risk flags.
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/UserSession' }
+                items: { $ref: '#/components/schemas/SessionWithRisk' }
         '401': { $ref: '#/components/responses/Unauthorized' }
   /auth/sessions/{id}:
     delete:
@@ -150,6 +166,27 @@ paths:
           description: Session revoked successfully.
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /auth/recovery:
+    post:
+      operationId: requestRecovery
+      tags: [Auth]
+      description: >-
+        Start an account recovery. STUB: schema-complete, provider proof verification lands in
+        a later milestone. Recovery is ALWAYS a proof-of-control challenge against a still-linked
+        provider; accounts are never recovered or merged by email/display name. The endpoint is
+        intentionally non-enumerating (it does not confirm whether an account exists).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecoveryRequest' }
+      responses:
+        '202':
+          description: Recovery ticket accepted; proof-of-control required to continue.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecoveryTicket' }
+        '400': { $ref: '#/components/responses/BadRequest' }
   /plugin/heartbeat:
     post:
       operationId: pluginHeartbeat
@@ -541,7 +578,51 @@ components:
       type: apiKey
       in: header
       name: X-Signature
-      description: HMAC-SHA256 signature verification using the plugin credentials.
+      description: >-
+        Signed plugin request authentication (HMAC-SHA256). The signature is carried in
+        `X-Signature` and is computed over a canonical string with the per-credential HMAC
+        secret. The signing IDENTITY and the signing SECRET are two distinct values:
+
+
+        Headers (all required):
+
+        - `X-Plugin-Key-Id`: the credential identifier. It IDENTIFIES which signing secret to
+          use; it is NOT itself the secret and is safe to log. It is rotatable and revocable
+          independently of the secret.
+
+        - `X-Plugin-Version`: plugin build/version string (compatibility + telemetry).
+
+        - `X-Request-Timestamp`: unix epoch milliseconds. Requests outside the clock-skew
+          window (+/- 5 minutes / 300000 ms) are rejected.
+
+        - `X-Request-Nonce`: >= 16 chars, single-use; replays within the skew window are
+          rejected (nonce cache).
+
+        - `X-Content-Sha256`: hex SHA-256 of the exact JSON request body ('' when no body).
+
+        - `X-Signature`: `HMAC_SHA256(secret, canonicalString)` as lowercase hex, where
+          `canonicalString = METHOD \n PATH_AND_QUERY \n TIMESTAMP \n NONCE \n CONTENT_SHA256`.
+
+        - `X-Server-Id`: target server id (also accepted via `?serverId=` or body.serverId).
+
+
+        Key id vs secret (issuance / rotation):
+
+        - Each server credential is issued as a pair `{ keyId, secret }`. The plugin stores the
+          secret securely and sends only `keyId` on the wire (in `X-Plugin-Key-Id`); the secret
+          is never transmitted.
+
+        - The backend resolves `keyId -> secret` server-side to verify `X-Signature`.
+
+        - Rotation: a new `{ keyId, secret }` may be issued and the plugin switches to the new
+          keyId; the previous keyId can be revoked without changing any other credential. During
+          an overlap window both keyIds may be valid to allow zero-downtime rotation.
+
+        - Clock skew: verifiers must allow +/- 300000 ms drift on `X-Request-Timestamp`.
+
+        NOTE: the live verifier currently keys the HMAC by the plain credential value rather
+        than resolving keyId->secret; treat the keyId/secret separation above as the contract
+        target the live middleware migrates to (additive, no wire-format change).
   responses:
     Unauthorized:
       description: Authentication required
@@ -575,6 +656,55 @@ components:
         createdAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
         lastUsedAt: { type: string, format: date-time }
+    SessionWithRisk:
+      allOf:
+        - { $ref: '#/components/schemas/UserSession' }
+        - type: object
+          required: [isCurrent, riskFlag, riskReasons]
+          properties:
+            isCurrent:
+              type: boolean
+              description: True when this session matches the requesting device's IP and user-agent.
+            riskFlag:
+              type: boolean
+              description: Risk-based login flag — true when a non-current session is on a new IP or new device.
+            riskReasons:
+              type: array
+              items: { type: string, enum: [new_ip, new_device] }
+    LinkProof:
+      type: object
+      description: >-
+        Proof-of-control material for account linking. `method` declares how control was
+        proven. email/name/username are explicitly rejected — IRIS ID never merges by identity
+        attributes. Method-specific verified fields (e.g. claimedId, verified token reference)
+        may accompany `method` as additional properties.
+      required: [method]
+      properties:
+        method:
+          type: string
+          enum: [steam_openid, epic_oauth, discord_oauth, provider_callback]
+      additionalProperties: true
+    RecoveryRequest:
+      type: object
+      required: [provider, providerAccountId]
+      properties:
+        provider: { type: string, enum: [discord, steam, epic] }
+        providerAccountId:
+          type: string
+          description: The provider-side account id the user claims; existence is never confirmed in the response.
+        contactChannel:
+          type: [string, 'null']
+          description: Optional channel hint for delivering the challenge; never used to auto-merge accounts.
+    RecoveryTicket:
+      type: object
+      required: [status, recoveryTicketId, provider, challengeNonce, expiresAt]
+      properties:
+        status: { type: string, const: pending_proof_of_control }
+        recoveryTicketId: { type: string }
+        provider: { type: string, enum: [discord, steam, epic] }
+        challengeNonce: { type: string }
+        instructions: { type: string }
+        expiresAt: { type: string, format: date-time }
     HeartbeatRequest:
       type: object
       required: [playerCount, pluginVersion, buildSha256, arkApiVersion, capabilities, queueDepth, circuitBreakerState]

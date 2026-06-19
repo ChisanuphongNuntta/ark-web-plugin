@@ -109,6 +109,7 @@ vi.mock('../src/config/database.js', () => ({
     },
     ledgerEntry: {
       create: vi.fn(),
+      aggregate: vi.fn(),
     },
     userSession: {
       findUnique: vi.fn(),

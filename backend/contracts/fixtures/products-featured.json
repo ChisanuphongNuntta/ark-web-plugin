@@ -37,24 +37,6 @@
       "category": { "id": 2, "name": "อาวุธ", "icon": "⚔️" }
     },
     {
-      "id": 3,
-      "name": "Mastercraft Riot Helmet",
-      "description": "หมวกกันน็อค Mastercraft ป้องกันการบาดเจ็บที่ศีรษะระดับสูง",
-      "price": 350,
-      "itemBlueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Items/Armor/Riot/PrimalItemArmor_RiotHelmet.PrimalItemArmor_RiotHelmet'",
-      "quantity": 1,
-      "quality": 4,
-      "isBlueprint": true,
-      "imageUrl": null,
-      "isActive": true,
-      "isFeatured": false,
-      "sortOrder": 3,
-      "maxPerUser": null,
-      "stock": null,
-      "categoryId": 3,
-      "category": { "id": 3, "name": "เกราะ", "icon": "🛡️" }
-    },
-    {
       "id": 4,
       "name": "Rex Level 300 (Bred)",
       "description": "ไดโนเสาร์ Rex ที่ได้รับการเพาะพันธุ์ระดับ 300 พร้อม Stats สูงสุด เหมาะสำหรับการล่าบอสทุกประเภท",
@@ -71,48 +53,6 @@
       "stock": 5,
       "categoryId": 1,
       "category": { "id": 1, "name": "ไดโนเสาร์", "icon": "🦕" }
-    },
-    {
-      "id": 5,
-      "name": "Argentavis Level 250",
-      "description": "นกยักษ์ Argentavis ความเร็วในการบินสูง เหมาะสำหรับการขนส่งระยะไกล",
-      "price": 3500,
-      "itemBlueprint": "Blueprint'/Game/PrimalEarth/Dinos/Argentavis/Argent_Character_BP.Argent_Character_BP'",
-      "quantity": 1,
-      "quality": 3,
-      "isBlueprint": false,
-      "imageUrl": null,
-      "isActive": true,
-      "isFeatured": false,
-      "sortOrder": 5,
-      "maxPerUser": null,
-      "stock": 12,
-      "categoryId": 1,
-      "category": { "id": 1, "name": "ไดโนเสาร์", "icon": "🦕" }
-    },
-    {
-      "id": 6,
-      "name": "Element x500",
-      "description": "ทรัพยากร Element จำนวน 500 หน่วย สำหรับสร้างอุปกรณ์ Tek ระดับสูง",
-      "price": 2000,
-      "itemBlueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Resources/PrimalItemResource_Element.PrimalItemResource_Element'",
-      "quantity": 500,
-      "quality": 0,
-      "isBlueprint": false,
-      "imageUrl": null,
-      "isActive": true,
-      "isFeatured": false,
-      "sortOrder": 6,
-      "maxPerUser": null,
-      "stock": null,
-      "categoryId": 4,
-      "category": { "id": 4, "name": "ทรัพยากร", "icon": "💎" }
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 6,
-    "totalPages": 1
-  }
+  ]
 }
