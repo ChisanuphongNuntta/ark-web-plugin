@@ -31,10 +31,8 @@ export interface Category {
 }
 
 /**
- * Catalog product. Contract field is `itemBlueprint`.
- * NOTE: fixtures/products.json currently ships `blueprint` instead of
- * `itemBlueprint` — both are typed optional here so existing UI keeps
- * working while Backend reconciles the field name. (flagged in handoff)
+ * Catalog product. Contract field is `itemBlueprint` (matches openapi.yaml
+ * Product.itemBlueprint, the live API, and fixtures/products.json).
  */
 export interface Product {
   id: number;
@@ -44,7 +42,10 @@ export interface Product {
   /** Iris Coin price — INTEGER per contract. */
   price: number;
   itemBlueprint?: string | null;
-  /** Legacy/fixture alias of itemBlueprint — see note above. */
+  /**
+   * @deprecated Legacy alias of `itemBlueprint`. Kept optional only so any
+   * not-yet-migrated caller still type-checks; read `itemBlueprint`.
+   */
   blueprint?: string | null;
   quantity: number;
   quality: number;
@@ -185,4 +186,66 @@ export interface LedgerTransaction {
 export interface WalletTransactionsResponse {
   transactions: LedgerTransaction[];
   pagination: Pagination;
+}
+
+/* ---------------------------- IRIS ID / Auth ---------------------------- */
+
+export type IdentityProvider = 'discord' | 'steam' | 'epic';
+
+/** Proof-of-control methods accepted by the backend for linking. */
+export type LinkProofMethod =
+  | 'steam_openid'
+  | 'epic_oauth'
+  | 'discord_oauth'
+  | 'provider_callback';
+
+/**
+ * One row of the Account Center linked-identities view
+ * (fixtures/linked-identities.json). A provider with a null
+ * providerAccountId / linkedAt is NOT linked yet.
+ */
+export interface LinkedIdentity {
+  provider: IdentityProvider;
+  providerAccountId: string | null;
+  displayName: string | null;
+  linkedAt: string | null;
+  proofMethod: LinkProofMethod | null;
+  isPrimary: boolean;
+  /** Backend-decided: false when unlinking would break the minimum-linked rule. */
+  canUnlink: boolean;
+}
+
+export interface IdentityRules {
+  autoMergeByEmailOrName: boolean;
+  proofOfControlRequired: boolean;
+  minimumLinkedProviders: number;
+  note?: string;
+}
+
+/** GET (Account Center linked-identities view). */
+export interface LinkedIdentitiesResponse {
+  userId: string;
+  identities: LinkedIdentity[];
+  rules: IdentityRules;
+}
+
+/** Risk-based login reasons surfaced per session. */
+export type SessionRiskReason = 'new_ip' | 'new_device';
+
+/**
+ * GET /auth/sessions item. Extends the base UserSession with derived
+ * risk flags (openapi.yaml SessionWithRisk).
+ */
+export interface SessionWithRisk {
+  id: string;
+  token: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  isActive?: boolean;
+  createdAt: string;
+  expiresAt: string;
+  lastUsedAt?: string;
+  isCurrent: boolean;
+  riskFlag: boolean;
+  riskReasons: SessionRiskReason[];
 }

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useQueries } from '@tanstack/react-query';
-import { useCartStore } from '@/lib/store';
+import { useCartStore, cartLineKey } from '@/lib/store';
 import { productApi } from '@/lib/api';
 import { X, ShoppingBag, Trash2, Plus, Minus, ArrowRight, Coins, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +24,7 @@ export function CartDrawer() {
   // Fetch product data for all cart items in parallel
   const productQueries = useQueries({
     queries: items.map((item) => ({
-      queryKey: ['product-drawer', item.productId],
+      queryKey: ['product-drawer', item.productId, item.serverId],
       queryFn: () =>
         productApi.getById(item.productId).then((res) => (res.data.product ?? res.data) as CartProduct),
       staleTime: 5 * 60 * 1000,
@@ -110,9 +110,11 @@ export function CartDrawer() {
                   const query = productQueries[index];
                   const product = query?.data;
 
+                  const lineKey = cartLineKey(item.productId, item.serverId);
+
                   if (query?.isLoading) {
                     return (
-                      <div key={item.productId} className="p-3 bg-white/2 border border-white/5 rounded-2xl flex items-center gap-3">
+                      <div key={lineKey} className="p-3 bg-white/2 border border-white/5 rounded-2xl flex items-center gap-3">
                         <Loader2 className="h-4 w-4 animate-spin text-iris-cyan" />
                         <span className="text-xs text-iris-muted">กำลังดึงข้อมูล...</span>
                       </div>
@@ -123,7 +125,7 @@ export function CartDrawer() {
 
                   return (
                     <article
-                      key={item.productId}
+                      key={lineKey}
                       className="p-3.5 bg-black/30 border border-white/5 rounded-2xl flex gap-3.5 items-center relative overflow-hidden group hover:border-white/10 transition"
                     >
                       {/* Product image */}
@@ -143,28 +145,29 @@ export function CartDrawer() {
                           <Coins className="h-3.5 w-3.5" />
                           <span>{product.price.toLocaleString()} IC</span>
                         </div>
+                        <p className="mt-1 text-[9px] font-mono text-iris-muted">เซิร์ฟเวอร์ #{item.serverId}</p>
                       </div>
 
                       {/* Actions & Count controller */}
                       <div className="flex flex-col items-end gap-2 shrink-0">
                         <button
-                          onClick={() => removeItem(item.productId)}
+                          onClick={() => removeItem(item.productId, item.serverId)}
                           className="text-iris-muted hover:text-rose-400 p-1 rounded-full transition"
                           aria-label="ลบออกจากตะกร้า"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
-                        
+
                         <div className="flex items-center bg-black/40 border border-white/10 rounded-full h-7">
                           <button
-                            onClick={() => setQuantity(item.productId, item.quantity - 1)}
+                            onClick={() => setQuantity(item.productId, item.serverId, item.quantity - 1)}
                             className="w-7 h-full flex items-center justify-center text-iris-muted hover:text-white"
                           >
                             <Minus className="h-3 w-3" />
                           </button>
                           <span className="min-w-6 text-center font-mono text-[11px] font-bold text-iris-pearl">{item.quantity}</span>
                           <button
-                            onClick={() => setQuantity(item.productId, item.quantity + 1)}
+                            onClick={() => setQuantity(item.productId, item.serverId, item.quantity + 1)}
                             className="w-7 h-full flex items-center justify-center text-iris-muted hover:text-white"
                           >
                             <Plus className="h-3 w-3" />

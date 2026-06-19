@@ -39,7 +39,8 @@ interface Product {
   id: number;
   name: string;
   description: string | null;
-  blueprint: string | null;
+  /** Contract field (openapi.yaml Product.itemBlueprint). */
+  itemBlueprint?: string | null;
   price: number;
   imageUrl: string | null;
   quantity: number;
@@ -279,7 +280,12 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    addItem(product.id, qty);
+    if (selectedServerId === null) {
+      setCartFeedback('idle');
+      return;
+    }
+    // Cart lines are keyed by (productId, serverId).
+    addItem(product.id, selectedServerId, qty);
     setCartFeedback('added');
     setTimeout(() => setCartFeedback('idle'), 2500);
   };
@@ -429,14 +435,14 @@ export default function ProductDetailPage() {
           </GlassCard>
 
           {/* Blueprint info */}
-          {product.blueprint && (
+          {product.itemBlueprint && (
             <GlassCard variant="flat" className="p-4">
               <div className="flex items-start gap-2">
                 <Info className="h-3.5 w-3.5 text-iris-muted shrink-0 mt-0.5" />
                 <div className="min-w-0">
                   <p className="text-[9px] font-bold text-iris-muted uppercase tracking-wider mb-1">ARK Item Class</p>
                   <code className="text-[9px] font-mono text-iris-cyan/80 break-all leading-relaxed">
-                    {product.blueprint}
+                    {product.itemBlueprint}
                   </code>
                 </div>
               </div>

@@ -24,6 +24,8 @@ import {
   checkoutSessionFixture,
   walletBalanceFixture,
   walletTransactionsFixture,
+  linkedIdentitiesFixture,
+  sessionsFixture,
 } from './fixtures';
 import type {
   Cart,
@@ -36,6 +38,9 @@ import type {
   WalletTransactionsResponse,
   CategoriesResponse,
   FeaturedResponse,
+  LinkedIdentitiesResponse,
+  SessionWithRisk,
+  LinkProofMethod,
 } from './types';
 
 type FixtureMode = 'always' | 'never' | 'auto';
@@ -194,5 +199,106 @@ export const walletContractApi = {
           .get('/wallet/transactions', { params: { page, limit } })
           .then((r) => r.data),
       walletTransactionsFixture
+    ),
+};
+
+/* ---------------------------- IRIS ID / Auth ---------------------------- */
+
+export interface LinkInput {
+  /** Steam: 64-bit id. Epic: account id. Discord cannot be linked here (signup provider). */
+  accountId: string;
+  /**
+   * Proof-of-control material. Optional in dev (verified callback cookie is
+   * used); REQUIRED in production. IRIS ID never merges by email/display name.
+   */
+  proof?: { method: LinkProofMethod; [k: string]: unknown };
+}
+
+/**
+ * Mutate the fixture identities snapshot so the UI shows a result while the
+ * live API is unavailable. Pure: returns a new object, never touches the
+ * shared fixture. The backend remains authoritative for real link/unlink.
+ */
+function projectIdentities(
+  mutate: (next: LinkedIdentitiesResponse) => void
+): LinkedIdentitiesResponse {
+  const next: LinkedIdentitiesResponse = {
+    userId: linkedIdentitiesFixture.userId,
+    rules: { ...linkedIdentitiesFixture.rules },
+    identities: linkedIdentitiesFixture.identities.map((i) => ({ ...i })),
+  };
+  mutate(next);
+  return next;
+}
+
+export const identityApi = {
+  /** Account Center linked-identities view. */
+  getIdentities: (): Promise<LinkedIdentitiesResponse> =>
+    withFixture(
+      // No dedicated GET in the contract yet — /auth/me carries linked ids.
+      // Flagged in handoff: a GET /auth/identities matching this shape is desired.
+      () => api.get('/auth/me').then((r) => r.data.identities ?? linkedIdentitiesFixture),
+      linkedIdentitiesFixture
+    ),
+
+  /**
+   * Link a provider. Routes to the contract endpoint for the provider
+   * (POST /auth/link-steam | /auth/link-epic). Discord is not linkable here.
+   */
+  link: (
+    provider: 'steam' | 'epic',
+    input: LinkInput
+  ): Promise<LinkedIdentitiesResponse> => {
+    const path = provider === 'steam' ? '/auth/link-steam' : '/auth/link-epic';
+    const body =
+      provider === 'steam'
+        ? { steamId: input.accountId, proof: input.proof }
+        : { epicId: input.accountId, proof: input.proof };
+    return withFixture(
+      () => api.post(path, body).then((r) => r.data),
+      projectIdentities((next) => {
+        const row = next.identities.find((i) => i.provider === provider);
+        if (row) {
+          row.providerAccountId = input.accountId;
+          row.displayName = input.accountId;
+          row.linkedAt = new Date().toISOString();
+          row.proofMethod = input.proof?.method ?? (provider === 'steam' ? 'steam_openid' : 'epic_oauth');
+          row.canUnlink = true;
+        }
+      })
+    );
+  },
+
+  /**
+   * Unlink a provider (POST /auth/unlink-steam | /auth/unlink-epic |
+   * /auth/unlink-discord). Backend enforces the minimum-linked rule and
+   * rejects with 400 when unlinking is not allowed.
+   */
+  unlink: (provider: 'steam' | 'epic' | 'discord'): Promise<LinkedIdentitiesResponse> => {
+    const path = `/auth/unlink-${provider}`;
+    return withFixture(
+      () => api.post(path).then((r) => r.data),
+      projectIdentities((next) => {
+        const row = next.identities.find((i) => i.provider === provider);
+        if (row) {
+          row.providerAccountId = null;
+          row.displayName = null;
+          row.linkedAt = null;
+          row.proofMethod = null;
+          row.canUnlink = false;
+        }
+      })
+    );
+  },
+
+  /** GET /auth/sessions -> SessionWithRisk[] (risk flags derived per device). */
+  listSessions: (): Promise<SessionWithRisk[]> =>
+    withFixture(() => api.get('/auth/sessions').then((r) => r.data), sessionsFixture),
+
+  /** DELETE /auth/sessions/{id} -> revoke a session. */
+  revokeSession: (id: string): Promise<{ success: boolean }> =>
+    withFixture(
+      () => api.delete(`/auth/sessions/${id}`).then((r) => r.data),
+      { success: true }
     ),
 };

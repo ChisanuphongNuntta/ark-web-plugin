@@ -11,7 +11,8 @@ interface Product {
   id: number;
   name: string;
   description: string | null;
-  blueprint: string | null;
+  /** Contract field (openapi.yaml Product.itemBlueprint). */
+  itemBlueprint?: string | null;
   price: number;
   imageUrl: string | null;
   quantity: number;

@@ -18,6 +18,8 @@ import type {
   WalletTransactionsResponse,
   CategoriesResponse,
   FeaturedResponse,
+  LinkedIdentitiesResponse,
+  SessionWithRisk,
 } from './types';
 
 /** Mirrors fixtures/products.json (GET /products). */
@@ -28,7 +30,7 @@ export const productsFixture: ProductListResponse = {
       name: 'Ascendant Longneck Rifle',
       description:
         'ปืนสไนเปอร์คุณภาพสูงสุด ระดับ Ascendant เหมาะสำหรับผู้ล่าที่ต้องการความแม่นยำสูงในระยะไกล',
-      blueprint:
+      itemBlueprint:
         "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponOneShotRifle.PrimalItem_WeaponOneShotRifle'",
       price: 500,
       imageUrl: null,
@@ -42,7 +44,7 @@ export const productsFixture: ProductListResponse = {
       name: 'Tek Sword',
       description:
         'ดาบ Tek ขับเคลื่อนด้วยพลังงานควอนตัม ให้ความเร็วในการโจมตีและพลังทำลายล้างระดับสูงสุด',
-      blueprint:
+      itemBlueprint:
         "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponTekSword.PrimalItem_WeaponTekSword'",
       price: 1200,
       imageUrl: null,
@@ -55,7 +57,7 @@ export const productsFixture: ProductListResponse = {
       id: 3,
       name: 'Mastercraft Riot Helmet',
       description: 'หมวกกันน็อค Mastercraft ป้องกันการบาดเจ็บที่ศีรษะระดับสูง',
-      blueprint: null,
+      itemBlueprint: null,
       price: 350,
       imageUrl: null,
       quantity: 1,
@@ -68,7 +70,8 @@ export const productsFixture: ProductListResponse = {
       name: 'Rex Level 300 (Bred)',
       description:
         'ไดโนเสาร์ Rex ที่ได้รับการเพาะพันธุ์ระดับ 300 พร้อม Stats สูงสุด เหมาะสำหรับการล่าบอสทุกประเภท',
-      blueprint: null,
+      itemBlueprint:
+        "Blueprint'/Game/PrimalEarth/Dinos/Rex/Rex_Character_BP.Rex_Character_BP'",
       price: 8000,
       imageUrl: null,
       quantity: 1,
@@ -80,7 +83,7 @@ export const productsFixture: ProductListResponse = {
       id: 5,
       name: 'Argentavis Level 250',
       description: 'นกยักษ์ Argentavis ความเร็วในการบินสูง เหมาะสำหรับการขนส่งระยะไกล',
-      blueprint: null,
+      itemBlueprint: null,
       price: 3500,
       imageUrl: null,
       quantity: 1,
@@ -92,7 +95,7 @@ export const productsFixture: ProductListResponse = {
       id: 6,
       name: 'Element x500',
       description: 'ทรัพยากร Element จำนวน 500 หน่วย สำหรับสร้างอุปกรณ์ Tek ระดับสูง',
-      blueprint: null,
+      itemBlueprint: null,
       price: 2000,
       imageUrl: null,
       quantity: 500,
@@ -296,3 +299,73 @@ export const walletTransactionsFixture: WalletTransactionsResponse = {
   ],
   pagination: { page: 1, limit: 20, total: 2, totalPages: 1 },
 };
+
+/** Mirrors fixtures/linked-identities.json (Account Center linked identities). */
+export const linkedIdentitiesFixture: LinkedIdentitiesResponse = {
+  userId: 'b3f1c2a4-1111-4d2e-9a8b-000000000001',
+  identities: [
+    {
+      provider: 'discord',
+      providerAccountId: '284736510028374016',
+      displayName: 'IrisPlayerOne',
+      linkedAt: '2026-05-01T09:12:00.000Z',
+      proofMethod: 'discord_oauth',
+      isPrimary: true,
+      canUnlink: true,
+    },
+    {
+      provider: 'steam',
+      providerAccountId: '76561198000000001',
+      displayName: null,
+      linkedAt: '2026-05-03T14:40:00.000Z',
+      proofMethod: 'steam_openid',
+      isPrimary: false,
+      canUnlink: true,
+    },
+    {
+      provider: 'epic',
+      providerAccountId: null,
+      displayName: null,
+      linkedAt: null,
+      proofMethod: null,
+      isPrimary: false,
+      canUnlink: false,
+    },
+  ],
+  rules: {
+    autoMergeByEmailOrName: false,
+    proofOfControlRequired: true,
+    minimumLinkedProviders: 1,
+    note: 'At least one provider must remain linked. Linking always requires proof-of-control; email/name are never used to merge accounts.',
+  },
+};
+
+/** Mirrors fixtures/sessions.json (GET /auth/sessions). */
+export const sessionsFixture: SessionWithRisk[] = [
+  {
+    id: '11111111-1111-4111-8111-111111111111',
+    token: 'f3a1...redacted-hash',
+    ipAddress: '203.0.113.10',
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) IRIS-Web',
+    isActive: true,
+    createdAt: '2026-06-20T08:00:00.000Z',
+    expiresAt: '2026-06-27T08:00:00.000Z',
+    lastUsedAt: '2026-06-20T08:55:00.000Z',
+    isCurrent: true,
+    riskFlag: false,
+    riskReasons: [],
+  },
+  {
+    id: '22222222-2222-4222-8222-222222222222',
+    token: '9bd2...redacted-hash',
+    ipAddress: '198.51.100.42',
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) IRIS-Mobile',
+    isActive: true,
+    createdAt: '2026-06-19T21:14:00.000Z',
+    expiresAt: '2026-06-26T21:14:00.000Z',
+    lastUsedAt: '2026-06-20T07:02:00.000Z',
+    isCurrent: false,
+    riskFlag: true,
+    riskReasons: ['new_ip', 'new_device'],
+  },
+];

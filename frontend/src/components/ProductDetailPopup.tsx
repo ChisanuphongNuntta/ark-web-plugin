@@ -30,7 +30,8 @@ interface Product {
   id: number;
   name: string;
   description: string | null;
-  blueprint: string | null;
+  /** Contract field (openapi.yaml Product.itemBlueprint). */
+  itemBlueprint?: string | null;
   price: number;
   imageUrl: string | null;
   quantity: number;
@@ -178,7 +179,14 @@ export default function ProductDetailPopup({
   };
 
   const handleAddToCart = () => {
-    addItem(product.id, quantity);
+    if (!selectedServer) {
+      setIsBuyError(true);
+      setBuyErrorText('กรุณาเลือกเซิร์ฟเวอร์ปลายทางก่อนเพิ่มลงตะกร้า');
+      return;
+    }
+    setIsBuyError(false);
+    // Cart lines are keyed by (productId, serverId) — pass the chosen server.
+    addItem(product.id, selectedServer, quantity);
     setIsCartSuccess(true);
     setTimeout(() => {
       setIsCartSuccess(false);
