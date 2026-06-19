@@ -2,16 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =====================================================================
+   IRIS Design Tokens — "Iconic Siam Ultra View"
+   Canonical brand palette (see ENTERPRISE_REDESIGN_PLAN_TH.md §4).
+   Space-separated RGB triplets so Tailwind can apply <alpha-value>.
+   ---------------------------------------------------------------------
+   Brand name     | Hex      | RGB triplet   | token
+   Obsidian Navy  | #05070D  | 5 7 13        | --iris-ink
+   Deep River     | #071A24  | 7 26 36       | --iris-river
+   Iris Cyan      | #37E5D2  | 55 229 210    | --iris-cyan
+   Royal Orchid   | #A77BFF  | 167 123 255   | --iris-orchid
+   Champagne Gold | #DDBB72  | 221 187 114   | --iris-gold
+   ===================================================================== */
 :root {
   color-scheme: dark;
-  --iris-ink: 5 7 13;
-  --iris-midnight: 8 13 23;
-  --iris-river: 7 26 36;
-  --iris-cyan: 55 229 210;
-  --iris-orchid: 167 123 255;
-  --iris-gold: 221 187 114;
+
+  /* --- Base surfaces --- */
+  --iris-ink: 5 7 13;        /* Obsidian Navy  #05070D */
+  --iris-midnight: 8 13 23;  /* derived deep field      */
+  --iris-river: 7 26 36;     /* Deep River     #071A24 */
+
+  /* --- Brand light --- */
+  --iris-cyan: 55 229 210;   /* Iris Cyan      #37E5D2 */
+  --iris-orchid: 167 123 255;/* Royal Orchid   #A77BFF */
+
+  /* --- Luxury accent --- */
+  --iris-gold: 221 187 114;  /* Champagne Gold #DDBB72 */
+
+  /* --- Neutral foreground --- */
   --iris-pearl: 245 241 232;
   --iris-muted: 150 159 170;
+
+  /* --- Canonical hex aliases (for non-Tailwind / inline use) --- */
+  --color-obsidian-navy: #05070D;
+  --color-deep-river: #071A24;
+  --color-iris-cyan: #37E5D2;
+  --color-royal-orchid: #A77BFF;
+  --color-champagne-gold: #DDBB72;
+
+  /* --- Semantic surface / line / focus tokens --- */
   --surface-1: rgba(12, 22, 31, 0.72);
   --surface-2: rgba(16, 31, 41, 0.88);
   --line: rgba(242, 231, 207, 0.12);

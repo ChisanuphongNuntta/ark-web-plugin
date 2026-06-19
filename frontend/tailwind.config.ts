@@ -9,15 +9,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // IRIS brand palette — "Iconic Siam Ultra View"
+        // tokens defined in src/app/globals.css :root
         iris: {
-          ink: 'rgb(var(--iris-ink) / <alpha-value>)',
+          ink: 'rgb(var(--iris-ink) / <alpha-value>)',        // Obsidian Navy  #05070D
           midnight: 'rgb(var(--iris-midnight) / <alpha-value>)',
-          river: 'rgb(var(--iris-river) / <alpha-value>)',
-          cyan: 'rgb(var(--iris-cyan) / <alpha-value>)',
-          orchid: 'rgb(var(--iris-orchid) / <alpha-value>)',
-          gold: 'rgb(var(--iris-gold) / <alpha-value>)',
+          river: 'rgb(var(--iris-river) / <alpha-value>)',     // Deep River     #071A24
+          cyan: 'rgb(var(--iris-cyan) / <alpha-value>)',       // Iris Cyan      #37E5D2
+          orchid: 'rgb(var(--iris-orchid) / <alpha-value>)',   // Royal Orchid   #A77BFF
+          gold: 'rgb(var(--iris-gold) / <alpha-value>)',       // Champagne Gold #DDBB72
           pearl: 'rgb(var(--iris-pearl) / <alpha-value>)',
           muted: 'rgb(var(--iris-muted) / <alpha-value>)',
+          // Canonical brand-name aliases (same tokens, descriptive names)
+          obsidian: 'rgb(var(--iris-ink) / <alpha-value>)',
+          'deep-river': 'rgb(var(--iris-river) / <alpha-value>)',
+          champagne: 'rgb(var(--iris-gold) / <alpha-value>)',
         },
         primary: {
           50: '#ecfdf5',

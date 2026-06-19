@@ -554,7 +554,7 @@ export default function ProductDetailPage() {
               disabled={!selectedServerId || buyFeedback === 'loading'}
               isLoading={buyFeedback === 'loading'}
               onClick={handleBuyNow}
-              leftIcon={buyFeedback === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
+              leftIcon={<Zap className="h-4 w-4" />}
             >
               {!user ? 'เข้าสู่ระบบเพื่อซื้อ' : !canAfford ? 'ยอดพ้อยต์ไม่พอ' : 'ซื้อทันที'}
             </Button>
