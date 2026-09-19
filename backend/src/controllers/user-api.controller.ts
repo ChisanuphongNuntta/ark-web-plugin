@@ -3,7 +3,7 @@ import prisma from '../config/database.js';
 import { AuthRequest } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import crypto from 'crypto';
-import { encryptDeterministic, decrypt } from '../utils/encryption.js';
+import { encryptDeterministic } from '../utils/encryption.js';
 
 export class UserApiController {
   /**
@@ -44,7 +44,10 @@ export class UserApiController {
       res.json({
         user: {
           ...user,
-          apiKey: user.apiKey ? decrypt(user.apiKey) : null,
+          // API keys are credentials, not profile data. Return them only once from
+          // generateApiKey; subsequent reads expose status without recoverable secret.
+          apiKey: null,
+          hasApiKey: Boolean(user.apiKey),
           pointsBalance: Number(user.pointsBalance),
           totalSpent: Number(user.totalSpent),
         },

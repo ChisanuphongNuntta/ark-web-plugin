@@ -1,5 +1,44 @@
 # HeartShop ARK Plugin
 
+## Current production path
+
+The canonical production plugin in this repository is `ark-plugin/` and the
+output DLL is `HeartShop.dll`. Build with:
+
+```powershell
+.\scripts\Build-Plugin.ps1
+```
+
+The build script performs a fresh CMake configure/build, runs all CTest suites,
+and writes a packaged artifact plus `build-manifest.json` and `SHA256SUMS`.
+
+### Production auth/TLS contract
+
+`ApiUrl` must be HTTPS. Production TLS verification is on by default through the
+Windows trust store. `Security.AllowInvalidCertificates` is only accepted for
+localhost development endpoints and must remain `false` in production.
+
+`ApiKey` is now the HMAC shared secret. It is used only to compute
+`X-Signature`; it must never be sent as an identifier. Configure `KeyId`
+separately with the backend-issued credential id used in `X-Plugin-Key-Id`.
+
+```json
+{
+  "HeartShop": {
+    "ApiUrl": "https://your-backend.example/api/plugin",
+    "ApiKey": "your-hmac-shared-secret",
+    "KeyId": "backend-issued-plugin-key-id",
+    "ServerId": 1,
+    "Security": {
+      "AllowInvalidCertificates": false
+    }
+  }
+}
+```
+
+Legacy endpoints that are not yet in the signed backend contract still use the
+old bearer header; see `INTEGRATION_AUDIT.md` before changing endpoint auth.
+
 ARK: Survival Evolved server plugin ที่เชื่อมต่อกับ HeartShop backend เพื่อให้ระบบซื้อขายไอเทมในเกม
 
 ## คุณสมบัติ
@@ -148,8 +187,12 @@ ARKServer/ShooterGame/Binaries/Win64/ArkApi/Plugins/HeartShop/
 {
   "HeartShop": {
     "ApiUrl": "https://your-backend.com/api/plugin",
-    "ApiKey": "your-server-api-key-here",
+    "ApiKey": "your-hmac-shared-secret",
+    "KeyId": "backend-issued-plugin-key-id",
     "ServerId": 1,
+    "Security": {
+      "AllowInvalidCertificates": false
+    },
 
     "PollInterval": 30,
     "StatsInterval": 300,
@@ -178,7 +221,9 @@ ARKServer/ShooterGame/Binaries/Win64/ArkApi/Plugins/HeartShop/
 
 **การตั้งค่าที่สำคัญ:**
 - `ApiUrl`: URL ของ Backend API (รวม `/api/plugin`)
-- `ApiKey`: API Key ของ server นี้ (ดูจาก database)
+- `ApiKey`: HMAC shared secret ใช้สำหรับคำนวณ `X-Signature` เท่านั้น ห้ามส่งเป็น identifier
+- `KeyId`: backend-issued plugin credential id ที่ส่งใน `X-Plugin-Key-Id`
+- `Security.AllowInvalidCertificates`: ใช้เฉพาะ localhost development; production ต้องเป็น `false`
 - `ServerId`: ID ของ server ในระบบ
 
 ### ขั้นตอนที่ 4: Restart Server
@@ -330,7 +375,7 @@ Backend จะตรวจสอบ API Key กับ database เพื่อ�
 
 ### ไม่สามารถเชื่อมต่อ Backend
 1. ตรวจสอบ `ApiUrl` ใน config.json
-2. ตรวจสอบ `ApiKey` ว่าถูกต้อง
+2. ตรวจสอบ `ApiKey` (HMAC secret) และ `KeyId` ว่าตรงกับ backend-issued credential
 3. ดู backend logs เช็ค authentication errors
 
 ### ผู้เล่นไม่ได้รับไอเทม

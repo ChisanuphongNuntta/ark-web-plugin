@@ -162,7 +162,7 @@ describe('Cart & Checkout System', () => {
             productId: 1,
             serverId: 1,
             quantity: 2,
-            product: { id: 1, name: 'Rifle', price: 100, isActive: true, stock: 10, maxPerUser: null },
+            product: { id: 1, name: 'Rifle', price: 100, isActive: true, stock: 10, maxPerUser: null, itemBlueprint: 'bp', quality: 1, isBlueprint: false },
             server: { id: 1, name: 'PVE', isActive: true },
           },
         ],
@@ -193,7 +193,7 @@ describe('Cart & Checkout System', () => {
         status: 'pending',
         expiresAt: new Date(Date.now() + 100000),
         cartSnapshot: [
-          { productId: 1, serverId: 1, quantity: 2, price: 100, name: 'Rifle', itemBlueprint: 'bp', quality: 1, isBlueprint: false },
+          { productId: 1, serverId: 1, quantity: 2, price: 100, name: 'Rifle', productType: 'item', itemBlueprint: 'bp', quality: 1, isBlueprint: false },
         ],
       };
 
@@ -205,22 +205,44 @@ describe('Cart & Checkout System', () => {
           findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'u1', steamId: 'steam-123' }),
         },
         product: {
-          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'Rifle', isActive: true, stock: 10, maxPerUser: null }),
+          findUniqueOrThrow: vi.fn().mockResolvedValue({
+            id: 1,
+            name: 'Rifle',
+            price: 100,
+            categoryId: null,
+            isActive: true,
+            stock: 10,
+            maxPerUser: null,
+            productType: 'item',
+            itemBlueprint: 'bp',
+            quality: 1,
+            isBlueprint: false,
+            requiredCapabilities: [],
+          }),
           update: vi.fn().mockResolvedValue({}),
+        },
+        server: {
+          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'PVE', isActive: true, drainMode: false, capabilities: [] }),
         },
         order: {
           create: vi.fn().mockResolvedValue({ id: 'o1' }),
         },
+        orderGroup: { create: vi.fn().mockResolvedValue({ id: 'og1' }) },
+        orderItem: { create: vi.fn().mockResolvedValue({ id: 'oi1' }) },
         pointTransaction: {
           create: vi.fn().mockResolvedValue({}),
         },
         deliveryJob: {
           create: vi.fn().mockResolvedValue({}),
         },
+        fulfillment: {
+          create: vi.fn().mockResolvedValue({}),
+        },
         cartItem: {
           deleteMany: vi.fn().mockResolvedValue({}),
         },
         checkoutSession: {
+          findUniqueOrThrow: vi.fn().mockResolvedValue(mockSession),
           update: vi.fn().mockResolvedValue({}),
         },
         $queryRaw: vi.fn().mockResolvedValue([]),
@@ -252,6 +274,7 @@ describe('Cart & Checkout System', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         orderIds: ['o1'],
+        orderGroupId: 'og1',
         totalSpent: '200',
       });
     });
@@ -264,7 +287,7 @@ describe('Cart & Checkout System', () => {
         status: 'pending',
         expiresAt: new Date(Date.now() + 100000),
         cartSnapshot: [
-          { productId: 1, serverId: 1, quantity: 1, price: 100, name: 'Rifle', itemBlueprint: 'bp', quality: 1, isBlueprint: false },
+          { productId: 1, serverId: 1, quantity: 1, price: 100, name: 'Rifle', productType: 'item', itemBlueprint: 'bp', quality: 1, isBlueprint: false },
         ],
       };
 
@@ -273,14 +296,34 @@ describe('Cart & Checkout System', () => {
       const mockTx: any = {
         user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'u1', steamId: 'steam-123' }) },
         product: {
-          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'Rifle', isActive: true, stock: 10, maxPerUser: null }),
+          findUniqueOrThrow: vi.fn().mockResolvedValue({
+            id: 1,
+            name: 'Rifle',
+            price: 100,
+            categoryId: null,
+            isActive: true,
+            stock: 10,
+            maxPerUser: null,
+            productType: 'item',
+            itemBlueprint: 'bp',
+            quality: 1,
+            isBlueprint: false,
+            requiredCapabilities: [],
+          }),
           update: vi.fn().mockResolvedValue({}),
         },
+        server: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'PVE', isActive: true, drainMode: false, capabilities: [] }) },
         order: { create: vi.fn().mockResolvedValue({ id: 'o2' }) },
+        orderGroup: { create: vi.fn().mockResolvedValue({ id: 'og2' }) },
+        orderItem: { create: vi.fn().mockResolvedValue({ id: 'oi2' }) },
         pointTransaction: { create: vi.fn().mockResolvedValue({}) },
         deliveryJob: { create: vi.fn().mockResolvedValue({}) },
+        fulfillment: { create: vi.fn().mockResolvedValue({}) },
         cartItem: { deleteMany: vi.fn().mockResolvedValue({}) },
-        checkoutSession: { update: vi.fn().mockResolvedValue({}) },
+        checkoutSession: {
+          findUniqueOrThrow: vi.fn().mockResolvedValue(mockSession),
+          update: vi.fn().mockResolvedValue({}),
+        },
         $queryRaw: vi.fn().mockResolvedValue([]),
       };
 

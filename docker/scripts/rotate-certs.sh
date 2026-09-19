@@ -47,33 +47,23 @@ send_notification() {
 
 # Check if rotation is needed
 check_rotation_needed() {
-    local metadata_file="$CERT_DIR/metadata.json"
+    local cert_file="$CERT_DIR/nginx/server.crt"
+    local rotate_before_seconds="${CERT_ROTATE_BEFORE_SECONDS:-604800}"
 
-    if [ ! -f "$metadata_file" ]; then
-        log_warn "No metadata file found, rotation needed"
+    if [ ! -s "$cert_file" ]; then
+        log_warn "Certificate file is missing, rotation needed"
         return 0
     fi
 
-    # Get expiry date from metadata
-    local expires_at=$(jq -r '.expires_at' "$metadata_file" 2>/dev/null || echo "")
-
-    if [ -z "$expires_at" ]; then
-        log_warn "Cannot read expiry date, rotation needed"
-        return 0
-    fi
-
-    # Calculate days until expiry
-    local expires_epoch=$(date -d "$expires_at" +%s 2>/dev/null || date -jf "%Y-%m-%dT%H:%M:%SZ" "$expires_at" +%s 2>/dev/null || echo "0")
-    local now_epoch=$(date +%s)
-    local days_left=$(( (expires_epoch - now_epoch) / 86400 ))
-
-    if [ "$days_left" -le 1 ]; then
-        log_info "Certificates expire in $days_left days, rotation needed"
-        return 0
-    else
-        log_info "Certificates valid for $days_left more days"
+    # OpenSSL performs the expiry comparison directly and behaves consistently
+    # across GNU coreutils and Alpine/BusyBox images.
+    if openssl x509 -checkend "$rotate_before_seconds" -noout -in "$cert_file" >/dev/null 2>&1; then
+        log_info "Certificates remain valid beyond the rotation window"
         return 1
     fi
+
+    log_info "Certificates enter the rotation window, rotation needed"
+    return 0
 }
 
 # Backup current certificates
@@ -121,15 +111,39 @@ rotate_certs() {
 reload_services() {
     log_info "Reloading services to use new certificates..."
 
+    wait_healthy() {
+        local container="$1"
+        local attempts=60
+        while [ "$attempts" -gt 0 ]; do
+            local status
+            status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null || true)
+            [ "$status" = "healthy" ] && return 0
+            attempts=$((attempts - 1))
+            sleep 2
+        done
+        log_error "$container did not become healthy after certificate rotation"
+        return 1
+    }
+
+    if docker inspect heartshop-postgres-primary >/dev/null 2>&1; then
+        docker restart heartshop-postgres-primary >/dev/null
+        wait_healthy heartshop-postgres-primary
+        docker restart heartshop-postgres-replica >/dev/null 2>&1 || true
+    fi
+
+    if docker inspect heartshop-redis-primary >/dev/null 2>&1; then
+        docker restart heartshop-redis-primary >/dev/null
+        wait_healthy heartshop-redis-primary
+    fi
+
+    docker ps -q --filter label=com.docker.compose.service=backend | xargs -r docker restart >/dev/null
+
     # Reload Nginx
     if docker exec heartshop-nginx nginx -s reload 2>/dev/null; then
         log_info "Nginx reloaded successfully"
     else
         log_warn "Could not reload Nginx (may not be running)"
     fi
-
-    # Note: PostgreSQL and Redis require restart for new certs
-    # This is handled by the orchestrator
 
     send_notification "🔄 Services reloaded with new certificates" "success"
 }

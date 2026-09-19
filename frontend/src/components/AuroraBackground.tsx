@@ -1,4 +1,5 @@
 'use client';
+
 import { motion } from "framer-motion";
 import React from "react";
 
@@ -10,7 +11,7 @@ export const AuroraBackground = ({
   className?: string;
 }) => {
   return (
-    <div className={`relative flex flex-col min-h-screen items-center justify-center bg-ark-dark text-slate-950 overflow-hidden ${className}`}>
+    <div className={`relative flex flex-col min-h-screen items-center justify-center bg-black/60 text-slate-950 overflow-hidden ${className}`}>
       <div className="absolute inset-0 z-0">
         <motion.div
           animate={{
@@ -34,7 +35,7 @@ export const AuroraBackground = ({
         />
         {/* Overlay to darken and add texture */}
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-ark-dark/80 backdrop-blur-[2px]"></div>
+        <div className="absolute inset-0 bg-black/60/80 backdrop-blur-[2px]"></div>
       </div>
       <div className="relative z-10 w-full">
         {children}

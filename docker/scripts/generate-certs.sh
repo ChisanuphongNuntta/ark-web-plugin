@@ -33,6 +33,17 @@ create_dirs() {
 generate_ca() {
     log_info "Generating Certificate Authority..."
 
+    # Keep a stable CA across routine leaf-certificate rotations. Replacing
+    # both at different moments creates an invalid live trust bundle.
+    if [ -s "$CERT_DIR/ca/ca.key" ] && [ -s "$CERT_DIR/ca/ca.crt" ] && \
+       openssl x509 -checkend 2592000 -noout -in "$CERT_DIR/ca/ca.crt" >/dev/null 2>&1; then
+        log_info "Reusing the existing Certificate Authority"
+        for dir in nginx postgres redis backend; do
+            cp "$CERT_DIR/ca/ca.crt" "$CERT_DIR/$dir/ca.crt"
+        done
+        return
+    fi
+
     # Generate CA private key
     openssl genrsa -out "$CERT_DIR/ca/ca.key" $KEY_SIZE
     chmod 600 "$CERT_DIR/ca/ca.key"
@@ -130,6 +141,8 @@ generate_postgres_certs() {
     generate_cert "postgres" "postgres-primary" "DNS.4 = postgres-replica
 DNS.5 = postgres"
 
+    generate_cert "backend" "backend" "DNS.4 = heartshop-backend"
+
     # Also generate client certificate for backend
     local cert_path="$CERT_DIR/backend"
 
@@ -165,6 +178,10 @@ DNS.5 = redis"
 
 # Generate DH parameters for perfect forward secrecy
 generate_dhparam() {
+    if [ -s "$CERT_DIR/nginx/dhparam.pem" ]; then
+        log_info "Reusing existing DH parameters"
+        return
+    fi
     log_info "Generating DH parameters (this may take a while)..."
     openssl dhparam -out "$CERT_DIR/nginx/dhparam.pem" 2048
     log_info "DH parameters generated"
@@ -174,7 +191,8 @@ generate_dhparam() {
 create_metadata() {
     local metadata_file="$CERT_DIR/metadata.json"
     local created_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-    local expires_at=$(date -u -d "+$VALIDITY_DAYS days" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -v+${VALIDITY_DAYS}d +"%Y-%m-%dT%H:%M:%SZ")
+    local expires_epoch=$(( $(date +%s) + VALIDITY_DAYS * 86400 ))
+    local expires_at=$(date -u -d "@$expires_epoch" +"%Y-%m-%dT%H:%M:%SZ")
 
     cat > "$metadata_file" << EOF
 {

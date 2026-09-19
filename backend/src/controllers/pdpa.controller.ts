@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middlewares/auth.js';
+import { AuthRequest, UserRole } from '../middlewares/auth.js';
 import pdpaService, { ConsentTypes, DataRequestTypes } from '../services/pdpa.service.js';
 
 // Grant consent
@@ -197,7 +197,7 @@ export const getPolicy = async (req: AuthRequest, res: Response) => {
 // Get all data requests (admin)
 export const getAllDataRequests = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?.isAdmin) {
+    if (!req.user || ![UserRole.ADMIN, UserRole.ROOT].includes(req.user.role)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -220,7 +220,7 @@ export const getAllDataRequests = async (req: AuthRequest, res: Response) => {
 // Process data request (admin)
 export const processDataRequest = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?.isAdmin) {
+    if (!req.user || ![UserRole.ADMIN, UserRole.ROOT].includes(req.user.role)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -244,7 +244,7 @@ export const processDataRequest = async (req: AuthRequest, res: Response) => {
 // Create policy version (admin)
 export const createPolicy = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?.isAdmin) {
+    if (!req.user || ![UserRole.ADMIN, UserRole.ROOT].includes(req.user.role)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 

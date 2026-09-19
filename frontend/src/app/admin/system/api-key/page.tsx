@@ -1,12 +1,17 @@
 'use client';
 
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
+
+
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store';
 import { usePermissions } from '@/hooks/usePermissions';
 import { userApi } from '@/lib/api';
 import { Loader2, Key, Shield } from 'lucide-react';
 import Link from 'next/link';
-import LaserCard from '@/components/LaserCard';
 import ApiKeyManager from '@/components/ApiKeyManager';
 
 export default function SystemApiKeyPage() {
@@ -32,12 +37,12 @@ export default function SystemApiKeyPage() {
 
     if (!isRoot) {
         return (
-            <LaserCard className="border-red-500/30">
+            <GlassCard className="border-red-500/30">
                 <div className="text-center py-12">
                     <p className="text-red-400">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
                     <p className="text-gray-500 text-sm mt-2">เฉพาะ Root Only เท่านั้น</p>
                 </div>
-            </LaserCard>
+            </GlassCard>
         );
     }
 

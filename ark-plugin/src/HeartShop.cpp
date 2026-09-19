@@ -2,6 +2,8 @@
 #include "Commands.h"
 #include "Protection.h"
 #include "GameThreadDispatcher.h"
+#include "DinoPayload.h"
+#include "RequestSigning.h"
 #include <Logger/Logger.h>
 #include <Windows.h>
 #include <filesystem>
@@ -89,6 +91,39 @@ namespace HeartShop
     std::string LastChatTimestamp = "";
     bool ChatEnabled = true;
 
+    int CountOnlinePlayers()
+    {
+        try
+        {
+            auto* World = ArkApi::GetApiUtils().GetWorld();
+            if (!World)
+            {
+                return 0;
+            }
+
+            int Count = 0;
+            auto& Players = World->PlayerControllerListField();
+            for (int i = 0; i < Players.Num(); i++)
+            {
+                if (static_cast<AShooterPlayerController*>(Players[i].Get()))
+                {
+                    Count++;
+                }
+            }
+            return Count;
+        }
+        catch (const std::exception& e)
+        {
+            Log::GetLog()->warn("HeartShop heartbeat player count failed: {}", e.what());
+        }
+        catch (...)
+        {
+            Log::GetLog()->warn("HeartShop heartbeat player count failed with unknown exception");
+        }
+
+        return 0;
+    }
+
     // Wallet notification sync state
     std::string LastWalletEventTimestamp = "";
     WalletNotifications WalletNotifier;
@@ -132,6 +167,108 @@ namespace HeartShop
                 Log::GetLog()->warn("Failed to send chat message to cross-chat API");
             }
         });
+    }
+
+    void ConfirmPreparedDinoListing(
+        const std::string& AssetLockId,
+        const nlohmann::json& Payload,
+        uint64 NotifySteamId)
+    {
+        if (!Http || !Journal || AssetLockId.empty())
+        {
+            return;
+        }
+
+        nlohmann::json Confirmation = Payload;
+        Confirmation["assetLockId"] = AssetLockId;
+        Http->ConfirmDinoLock(Confirmation, [AssetLockId, NotifySteamId, Payload](bool Success, const nlohmann::json& Response) {
+            if (!Success)
+            {
+                Log::GetLog()->warn(
+                    "Dino listing confirmation {} is pending retry; the removed asset remains protected by the local journal",
+                    AssetLockId);
+                return;
+            }
+
+            if (!Journal || !Journal->Complete("dino_listing", AssetLockId))
+            {
+                Log::GetLog()->critical(
+                    "Dino listing {} was confirmed by backend but local journal completion failed",
+                    AssetLockId);
+                return;
+            }
+
+            const std::string ListingId = Response.value("listingId", "");
+            Log::GetLog()->info("Dino listing confirmed: {} (lock {})", ListingId, AssetLockId);
+            if (NotifySteamId != 0)
+            {
+                if (auto* Player = ArkApi::GetApiUtils().FindPlayerFromSteamId(NotifySteamId))
+                {
+                    const std::string DinoName = Payload.value("dinoName", Payload.value("species", "Dino"));
+                    const int Price = Payload.value("price", 0);
+                    const std::string Message = "Successfully listed " + DinoName +
+                        " for " + std::to_string(Price) + " points!";
+                    SendMessage(Player, FString(ArkApi::Tools::Utf8Decode(Message).c_str()));
+                }
+            }
+        });
+    }
+
+    void RecoverPendingDinoListings()
+    {
+        if (!Journal || !Http)
+        {
+            return;
+        }
+
+        for (const auto& Record : Journal->Pending("dino_listing"))
+        {
+            if (Record.Payload.empty())
+            {
+                Log::GetLog()->error("Cannot recover dino listing {}: journal payload missing", Record.DeliveryId);
+                continue;
+            }
+
+            try
+            {
+                const auto Payload = nlohmann::json::parse(Record.Payload);
+                if (Record.State == "prepared")
+                {
+                    // The journal was durable but mutation was never declared. Keep the
+                    // in-game asset and abandon the expiring backend lock.
+                    Journal->Abort("dino_listing", Record.DeliveryId);
+                    continue;
+                }
+                if (Record.State != "mutating")
+                {
+                    continue;
+                }
+
+                const unsigned int DinoId1 = Payload.value("dinoId1", 0u);
+                const unsigned int DinoId2 = Payload.value("dinoId2", 0u);
+                auto* World = ArkApi::GetApiUtils().GetWorld();
+                auto* Existing = World && DinoId1 && DinoId2
+                    ? APrimalDinoCharacter::FindDinoWithID(World, DinoId1, DinoId2)
+                    : nullptr;
+                if (Existing)
+                {
+                    // Crash happened before the destructive mutation. The dino is still
+                    // alive, so cancel locally and let the backend lock expire.
+                    Journal->Abort("dino_listing", Record.DeliveryId);
+                    Log::GetLog()->warn(
+                        "Recovered listing lock {} without removing dino; listing cancelled safely",
+                        Record.DeliveryId);
+                    continue;
+                }
+
+                // Dino no longer exists: confirmation is safe and idempotent.
+                ConfirmPreparedDinoListing(Record.DeliveryId, Payload);
+            }
+            catch (const std::exception& e)
+            {
+                Log::GetLog()->error("Cannot recover dino listing {}: {}", Record.DeliveryId, e.what());
+            }
+        }
     }
 
     void Load()
@@ -286,6 +423,7 @@ namespace HeartShop
                         if (LicenseVerified)
                         {
                             PollPendingOrders();
+                            RecoverPendingDinoListings();
                         }
                     }
                 }
@@ -352,6 +490,58 @@ namespace HeartShop
         catch (const std::exception& e)
         {
             Log::GetLog()->error("Wallet sync timer setup exception: {}", e.what());
+        }
+
+        // STEP 7: Setup signed heartbeat timer for backend/server visibility
+        try
+        {
+            int heartbeatInterval = PluginConfig ? static_cast<int>(PluginConfig->GetHeartbeatInterval()) : 60;
+            if (heartbeatInterval <= 0)
+            {
+                heartbeatInterval = 60;
+            }
+
+            Log::GetLog()->info("HeartShop: Setting up heartbeat (every {}s)...", heartbeatInterval);
+
+            ArkApi::GetCommands().AddOnTimerCallback(
+                L"HeartShop_Heartbeat",
+                [heartbeatInterval]() {
+                    static int heartbeatCounter = heartbeatInterval;
+                    heartbeatCounter++;
+                    if (heartbeatCounter >= heartbeatInterval)
+                    {
+                        heartbeatCounter = 0;
+
+                        if (!Http)
+                        {
+                            Log::GetLog()->warn("HeartShop heartbeat skipped: HTTP client not initialized");
+                            return;
+                        }
+
+                        Http->SendHeartbeat(CountOnlinePlayers(), [](bool Success, const nlohmann::json&) {
+                            static bool LoggedSuccess = false;
+                            if (Success)
+                            {
+                                if (!LoggedSuccess)
+                                {
+                                    Log::GetLog()->info("HeartShop heartbeat sent successfully");
+                                    LoggedSuccess = true;
+                                }
+                            }
+                            else
+                            {
+                                Log::GetLog()->warn("HeartShop heartbeat failed");
+                            }
+                        });
+                    }
+                }
+            );
+
+            Log::GetLog()->info("HeartShop: Heartbeat timer started");
+        }
+        catch (const std::exception& e)
+        {
+            Log::GetLog()->error("Heartbeat timer setup exception: {}", e.what());
         }
 
         // STEP 7: Register Chat Hook
@@ -499,45 +689,211 @@ namespace HeartShop
         catch (...) {}
     }
 
-    bool SpawnDinoForPlayer(
+    bool SpawnExactDinoForPlayer(
         AShooterPlayerController* Player,
-        const std::string& BlueprintPath,
-        const std::string& Gender,
-        int Level)
+        const nlohmann::json& Payload)
     {
         if (!Player || !Player->GetPlayerCharacter())
             return false;
 
         try
         {
-            FString Blueprint = FString(ArkApi::Tools::Utf8Decode(BlueprintPath).c_str());
-            // Default to tamed (true), not neutered (false)
-            APrimalDinoCharacter* Dino = ArkApi::GetApiUtils().SpawnDino(Player, Blueprint, nullptr, Level, true, false);
-            if (!Dino)
+            if (Payload.value("schemaVersion", 0) != 2 ||
+                Payload.value("dinoDataVersion", 0) != 1)
             {
-                Log::GetLog()->error("Failed to spawn dino: {}", BlueprintPath);
+                Log::GetLog()->error("Rejected non-native dino delivery payload version");
                 return false;
             }
 
-            // Set gender if supported
-            if (Dino->bUsesGender()())
+            const std::string Encoded = Payload.value("cryopodData", "");
+            const std::string ExpectedHash = Payload.value("dinoDataSha256", "");
+            const int ExpectedSize = Payload.value("dinoDataSize", 0);
+            std::vector<unsigned char> NativeBytes;
+            if (!DinoPayload::DecodeBase64(Encoded, NativeBytes) ||
+                ExpectedSize <= 0 ||
+                static_cast<std::size_t>(ExpectedSize) != NativeBytes.size())
             {
-                if (Gender == "Male" || Gender == "male")
-                    Dino->bIsFemale() = false;
-                else if (Gender == "Female" || Gender == "female")
-                    Dino->bIsFemale() = true;
+                Log::GetLog()->error("Rejected malformed native dino delivery payload");
+                return false;
             }
 
-            Log::GetLog()->info("Spawned dino {} (Lv.{}) for player (SteamID: {})",
-                BlueprintPath, Level, GetSteamId(Player));
+            const std::string NativeBytesString(
+                reinterpret_cast<const char*>(NativeBytes.data()),
+                NativeBytes.size());
+            if (ExpectedHash.size() != 64 ||
+                RequestSigning::CalculateSha256Hex(NativeBytesString) != ExpectedHash)
+            {
+                Log::GetLog()->critical("Native dino delivery SHA-256 mismatch");
+                return false;
+            }
+
+            const std::string BlueprintPath = Payload.value("blueprintPath", "");
+            FString Blueprint(ArkApi::Tools::Utf8Decode(BlueprintPath).c_str());
+            UClass* DinoClass = UVictoryCore::BPLoadClass(&Blueprint);
+            if (!DinoClass)
+            {
+                Log::GetLog()->error("Could not load native dino class: {}", BlueprintPath);
+                return false;
+            }
+
+            FARKDinoData NativeData{};
+            NativeData.DinoClass = DinoClass;
+            for (const auto Byte : NativeBytes)
+            {
+                NativeData.DinoData.Add(Byte);
+            }
+            NativeData.DinoName = FString(ArkApi::Tools::Utf8Decode(
+                Payload.value("nativeDinoName", Payload.value("dinoName", ""))).c_str());
+            NativeData.DinoNameInMap = FString(ArkApi::Tools::Utf8Decode(
+                Payload.value("nativeDinoNameInMap", Payload.value("species", ""))).c_str());
+
+            FVector SpawnLocation = Player->GetPlayerCharacter()
+                ->RootComponentField()->RelativeLocationField();
+            SpawnLocation.Z += 200.0f;
+            FRotator SpawnRotation(0.0f, 0.0f, 0.0f);
+            bool WasDuplicate = false;
+            APrimalDinoCharacter* Dino = APrimalDinoCharacter::SpawnFromDinoDataEx(
+                &NativeData,
+                ArkApi::GetApiUtils().GetWorld(),
+                &SpawnLocation,
+                &SpawnRotation,
+                &WasDuplicate,
+                Player->TargetingTeamField(),
+                true,
+                Player,
+                true);
+            if (!Dino || !Dino->IsValidLowLevel())
+            {
+                Log::GetLog()->error("ARK rejected native dino snapshot for {}", BlueprintPath);
+                return false;
+            }
+
+            Log::GetLog()->info(
+                "Restored native dino snapshot {} for SteamID {} (newDinoId=true, duplicate={})",
+                BlueprintPath,
+                GetSteamId(Player),
+                WasDuplicate ? "true" : "false");
 
             return true;
         }
         catch (const std::exception& e)
         {
-            Log::GetLog()->error("Exception in SpawnDinoForPlayer: {}", e.what());
+            Log::GetLog()->error("Exception in SpawnExactDinoForPlayer: {}", e.what());
             return false;
         }
+    }
+
+    bool SpawnCatalogDinoForPlayer(
+        AShooterPlayerController* Player,
+        const nlohmann::json& Payload)
+    {
+        if (!Player || !Player->GetPlayerCharacter() ||
+            Payload.value("schemaVersion", 0) != 1 ||
+            Payload.value("productType", "") != "dino" ||
+            !Payload.contains("dino") || !Payload["dino"].is_object())
+        {
+            Log::GetLog()->error("Rejected malformed catalog dino delivery payload");
+            return false;
+        }
+
+        try
+        {
+            const auto& DinoDefinition = Payload["dino"];
+            const std::string BlueprintPath = DinoDefinition.value("blueprint", "");
+            const int Level = DinoDefinition.value("level", 0);
+            const bool ForceTame = DinoDefinition.value("forceTame", false);
+            const bool Neutered = DinoDefinition.value("neutered", false);
+            if (BlueprintPath.empty() || Level < 1 || Level > 10000 || !ForceTame)
+            {
+                Log::GetLog()->error("Rejected unsafe catalog dino definition");
+                return false;
+            }
+
+            FString Blueprint(ArkApi::Tools::Utf8Decode(BlueprintPath).c_str());
+            auto* Dino = ArkApi::GetApiUtils().SpawnDino(
+                Player,
+                Blueprint,
+                nullptr,
+                Level,
+                true,
+                Neutered);
+            if (!Dino || !Dino->IsValidLowLevel())
+            {
+                Log::GetLog()->error("ARK rejected catalog dino {} level {}", BlueprintPath, Level);
+                return false;
+            }
+
+            Log::GetLog()->info(
+                "Spawned catalog dino {} level {} for SteamID {} (neutered={})",
+                BlueprintPath,
+                Level,
+                GetSteamId(Player),
+                Neutered ? "true" : "false");
+            return true;
+        }
+        catch (const std::exception& e)
+        {
+            Log::GetLog()->error("Catalog dino spawn exception: {}", e.what());
+            return false;
+        }
+    }
+
+    // Interpret the structured response the backend returns from POST /deliveries/{key}/fail.
+    // Per the M3 contract the body carries { success, retry, deadLetter, nextRetryAt, attempts,
+    // duplicate }. The plugin does not drive the retry itself (the backend owns the queue and
+    // exponential backoff); we surface the outcome to the operational log so dead-letters and
+    // backoff scheduling are observable. A dead-letter means the order has moved to `failed`
+    // and is now refundable on the web side.
+    static void LogFailOutcome(const std::string& DeliveryKey, const nlohmann::json& Response)
+    {
+        if (!Response.is_object())
+        {
+            Log::GetLog()->warn(
+                "Delivery {} fail reported but backend returned no structured body", DeliveryKey);
+            return;
+        }
+
+        const bool Retry = Response.value("retry", false);
+        const bool DeadLetter = Response.value("deadLetter", false);
+        const bool Duplicate = Response.value("duplicate", false);
+        const int Attempts = Response.value("attempts", 0);
+        std::string NextRetryAt;
+        if (Response.contains("nextRetryAt") && Response["nextRetryAt"].is_string())
+        {
+            NextRetryAt = Response["nextRetryAt"].get<std::string>();
+        }
+
+        if (Duplicate)
+        {
+            // The job had already completed; failing it is a no-op. No asset was re-granted.
+            Log::GetLog()->info(
+                "Delivery {} fail was a no-op: job already completed (duplicate)", DeliveryKey);
+            return;
+        }
+
+        if (DeadLetter)
+        {
+            Log::GetLog()->critical(
+                "Delivery {} dead-lettered after {} attempt(s); order moved to failed (refundable)",
+                DeliveryKey,
+                Attempts);
+            return;
+        }
+
+        if (Retry)
+        {
+            Log::GetLog()->warn(
+                "Delivery {} will be retried (attempt {}); re-claimable after backoff{}",
+                DeliveryKey,
+                Attempts,
+                NextRetryAt.empty() ? "" : (" at " + NextRetryAt));
+            return;
+        }
+
+        Log::GetLog()->warn(
+            "Delivery {} fail recorded (attempts {}, retry=false, deadLetter=false)",
+            DeliveryKey,
+            Attempts);
     }
 
     void PollPendingOrders()
@@ -615,12 +971,40 @@ namespace HeartShop
 
                     if (Action == DeliveryAction::AcknowledgeOnly)
                     {
-                        // Already completed locally, just re-acknowledge to backend
+                        // Already completed locally, just re-acknowledge to backend. Backend
+                        // /complete is idempotent on deliveryKey: a duplicate returns the ORIGINAL
+                        // receipt with duplicate:true and does NOT re-deliver or re-settle. The
+                        // lease token is not re-checked on an already-completed job, so a stale
+                        // lease here is safe. This is the local-journal half of the idempotency
+                        // guarantee: the player never receives the item twice.
                         std::string ReceiptId = DeliveryJournal::MakeKey(DeliveryType, DeliveryKey);
-                        Http->CompleteDelivery(DeliveryKey, LeaseToken, SteamIdStr, PayloadHash, ReceiptId, [DeliveryKey](bool Success, const nlohmann::json&) {
+                        Http->CompleteDelivery(DeliveryKey, LeaseToken, SteamIdStr, PayloadHash, ReceiptId, [DeliveryKey](bool Success, const nlohmann::json& Response) {
                             if (Success)
                             {
-                                Log::GetLog()->info("Re-completed already-processed delivery: {}", DeliveryKey);
+                                const bool Duplicate = Response.is_object() && Response.value("duplicate", false);
+                                Log::GetLog()->info(
+                                    "Re-acknowledged already-processed delivery {} (backend duplicate={})",
+                                    DeliveryKey,
+                                    Duplicate ? "true" : "false");
+                            }
+                        });
+                        continue;
+                    }
+
+                    if (Action == DeliveryAction::Deferred)
+                    {
+                        // Transient local condition (journal unavailable / unpersisted / uncertain).
+                        // Nothing was delivered. Release the lease so the backend re-queues the job
+                        // WITHOUT consuming a delivery attempt — this avoids prematurely
+                        // dead-lettering and refunding an order that just needs a retry.
+                        Http->ReleaseDelivery(DeliveryKey, LeaseToken, [DeliveryKey](bool Success, const nlohmann::json&) {
+                            if (Success)
+                            {
+                                Log::GetLog()->warn("Deferred delivery lease released (no attempt consumed): {}", DeliveryKey);
+                            }
+                            else
+                            {
+                                Log::GetLog()->warn("Failed to release deferred delivery lease: {}", DeliveryKey);
                             }
                         });
                         continue;
@@ -628,8 +1012,23 @@ namespace HeartShop
 
                     if (Action == DeliveryAction::Blocked)
                     {
-                        Http->FailDelivery(DeliveryKey, LeaseToken, "Delivery blocked by local idempotency journal", [DeliveryKey](bool, const nlohmann::json&) {
-                            Log::GetLog()->warn("Blocked delivery reported: {}", DeliveryKey);
+                        // Hard integrity failure (payload mismatch). Consume an attempt so the
+                        // backend can dead-letter and refund rather than retrying a poisoned job.
+                        Http->FailDelivery(DeliveryKey, LeaseToken, "Delivery blocked by local idempotency journal (payload mismatch)", [DeliveryKey](bool, const nlohmann::json& Response) {
+                            LogFailOutcome(DeliveryKey, Response);
+                        });
+                        continue;
+                    }
+
+                    // Persist the transition from prepared to mutating before any ARK
+                    // inventory/dino state is changed. A crash after this point becomes an
+                    // explicit reconciliation case and can never be auto-delivered twice.
+                    if (!Journal || !Journal->MarkMutating(DeliveryType, DeliveryKey))
+                    {
+                        Http->ReleaseDelivery(DeliveryKey, LeaseToken, [DeliveryKey](bool, const nlohmann::json&) {
+                            Log::GetLog()->critical(
+                                "Delivery {} was not mutated because the journal transition failed",
+                                DeliveryKey);
                         });
                         continue;
                     }
@@ -642,14 +1041,41 @@ namespace HeartShop
                     {
                         try
                         {
-                            auto Item = Payload["item"];
-                            std::string BlueprintStr = Item.value("blueprint", "");
-                            FString Blueprint = FString(ArkApi::Tools::Utf8Decode(BlueprintStr).c_str());
-                            int Quantity = Item.value("quantity", 1);
-                            float Quality = Item.value("quality", 0.0f);
-                            bool IsBlueprint = Item.value("isBlueprint", false);
+                            nlohmann::json Items = nlohmann::json::array();
+                            if (Payload.contains("items") && Payload["items"].is_array())
+                            {
+                                Items = Payload["items"];
+                            }
+                            else if (Payload.contains("item") && Payload["item"].is_object())
+                            {
+                                Items.push_back(Payload["item"]);
+                            }
 
-                            if (GiveItemToPlayer(TargetPC, Blueprint, Quantity, Quality, IsBlueprint))
+                            bool AllItemsDelivered = !Items.empty();
+                            int DeliveredQuantity = 0;
+                            for (const auto& Item : Items)
+                            {
+                                const std::string BlueprintStr = Item.value("blueprint", "");
+                                const int Quantity = Item.value("quantity", 1);
+                                const float Quality = Item.value("quality", 0.0f);
+                                const bool IsBlueprint = Item.value("isBlueprint", false);
+                                if (BlueprintStr.empty() || Quantity < 1)
+                                {
+                                    AllItemsDelivered = false;
+                                    ErrorMessage = "Bundle contains an invalid item definition";
+                                    break;
+                                }
+                                FString Blueprint(ArkApi::Tools::Utf8Decode(BlueprintStr).c_str());
+                                if (!GiveItemToPlayer(TargetPC, Blueprint, Quantity, Quality, IsBlueprint))
+                                {
+                                    AllItemsDelivered = false;
+                                    ErrorMessage = "Game inventory mutation failed for a bundle item";
+                                    break;
+                                }
+                                DeliveredQuantity += Quantity;
+                            }
+
+                            if (AllItemsDelivered)
                             {
                                 SpawnSuccess = true;
 
@@ -659,13 +1085,13 @@ namespace HeartShop
 
                                 FString Message = FString(ArkApi::Tools::Utf8Decode(MessageTemplate).c_str());
                                 FString ProductNameFS = FString(ArkApi::Tools::Utf8Decode(ProductName).c_str());
-                                FString QuantityStr = FString::FromInt(Quantity);
+                                FString QuantityStr = FString::FromInt(DeliveredQuantity);
 
                                 Message = Message.Replace(L"{item}", *ProductNameFS, ESearchCase::IgnoreCase);
                                 Message = Message.Replace(L"{quantity}", *QuantityStr, ESearchCase::IgnoreCase);
                                 SendMessage(TargetPC, Message);
                             }
-                            else
+                            else if (ErrorMessage.empty())
                             {
                                 ErrorMessage = "Game inventory mutation failed";
                             }
@@ -680,12 +1106,10 @@ namespace HeartShop
                         try
                         {
                             std::string Species = Payload.value("species", "");
-                            std::string BlueprintPath = Payload.value("blueprintPath", "");
                             std::string DinoName = Payload.value("dinoName", "");
-                            std::string Gender = Payload.value("gender", "Male");
                             int Level = Payload.value("level", 1);
 
-                            if (SpawnDinoForPlayer(TargetPC, BlueprintPath, Gender, Level))
+                            if (SpawnExactDinoForPlayer(TargetPC, Payload))
                             {
                                 SpawnSuccess = true;
 
@@ -705,6 +1129,30 @@ namespace HeartShop
                             ErrorMessage = std::string("Dino spawn exception: ") + e.what();
                         }
                     }
+                    else if (DeliveryType == "dino_catalog")
+                    {
+                        try
+                        {
+                            const auto& DinoDefinition = Payload["dino"];
+                            const int Level = DinoDefinition.value("level", 1);
+                            const std::string ProductName = Payload.value("productName", "Dino");
+                            if (SpawnCatalogDinoForPlayer(TargetPC, Payload))
+                            {
+                                SpawnSuccess = true;
+                                const std::string Message = "Successfully delivered " + ProductName +
+                                    " (Level " + std::to_string(Level) + ")!";
+                                SendMessage(TargetPC, FString(ArkApi::Tools::Utf8Decode(Message).c_str()));
+                            }
+                            else
+                            {
+                                ErrorMessage = "Catalog dino spawn failed";
+                            }
+                        }
+                        catch (const std::exception& e)
+                        {
+                            ErrorMessage = std::string("Catalog dino delivery exception: ") + e.what();
+                        }
+                    }
                     else
                     {
                         ErrorMessage = "Unknown delivery type: " + DeliveryType;
@@ -715,10 +1163,23 @@ namespace HeartShop
                         if (CompleteDelivery(DeliveryType, DeliveryKey))
                         {
                             std::string ReceiptId = DeliveryJournal::MakeKey(DeliveryType, DeliveryKey);
-                            Http->CompleteDelivery(DeliveryKey, LeaseToken, SteamIdStr, PayloadHash, ReceiptId, [DeliveryKey](bool Success, const nlohmann::json&) {
+                            Http->CompleteDelivery(DeliveryKey, LeaseToken, SteamIdStr, PayloadHash, ReceiptId, [DeliveryKey](bool Success, const nlohmann::json& Response) {
                                 if (Success)
                                 {
-                                    Log::GetLog()->info("Delivery {} completed and acknowledged successfully", DeliveryKey);
+                                    const bool Duplicate = Response.is_object() && Response.value("duplicate", false);
+                                    if (Duplicate)
+                                    {
+                                        // We mutated the game and journalled completion, but the backend
+                                        // had already recorded this delivery (e.g. a prior ack we did not
+                                        // observe succeed). The backend did NOT settle twice.
+                                        Log::GetLog()->warn(
+                                            "Delivery {} acknowledged but backend reported duplicate; "
+                                            "order was already delivered/settled", DeliveryKey);
+                                    }
+                                    else
+                                    {
+                                        Log::GetLog()->info("Delivery {} completed and acknowledged successfully", DeliveryKey);
+                                    }
                                 }
                             });
                         }
@@ -731,9 +1192,14 @@ namespace HeartShop
                     }
                     else
                     {
+                        // Genuine game-mutation failure. Roll back the local prepared record so a
+                        // later retry can run cleanly, then report the failure. The backend decides
+                        // (per its attempt counter / backoff) whether this retries or dead-letters;
+                        // we observe that decision via the structured response.
                         AbortDelivery(DeliveryType, DeliveryKey);
-                        Http->FailDelivery(DeliveryKey, LeaseToken, ErrorMessage, [DeliveryKey, ErrorMessage](bool, const nlohmann::json&) {
+                        Http->FailDelivery(DeliveryKey, LeaseToken, ErrorMessage, [DeliveryKey, ErrorMessage](bool, const nlohmann::json& Response) {
                             Log::GetLog()->warn("Delivery {} failed: {}", DeliveryKey, ErrorMessage);
+                            LogFailOutcome(DeliveryKey, Response);
                         });
                     }
                 }
@@ -919,9 +1385,24 @@ namespace HeartShop
 
         std::string PrefixStr = PluginConfig->GetMessagePrefix();
         FString Prefix = FString(ArkApi::Tools::Utf8Decode(PrefixStr).c_str());
-        FString FullMessage = Prefix + L" " + Message;
+        ArkApi::GetApiUtils().SendChatMessage(Player, *Prefix, *Message);
+    }
 
-        ArkApi::GetApiUtils().SendChatMessage(Player, *Prefix, *FullMessage);
+    void SendAnnouncement(AShooterPlayerController* Player, const FString& Message, float DisplayTime)
+    {
+        if (!Player)
+            return;
+
+        // ARK's native HUD notification is substantially easier to scan than a burst
+        // of individual chat rows. Keep this player-scoped: shop results may be ranked
+        // or filtered for that player's cluster/server compatibility.
+        ArkApi::GetApiUtils().SendNotification(
+            Player,
+            FLinearColor(0.12f, 0.90f, 0.88f, 1.0f),
+            0.85f,
+            DisplayTime,
+            nullptr,
+            *Message);
     }
 
     uint64 GetSteamId(AShooterPlayerController* Player)
@@ -1000,7 +1481,14 @@ namespace HeartShop
     {
         if (!Journal)
         {
-            return DeliveryAction::Blocked;
+            // The journal failed to load at startup. We cannot guarantee idempotency, so we
+            // must not mutate game state. This is transient (operator can fix the data dir
+            // and reload), so defer the lease rather than burning a backend attempt.
+            Log::GetLog()->error(
+                "Delivery {}:{} deferred: local idempotency journal is unavailable",
+                DeliveryType,
+                DeliveryId);
+            return DeliveryAction::Deferred;
         }
 
         switch (Journal->Begin(DeliveryType, DeliveryId, Payload))
@@ -1014,24 +1502,37 @@ namespace HeartShop
                     DeliveryId);
                 return DeliveryAction::AcknowledgeOnly;
             case DeliveryJournal::BeginResult::UncertainPrepared:
+                // A prepared-but-not-completed record from a prior attempt/crash. We do not
+                // know whether the game mutation ran, so we must not run it again. This needs
+                // manual reconciliation, not an automatic /fail that would consume attempts and
+                // eventually dead-letter (refund) the order. Defer so the backoff/lease cycle
+                // keeps the job recoverable while an operator inspects the journal.
                 Log::GetLog()->critical(
-                    "Delivery {}:{} is in uncertain prepared state; automatic redelivery blocked",
+                    "Delivery {}:{} is in uncertain prepared state; automatic redelivery blocked, "
+                    "lease deferred for manual reconciliation",
                     DeliveryType,
                     DeliveryId);
-                return DeliveryAction::Blocked;
+                return DeliveryAction::Deferred;
             case DeliveryJournal::BeginResult::PayloadMismatch:
+                // The payload changed for a delivery id we have already seen. This is a real
+                // integrity violation (the immutable payload should never change for a fixed
+                // deliveryKey). Report it as a hard failure so the backend records an attempt
+                // and can route to dead-letter/refund rather than retrying a poisoned job.
                 Log::GetLog()->critical(
-                    "Delivery {}:{} payload changed for an existing delivery ID",
+                    "Delivery {}:{} payload changed for an existing delivery ID; failing hard",
                     DeliveryType,
                     DeliveryId);
                 return DeliveryAction::Blocked;
             case DeliveryJournal::BeginResult::PersistenceError:
             default:
+                // We could not durably record the prepared state, so we will not mutate the
+                // game (doing so would risk a duplicate grant on retry). This is a transient
+                // local I/O problem; defer the lease without consuming a backend attempt.
                 Log::GetLog()->critical(
-                    "Delivery {}:{} could not be persisted before game mutation",
+                    "Delivery {}:{} could not be persisted before game mutation; deferring lease",
                     DeliveryType,
                     DeliveryId);
-                return DeliveryAction::Blocked;
+                return DeliveryAction::Deferred;
         }
     }
 

@@ -24,10 +24,21 @@ import chatRoutes from './routes/chat.routes.js';
 import walletRoutes from './routes/wallet.routes.js';
 import cartRoutes from './routes/cart.routes.js';
 import checkoutRoutes from './routes/checkout.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
+import promotionRoutes from './routes/promotion.routes.js';
 import { setupSocketIO } from './websocket/index.js';
 import { startDiscordBot, registerCommands } from './discord/bot.js';
 
 dotenv.config();
+
+if (process.env.NODE_ENV === 'production') {
+  const required = ['DATABASE_URL', 'REDIS_URL', 'JWT_SECRET', 'ENCRYPTION_KEY', 'FRONTEND_URL', 'PLUGIN_API_URL'];
+  const missing = required.filter((name) => !process.env[name]);
+  if (missing.length > 0) throw new Error(`Missing required production environment variables: ${missing.join(', ')}`);
+  if (process.env.JWT_SECRET!.length < 32 || process.env.ENCRYPTION_KEY!.length < 32) {
+    throw new Error('JWT_SECRET and ENCRYPTION_KEY must each contain at least 32 characters');
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -72,7 +83,11 @@ app.use('/api/plugin', pluginLimiter);
 app.use('/api/', generalLimiter);
 
 // Body parsing
-app.use(express.json());
+// Payment signatures cover the exact request bytes; mount this before express.json().
+app.use('/api/payments/webhooks', express.raw({ type: 'application/json', limit: '256kb' }));
+// Native ARK dino snapshots are base64 encoded and signed by the server plugin.
+// Keep a bounded limit that accommodates them without accepting unbounded bodies.
+app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -94,6 +109,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/checkout', checkoutRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/promotions', promotionRoutes);
 app.use('/api/plugin', pluginRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/pdpa', pdpaRoutes);

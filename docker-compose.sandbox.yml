@@ -1,0 +1,46 @@
+# Fully isolated local test database, Redis and API. No production volumes or game servers.
+name: iris-sandbox
+services:
+  sandbox-postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: iris_sandbox
+      POSTGRES_PASSWORD: local-sandbox-only-no-real-data
+      POSTGRES_DB: iris_sandbox
+    volumes:
+      - sandbox_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U iris_sandbox]
+      interval: 3s
+      retries: 20
+  sandbox-redis:
+    image: redis:7-alpine
+  sandbox-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    env_file: .env.stripe.local
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://iris_sandbox:local-sandbox-only-no-real-data@sandbox-postgres:5432/iris_sandbox
+      REDIS_URL: redis://sandbox-redis:6379
+      JWT_SECRET: local-sandbox-only-jwt-secret-not-for-production-2026
+      ENCRYPTION_KEY: local-sandbox-only-encryption-not-for-production-2026
+      FRONTEND_URL: http://localhost:3100
+      PLUGIN_API_URL: http://localhost:3201/api/plugin
+    ports:
+      - 127.0.0.1:3201:3001
+    depends_on:
+      sandbox-postgres:
+        condition: service_healthy
+      sandbox-redis:
+        condition: service_started
+  stripe-listener:
+    image: stripe/stripe-cli:v1.50.11
+    env_file: .env.stripe.local
+    command: listen --events checkout.session.completed,checkout.session.expired,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed --forward-to http://sandbox-api:3001/api/payments/webhooks/stripe
+    depends_on:
+      - sandbox-api
+volumes:
+  sandbox_pg:

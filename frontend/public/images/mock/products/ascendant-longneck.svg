@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+  <title id="title">Ascendant Longneck Rifle mock art</title>
+  <desc id="desc">Premium sci-fi rifle blueprint artwork in cyan and gold.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#05070D"/><stop offset=".55" stop-color="#071A24"/><stop offset="1" stop-color="#102A3A"/></linearGradient>
+    <linearGradient id="metal" x1="0" x2="1"><stop stop-color="#DDBB72"/><stop offset=".42" stop-color="#F8E7AD"/><stop offset="1" stop-color="#7B6130"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="900" height="900" fill="url(#bg)"/>
+  <path d="M74 690c194-98 542-98 752 0" fill="none" stroke="#37E5D2" stroke-opacity=".2" stroke-width="4"/>
+  <g transform="translate(95 372) rotate(-8)" filter="url(#glow)">
+    <rect x="110" y="84" width="570" height="38" rx="18" fill="url(#metal)"/>
+    <rect x="594" y="65" width="170" height="22" rx="11" fill="#37E5D2"/>
+    <rect x="172" y="40" width="210" height="34" rx="17" fill="#071A24" stroke="#37E5D2" stroke-width="8"/>
+    <path d="M272 120h145l58 120h-86l-36-72h-81z" fill="#0A1520" stroke="#DDBB72" stroke-width="10"/>
+    <path d="M134 102 42 70v74z" fill="#0A1520" stroke="#DDBB72" stroke-width="10"/>
+    <circle cx="475" cy="103" r="30" fill="#37E5D2" fill-opacity=".22" stroke="#37E5D2" stroke-width="7"/>
+  </g>
+  <text x="70" y="112" fill="#DDBB72" font-family="Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="8">ASCENDANT</text>
+  <text x="70" y="158" fill="#37E5D2" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="5">LONGNECK RIFLE</text>
+</svg>

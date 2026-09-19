@@ -74,45 +74,46 @@ export function CookieConsent() {
     <>
       {/* Main Banner */}
       {!showSettings && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-ark-dark border-t border-gray-800 shadow-xl">
-          <div className="container mx-auto max-w-6xl">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-              <div className="flex items-start gap-3 flex-1">
-                <Cookie className="h-6 w-6 text-ark-gold flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-semibold mb-1">เราใช้คุกกี้</h3>
-                  <p className="text-sm text-gray-400">
-                    เว็บไซต์นี้ใช้คุกกี้เพื่อปรับปรุงประสบการณ์การใช้งานของคุณ
-                    คุกกี้ที่จำเป็นจะถูกใช้เสมอเพื่อให้บริการทำงานได้
-                    คุณสามารถจัดการการตั้งค่าคุกกี้ได้{' '}
-                    <Link href="/privacy" className="text-ark-accent hover:underline">
-                      อ่านเพิ่มเติม
-                    </Link>
-                  </p>
-                </div>
+        <div className="fixed bottom-4 left-4 z-40 max-w-md p-3.5 sm:p-4 bg-[#081523]/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.85)] text-slate-200 animate-slide-up">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-amber-400/30 bg-amber-400/10 text-amber-300">
+                <Cookie className="h-4 w-4" />
               </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-bold text-white mb-0.5">การใช้งานคุกกี้ (Cookie Policy)</h3>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  เว็บไซต์นี้ใช้คุกกี้เพื่อปรับปรุงประสบการณ์การใช้งานของคุณ{' '}
+                  <Link href="/privacy" className="text-cyan-300 underline underline-offset-2 hover:text-white">
+                    อ่านเพิ่มเติม
+                  </Link>
+                </p>
+              </div>
+            </div>
 
-              <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="btn btn-secondary flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  ตั้งค่า
-                </button>
-                <button
-                  onClick={handleAcceptNecessary}
-                  className="btn btn-secondary"
-                >
-                  เฉพาะที่จำเป็น
-                </button>
-                <button
-                  onClick={handleAcceptAll}
-                  className="btn btn-primary"
-                >
-                  ยอมรับทั้งหมด
-                </button>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-1 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setShowSettings(true)}
+                className="h-8 px-3 text-xs font-semibold rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 flex items-center gap-1.5 transition"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                ตั้งค่า
+              </button>
+              <button
+                type="button"
+                onClick={handleAcceptNecessary}
+                className="h-8 px-3 text-xs font-semibold rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 transition"
+              >
+                เฉพาะที่จำเป็น
+              </button>
+              <button
+                type="button"
+                onClick={handleAcceptAll}
+                className="h-8 px-3 text-xs font-bold rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black shadow-[0_0_12px_rgba(55,229,210,0.4)] transition"
+              >
+                ยอมรับทั้งหมด
+              </button>
             </div>
           </div>
         </div>
@@ -125,12 +126,14 @@ export function CookieConsent() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Cookie className="h-6 w-6 text-ark-gold" />
+                  <Cookie className="h-6 w-6 text-iris-gold" />
                   ตั้งค่าคุกกี้
                 </h2>
                 <button
+                  type="button"
                   onClick={() => setShowSettings(false)}
                   className="p-2 hover:bg-gray-700 rounded"
+                  aria-label="ปิดหน้าต่างตั้งค่า"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -138,7 +141,7 @@ export function CookieConsent() {
 
               <div className="space-y-4">
                 {/* Necessary Cookies */}
-                <div className="p-4 bg-ark-darker rounded-lg">
+                <div className="p-4 bg-black/40 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold">คุกกี้ที่จำเป็น</h3>
                     <span className="text-xs text-green-400 bg-green-500/20 px-2 py-1 rounded">
@@ -152,7 +155,7 @@ export function CookieConsent() {
                 </div>
 
                 {/* Analytics Cookies */}
-                <div className="p-4 bg-ark-darker rounded-lg">
+                <div className="p-4 bg-black/40 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold">คุกกี้วิเคราะห์</h3>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -164,7 +167,7 @@ export function CookieConsent() {
                         }
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ark-accent"></div>
+                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-iris-cyan"></div>
                     </label>
                   </div>
                   <p className="text-sm text-gray-400">
@@ -173,7 +176,7 @@ export function CookieConsent() {
                 </div>
 
                 {/* Marketing Cookies */}
-                <div className="p-4 bg-ark-darker rounded-lg">
+                <div className="p-4 bg-black/40 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold">คุกกี้การตลาด</h3>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -185,7 +188,7 @@ export function CookieConsent() {
                         }
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ark-accent"></div>
+                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-iris-cyan"></div>
                     </label>
                   </div>
                   <p className="text-sm text-gray-400">
@@ -196,12 +199,14 @@ export function CookieConsent() {
 
               <div className="flex gap-3 mt-6">
                 <button
+                  type="button"
                   onClick={handleSavePreferences}
                   className="btn btn-primary flex-1"
                 >
                   บันทึกการตั้งค่า
                 </button>
                 <button
+                  type="button"
                   onClick={handleAcceptAll}
                   className="btn btn-secondary"
                 >

@@ -32,6 +32,6 @@ test.describe('Home Page', () => {
     await page.goto('/');
     await page.keyboard.press('Tab');
     await expect(page.getByRole('link', { name: 'ข้ามไปยังเนื้อหาหลัก' })).toBeFocused();
-    await expect(page.getByRole('heading', { name: 'เลือกเส้นทางของคุณ' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /ยอดนิยมจาก IRIS Store|สถานะเซิร์ฟเวอร์/i }).first()).toBeVisible();
   });
 });

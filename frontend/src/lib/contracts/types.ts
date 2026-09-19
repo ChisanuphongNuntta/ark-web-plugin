@@ -41,6 +41,17 @@ export interface Product {
   description?: string | null;
   /** Iris Coin price — INTEGER per contract. */
   price: number;
+  productType?: 'item' | 'dino' | 'engram' | 'kit';
+  deliveryPayload?: {
+    spawn?: {
+      blueprint?: string;
+      level?: number;
+      forceTame?: boolean;
+      neutered?: boolean;
+      command?: string;
+    };
+    [key: string]: unknown;
+  } | null;
   itemBlueprint?: string | null;
   /**
    * @deprecated Legacy alias of `itemBlueprint`. Kept optional only so any
@@ -146,6 +157,106 @@ export interface CheckoutCommitResponse {
   totalSpent: string;
 }
 
+/* ------------------------------- Orders (M3) ------------------------------ *
+ * Order state machine (§8). Contract enum OrderStatus. `pending` is a legacy
+ * single-item status kept for not-yet-migrated rows. The frontend renders
+ * status but never decides transitions — the backend owns the machine.
+ * ------------------------------------------------------------------------- */
+export type OrderStatus =
+  | 'draft'
+  | 'pending_payment'
+  | 'paid'
+  | 'queued'
+  | 'delivering'
+  | 'delivered'
+  | 'failed'
+  | 'refunded'
+  | 'cancelled'
+  /** @deprecated legacy single-item status (pre-M3 rows). */
+  | 'pending';
+
+/**
+ * One order row (openapi.yaml Order). `totalPrice` is an INTEGER Iris Coin
+ * amount echoed from the backend — never recomputed on the frontend.
+ */
+export interface Order {
+  id: string;
+  userId: string;
+  productId: number;
+  serverId: number;
+  quantity: number;
+  /** Iris Coin charged — INTEGER per contract; the wallet ledger is authoritative. */
+  totalPrice: number;
+  status: OrderStatus;
+  deliveredAt?: string | null;
+  deliveryAttempts?: number;
+  lastError?: string | null;
+  paidAt?: string | null;
+  queuedAt?: string | null;
+  refundedAt?: string | null;
+  checkoutSessionId?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  product?: Product;
+  server?: {
+    id: number;
+    name: string;
+    map?: string | null;
+  };
+}
+
+export interface OrderListResponse {
+  orders: Order[];
+  pagination: Pagination;
+}
+
+/** Per-order delivery summary (from the Fulfillment row) on GET /orders/{id}. */
+export interface DeliverySummary {
+  status: 'queued' | 'claimed' | 'delivered' | 'failed';
+  attempts?: number;
+  lastError?: string | null;
+  receiptId?: string | null;
+}
+
+/** Timeline status values, in canonical chronological order. */
+export type TimelineStatus =
+  | 'created'
+  | 'paid'
+  | 'queued'
+  | 'delivering'
+  | 'delivered'
+  | 'failed'
+  | 'refunded';
+
+/** One chronological delivery event (openapi.yaml TimelineEvent). */
+export interface TimelineEvent {
+  status: TimelineStatus;
+  at: string;
+}
+
+/** GET /orders/{id} -> order + delivery summary + chronological timeline. */
+export interface OrderDetailResponse {
+  order: Order;
+  /** null when no Fulfillment exists yet (e.g. pre-delivery / legacy rows). */
+  delivery: DeliverySummary | null;
+  timeline: TimelineEvent[];
+}
+
+/**
+ * POST /orders/{id}/refund response. `refundedAmount` is a backend decimal
+ * string; funds land in the wallet `refundable` account, NOT `available`.
+ * Idempotent: a second call returns `alreadyRefunded: true` with the same
+ * amount. The frontend never computes the refund amount.
+ */
+export interface RefundResponse {
+  success: boolean;
+  orderId: string;
+  status: 'refunded';
+  /** Decimal string (`^[0-9]+$`). */
+  refundedAmount: string;
+  alreadyRefunded?: boolean;
+}
+
 /** Decimal-string balances per sub-account. */
 export interface WalletBalance {
   currency: string;
@@ -249,3 +360,69 @@ export interface SessionWithRisk {
   riskFlag: boolean;
   riskReasons: SessionRiskReason[];
 }
+
+export interface PaymentPackage {
+  id: string;
+  name: string;
+  priceThb: string;
+  points: string;
+  bonusPoints: string;
+  totalPoints: string;
+  tier: string;
+  isPopular?: boolean;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+export interface PaymentPackagesResponse {
+  packages: PaymentPackage[];
+}
+
+export interface PaymentIntent {
+  id: string;
+  userId: string;
+  packageId: string;
+  provider: string;
+  providerIntentId?: string | null;
+  reference: string;
+  idempotencyKey: string;
+  amountThb: string;
+  pointsAmount: string;
+  paymentUrl?: string | null;
+  qrPayload?: string | null;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'expired';
+  expiresAt: string;
+  completedAt?: string | null;
+}
+
+export interface CreatePaymentIntentResponse {
+  intent: PaymentIntent;
+  replayed: boolean;
+}
+
+export interface SlipTopupSubmission {
+  id: string;
+  userId: string;
+  userName: string;
+  userDiscordId?: string;
+  userAvatar?: string;
+  packageId: string;
+  packageName: string;
+  amountThb: number;
+  pointsToCredit: number;
+  slipImageUrl: string;
+  transferBank: string;
+  transferRef?: string;
+  transferredAt: string;
+  status: 'pending_approval' | 'approved' | 'rejected';
+  reviewedBy?: string;
+  reviewedAt?: string;
+  rejectReason?: string;
+  createdAt: string;
+}
+
+export interface PendingTopupsResponse {
+  topups: SlipTopupSubmission[];
+  count: number;
+}
+

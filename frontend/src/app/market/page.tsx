@@ -1,158 +1,141 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { dinoMarketApi } from '@/lib/api';
-import LaserCard from '@/components/LaserCard';
-import LaserButton from '@/components/LaserButton';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Button } from '@/components/ui/Button';
 import {
   Loader2,
   Search,
   Filter,
   Store,
   ArrowUpDown,
-  Heart,
-  Zap,
-  Shield,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
 } from 'lucide-react';
 
+import { getProductImageUrl } from '@/lib/productVisuals';
+
 // Gender icons
 const GenderIcon = ({ gender }: { gender: string }) => {
   if (gender === 'Male') {
-    return <span className="text-blue-400 font-extrabold text-sm drop-shadow-[0_0_5px_rgba(96,165,250,0.5)]">♂ MALE</span>;
+    return <span className="text-sky-400 font-extrabold text-[11px] tracking-wider bg-sky-500/10 border border-sky-500/30 px-2 py-0.5 rounded-lg">♂ MALE</span>;
   }
-  return <span className="text-pink-400 font-extrabold text-sm drop-shadow-[0_0_5px_rgba(244,114,182,0.5)]">♀ FEMALE</span>;
+  return <span className="text-pink-400 font-extrabold text-[11px] tracking-wider bg-pink-500/10 border border-pink-500/30 px-2 py-0.5 rounded-lg">♀ FEMALE</span>;
 };
 
 // Dino Card Component
 function DinoCard({ listing }: { listing: any }) {
-  const totalMutations = listing.maternalMutations + listing.paternalMutations;
+  const imageUrl = getProductImageUrl({ name: listing.species || listing.dinoName || 'Dinosaur', imageUrl: listing.imageUrl });
 
   return (
     <Link href={`/market/${listing.id}`}>
-      <LaserCard glowOnHover variant={listing.gender === 'Male' ? 'cyan' : 'gold'} className="h-full">
-        <div className="p-5 space-y-4 bg-gradient-to-b from-ark-panel/60 to-ark-dark/40 relative overflow-hidden">
-          
-          {/* Subtle background watermarked text of species */}
-          <div className="absolute right-[-10px] top-[-10px] text-5xl font-black text-white/2 select-none uppercase tracking-tighter italic">{listing.species.slice(0, 5)}</div>
-
-          {/* Header */}
-          <div className="flex items-start justify-between z-10 relative">
-            <div>
-              <h3 className="font-extrabold text-base text-white truncate max-w-[140px] uppercase tracking-wide">
-                {listing.dinoName || listing.species}
-              </h3>
-              <p className="text-xs text-ark-primary font-bold tracking-wider uppercase">{listing.species}</p>
-            </div>
-            <div className="flex flex-col items-end gap-1.5">
-              <span className="px-2 py-0.5 bg-ark-primary/10 border border-ark-primary/30 rounded-lg text-[10px] font-black text-ark-primary">
+      <div
+        className="h-full rounded-2xl border border-slate-700/40 bg-[#102637] transition-all duration-300 hover:border-cyan-400/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.15)] flex flex-col justify-between overflow-hidden group"
+      >
+        <div className="p-4 space-y-3 relative">
+          {/* 3D Creature Image Frame */}
+          <div className="relative h-40 w-full overflow-hidden rounded-xl bg-[#081826] border border-slate-700/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageUrl}
+              alt={listing.species}
+              className="h-full w-full object-cover object-center transition duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#06111d]/90 via-transparent to-transparent" />
+            <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
+              <span className="px-2 py-0.5 bg-cyan-950/70 border border-cyan-400/40 rounded-md text-[10px] font-bold text-cyan-200 backdrop-blur-md">
                 LV.{listing.level}
               </span>
+            </div>
+            <div className="absolute top-2 right-2">
               <GenderIcon gender={listing.gender} />
             </div>
           </div>
 
-          {/* Stats terminal preview */}
-          <div className="grid grid-cols-2 gap-2 text-xs z-10 relative">
-            
-            {/* HP */}
-            <div className="p-2 bg-black/40 rounded-xl border border-white/5 space-y-1">
-              <div className="flex items-center justify-between text-[10px] text-gray-500 font-bold">
-                <span className="flex items-center gap-1"><Heart className="h-3 w-3 text-red-400" /> HP</span>
-                <span className="text-white font-extrabold">{listing.baseHealth}</span>
-              </div>
-              <div className="h-1 bg-black/30 rounded-full overflow-hidden">
-                <div className="h-full bg-red-400" style={{ width: `${Math.min(100, (listing.baseHealth / 100) * 100)}%` }}></div>
-              </div>
-            </div>
-
-            {/* Stamina */}
-            <div className="p-2 bg-black/40 rounded-xl border border-white/5 space-y-1">
-              <div className="flex items-center justify-between text-[10px] text-gray-500 font-bold">
-                <span className="flex items-center gap-1"><Zap className="h-3 w-3 text-yellow-400" /> STAM</span>
-                <span className="text-white font-extrabold">{listing.baseStamina}</span>
-              </div>
-              <div className="h-1 bg-black/30 rounded-full overflow-hidden">
-                <div className="h-full bg-yellow-400" style={{ width: `${Math.min(100, (listing.baseStamina / 100) * 100)}%` }}></div>
-              </div>
-            </div>
-
-            {/* Melee Damage */}
-            <div className="p-2 bg-black/40 rounded-xl border border-white/5 space-y-1">
-              <div className="flex items-center justify-between text-[10px] text-gray-500 font-bold">
-                <span className="flex items-center gap-1"><Shield className="h-3 w-3 text-ark-primary" /> DMG</span>
-                <span className="text-white font-extrabold">{listing.baseDamage}</span>
-              </div>
-              <div className="h-1 bg-black/30 rounded-full overflow-hidden">
-                <div className="h-full bg-ark-primary" style={{ width: `${Math.min(100, (listing.baseDamage / 100) * 100)}%` }}></div>
-              </div>
-            </div>
-
-            {/* Mutations */}
-            <div className="p-2 bg-black/40 rounded-xl border border-white/5 flex flex-col justify-center items-center text-center">
-              <span className="text-[9px] text-gray-500 font-black uppercase">MUTATIONS</span>
-              <span className="text-xs font-black text-ark-accent">{totalMutations}</span>
-            </div>
-
-          </div>
-
-          {/* Imprint status */}
-          {listing.imprintQuality > 0 && (
-            <div className="space-y-1 z-10 relative">
-              <div className="flex items-center justify-between text-[9px] font-black text-gray-500 tracking-wider">
-                <span>NEURAL SYNC:</span>
-                <span className="text-ark-primary">{Math.round(listing.imprintQuality * 100)}% IMPRINT</span>
-              </div>
-              <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
-                <div
-                  className="h-full bg-gradient-to-r from-ark-primary to-ark-accent"
-                  style={{ width: `${listing.imprintQuality * 100}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Seller HUD & points */}
-          <div className="flex items-center justify-between pt-3 border-t border-white/5 z-10 relative">
-            <div className="flex items-center gap-2">
-              {listing.seller?.discordAvatar ? (
-                <img
-                  src={`https://cdn.discordapp.com/avatars/${listing.seller.id}/${listing.seller.discordAvatar}.png`}
-                  alt=""
-                  className="w-5.5 h-5.5 rounded-full border border-white/10"
-                />
-              ) : (
-                <div className="w-5.5 h-5.5 rounded-full bg-white/5 border border-white/10" />
-              )}
-              <span className="text-xs text-gray-400 font-semibold max-w-[80px] truncate uppercase">
-                {listing.seller?.discordUsername || 'UNKNOWN'}
-              </span>
-            </div>
-            <div className="text-right">
-              <span className="text-base font-black text-gradient-primary">
-                {listing.price.toLocaleString()}
-              </span>
-              <span className="text-[9px] text-gray-500 ml-1 font-black uppercase">IC</span>
+          {/* Header */}
+          <div className="flex items-start justify-between z-10 relative">
+            <div>
+              <h3 className="font-bold text-base text-iris-pearl truncate max-w-[170px] uppercase tracking-wide group-hover:text-iris-cyan transition">
+                {listing.dinoName || listing.species}
+              </h3>
+              <p className="text-xs text-iris-cyan font-bold tracking-wider uppercase">{listing.species}</p>
             </div>
           </div>
 
+          {/* Stats Preview */}
+          <div className="grid grid-cols-2 gap-2 text-xs z-10 relative bg-black/20 p-2.5 rounded-xl border border-white/5">
+            <div>
+              <span className="text-[10px] text-iris-muted uppercase block">Health</span>
+              <span className="font-mono font-bold text-iris-pearl tabular-nums">{listing.health ? listing.health.toLocaleString() : 'N/A'}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-iris-muted uppercase block">Melee</span>
+              <span className="font-mono font-bold text-iris-pearl tabular-nums">{listing.melee ? `${listing.melee}%` : 'N/A'}</span>
+            </div>
+          </div>
         </div>
-      </LaserCard>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-slate-700/30 flex items-center justify-between bg-black/15">
+          <span className="text-xs text-iris-muted font-medium truncate max-w-[110px]">
+            {listing.seller?.discordUsername || 'UNKNOWN'}
+          </span>
+          <div className="text-right flex items-center gap-1">
+            <span className="text-base font-bold text-iris-gold font-mono tabular-nums">
+              {listing.price.toLocaleString()}
+            </span>
+            <span className="text-[10px] text-iris-gold/80 font-bold">IC</span>
+          </div>
+        </div>
+      </div>
     </Link>
   );
 }
 
-export default function MarketplacePage() {
-  const [search, setSearch] = useState('');
-  const [selectedSpecies, setSelectedSpecies] = useState('');
-  const [gender, setGender] = useState('');
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(1);
+function MarketplaceContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const searchParam = searchParams.get('search') ?? '';
+  const speciesParam = searchParams.get('species') ?? '';
+  const genderParam = searchParams.get('gender') ?? '';
+  const sortByParam = searchParams.get('sortBy') ?? 'createdAt';
+  const sortOrderParam = (searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
+  const pageParam = Math.max(1, Number(searchParams.get('page')) || 1);
+
+  const [search, setSearch] = useState(searchParam);
+  const [selectedSpecies, setSelectedSpecies] = useState(speciesParam);
+  const [gender, setGender] = useState(genderParam);
+  const [sortBy, setSortBy] = useState(sortByParam);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(sortOrderParam);
+  const [page, setPage] = useState(pageParam);
+
+  useEffect(() => {
+    setSearch(searchParam);
+    setSelectedSpecies(speciesParam);
+    setGender(genderParam);
+    setSortBy(sortByParam);
+    setSortOrder(sortOrderParam);
+    setPage(pageParam);
+  }, [searchParam, speciesParam, genderParam, sortByParam, sortOrderParam, pageParam]);
+
+  const updateUrl = useCallback(
+    (updates: Record<string, string | null>) => {
+      const next = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value) next.set(key, value);
+        else next.delete(key);
+      });
+      const query = next.toString();
+      router.push(query ? `/market?${query}` : '/market');
+    },
+    [router, searchParams]
+  );
 
   const { data: listingsData, isLoading } = useQuery({
     queryKey: ['dinoListings', search, selectedSpecies, gender, sortBy, sortOrder, page],
@@ -179,70 +162,86 @@ export default function MarketplacePage() {
   });
 
   const toggleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
-    }
+    const nextOrder = sortBy === field && sortOrder === 'desc' ? 'asc' : 'desc';
+    setSortBy(field);
+    setSortOrder(nextOrder);
+    updateUrl({ sortBy: field, sortOrder: nextOrder, page: null });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    updateUrl({ search: value || null, page: null });
+  };
+
+  const handleSpeciesChange = (value: string) => {
+    setSelectedSpecies(value);
+    updateUrl({ species: value || null, page: null });
+  };
+
+  const handleGenderChange = (value: string) => {
+    setGender(value);
+    updateUrl({ gender: value || null, page: null });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    updateUrl({ page: String(newPage) });
   };
 
   return (
-    <div className="space-y-8 py-6">
-      
-      {/* Header Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-        <div className="relative inline-block">
-          <div className="absolute inset-0 bg-ark-primary/10 rounded-2xl blur-2xl"></div>
-          <h1 className="text-3xl font-black bg-gradient-to-r from-ark-primary via-ark-accent to-ark-primary bg-clip-text text-transparent relative flex items-center gap-3 tracking-widest uppercase">
-            <div className="relative">
-              <div className="absolute inset-0 bg-ark-primary/25 rounded-full blur-md animate-pulse"></div>
-              <Store className="h-8 w-8 text-ark-primary relative" />
-            </div>
-            DINO MARKETPLACE
+    <div className="page-shell py-8 sm:py-10 space-y-8 animate-slide-up">
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-slate-700/30 pb-6">
+        <div className="space-y-1">
+          <span className="eyebrow text-cyan-300">IRIS Player Market</span>
+          <h1 className="font-serif text-3xl sm:text-4xl font-normal text-iris-pearl tracking-tight flex items-center gap-3">
+            <Store className="h-7 w-7 text-iris-cyan" />
+            <span>ตลาดไดโนเสาร์</span>
           </h1>
+          <p className="text-xs text-iris-muted">พบไดโนเสาร์คู่ใจจากผู้เล่นในชุมชน ตรวจสอบรายละเอียดและเงื่อนไขก่อนซื้อ</p>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="flex gap-4">
-          <div className="px-4.5 py-2 bg-gradient-to-b from-ark-panel/60 to-ark-dark/40 rounded-xl border border-white/5">
-            <span className="text-[9px] text-gray-500 font-black uppercase tracking-wider">ACTIVE TRADES</span>
-            <p className="text-lg font-black text-ark-primary">
-              {statsData?.stats?.activeListings || 0}
-            </p>
+        {/* Quick Stats Banner */}
+        <div className="flex items-center gap-3">
+          <div className="px-4 py-2 bg-[#102637] rounded-2xl border border-slate-700/40 text-center">
+            <span className="text-[10px] text-iris-muted font-semibold uppercase block">รายการทั้งหมด</span>
+            <span className="text-sm font-bold text-iris-pearl font-mono tabular-nums">
+              {statsData?.stats?.totalListings || 0}
+            </span>
           </div>
-          <div className="px-4.5 py-2 bg-gradient-to-b from-ark-panel/60 to-ark-dark/40 rounded-xl border border-white/5">
-            <span className="text-[9px] text-gray-500 font-black uppercase tracking-wider">SECURED SALES</span>
-            <p className="text-lg font-black text-ark-accent">
-              {statsData?.stats?.totalSold || 0}
-            </p>
+          <div className="px-4 py-2 bg-[#102637] rounded-2xl border border-slate-700/40 text-center">
+            <span className="text-[10px] text-iris-muted font-semibold uppercase block">ยอดเทรดสะสม</span>
+            <span className="text-sm font-bold text-iris-gold font-mono tabular-nums">
+              {(statsData?.stats?.totalVolume || 0).toLocaleString()} IC
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Advanced Filters */}
-      <LaserCard className="border-white/5">
-        <div className="p-4 bg-gradient-to-r from-ark-panel/60 to-ark-dark/40 flex flex-col md:flex-row items-center gap-4">
-          
+      {/* Advanced Filters Card */}
+      <GlassCard className="p-4">
+        <div className="flex flex-col md:flex-row items-center gap-4">
           {/* Search bar */}
           <div className="flex-1 w-full relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ark-primary" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-iris-cyan" />
             <input
               type="text"
+              aria-label="ค้นหาไดโนเสาร์"
               placeholder="ค้นหาไดโน เช่น Rex, Giga, Spino..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input pl-10 w-full animate-pulse-glow"
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="w-full h-11 pl-10 pr-4 bg-black/40 border border-white/10 rounded-2xl text-xs text-iris-pearl placeholder:text-iris-muted/60 focus:border-iris-cyan focus:outline-none focus:ring-1 focus:ring-iris-cyan/30 transition-all"
             />
           </div>
 
           {/* Species Picker */}
-          <div className="w-full md:w-44 flex items-center gap-2">
-            <Filter className="h-4 w-4 text-ark-accent flex-shrink-0" />
+          <div className="w-full md:w-48 flex items-center gap-2">
+            <Filter className="h-4 w-4 text-iris-gold shrink-0" />
             <select
               value={selectedSpecies}
-              onChange={(e) => setSelectedSpecies(e.target.value)}
-              className="input text-xs font-bold uppercase tracking-wider"
+              onChange={(e) => handleSpeciesChange(e.target.value)}
+              aria-label="เลือกสายพันธุ์ไดโนเสาร์"
+              className="w-full h-11 px-3 bg-black/40 border border-white/10 rounded-2xl text-xs font-bold text-iris-pearl uppercase focus:border-iris-cyan focus:outline-none transition-all"
             >
               <option value="">ทุกสายพันธุ์</option>
               {speciesData?.species?.map((s: any) => (
@@ -256,8 +255,9 @@ export default function MarketplacePage() {
           {/* Gender Picker */}
           <select
             value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            className="input w-full md:w-32 text-xs font-bold uppercase tracking-wider"
+            onChange={(e) => handleGenderChange(e.target.value)}
+            aria-label="เลือกเพศไดโนเสาร์"
+            className="w-full md:w-36 h-11 px-3 bg-black/40 border border-white/10 rounded-2xl text-xs font-bold text-iris-pearl uppercase focus:border-iris-cyan focus:outline-none transition-all"
           >
             <option value="">ทุกเพศ</option>
             <option value="Male">♂ MALE</option>
@@ -265,7 +265,7 @@ export default function MarketplacePage() {
           </select>
 
           {/* Sort Toggles */}
-          <div className="flex gap-2 w-full md:w-auto flex-shrink-0">
+          <div className="flex gap-2 w-full md:w-auto shrink-0">
             {[
               { id: 'createdAt', label: 'ล่าสุด' },
               { id: 'price', label: 'ราคา' },
@@ -273,11 +273,12 @@ export default function MarketplacePage() {
             ].map((sort) => (
               <button
                 key={sort.id}
+                type="button"
                 onClick={() => toggleSort(sort.id)}
-                className={`px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl border transition-all flex items-center gap-1 w-full justify-center ${
+                className={`px-3.5 h-11 text-xs font-extrabold uppercase tracking-wider rounded-2xl border transition-all flex items-center gap-1.5 justify-center ${
                   sortBy === sort.id
-                    ? 'border-ark-primary bg-ark-primary/10 text-ark-primary'
-                    : 'border-white/5 text-gray-400 hover:border-white/20'
+                    ? 'border-iris-cyan bg-iris-cyan/15 text-iris-cyan'
+                    : 'border-white/10 text-iris-muted hover:border-white/20 hover:text-iris-pearl'
                 }`}
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
@@ -285,26 +286,20 @@ export default function MarketplacePage() {
               </button>
             ))}
           </div>
-
         </div>
-      </LaserCard>
+      </GlassCard>
 
       {/* Listings Grid */}
       {isLoading ? (
-        <div className="flex justify-center py-32 bg-ark-panel/20 rounded-3xl border border-white/5">
-          <div className="relative">
-            <div className="absolute inset-0 bg-ark-primary/10 rounded-full blur-xl"></div>
-            <Loader2 className="h-10 w-10 animate-spin text-ark-primary relative" />
-          </div>
+        <div className="flex justify-center py-32 bg-iris-slate/30 rounded-3xl border border-white/5">
+          <Loader2 className="h-10 w-10 animate-spin text-iris-cyan" />
         </div>
       ) : !listingsData?.listings || listingsData.listings.length === 0 ? (
-        <LaserCard>
-          <div className="text-center py-24 bg-gradient-to-b from-ark-panel/60 to-ark-dark/40">
-            <Store className="h-16 w-16 text-gray-500/30 mx-auto mb-4" />
-            <p className="text-gray-400 font-extrabold text-base uppercase tracking-wider">ไม่พบไดโนเสาร์ในรายการค้นหา</p>
-            <p className="text-xs text-gray-500 mt-2">โปรดปรับสายพันธุ์ ตัวกรอง หรือพิมพ์เพื่อค้นหาใหม่อีกครั้ง</p>
-          </div>
-        </LaserCard>
+        <GlassCard className="text-center py-24">
+          <Store className="h-16 w-16 text-iris-muted/30 mx-auto mb-4" />
+          <p className="text-iris-pearl font-extrabold text-base uppercase tracking-wider">ไม่พบไดโนเสาร์ในรายการค้นหา</p>
+          <p className="text-xs text-iris-muted mt-2">โปรดปรับสายพันธุ์ ตัวกรอง หรือพิมพ์เพื่อค้นหาใหม่อีกครั้ง</p>
+        </GlassCard>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
           {listingsData.listings.map((listing: any) => (
@@ -313,45 +308,64 @@ export default function MarketplacePage() {
         </div>
       )}
 
-      {/* Pagination control */}
+      {/* Pagination Control */}
       {listingsData?.pagination && listingsData.pagination.totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4.5 pt-4">
+        <div className="flex justify-center items-center gap-4 pt-4">
           <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            type="button"
+            onClick={() => handlePageChange(Math.max(1, page - 1))}
             disabled={page === 1}
-            className="p-3 rounded-xl border border-white/5 text-ark-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/5 transition-all"
+            aria-label="หน้าก่อนหน้า"
+            className="p-3 rounded-2xl border border-white/10 text-iris-cyan disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/5 transition-all"
           >
-            <ChevronLeft className="h-4.5 w-4.5" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
 
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+          <span className="text-xs font-extrabold text-iris-muted uppercase tracking-widest">
             PAGE {listingsData.pagination.page} / {listingsData.pagination.totalPages}
           </span>
 
           <button
-            onClick={() => setPage((p) => Math.min(listingsData.pagination.totalPages, p + 1))}
+            type="button"
+            onClick={() => handlePageChange(Math.min(listingsData.pagination.totalPages, page + 1))}
             disabled={page === listingsData.pagination.totalPages}
-            className="p-3 rounded-xl border border-white/5 text-ark-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/5 transition-all"
+            aria-label="หน้าถัดไป"
+            className="p-3 rounded-2xl border border-white/10 text-iris-cyan disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/5 transition-all"
           >
-            <ChevronRight className="h-4.5 w-4.5" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* Navigation action links */}
+      {/* Action links */}
       <div className="flex justify-center gap-4 pt-4">
         <Link href="/market/my-listings">
-          <LaserButton variant="secondary" icon={<TrendingUp className="h-4.5 w-4.5" />}>
+          <Button variant="secondary" className="gap-2 text-xs uppercase font-extrabold">
+            <TrendingUp className="h-4 w-4 text-iris-cyan" />
             รายการขายของฉัน
-          </LaserButton>
+          </Button>
         </Link>
         <Link href="/market/my-purchases">
-          <LaserButton variant="secondary" icon={<Store className="h-4.5 w-4.5 text-ark-accent" />}>
+          <Button variant="secondary" className="gap-2 text-xs uppercase font-extrabold">
+            <Store className="h-4 w-4 text-iris-gold" />
             ไดโนที่ฉันซื้อ
-          </LaserButton>
+          </Button>
         </Link>
       </div>
-
     </div>
+  );
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-32">
+          <Loader2 className="h-10 w-10 animate-spin text-iris-cyan" />
+        </div>
+      }
+    >
+      <MarketplaceContent />
+    </Suspense>
   );
 }

@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contentApi } from '@/lib/api';
-import LaserCard from '@/components/LaserCard';
-import LaserModal from '@/components/LaserModal';
-import LaserButton from '@/components/LaserButton';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Button } from '@/components/ui/Button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
 import {
   ArrowLeft,
   Save,
@@ -380,25 +380,25 @@ export default function PageEditorPage() {
       {/* Blocks */}
       <div className="space-y-4">
         {blocks.length === 0 ? (
-          <LaserCard>
+          <GlassCard>
             <div className="text-center py-16">
               <div className="relative inline-block mb-4">
                 <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl"></div>
                 <Layout className="h-16 w-16 text-emerald-400/50 relative mx-auto" />
               </div>
               <p className="text-gray-400 text-lg mb-4">ยังไม่มี Content Block</p>
-              <LaserButton onClick={() => setShowAddBlock(true)}>
+              <Button onClick={() => setShowAddBlock(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 เพิ่ม Block แรก
-              </LaserButton>
+              </Button>
             </div>
-          </LaserCard>
+          </GlassCard>
         ) : (
           <>
             {blocks.map((block: ContentBlock, index: number) => {
               const IconComponent = blockIcons[block.blockType] || FileText;
               return (
-                <LaserCard key={block.id} glowOnHover>
+                <GlassCard key={block.id} glowOnHover>
                   <div className="p-4">
                     <div className="flex items-center gap-4">
                       {/* Drag handle */}
@@ -489,7 +489,7 @@ export default function PageEditorPage() {
                       </div>
                     </div>
                   </div>
-                </LaserCard>
+                </GlassCard>
               );
             })}
 
@@ -514,7 +514,7 @@ export default function PageEditorPage() {
           ></div>
 
           <div className="relative z-10 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-            <LaserCard>
+            <GlassCard>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
@@ -551,7 +551,7 @@ export default function PageEditorPage() {
                   })}
                 </div>
               </div>
-            </LaserCard>
+            </GlassCard>
           </div>
         </div>
       )}
@@ -580,7 +580,7 @@ export default function PageEditorPage() {
           ></div>
 
           <div className="relative z-10 w-full max-w-lg max-h-[80vh] overflow-y-auto">
-            <LaserCard>
+            <GlassCard>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
@@ -708,7 +708,7 @@ export default function PageEditorPage() {
                   >
                     ยกเลิก
                   </button>
-                  <LaserButton
+                  <Button
                     onClick={handleSaveSettings}
                     disabled={updatePageMutation.isPending}
                   >
@@ -718,27 +718,41 @@ export default function PageEditorPage() {
                       <Save className="h-4 w-4 mr-2" />
                     )}
                     บันทึก
-                  </LaserButton>
+                  </Button>
                 </div>
               </div>
-            </LaserCard>
+            </GlassCard>
           </div>
         </div>
       )}
 
       {/* Laser Modal */}
-      <LaserModal
-        isOpen={modalConfig.isOpen}
-        onClose={closeModal}
-        onConfirm={modalConfig.onConfirm}
-        title={modalConfig.title}
-        variant={modalConfig.variant}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-        singleButton={modalConfig.singleButton}
-      >
-        {modalConfig.content}
-      </LaserModal>
+      <Dialog open={modalConfig.isOpen} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{modalConfig.title}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-sm text-iris-muted">
+            {modalConfig.content}
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            {!modalConfig.singleButton && (
+              <Button variant="outline" onClick={closeModal}>
+                {modalConfig.cancelText || 'ยกเลิก'}
+              </Button>
+            )}
+            <Button
+              variant={modalConfig.variant === 'danger' ? 'danger' : 'primary'}
+              onClick={() => {
+                modalConfig.onConfirm?.();
+                closeModal();
+              }}
+            >
+              {modalConfig.confirmText || 'ตกลง'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -804,7 +818,7 @@ function BlockEditor({
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
 
       <div className="relative z-10 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-        <LaserCard>
+        <GlassCard>
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent capitalize">
@@ -1119,17 +1133,17 @@ function BlockEditor({
               >
                 ยกเลิก
               </button>
-              <LaserButton onClick={handleSave} disabled={isPending}>
+              <Button onClick={handleSave} disabled={isPending}>
                 {isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <Save className="h-4 w-4 mr-2" />
                 )}
                 บันทึก
-              </LaserButton>
+              </Button>
             </div>
           </div>
-        </LaserCard>
+        </GlassCard>
       </div>
     </div>
   );

@@ -2,6 +2,26 @@ import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService from './wallet.service.js';
 
+type WalletEventCursor = { postedAt: string; id: string };
+
+const encodeWalletCursor = (cursor: WalletEventCursor) => Buffer
+  .from(JSON.stringify(cursor), 'utf8')
+  .toString('base64url');
+
+const decodeWalletCursor = (value?: string): WalletEventCursor | null => {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as WalletEventCursor;
+    const rawDate = (parsed as any).postedAt ?? (parsed as any).createdAt;
+    const date = new Date(rawDate);
+    if (parsed.id && !Number.isNaN(date.getTime())) return { postedAt: date.toISOString(), id: parsed.id };
+  } catch {
+    // Legacy ISO timestamps remain accepted during the cursor transition.
+  }
+  const legacyDate = new Date(value);
+  return Number.isNaN(legacyDate.getTime()) ? null : { postedAt: legacyDate.toISOString(), id: '' };
+};
+
 /**
  * Read-only companion data for the in-game `/iris` surface (CR-PLUGIN-007 / 008).
  *
@@ -61,11 +81,13 @@ export class PluginCompanionService {
    *
    * Emits `wallet.transaction.posted` events (matching contracts/events) with ADDITIVE
    * `playerSteamId` + `userId` fields so the plugin can attribute each event to a player without
-   * a second lookup. Pagination is cursor-based on the transaction `createdAt` timestamp:
-   * pass the previous `lastTimestamp` as `?since=`. Returns at most `limit` events.
+   * a second lookup. The opaque cursor contains `(postedAt,id)`, so transactions sharing the
+   * same timestamp cannot be skipped. Legacy ISO `since` values remain accepted temporarily.
    */
-  async getWalletEvents(serverId: number, since?: string, limit = 50) {
+  async getWalletEvents(serverId: number, cursorValue?: string, limit = 50) {
     const safeLimit = Math.min(Math.max(limit, 1), 200);
+    const cursor = decodeWalletCursor(cursorValue);
+    if (cursorValue && !cursor) throw new AppError('Invalid wallet event cursor', 400);
 
     // Players associated with this server (have at least one delivery job there). The steamId
     // set bounds which users' ledger entries this server is allowed to observe.
@@ -76,7 +98,7 @@ export class PluginCompanionService {
     });
     const steamIds = serverPlayers.map((p) => p.playerSteamId).filter(Boolean);
     if (steamIds.length === 0) {
-      return { success: true, events: [], lastTimestamp: since ?? null };
+      return { success: true, events: [], lastCursor: cursorValue ?? null, lastTimestamp: cursor?.postedAt ?? null };
     }
 
     const users = await prisma.user.findMany({
@@ -86,26 +108,28 @@ export class PluginCompanionService {
     const userIdToSteamId = new Map(users.map((u) => [u.id, u.steamId as string]));
     const userIds = users.map((u) => u.id);
     if (userIds.length === 0) {
-      return { success: true, events: [], lastTimestamp: since ?? null };
+      return { success: true, events: [], lastCursor: cursorValue ?? null, lastTimestamp: cursor?.postedAt ?? null };
     }
 
-    const sinceDate = since ? new Date(since) : null;
     const where: any = {
+      postedAt: { not: null },
       entries: { some: { account: { userId: { in: userIds } } } },
     };
-    if (sinceDate && !isNaN(sinceDate.getTime())) {
-      where.createdAt = { gt: sinceDate };
+    if (cursor) {
+      const postedAt = new Date(cursor.postedAt);
+      where.AND = cursor.id
+        ? [{ OR: [{ postedAt: { gt: postedAt } }, { postedAt, id: { gt: cursor.id } }] }]
+        : [{ postedAt: { gt: postedAt } }];
     }
 
     const transactions = await prisma.ledgerTransaction.findMany({
       where,
       include: {
         entries: {
-          where: { account: { userId: { in: userIds } } },
           include: { account: true },
         },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ postedAt: 'asc' }, { id: 'asc' }],
       take: safeLimit,
     });
 
@@ -118,7 +142,7 @@ export class PluginCompanionService {
       return {
         eventId: `evt_${tx.id}`,
         eventType: 'wallet.transaction.posted' as const,
-        occurredAt: tx.createdAt.toISOString(),
+        occurredAt: (tx.postedAt ?? tx.createdAt).toISOString(),
         transactionId: tx.id,
         transactionType: tx.type,
         referenceType: tx.referenceType ?? null,
@@ -134,11 +158,15 @@ export class PluginCompanionService {
       };
     });
 
-    const lastTimestamp = transactions.length > 0
-      ? transactions[transactions.length - 1].createdAt.toISOString()
-      : (since ?? null);
+    const lastTransaction = transactions.at(-1);
+    const lastTimestamp = lastTransaction
+      ? (lastTransaction.postedAt ?? lastTransaction.createdAt).toISOString()
+      : (cursor?.postedAt ?? null);
+    const lastCursor = lastTransaction
+      ? encodeWalletCursor({ postedAt: (lastTransaction.postedAt ?? lastTransaction.createdAt).toISOString(), id: lastTransaction.id })
+      : (cursorValue ?? null);
 
-    return { success: true, events, lastTimestamp };
+    return { success: true, events, lastCursor, lastTimestamp };
   }
 }
 

@@ -1,0 +1,15 @@
+<svg width="900" height="900" viewBox="0 0 900 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="900" rx="96" fill="#05070D"/>
+  <path d="M0 615C165 530 244 660 392 594C565 516 681 596 900 480V900H0V615Z" fill="#071A24"/>
+  <circle cx="615" cy="247" r="236" fill="#37E5D2" opacity=".15"/>
+  <path d="M232 526C302 404 414 346 557 348C654 350 723 390 765 468L722 495C680 443 626 418 558 419C456 420 385 463 344 550L232 526Z" fill="#DDBB72"/>
+  <path d="M565 349L720 287L745 340L638 418L565 349Z" fill="#F5F1E8"/>
+  <path d="M724 287L814 312L744 340L724 287Z" fill="#37E5D2"/>
+  <path d="M353 550L272 689" stroke="#DDBB72" stroke-width="42" stroke-linecap="round"/>
+  <path d="M498 540L560 703" stroke="#DDBB72" stroke-width="42" stroke-linecap="round"/>
+  <path d="M267 533L140 615" stroke="#A77BFF" stroke-width="34" stroke-linecap="round"/>
+  <path d="M647 419C628 474 578 514 520 529" stroke="#071A24" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="723" cy="319" r="10" fill="#05070D"/>
+  <text x="86" y="118" fill="#37E5D2" font-family="Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="8">BRED CREATURE</text>
+  <text x="86" y="792" fill="#F5F1E8" font-family="Arial, sans-serif" font-size="62" font-weight="800" letter-spacing="3">REX</text>
+</svg>

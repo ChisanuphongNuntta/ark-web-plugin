@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <nlohmann/json.hpp>
+#include "RequestPolicy.h"
 
 namespace HeartShop
 {
@@ -43,6 +44,16 @@ namespace HeartShop
         // caches balances locally.
         void GetWalletBalance(const std::string& SteamId, HttpCallback Callback);
         void GetPendingDeliveries(const std::string& SteamId, HttpCallback Callback);
+        void GetCatalog(const std::string& SteamId, const std::string& Search, HttpCallback Callback);
+        void CreatePurchaseQuote(
+            const std::string& SteamId,
+            int ProductId,
+            int Quantity,
+            HttpCallback Callback);
+        void ConfirmPurchaseQuote(
+            const std::string& SteamId,
+            const std::string& QuoteId,
+            HttpCallback Callback);
 
         // Poll the backend for wallet.transaction-posted events newer than `Since`
         // (server outbox projection). Used to sync in-game wallet notifications. Read-only.
@@ -68,6 +79,8 @@ namespace HeartShop
             HttpCallback Callback);
 
         // Dino Market API
+        void PrepareDinoLock(const nlohmann::json& DinoIdentity, HttpCallback Callback);
+        void ConfirmDinoLock(const nlohmann::json& ListingData, HttpCallback Callback);
         void CreateDinoListing(const nlohmann::json& DinoData, HttpCallback Callback);
         void GetPendingDinoDeliveries(HttpCallback Callback);
         void MarkDinoDelivered(const std::string& ListingId, HttpCallback Callback);
@@ -97,5 +110,6 @@ namespace HeartShop
         int m_ServerId;
         bool m_AllowInvalidCertificates;
         std::shared_ptr<RequestState> m_RequestState;
+        std::shared_ptr<RequestPolicy> m_RequestPolicy;
     };
 }

@@ -1,5 +1,8 @@
 import { vi } from 'vitest';
 
+process.env.JWT_SECRET ||= 'vitest-jwt-secret-with-at-least-thirty-two-characters';
+process.env.ENCRYPTION_KEY ||= 'vitest-encryption-key-with-at-least-thirty-two-characters';
+
 // Mock audit service so unit tests don't need real DB for audit logs
 vi.mock('../src/services/audit.service.js', () => ({
   default: {
@@ -38,6 +41,7 @@ vi.mock('../src/config/database.js', () => ({
       create: vi.fn(),
       update: vi.fn(),
       count: vi.fn(),
+      aggregate: vi.fn(),
     },
     order: {
       findUnique: vi.fn(),
@@ -45,9 +49,19 @@ vi.mock('../src/config/database.js', () => ({
       create: vi.fn(),
       update: vi.fn(),
       count: vi.fn(),
+      aggregate: vi.fn(),
+    },
+    orderGroup: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+    },
+    orderItem: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
     },
     server: {
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
@@ -105,6 +119,7 @@ vi.mock('../src/config/database.js', () => ({
       findUniqueOrThrow: vi.fn(),
       findMany: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
       count: vi.fn(),
     },
     ledgerEntry: {
@@ -122,9 +137,12 @@ vi.mock('../src/config/database.js', () => ({
     },
     deliveryJob: {
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       upsert: vi.fn(),
       count: vi.fn(),
     },
@@ -132,6 +150,7 @@ vi.mock('../src/config/database.js', () => ({
       findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     serverCredential: {
       findUnique: vi.fn(),
@@ -159,10 +178,21 @@ vi.mock('../src/config/database.js', () => ({
       findUniqueOrThrow: vi.fn(),
       findMany: vi.fn(),
       create: vi.fn(),
+      createMany: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
       updateMany: vi.fn(),
       deleteMany: vi.fn(),
+      upsert: vi.fn(),
+    },
+    fulfillment: {
+      findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
       upsert: vi.fn(),
     },
     checkoutSession: {
@@ -173,6 +203,33 @@ vi.mock('../src/config/database.js', () => ({
       update: vi.fn(),
       delete: vi.fn(),
       upsert: vi.fn(),
+    },
+    gamePurchaseQuote: {
+      findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    promotionCampaign: {
+      findUnique: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      count: vi.fn(),
+    },
+    voucherCode: {
+      findUnique: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      count: vi.fn(),
+    },
+    promotionRedemption: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
     },
     $transaction: vi.fn((ops: any[]) => Promise.all(ops)),
     $disconnect: vi.fn(),

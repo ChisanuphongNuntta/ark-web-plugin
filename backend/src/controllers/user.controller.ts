@@ -1,7 +1,9 @@
 import { Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import prisma from '../config/database.js';
 import { AuthRequest } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
+import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
 
 export class UserController {
   // Get user profile
@@ -100,53 +102,79 @@ export class UserController {
   // Claim points from gameplay
   claimPoints = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const user = await prisma.user.findUnique({
-        where: { id: req.user!.id },
-        include: {
-          playerStats: true,
-        },
-      });
+      // Read stats, reset them, and mint the reward atomically. The stats reset inside
+      // this Serializable transaction is the idempotency guard: a duplicate/concurrent
+      // claim sees zeroed stats and earns nothing, so points are never minted twice.
+      const result = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: req.user!.id },
+          include: { playerStats: true },
+        });
 
-      if (!user) {
-        throw new AppError('User not found', 404);
-      }
-
-      let totalPointsEarned = 0;
-      const claimDetails: any[] = [];
-
-      // Calculate points from each server's stats
-      for (const stats of user.playerStats) {
-        // Points calculation
-        const playtimePoints = Math.floor(stats.playtimeMinutes / 60) * 10; // 10 points per hour
-        const killPoints = stats.dinosKilled; // 1 point per kill
-        const harvestPoints = Math.floor(Number(stats.resourcesHarvested) / 1000); // 1 point per 1000 resources
-
-        const serverPoints = playtimePoints + killPoints + harvestPoints;
-
-        if (serverPoints > 0) {
-          totalPointsEarned += serverPoints;
-          claimDetails.push({
-            serverId: stats.serverId,
-            playtimePoints,
-            killPoints,
-            harvestPoints,
-            total: serverPoints,
-          });
-
-          // Reset stats after claiming
-          await prisma.playerStats.update({
-            where: { id: stats.id },
-            data: {
-              playtimeMinutes: 0,
-              dinosKilled: 0,
-              resourcesHarvested: 0,
-              lastPointsClaim: new Date(),
-            },
-          });
+        if (!user) {
+          throw new AppError('User not found', 404);
         }
-      }
 
-      if (totalPointsEarned === 0) {
+        let totalPointsEarned = 0;
+        const claimDetails: any[] = [];
+
+        // Calculate points from each server's stats
+        for (const stats of user.playerStats) {
+          // Points calculation
+          const playtimePoints = Math.floor(stats.playtimeMinutes / 60) * 10; // 10 points per hour
+          const killPoints = stats.dinosKilled; // 1 point per kill
+          const harvestPoints = Math.floor(Number(stats.resourcesHarvested) / 1000); // 1 point per 1000 resources
+
+          const serverPoints = playtimePoints + killPoints + harvestPoints;
+
+          if (serverPoints > 0) {
+            totalPointsEarned += serverPoints;
+            claimDetails.push({
+              serverId: stats.serverId,
+              playtimePoints,
+              killPoints,
+              harvestPoints,
+              total: serverPoints,
+            });
+
+            // Reset stats after claiming
+            await tx.playerStats.update({
+              where: { id: stats.id },
+              data: {
+                playtimeMinutes: 0,
+                dinosKilled: 0,
+                resourcesHarvested: 0,
+                lastPointsClaim: new Date(),
+              },
+            });
+          }
+        }
+
+        if (totalPointsEarned === 0) {
+          return { totalPointsEarned: 0, claimDetails };
+        }
+
+        // Mint the reward through the IRIS Wallet double-entry ledger (single source of
+        // truth): issued from the system issuance account into the user's available
+        // balance. User.pointsBalance is kept in sync as a read-only projection inside
+        // walletService.post — no legacy PointTransaction dual-write.
+        await walletService.ensureUserAccounts(user.id, tx);
+        await walletService.post({
+          idempotencyKey: `earn:playtime:${user.id}:${crypto.randomUUID()}`,
+          type: 'earn_playtime',
+          referenceType: 'gameplay',
+          referenceId: user.id,
+          description: 'Claimed gameplay points',
+          entries: [
+            { accountKey: SYSTEM_ACCOUNTS.issuance, amount: -BigInt(totalPointsEarned) },
+            { accountKey: userAccountKey(user.id, 'available'), amount: BigInt(totalPointsEarned) },
+          ],
+        }, tx);
+
+        return { totalPointsEarned, claimDetails };
+      }, { isolationLevel: 'Serializable' });
+
+      if (result.totalPointsEarned === 0) {
         return res.json({
           success: false,
           message: 'No points to claim',
@@ -154,30 +182,17 @@ export class UserController {
         });
       }
 
-      // Add points to user
-      const updatedUser = await prisma.user.update({
+      // pointsBalance is now the read-only projection maintained by the ledger.
+      const updated = await prisma.user.findUnique({
         where: { id: req.user!.id },
-        data: {
-          pointsBalance: { increment: totalPointsEarned },
-        },
-      });
-
-      // Record transaction
-      await prisma.pointTransaction.create({
-        data: {
-          userId: req.user!.id,
-          amount: totalPointsEarned,
-          balanceAfter: updatedUser.pointsBalance,
-          type: 'earn_playtime',
-          description: 'Claimed gameplay points',
-        },
+        select: { pointsBalance: true },
       });
 
       res.json({
         success: true,
-        pointsEarned: totalPointsEarned,
-        newBalance: Number(updatedUser.pointsBalance),
-        details: claimDetails,
+        pointsEarned: result.totalPointsEarned,
+        newBalance: Number(updated?.pointsBalance ?? 0n),
+        details: result.claimDetails,
       });
     } catch (error) {
       next(error);

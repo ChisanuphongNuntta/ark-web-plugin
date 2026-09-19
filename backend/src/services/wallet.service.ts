@@ -1,4 +1,5 @@
 import { Prisma, WalletAccountStatus, WalletAccountType } from '@prisma/client';
+import { createHash } from 'node:crypto';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 
@@ -38,6 +39,29 @@ const serializeTransaction = (transaction: any) => ({
   })),
 });
 
+const stableJson = (value: unknown): string => {
+  if (value === null || typeof value !== 'object') {
+    return typeof value === 'bigint' ? JSON.stringify(value.toString()) : JSON.stringify(value);
+  }
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  return `{${Object.entries(value as Record<string, unknown>)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`)
+    .join(',')}}`;
+};
+
+export const walletRequestHashFor = (input: PostLedgerTransactionInput, entries: LedgerLine[]) => createHash('sha256')
+  .update(stableJson({
+    type: input.type,
+    referenceType: input.referenceType ?? null,
+    referenceId: input.referenceId ?? null,
+    description: input.description ?? null,
+    metadata: input.metadata ?? null,
+    createdBy: input.createdBy ?? null,
+    entries: entries.map((entry) => ({ accountKey: entry.accountKey, amount: entry.amount.toString() })),
+  }))
+  .digest('hex');
+
 export class WalletService {
   async ensureUserAccounts(userId: string, client: Prisma.TransactionClient | typeof prisma = prisma) {
     const user = await client.user.findUnique({ where: { id: userId }, select: { id: true, pointsBalance: true } });
@@ -53,7 +77,9 @@ export class WalletService {
         key: userAccountKey(userId, type),
         userId,
         type: type as WalletAccountType,
-        balance: type === 'available' ? user.pointsBalance : 0n,
+        // Existing legacy balances are backfilled by the wallet migration with a
+        // balanced opening transaction. Runtime account creation must start at zero.
+        balance: 0n,
       },
       update: {},
     })));
@@ -77,7 +103,7 @@ export class WalletService {
     await this.ensureUserAccounts(userId);
     const safeLimit = Math.min(Math.max(limit, 1), 100);
     const safePage = Math.max(page, 1);
-    const where = { entries: { some: { account: { userId } } } };
+    const where = { postedAt: { not: null }, entries: { some: { account: { userId } } } };
     const [transactions, total] = await Promise.all([
       prisma.ledgerTransaction.findMany({
         where,
@@ -111,13 +137,19 @@ export class WalletService {
     if (entries.length < 2 || entries.reduce((sum, entry) => sum + entry.amount, 0n) !== 0n) {
       throw new AppError('Ledger transaction must contain at least two balanced entries', 400);
     }
+    const requestHash = walletRequestHashFor(input, entries);
 
     const execute = async (tx: Prisma.TransactionClient) => {
       const existing = await tx.ledgerTransaction.findUnique({
         where: { idempotencyKey: input.idempotencyKey },
         include: { entries: { include: { account: true } } },
       });
-      if (existing) return serializeTransaction(existing);
+      if (existing) {
+        if (existing.requestHash !== requestHash) {
+          throw new AppError('Idempotency key was already used for a different wallet transaction', 409);
+        }
+        return serializeTransaction(existing);
+      }
 
       const accounts = await tx.walletAccount.findMany({
         where: { key: { in: entries.map((entry) => entry.accountKey) } },
@@ -131,6 +163,7 @@ export class WalletService {
       const transaction = await tx.ledgerTransaction.create({
         data: {
           idempotencyKey: input.idempotencyKey,
+          requestHash,
           type: input.type,
           referenceType: input.referenceType,
           referenceId: input.referenceId,
@@ -144,7 +177,9 @@ export class WalletService {
         const account = byKey.get(entry.accountKey)!;
         if (account.status !== WalletAccountStatus.active) throw new AppError(`Wallet account is ${account.status}`, 409);
 
-        const canOverdraw = account.type === WalletAccountType.system_issuance || account.type === WalletAccountType.system_clearing;
+        const canOverdraw = account.userId === null && (
+          account.key === SYSTEM_ACCOUNTS.issuance || account.key === SYSTEM_ACCOUNTS.clearing
+        );
         const updated = entry.amount < 0n
           ? await tx.walletAccount.updateMany({
               where: {
@@ -173,6 +208,11 @@ export class WalletService {
         }
       }
 
+      await tx.ledgerTransaction.update({
+        where: { id: transaction.id },
+        data: { postedAt: new Date() },
+      });
+
       const posted = await tx.ledgerTransaction.findUniqueOrThrow({
         where: { id: transaction.id },
         include: { entries: { include: { account: true } } },
@@ -184,12 +224,40 @@ export class WalletService {
       return execute(client);
     }
 
-    return prisma.$transaction(execute, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        return await prisma.$transaction(execute, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      } catch (error) {
+        const code = (error as { code?: string }).code;
+        if (code === 'P2002') {
+          const existing = await prisma.ledgerTransaction.findUnique({
+            where: { idempotencyKey: input.idempotencyKey },
+            include: { entries: { include: { account: true } } },
+          });
+          if (existing) {
+            if (existing.requestHash !== requestHash) {
+              throw new AppError('Idempotency key was already used for a different wallet transaction', 409);
+            }
+            return serializeTransaction(existing);
+          }
+        }
+        if ((code === 'P2034' || code === 'P2002') && attempt < 3) continue;
+        throw error;
+      }
+    }
+    throw new AppError('Wallet transaction could not be serialized', 409);
   }
 
-  async creditUser(userId: string, amount: bigint, idempotencyKey: string, type: string, referenceId?: string) {
+  async creditUser(
+    userId: string,
+    amount: bigint,
+    idempotencyKey: string,
+    type: string,
+    referenceId?: string,
+    client?: Prisma.TransactionClient,
+  ) {
     if (amount <= 0n) throw new AppError('Credit amount must be positive', 400);
-    await this.ensureUserAccounts(userId);
+    await this.ensureUserAccounts(userId, client ?? prisma);
     return this.post({
       idempotencyKey,
       type,
@@ -199,7 +267,7 @@ export class WalletService {
         { accountKey: SYSTEM_ACCOUNTS.issuance, amount: -amount },
         { accountKey: userAccountKey(userId, 'available'), amount },
       ],
-    });
+    }, client);
   }
 
   async holdUserFunds(userId: string, amount: bigint, idempotencyKey: string, referenceId?: string) {

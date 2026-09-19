@@ -1,8 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import prisma from '../config/database.js';
+import { AppError } from '../middlewares/errorHandler.js';
+import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
 
 // Platform fee percentage (e.g., 5% = 0.05)
 const PLATFORM_FEE_PERCENT = 0.05;
+
+// Deterministic fee split so the escrow hold (at purchase) and release (at delivery)
+// always agree on what the seller nets and what the platform keeps.
+const computeFeeSplit = (price: number) => {
+  const platformFee = Math.floor(price * PLATFORM_FEE_PERCENT);
+  return { platformFee, sellerReceives: price - platformFee };
+};
+
+// Native ARK snapshots are fulfillment secrets, not marketplace metadata.
+// Never expose them through public or account listing responses.
+const withoutNativeSnapshot = <T extends { cryopodData?: unknown }>(listing: T) => {
+  const { cryopodData: _snapshot, ...safeListing } = listing;
+  return safeListing;
+};
 
 export class DinoMarketController {
   // Get all listings (public)
@@ -82,7 +99,7 @@ export class DinoMarketController {
       ]);
 
       res.json({
-        listings,
+        listings: listings.map(withoutNativeSnapshot),
         pagination: {
           page: parseInt(page as string),
           limit: parseInt(limit as string),
@@ -117,7 +134,7 @@ export class DinoMarketController {
         return res.status(404).json({ error: 'Listing not found' });
       }
 
-      res.json({ listing });
+      res.json({ listing: withoutNativeSnapshot(listing) });
     } catch (error) {
       next(error);
     }
@@ -168,7 +185,7 @@ export class DinoMarketController {
       ]);
 
       res.json({
-        listings,
+        listings: listings.map(withoutNativeSnapshot),
         pagination: {
           page: parseInt(page as string),
           limit: parseInt(limit as string),
@@ -209,7 +226,7 @@ export class DinoMarketController {
       ]);
 
       res.json({
-        purchases,
+        purchases: purchases.map(withoutNativeSnapshot),
         pagination: {
           page: parseInt(page as string),
           limit: parseInt(limit as string),
@@ -225,6 +242,10 @@ export class DinoMarketController {
   // Create listing (called from plugin)
   createListing = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      throw new AppError('Direct dino listing is retired; use the signed prepare-lock/confirm-lock protocol', 410);
+
+      /* Legacy parser retained temporarily for migration reference. It is unreachable and
+       * will be removed after all server plugins advertise marketplace.asset-lock.v1.
       const body = req.body;
       const {
         steamId,
@@ -276,7 +297,7 @@ export class DinoMarketController {
       });
 
       if (!user) {
-        return res.status(404).json({ error: 'User not found. Please link your Steam account.' });
+        throw new AppError('User not found. Please link your Steam account.', 404);
       }
 
       // Validate price
@@ -346,6 +367,7 @@ export class DinoMarketController {
         },
         message: `Your ${species} has been listed for ${price} points!`,
       });
+      */
     } catch (error) {
       next(error);
     }
@@ -393,6 +415,10 @@ export class DinoMarketController {
     try {
       const { id } = req.params;
       const userId = (req as any).user.id;
+      const targetServerId = Number(req.body?.serverId);
+      if (!Number.isSafeInteger(targetServerId) || targetServerId <= 0) {
+        throw new AppError('A valid delivery serverId is required', 400);
+      }
 
       // Get listing
       const listing = await prisma.dinoListing.findUnique({
@@ -420,6 +446,17 @@ export class DinoMarketController {
       if (!buyer) {
         return res.status(404).json({ error: 'Buyer not found' });
       }
+      if (!buyer.steamId) {
+        throw new AppError('Steam account must be linked before buying a dino', 400);
+      }
+
+      const targetServer = await prisma.server.findUnique({ where: { id: targetServerId } });
+      if (!targetServer || !targetServer.isActive || targetServer.drainMode) {
+        throw new AppError('Delivery server is unavailable', 409);
+      }
+      if (!targetServer.capabilities.includes('delivery.dino.v2')) {
+        throw new AppError('Delivery server does not support exact native dino delivery', 409);
+      }
 
       // Check buyer balance
       if (Number(buyer.pointsBalance) < listing.price) {
@@ -430,65 +467,83 @@ export class DinoMarketController {
         });
       }
 
-      // Calculate fees
-      const platformFee = Math.floor(listing.price * PLATFORM_FEE_PERCENT);
-      const sellerReceives = listing.price - platformFee;
+      // Calculate fees (deterministic: hold-time and release-time must agree)
+      const { platformFee, sellerReceives } = computeFeeSplit(listing.price);
+      if (!listing.cryopodData || listing.cryopodData.length < 1 || listing.cryopodData.length > 1024 * 1024) {
+        throw new AppError('Listing does not contain a valid native dino snapshot', 409);
+      }
+      const nativeDinoSha256 = crypto.createHash('sha256').update(listing.cryopodData).digest('hex');
+      const deliveryPayload = {
+        schemaVersion: 2,
+        dinoDataVersion: 1,
+        dinoDataSha256: nativeDinoSha256,
+        dinoDataSize: listing.cryopodData.length,
+        listingId: listing.id,
+        species: listing.species,
+        blueprintPath: listing.blueprintPath,
+        dinoName: listing.dinoName,
+        level: listing.level,
+        gender: listing.gender,
+        baseStats: {
+          health: listing.baseHealth, stamina: listing.baseStamina, oxygen: listing.baseOxygen,
+          food: listing.baseFood, weight: listing.baseWeight, damage: listing.baseDamage, speed: listing.baseSpeed,
+        },
+        addedStats: {
+          health: listing.addedHealth, stamina: listing.addedStamina, oxygen: listing.addedOxygen,
+          food: listing.addedFood, weight: listing.addedWeight, damage: listing.addedDamage, speed: listing.addedSpeed,
+        },
+        imprintQuality: listing.imprintQuality,
+        imprinterName: listing.imprinterName,
+        colors: [listing.colorRegion0, listing.colorRegion1, listing.colorRegion2, listing.colorRegion3, listing.colorRegion4, listing.colorRegion5],
+        mutations: { maternal: listing.maternalMutations, paternal: listing.paternalMutations },
+        cryopodData: listing.cryopodData.toString('base64'),
+      };
+      const payloadHash = crypto.createHash('sha256').update(JSON.stringify(deliveryPayload)).digest('hex');
 
-      // Execute transaction
+      // P2P purchase = ESCROW HOLD, not a direct payout. Per ENTERPRISE_REDESIGN_PLAN_TH.md
+      // §17, funds are held in the system clearing account and the seller is NOT paid until
+      // delivery is confirmed (see markDelivered). All money movement flows through the IRIS
+      // Wallet double-entry ledger — no legacy PointTransaction dual-write.
       await prisma.$transaction(async (tx) => {
-        // Deduct from buyer
-        await tx.user.update({
-          where: { id: userId },
-          data: {
-            pointsBalance: { decrement: listing.price },
-            totalSpent: { increment: listing.price },
-          },
-        });
+        await walletService.ensureUserAccounts(userId, tx);
 
-        // Add to seller (minus fee)
-        await tx.user.update({
-          where: { id: listing.sellerId },
-          data: {
-            pointsBalance: { increment: sellerReceives },
-          },
-        });
-
-        // Record buyer transaction
-        await tx.pointTransaction.create({
-          data: {
-            userId,
-            amount: -listing.price,
-            balanceAfter: Number(buyer.pointsBalance) - listing.price,
-            type: 'dino_purchase',
-            description: `Purchased ${listing.species} Lv.${listing.level}`,
-            referenceId: listing.id,
-          },
-        });
-
-        // Record seller transaction
-        await tx.pointTransaction.create({
-          data: {
-            userId: listing.sellerId,
-            amount: sellerReceives,
-            balanceAfter: Number(listing.seller.pointsBalance) + sellerReceives,
-            type: 'dino_sale',
-            description: `Sold ${listing.species} Lv.${listing.level} (fee: ${platformFee})`,
-            referenceId: listing.id,
-          },
-        });
-
-        // Update listing
-        await tx.dinoListing.update({
-          where: { id },
+        // Conditional state transition (listed -> sold) under Serializable isolation
+        // prevents a double-buy race: only the first buyer flips the listing.
+        const claimed = await tx.dinoListing.updateMany({
+          where: { id, status: 'listed' },
           data: {
             status: 'sold',
             buyerId: userId,
             soldAt: new Date(),
             deliveryStatus: 'pending',
+            deliveryServerId: targetServerId,
           },
         });
+        if (claimed.count !== 1) {
+          throw new AppError('This dino is no longer available', 400);
+        }
 
-        // Record trade history
+        // Hold the full price from the buyer into escrow (system clearing account).
+        // Idempotent per listing id, so a retried purchase never double-holds.
+        await walletService.post({
+          idempotencyKey: `dino:escrow:hold:${listing.id}`,
+          type: 'dino_escrow_hold',
+          referenceType: 'dino_listing',
+          referenceId: listing.id,
+          description: `Escrow hold for ${listing.species} Lv.${listing.level}`,
+          entries: [
+            { accountKey: userAccountKey(userId, 'available'), amount: -BigInt(listing.price) },
+            { accountKey: SYSTEM_ACCOUNTS.clearing, amount: BigInt(listing.price) },
+          ],
+        }, tx);
+
+        // totalSpent is a lifetime stat, not the money ledger; keep it current.
+        await tx.user.update({
+          where: { id: userId },
+          data: { totalSpent: { increment: listing.price } },
+        });
+
+        // Record trade history (terms snapshot; the seller is settled on delivery)
         await tx.dinoTradeHistory.create({
           data: {
             listingId: listing.id,
@@ -502,7 +557,20 @@ export class DinoMarketController {
             platformFee,
           },
         });
-      });
+
+        await tx.deliveryJob.create({
+          data: {
+            id: `dino-market:${listing.id}`,
+            serverId: targetServerId,
+            playerSteamId: buyer.steamId!,
+            deliveryType: 'dino_marketplace',
+            referenceId: listing.id,
+            payload: deliveryPayload,
+            payloadHash,
+            status: 'pending',
+          },
+        });
+      }, { isolationLevel: 'Serializable' });
 
       res.json({
         success: true,
@@ -583,22 +651,66 @@ export class DinoMarketController {
     }
   };
 
-  // Mark delivery complete (called from plugin)
+  // Mark delivery complete (called from plugin) — settles escrow.
+  // Per ENTERPRISE_REDESIGN_PLAN_TH.md §17 (Delivered -> Settled), confirming delivery
+  // releases the escrowed funds: the seller is paid their net and the platform keeps its
+  // fee. Money moves entirely through the IRIS Wallet double-entry ledger.
   markDelivered = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      throw new AppError('Legacy marketplace delivery callback is retired; use /api/plugin/deliveries/:deliveryKey/complete', 410);
+
+      /* Retained only as a historical reference during the signed-delivery cutover.
       const { id } = req.params;
       const { serverId } = req.body;
 
-      await prisma.dinoListing.update({
-        where: { id },
-        data: {
-          deliveryStatus: 'delivered',
-          deliveredAt: new Date(),
-          deliveryServerId: serverId,
-        },
-      });
+      const listing = await prisma.dinoListing.findUnique({ where: { id } });
+      if (!listing) {
+        throw new AppError('Listing not found', 404);
+      }
+
+      // Already settled: respond success without releasing escrow again (idempotent).
+      if (listing.deliveryStatus === 'delivered') {
+        return res.json({ success: true });
+      }
+
+      const { platformFee, sellerReceives } = computeFeeSplit(listing.price);
+
+      await prisma.$transaction(async (tx) => {
+        await walletService.ensureUserAccounts(listing.sellerId, tx);
+
+        // Conditional transition (sold + pending -> delivered) guards against a
+        // duplicate plugin callback double-releasing the escrow.
+        const settled = await tx.dinoListing.updateMany({
+          where: { id, status: 'sold', deliveryStatus: 'pending' },
+          data: {
+            deliveryStatus: 'delivered',
+            deliveredAt: new Date(),
+            deliveryServerId: serverId,
+          },
+        });
+        if (settled.count !== 1) {
+          // Nothing in a releasable state (e.g. concurrent callback won the race).
+          return;
+        }
+
+        // Release escrow: clearing -> seller net + platform revenue (fee).
+        // Idempotent per listing id; sums to zero (double-entry invariant).
+        await walletService.post({
+          idempotencyKey: `dino:escrow:release:${listing.id}`,
+          type: 'dino_escrow_release',
+          referenceType: 'dino_listing',
+          referenceId: listing.id,
+          description: `Escrow release for ${listing.species} Lv.${listing.level} (fee: ${platformFee})`,
+          entries: [
+            { accountKey: SYSTEM_ACCOUNTS.clearing, amount: -BigInt(listing.price) },
+            { accountKey: userAccountKey(listing.sellerId, 'available'), amount: BigInt(sellerReceives) },
+            { accountKey: SYSTEM_ACCOUNTS.revenue, amount: BigInt(platformFee) },
+          ],
+        }, tx);
+      }, { isolationLevel: 'Serializable' });
 
       res.json({ success: true });
+      */
     } catch (error) {
       next(error);
     }

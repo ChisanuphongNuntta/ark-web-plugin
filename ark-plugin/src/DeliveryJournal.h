@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <mutex>
 #include <string>
+#include <vector>
 #include <nlohmann/json.hpp>
 
 namespace HeartShop
@@ -10,6 +11,12 @@ namespace HeartShop
     class DeliveryJournal
     {
     public:
+        struct PendingRecord
+        {
+            std::string DeliveryId;
+            std::string State;
+            std::string Payload;
+        };
         enum class BeginResult
         {
             Started,
@@ -28,6 +35,8 @@ namespace HeartShop
             const std::string& Payload);
         bool Complete(const std::string& DeliveryType, const std::string& DeliveryId);
         bool Abort(const std::string& DeliveryType, const std::string& DeliveryId);
+        bool MarkMutating(const std::string& DeliveryType, const std::string& DeliveryId);
+        std::vector<PendingRecord> Pending(const std::string& DeliveryType);
 
         static std::string MakeKey(
             const std::string& DeliveryType,

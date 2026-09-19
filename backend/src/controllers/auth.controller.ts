@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import prisma from '../config/database.js';
+import { claimLegacySteamBalance } from '../services/legacyBalance.service.js';
 import { generateToken } from '../utils/jwt.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import { AuthRequest } from '../middlewares/auth.js';
@@ -11,62 +12,145 @@ import securityService from '../services/security.service.js';
 // IRIS ID rule: an account is linked ONLY when the caller proves control of the provider
 // identity (OAuth/OpenID assertion verified server-side or via the provider callback).
 // We NEVER merge or link accounts by matching email or display name.
-type LinkProof = {
-  method?: string; // e.g. 'steam_openid', 'discord_oauth', 'epic_oauth', 'provider_callback'
-  // method-specific verified material (claimedId, verified token reference, etc.)
-  [key: string]: unknown;
-};
+const OAUTH_STATE_COOKIE_MAX_AGE = 10 * 60 * 1000;
+const STEAM_PROOF_COOKIE = 'pending_steam_proof';
 
-const PROOF_METHODS_BY_PROVIDER: Record<string, string[]> = {
-  steam: ['steam_openid', 'provider_callback'],
-  epic: ['epic_oauth', 'provider_callback'],
-  discord: ['discord_oauth', 'provider_callback'],
-};
+function secureCookieOptions(maxAge = OAUTH_STATE_COOKIE_MAX_AGE) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/api/auth',
+    maxAge,
+  };
+}
 
-// Returns the proof method actually used. In production every link MUST carry a valid proof.
-// During development (NODE_ENV=development) a missing proof is tolerated to keep the existing
-// callback-cookie flow working, but email/name are never an accepted proof in any environment.
-function assertProofOfControl(provider: 'steam' | 'epic' | 'discord', proof: LinkProof | undefined): string {
-  const allowed = PROOF_METHODS_BY_PROVIDER[provider] || [];
-  if (proof && typeof proof.method === 'string') {
-    if (proof.method === 'email' || proof.method === 'name' || proof.method === 'username') {
-      throw new AppError('Account linking by email or name is not allowed; proof-of-control is required', 400);
-    }
-    if (!allowed.includes(proof.method)) {
-      throw new AppError(`Unsupported proof method for ${provider}. Allowed: ${allowed.join(', ')}`, 400);
-    }
-    return proof.method;
+function secretForProviderProof(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new AppError('Server authentication secret is not configured securely', 500);
   }
-  const isProd = process.env.NODE_ENV === 'production';
-  if (isProd) {
-    throw new AppError(`Proof-of-control is required to link a ${provider} account`, 400);
+  return secret;
+}
+
+function safeEqualString(left: unknown, right: unknown): boolean {
+  if (typeof left !== 'string' || typeof right !== 'string') return false;
+  const a = Buffer.from(left);
+  const b = Buffer.from(right);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function createSteamProof(steamId: string): string {
+  const payload = Buffer.from(JSON.stringify({
+    steamId,
+    expiresAt: Date.now() + OAUTH_STATE_COOKIE_MAX_AGE,
+    nonce: crypto.randomBytes(16).toString('hex'),
+  })).toString('base64url');
+  const signature = crypto.createHmac('sha256', secretForProviderProof()).update(payload).digest('base64url');
+  return `${payload}.${signature}`;
+}
+
+function verifySteamProof(token: unknown, requestedSteamId: unknown): string {
+  if (typeof token !== 'string' || typeof requestedSteamId !== 'string') {
+    throw new AppError('A verified Steam OpenID callback is required', 400);
   }
-  // Transitional: derived from the verified provider callback (e.g. Steam OpenID claimedId
-  // stored in an httpOnly cookie) rather than a client-supplied identity.
-  return 'provider_callback';
+  const [payload, signature, extra] = token.split('.');
+  if (!payload || !signature || extra) {
+    throw new AppError('Invalid or expired Steam verification', 400);
+  }
+  const expected = crypto.createHmac('sha256', secretForProviderProof()).update(payload).digest('base64url');
+  if (!safeEqualString(signature, expected)) {
+    throw new AppError('Invalid or expired Steam verification', 400);
+  }
+
+  let decoded: { steamId?: unknown; expiresAt?: unknown };
+  try {
+    decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+  } catch {
+    throw new AppError('Invalid or expired Steam verification', 400);
+  }
+  if (
+    typeof decoded.steamId !== 'string' ||
+    typeof decoded.expiresAt !== 'number' ||
+    decoded.expiresAt < Date.now() ||
+    !safeEqualString(decoded.steamId, requestedSteamId)
+  ) {
+    throw new AppError('Invalid or expired Steam verification', 400);
+  }
+  return decoded.steamId;
+}
+
+async function verifySteamOpenId(query: Request['query'], expectedReturnTo: string): Promise<string> {
+  const get = (key: string): string | undefined => {
+    const value = query[key];
+    return typeof value === 'string' ? value : undefined;
+  };
+
+  const claimedId = get('openid.claimed_id');
+  const identity = get('openid.identity');
+  const returnTo = get('openid.return_to');
+  const opEndpoint = get('openid.op_endpoint');
+  if (
+    get('openid.mode') !== 'id_res' ||
+    opEndpoint !== 'https://steamcommunity.com/openid/login' ||
+    !claimedId || claimedId !== identity ||
+    returnTo !== expectedReturnTo
+  ) {
+    throw new AppError('Invalid Steam OpenID response', 400);
+  }
+
+  // Steam documents the claimed identifier with an http:// URL even though the
+  // OpenID provider and verification endpoint are HTTPS. Accept both schemes
+  // so a valid provider assertion is not rejected after the user signs in.
+  const match = /^https?:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/.exec(claimedId);
+  if (!match) throw new AppError('Invalid Steam ID', 400);
+
+  const verification = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (key.startsWith('openid.') && typeof value === 'string') verification.set(key, value);
+  }
+  verification.set('openid.mode', 'check_authentication');
+
+  const response = await fetch('https://steamcommunity.com/openid/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: verification,
+  });
+  const body = await response.text();
+  if (!response.ok || !/^is_valid:true\s*$/m.test(body)) {
+    throw new AppError('Steam could not verify this OpenID response', 400);
+  }
+  return match[1];
 }
 
 export class AuthController {
   // Discord OAuth - Redirect to Discord
   discordAuth = (req: Request, res: Response) => {
+    const state = crypto.randomBytes(32).toString('base64url');
     const params = new URLSearchParams({
       client_id: process.env.DISCORD_CLIENT_ID!,
       redirect_uri: process.env.DISCORD_CALLBACK_URL!,
       response_type: 'code',
       scope: 'identify',
+      state,
     });
 
+    res.cookie('discord_oauth_state', state, secureCookieOptions());
     res.redirect(`https://discord.com/api/oauth2/authorize?${params}`);
   };
 
   // Discord OAuth Callback
   discordCallback = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { code } = req.query;
+      const { code, state } = req.query;
 
       if (!code) {
         throw new AppError('Authorization code required', 400);
       }
+      if (!safeEqualString(state, req.cookies?.discord_oauth_state)) {
+        throw new AppError('Invalid or expired Discord OAuth state', 400);
+      }
+      res.clearCookie('discord_oauth_state', { path: '/api/auth' });
 
       // Exchange code for token
       const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
@@ -160,51 +244,43 @@ export class AuthController {
 
   // Steam OAuth - Redirect to Steam
   steamAuth = (req: Request, res: Response) => {
+    const state = crypto.randomBytes(32).toString('base64url');
+    const returnUrl = new URL(process.env.STEAM_RETURN_URL!);
+    returnUrl.searchParams.set('state', state);
     const params = new URLSearchParams({
       'openid.ns': 'http://specs.openid.net/auth/2.0',
       'openid.mode': 'checkid_setup',
-      'openid.return_to': process.env.STEAM_RETURN_URL!,
+      'openid.return_to': returnUrl.toString(),
       'openid.realm': process.env.STEAM_REALM!,
       'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
       'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
     });
 
+    res.cookie('steam_oauth_state', state, secureCookieOptions());
     res.redirect(`https://steamcommunity.com/openid/login?${params}`);
   };
 
   // Steam OAuth Callback
   steamCallback = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log('Steam callback query params:', req.query);
-
       // Check if user cancelled
       const mode = req.query['openid.mode'] as string;
       if (mode === 'cancel') {
         return res.redirect(`${process.env.FRONTEND_URL}/profile?error=steam_cancelled`);
       }
 
-      const claimedId = req.query['openid.claimed_id'] as string;
-
-      if (!claimedId) {
-        console.error('Steam auth failed - no claimed_id. Query:', req.query);
-        return res.redirect(`${process.env.FRONTEND_URL}/profile?error=steam_failed`);
+      const state = req.query.state;
+      if (!safeEqualString(state, req.cookies?.steam_oauth_state)) {
+        throw new AppError('Invalid or expired Steam OAuth state', 400);
       }
+      const expectedReturnUrl = new URL(process.env.STEAM_RETURN_URL!);
+      expectedReturnUrl.searchParams.set('state', state as string);
+      const steamId = await verifySteamOpenId(req.query, expectedReturnUrl.toString());
+      res.clearCookie('steam_oauth_state', { path: '/api/auth' });
 
-      // Extract Steam ID from claimed_id
-      const steamId = claimedId.replace('https://steamcommunity.com/openid/id/', '');
-
-      if (!steamId || steamId === claimedId) {
-        console.error('Steam auth failed - invalid claimed_id format:', claimedId);
-        return res.redirect(`${process.env.FRONTEND_URL}/profile?error=steam_invalid`);
-      }
-
-      // Store Steam ID in session/cookie for linking
-      res.cookie('pending_steam_id', steamId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 10 * 60 * 1000, // 10 minutes
-      });
+      // The browser may display the Steam ID, but linking is authorized only by this
+      // short-lived HMAC proof produced after Steam's server-to-server verification.
+      res.cookie(STEAM_PROOF_COOKIE, createSteamProof(steamId), secureCookieOptions());
 
       res.redirect(`${process.env.FRONTEND_URL}/auth/link-steam?steamId=${steamId}`);
     } catch (error) {
@@ -215,33 +291,41 @@ export class AuthController {
   // Link Steam to existing account
   linkSteam = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { steamId, proof } = req.body;
+      const { steamId } = req.body;
 
       if (!steamId) {
         throw new AppError('Steam ID required', 400);
       }
 
-      // Proof-of-control gate (no auto-merge by email/name).
-      assertProofOfControl('steam', proof);
+      const verifiedSteamId = verifySteamProof(req.cookies?.[STEAM_PROOF_COOKIE], steamId);
 
       // Check if Steam ID already linked
       const existingUser = await prisma.user.findUnique({
-        where: { steamId },
+        where: { steamId: verifiedSteamId },
       });
 
       if (existingUser && existingUser.id !== req.user!.id) {
         throw new AppError('This Steam account is already linked to another user', 400);
       }
 
-      // Link Steam ID
-      const user = await prisma.user.update({
-        where: { id: req.user!.id },
-        data: { steamId },
+      // Link the verified Steam identity and atomically claim any deduplicated
+      // legacy ArkShop balance. A failed wallet post rolls the identity update
+      // back, so a balance can never be marked claimed without being credited.
+      const { user, claimedLegacyBalance } = await prisma.$transaction(async (tx) => {
+        const linkedUser = await tx.user.update({
+          where: { id: req.user!.id },
+          data: { steamId: verifiedSteamId },
+        });
+        const claimed = await claimLegacySteamBalance(tx, linkedUser.id, verifiedSteamId);
+        return { user: linkedUser, claimedLegacyBalance: claimed };
       });
+
+      res.clearCookie(STEAM_PROOF_COOKIE, { path: '/api/auth' });
 
       res.json({
         success: true,
         message: 'Steam account linked successfully',
+        claimedLegacyBalance: claimedLegacyBalance.toString(),
         user: {
           id: user.id,
           steamId: user.steamId,
@@ -397,22 +481,10 @@ export class AuthController {
 
   linkEpic = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { epicId, proof } = req.body;
-      if (!epicId) throw new AppError('Epic ID required', 400);
-
-      // Proof-of-control gate (no auto-merge by email/name).
-      assertProofOfControl('epic', proof);
-
-      const existing = await prisma.user.findUnique({ where: { epicId } });
-      if (existing && existing.id !== req.user!.id) {
-        throw new AppError('This Epic Games account is already linked to another user', 400);
-      }
-
-      const updated = await prisma.user.update({
-        where: { id: req.user!.id },
-        data: { epicId },
-      });
-      res.json({ success: true, message: 'Epic Games account linked successfully', user: { id: updated.id, epicId: updated.epicId } });
+      // Do not accept a provider identity or a proof method supplied by the browser.
+      // Re-enable this endpoint only after an Epic OAuth callback has been verified
+      // server-to-server and exchanged for a one-time proof, like the Steam flow.
+      throw new AppError('Epic account linking is temporarily unavailable pending verified OAuth integration', 501);
     } catch (error) { next(error); }
   };
 

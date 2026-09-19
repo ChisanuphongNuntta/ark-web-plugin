@@ -20,11 +20,15 @@ const config: Config = {
           gold: 'rgb(var(--iris-gold) / <alpha-value>)',       // Champagne Gold #DDBB72
           pearl: 'rgb(var(--iris-pearl) / <alpha-value>)',
           muted: 'rgb(var(--iris-muted) / <alpha-value>)',
+          slate: 'rgb(var(--iris-slate) / <alpha-value>)',                                   // Iris Slate     #151226
+          violet: 'rgb(var(--iris-violet) / <alpha-value>)',                                  // Frozen Midnight Violet #0D091A
+          magenta: 'rgb(var(--iris-magenta) / <alpha-value>)',                                 // Glowing Magenta #E83D84
           // Canonical brand-name aliases (same tokens, descriptive names)
           obsidian: 'rgb(var(--iris-ink) / <alpha-value>)',
           'deep-river': 'rgb(var(--iris-river) / <alpha-value>)',
           champagne: 'rgb(var(--iris-gold) / <alpha-value>)',
         },
+        'iris-slate': 'rgb(var(--iris-slate) / <alpha-value>)',
         primary: {
           50: '#ecfdf5',
           100: '#d1fae5',

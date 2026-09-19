@@ -71,7 +71,7 @@ services:
       # Performance tuning
       POSTGRES_INITDB_ARGS: "--encoding=UTF8"
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -124,7 +124,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_primary_data:/var/lib/postgresql/data
       - ./docker/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
@@ -134,13 +134,12 @@ services:
       - sh
       - -c
       - |
+        set -eu
         mkdir -p /var/lib/postgresql/certs
         cp /tmp/certs/* /var/lib/postgresql/certs/
         chmod 600 /var/lib/postgresql/certs/*.key
         chown postgres:postgres /var/lib/postgresql/certs/*.key
-        exec docker-entrypoint.sh "$@"
-    command: >
-      postgres -c config_file=/etc/postgresql/postgresql.conf -c hba_file=/etc/postgresql/pg_hba.conf -c ssl=on -c ssl_cert_file=/var/lib/postgresql/certs/server.crt -c ssl_key_file=/var/lib/postgresql/certs/server.key -c ssl_ca_file=/var/lib/postgresql/certs/ca.crt
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgresql.conf -c hba_file=/etc/postgresql/pg_hba.conf -c ssl=on -c ssl_cert_file=/var/lib/postgresql/certs/server.crt -c ssl_key_file=/var/lib/postgresql/certs/server.key -c ssl_ca_file=/var/lib/postgresql/certs/ca.crt
     networks:
       - heartshop-backend
     healthcheck:
@@ -164,6 +163,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PGUSER: ${POSTGRES_USER}
       PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGSSLMODE: require
     volumes:
       - postgres_replica_data:/var/lib/postgresql/data
       - ./docker/certs/postgres:/tmp/certs:ro
@@ -175,16 +175,22 @@ services:
     shm_size: 512mb
     command: >
       sh -c "
+        set -eu
         mkdir -p /var/lib/postgresql/certs
         cp /tmp/certs/* /var/lib/postgresql/certs/
         chmod 600 /var/lib/postgresql/certs/*.key
         chown postgres:postgres /var/lib/postgresql/certs/*.key
+        chown -R postgres:postgres /var/lib/postgresql/data
+        chmod 700 /var/lib/postgresql/data
 
-        until pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U ${POSTGRES_USER} -Fp -Xs -P -R; do
-          echo 'Waiting for primary...'
-          sleep 5
-        done
-        exec postgres
+        if [ ! -s /var/lib/postgresql/data/PG_VERSION ]; then
+          find /var/lib/postgresql/data -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+          until gosu postgres pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U ${POSTGRES_USER} -Fp -Xs -P -R; do
+            echo 'Waiting for primary...'
+            sleep 5
+          done
+        fi
+        exec gosu postgres postgres -c max_connections=200
       "
 
   # ===========================================
@@ -196,7 +202,7 @@ services:
     restart: unless-stopped
     profiles: [ "dev" ]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -222,7 +228,7 @@ services:
     restart: unless-stopped
     profiles: [ "prod" ]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_primary_data:/data
       - ./docker/redis/redis-prod.conf:/usr/local/etc/redis/redis.conf:ro
@@ -231,19 +237,24 @@ services:
       - sh
       - -c
       - |
+        set -eu
+        test -n "$${REDIS_PASSWORD:-}"
         mkdir -p /etc/redis/certs
         cp /tmp/certs/* /etc/redis/certs/
         chmod 600 /etc/redis/certs/*.key
         chown redis:redis /etc/redis/certs/*.key
-        exec docker-entrypoint.sh "$@"
-    command: redis-server /usr/local/etc/redis/redis.conf
+        umask 077
+        cp /usr/local/etc/redis/redis.conf /tmp/redis.conf
+        printf '\nrequirepass %s\nmasterauth %s\n' "$$REDIS_PASSWORD" "$$REDIS_PASSWORD" >> /tmp/redis.conf
+        exec redis-server /tmp/redis.conf
     networks:
       - heartshop-backend
     environment:
       <<: *common-env
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     healthcheck:
       <<: *prod-healthcheck
-      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      test: [ "CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli --tls --cacert /etc/redis/certs/ca.crt --sni redis-primary -h redis-primary ping | grep -q PONG" ]
     deploy:
       resources:
         limits:
@@ -254,15 +265,21 @@ services:
     image: redis:7.4-alpine # Latest 7.x (BSD licensed)
     container_name: heartshop-redis-sentinel
     restart: unless-stopped
-    profiles: [ "prod" ]
+    # A single Sentinel cannot provide quorum or failover. Keep this optional
+    # until a real 3-Sentinel/replica topology is provisioned.
+    profiles: [ "redis-ha" ]
     entrypoint:
       - sh
       - -c
       - |
+        set -eu
+        test -n "$${REDIS_PASSWORD:-}"
         cp /tmp/sentinel.conf /usr/local/etc/redis/sentinel.conf
+        printf '\nsentinel auth-pass heartshop-master %s\n' "$$REDIS_PASSWORD" >> /usr/local/etc/redis/sentinel.conf
         exec redis-sentinel /usr/local/etc/redis/sentinel.conf
     volumes:
       - ./docker/redis/sentinel.conf:/tmp/sentinel.conf:ro
+      - ./docker/certs/redis:/etc/redis/certs:ro
       - sentinel_data:/usr/local/etc/redis
     depends_on:
       redis-primary:
@@ -271,6 +288,7 @@ services:
       - heartshop-backend
     environment:
       <<: *common-env
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
   # ===========================================
   # Backend - Development (Hot Reload)
@@ -299,7 +317,12 @@ services:
       STEAM_REALM: ${STEAM_REALM}
       STEAM_RETURN_URL: ${STEAM_RETURN_URL}
       FRONTEND_URL: ${FRONTEND_URL}
+      PLUGIN_API_URL: ${PLUGIN_API_URL:-https://localhost/api/plugin}
       PLUGIN_MASTER_KEY: ${PLUGIN_MASTER_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_API_KEY: ${STRIPE_API_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_CHECKOUT_ORIGIN: ${STRIPE_CHECKOUT_ORIGIN:-http://localhost:3000}
       # Performance: disable Prisma telemetry
       PRISMA_HIDE_UPDATE_MESSAGE: "true"
       CHECKPOINT_DISABLE: "1"
@@ -317,7 +340,7 @@ services:
     networks:
       - heartshop-frontend
       - heartshop-backend
-    command: sh -c "bunx prisma db push && bun --watch run src/index.ts"
+    command: sh -c "bun scripts/deploy-database.mjs && bun --watch run src/index.ts"
     deploy:
       resources:
         limits:
@@ -340,8 +363,9 @@ services:
       - "3001"
     environment:
       <<: *common-env
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-primary:5432/${POSTGRES_DB}
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis-primary:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-primary:5432/${POSTGRES_DB}?sslmode=verify-full&sslrootcert=/app/certs/ca.crt
+      REDIS_URL: rediss://:${REDIS_PASSWORD}@redis-primary:6379
+      NODE_EXTRA_CA_CERTS: /app/certs/ca.crt
       PORT: ${PORT}
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET}
@@ -353,10 +377,15 @@ services:
       STEAM_REALM: ${STEAM_REALM}
       STEAM_RETURN_URL: ${STEAM_RETURN_URL}
       FRONTEND_URL: ${FRONTEND_URL}
+      PLUGIN_API_URL: ${PLUGIN_API_URL:-https://localhost/api/plugin}
       PLUGIN_MASTER_KEY: ${PLUGIN_MASTER_KEY}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       SECURITY_LEVEL: maximum
       ENABLE_ANOMALY_DETECTION: "true"
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_API_KEY: ${STRIPE_API_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_CHECKOUT_ORIGIN: ${STRIPE_CHECKOUT_ORIGIN:-https://localhost}
     volumes:
       - ./docker/certs/backend:/app/certs:ro
       - backend_logs:/app/logs
@@ -373,7 +402,8 @@ services:
       <<: *prod-healthcheck
       test: [ "CMD", "curl", "-f", "http://localhost:3001/health" ]
     deploy:
-      replicas: 2
+      # Keep one API/Discord process until leader election is implemented for bot workers.
+      replicas: 1
       resources:
         limits:
           cpus: '2'
@@ -426,6 +456,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        - NEXT_PUBLIC_USE_FIXTURES=never
     # No container_name when using replicas
     restart: unless-stopped
     profiles: [ "prod" ]
@@ -435,6 +466,7 @@ services:
       <<: *common-env
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_USE_FIXTURES: never
     networks:
       - heartshop-frontend
     healthcheck:
@@ -465,7 +497,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       <<: *common-env
-      CERT_ROTATION_DAYS: 7
+      CERT_ROTATION_DAYS: 90
       DOMAIN: ${DOMAIN:-localhost}
       NOTIFICATION_WEBHOOK: ${SLACK_WEBHOOK:-}
     networks:

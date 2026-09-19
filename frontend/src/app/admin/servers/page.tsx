@@ -1,10 +1,15 @@
 'use client';
 
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
+
+
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { adminApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import LaserModal from '@/components/LaserModal';
 
 interface Server {
   id: number;
@@ -202,9 +207,9 @@ export default function ServersPage() {
       </div>
 
       {/* Servers Table */}
-      <div className="bg-ark-dark rounded-lg overflow-hidden">
+      <div className="bg-black/60 rounded-lg overflow-hidden">
         <table className="w-full">
-          <thead className="bg-ark-darker">
+          <thead className="bg-black/40">
             <tr>
               <th className="px-4 py-3 text-left">ID</th>
               <th className="px-4 py-3 text-left">Name</th>
@@ -218,7 +223,7 @@ export default function ServersPage() {
           </thead>
           <tbody>
             {servers.map((server) => (
-              <tr key={server.id} className="border-t border-ark-darker hover:bg-ark-darker/50">
+              <tr key={server.id} className="border-t border-white/5 hover:bg-white/5">
                 <td className="px-4 py-3">{server.id}</td>
                 <td className="px-4 py-3 font-medium">{server.name}</td>
                 <td className="px-4 py-3">{server.map}</td>
@@ -234,7 +239,7 @@ export default function ServersPage() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <code className="bg-ark-darker px-2 py-1 rounded text-xs">
+                    <code className="bg-black/40 px-2 py-1 rounded text-xs">
                       {server.apiKey.substring(0, 12)}...
                     </code>
                     <button
@@ -299,7 +304,7 @@ export default function ServersPage() {
             {servers.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
-                  No servers configured. Click "Add Server" to get started.
+                  No servers configured. Click &quot;Add Server&quot; to get started.
                 </td>
               </tr>
             )}
@@ -308,12 +313,12 @@ export default function ServersPage() {
       </div>
 
       {/* Config Instructions */}
-      <div className="mt-8 bg-ark-dark rounded-lg p-6">
+      <div className="mt-8 bg-black/60 rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4">Plugin Configuration</h2>
         <p className="text-gray-400 mb-4">
-          Copy the API Key and Server ID to your plugin's config.json:
+          Copy the API Key and Server ID to your plugin&apos;s config.json:
         </p>
-        <pre className="bg-ark-darker p-4 rounded-lg text-sm overflow-x-auto">
+        <pre className="bg-black/40 p-4 rounded-lg text-sm overflow-x-auto">
           {`{
   "HeartShop": {
     "ApiUrl": "${typeof window !== 'undefined' ? window.location.origin : ''}/api/plugin",
@@ -328,7 +333,7 @@ export default function ServersPage() {
       {/* Add/Edit Modal */}
       {(showAddModal || editingServer) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-ark-dark rounded-lg p-6 w-full max-w-md">
+          <div className="bg-black/60 rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
               {editingServer ? 'Edit Server' : 'Add New Server'}
             </h2>
@@ -340,7 +345,7 @@ export default function ServersPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., IslandPVP, RagnarokPVE"
-                  className="w-full bg-ark-darker border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
+                  className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
                 />
               </div>
               <div>
@@ -348,7 +353,7 @@ export default function ServersPage() {
                 <select
                   value={formData.map}
                   onChange={(e) => setFormData({ ...formData, map: e.target.value })}
-                  className="w-full bg-ark-darker border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
+                  className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
                 >
                   <option value="">Select Map</option>
                   <option value="TheIsland">The Island</option>
@@ -377,7 +382,7 @@ export default function ServersPage() {
                       value={formData.chatTag}
                       onChange={(e) => setFormData({ ...formData, chatTag: e.target.value })}
                       placeholder="[PVP5]"
-                      className="w-full bg-ark-darker border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-green-500 text-sm"
+                      className="w-full bg-black/40 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-green-500 text-sm"
                     />
                   </div>
                   <div>
@@ -387,13 +392,13 @@ export default function ServersPage() {
                         type="color"
                         value={formData.chatColor}
                         onChange={(e) => setFormData({ ...formData, chatColor: e.target.value })}
-                        className="h-[38px] w-12 bg-ark-darker border border-gray-700 rounded cursor-pointer"
+                        className="h-[38px] w-12 bg-black/40 border border-gray-700 rounded cursor-pointer"
                       />
                       <input
                         type="text"
                         value={formData.chatColor}
                         onChange={(e) => setFormData({ ...formData, chatColor: e.target.value })}
-                        className="flex-1 bg-ark-darker border border-gray-700 rounded-lg px-2 py-2 focus:outline-none focus:border-green-500 text-sm"
+                        className="flex-1 bg-black/40 border border-gray-700 rounded-lg px-2 py-2 focus:outline-none focus:border-green-500 text-sm"
                       />
                     </div>
                   </div>
@@ -404,13 +409,13 @@ export default function ServersPage() {
                       value={formData.chatIcon}
                       onChange={(e) => setFormData({ ...formData, chatIcon: e.target.value })}
                       placeholder="⚔️"
-                      className="w-full bg-ark-darker border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-green-500 text-sm"
+                      className="w-full bg-black/40 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-green-500 text-sm"
                     />
                   </div>
                 </div>
                 {/* Preview */}
                 {(formData.chatTag || formData.chatIcon) && (
-                  <div className="mt-3 p-2 bg-ark-darker rounded-lg">
+                  <div className="mt-3 p-2 bg-black/40 rounded-lg">
                     <span className="text-xs text-gray-400">Preview: </span>
                     <span style={{ color: formData.chatColor }}>
                       {formData.chatIcon && `${formData.chatIcon} `}
@@ -444,17 +449,32 @@ export default function ServersPage() {
         </div>
       )}
       {/* Laser Modal */}
-      <LaserModal
-        isOpen={modalConfig.isOpen}
-        onClose={closeModal}
-        onConfirm={modalConfig.onConfirm}
-        title={modalConfig.title}
-        variant={modalConfig.variant}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-      >
-        {modalConfig.content}
-      </LaserModal>
+      <Dialog open={modalConfig?.isOpen ?? false} onOpenChange={(open) => !open && closeModal?.()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{modalConfig?.title || 'แจ้งเตือน'}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-sm text-iris-muted">
+            {modalConfig?.content}
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            {!(modalConfig as any)?.singleButton && (
+              <Button variant="outline" onClick={closeModal}>
+                {modalConfig?.cancelText || 'ยกเลิก'}
+              </Button>
+            )}
+            <Button
+              variant={modalConfig?.variant === 'danger' ? 'danger' : 'primary'}
+              onClick={() => {
+                modalConfig?.onConfirm?.();
+                closeModal?.();
+              }}
+            >
+              {modalConfig?.confirmText || 'ตกลง'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

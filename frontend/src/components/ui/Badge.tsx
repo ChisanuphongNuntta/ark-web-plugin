@@ -2,7 +2,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'cyan' | 'orchid' | 'gold' | 'hot' | 'success' | 'error' | 'warning' | 'info';
+  variant?: 'default' | 'cyan' | 'orchid' | 'gold' | 'hot' | 'success' | 'error' | 'warning' | 'info' | 'muted';
   outline?: boolean;
 }
 
@@ -18,6 +18,9 @@ export function Badge({
     default: outline
       ? 'border border-white/20 text-iris-pearl bg-transparent'
       : 'bg-white/10 text-iris-pearl border border-transparent',
+    muted: outline
+      ? 'border border-white/10 text-iris-muted bg-transparent'
+      : 'bg-white/5 text-iris-muted border border-white/10',
     cyan: outline
       ? 'border border-iris-cyan/30 text-iris-cyan bg-transparent hover:bg-iris-cyan/5'
       : 'bg-iris-cyan/15 text-iris-cyan border border-iris-cyan/20 hover:bg-iris-cyan/20',
@@ -51,3 +54,5 @@ export function Badge({
     />
   );
 }
+
+export default Badge;

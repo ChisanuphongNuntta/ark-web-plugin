@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+  <title id="title">Riot Helmet mock art</title>
+  <desc id="desc">Mastercraft riot helmet with gold armor trim.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#05070D"/><stop offset=".7" stop-color="#162137"/></linearGradient>
+    <linearGradient id="visor" x1="0" x2="1"><stop stop-color="#37E5D2"/><stop offset="1" stop-color="#A77BFF"/></linearGradient>
+  </defs>
+  <rect width="900" height="900" fill="url(#bg)"/>
+  <path d="M164 670c98-70 482-70 572 0" stroke="#DDBB72" stroke-opacity=".28" stroke-width="5" fill="none"/>
+  <g transform="translate(450 452)">
+    <path d="M-238 30c0-184 78-300 238-300S238-154 238 30v138c0 44-36 80-80 80h-316c-44 0-80-36-80-80z" fill="#0B1520" stroke="#DDBB72" stroke-width="14"/>
+    <path d="M-168-8c34-70 94-104 168-104S134-78 168-8v48h-336z" fill="url(#visor)" fill-opacity=".8"/>
+    <path d="M-190 74h380v82c0 24-20 44-44 44h-292c-24 0-44-20-44-44z" fill="#071A24" stroke="#37E5D2" stroke-opacity=".45" stroke-width="8"/>
+    <path d="M-80-250 0-306l80 56" stroke="#DDBB72" stroke-width="12" fill="none"/>
+  </g>
+  <text x="74" y="112" fill="#DDBB72" font-family="Arial, sans-serif" font-size="32" font-weight="800" letter-spacing="7">MASTERCRAFT HELMET</text>
+</svg>

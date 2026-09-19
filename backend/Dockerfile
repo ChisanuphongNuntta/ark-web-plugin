@@ -14,6 +14,7 @@ RUN bun install --frozen-lockfile 2>/dev/null || bun install
 
 # Copy prisma schema and generate client
 COPY prisma ./prisma
+COPY scripts ./scripts
 RUN bunx prisma generate
 
 # Don't copy source - it's mounted as volume for hot reload

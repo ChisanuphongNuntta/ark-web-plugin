@@ -1,0 +1,20 @@
+<svg width="1400" height="900" viewBox="0 0 1400 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1400" height="900" rx="72" fill="#05070D"/>
+  <path d="M0 592C248 482 347 676 586 562C830 446 1003 621 1400 403V900H0V592Z" fill="#071A24"/>
+  <circle cx="1032" cy="224" r="302" fill="#37E5D2" opacity=".12"/>
+  <circle cx="875" cy="334" r="230" fill="#A77BFF" opacity=".12"/>
+  <path d="M180 242H828C862 242 890 270 890 304V650C890 684 862 712 828 712H180C146 712 118 684 118 650V304C118 270 146 242 180 242Z" fill="#091523" stroke="#37E5D2" stroke-opacity=".35" stroke-width="4"/>
+  <path d="M177 324H831" stroke="#DDBB72" stroke-opacity=".35" stroke-width="4"/>
+  <rect x="174" y="383" width="228" height="32" rx="16" fill="#37E5D2" opacity=".7"/>
+  <rect x="174" y="458" width="512" height="28" rx="14" fill="#F5F1E8" opacity=".12"/>
+  <rect x="174" y="518" width="431" height="28" rx="14" fill="#F5F1E8" opacity=".12"/>
+  <rect x="174" y="578" width="566" height="28" rx="14" fill="#F5F1E8" opacity=".12"/>
+  <path d="M992 330H1196C1245 330 1285 370 1285 419V650C1285 699 1245 739 1196 739H992C943 739 903 699 903 650V419C903 370 943 330 992 330Z" fill="#0A1724" stroke="#DDBB72" stroke-opacity=".4" stroke-width="4"/>
+  <path d="M960 443H1228" stroke="#37E5D2" stroke-width="24" stroke-linecap="round"/>
+  <path d="M960 520H1178" stroke="#A77BFF" stroke-width="24" stroke-linecap="round"/>
+  <path d="M960 597H1250" stroke="#F5F1E8" stroke-opacity=".2" stroke-width="24" stroke-linecap="round"/>
+  <path d="M1054 238L1110 294L1054 350L998 294L1054 238Z" fill="#37E5D2"/>
+  <path d="M1140 208L1190 258L1140 308L1090 258L1140 208Z" fill="#DDBB72"/>
+  <text x="118" y="144" fill="#37E5D2" font-family="Arial, sans-serif" font-size="40" font-weight="800" letter-spacing="10">IRIS SUPPORT COMMAND</text>
+  <text x="118" y="786" fill="#F5F1E8" font-family="Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="5">SECURE TICKET • GAME DELIVERY • WALLET OPS</text>
+</svg>

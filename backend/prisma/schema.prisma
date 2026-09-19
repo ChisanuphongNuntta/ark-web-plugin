@@ -79,21 +79,46 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  orders            Order[]
-  pointTransactions PointTransaction[]
-  donations         Donation[]
-  playerStats       PlayerStats[]
-  consents          UserConsent[]
-  dataRequests      DataRequest[]
-  dinoListings      DinoListing[]      @relation("DinoSeller")
-  dinoPurchases     DinoListing[]      @relation("DinoBuyer")
-  walletAccounts    WalletAccount[]
-  paymentIntents    PaymentIntent[]
-  sessions          UserSession[]
-  cart              Cart?
-  checkoutSessions  CheckoutSession[]
+  orders               Order[]
+  pointTransactions    PointTransaction[]
+  donations            Donation[]
+  playerStats          PlayerStats[]
+  consents             UserConsent[]
+  dataRequests         DataRequest[]
+  dinoListings         DinoListing[]         @relation("DinoSeller")
+  dinoPurchases        DinoListing[]         @relation("DinoBuyer")
+  walletAccounts       WalletAccount[]
+  paymentIntents       PaymentIntent[]
+  sessions             UserSession[]
+  cart                 Cart?
+  checkoutSessions     CheckoutSession[]
+  orderGroups          OrderGroup[]
+  promotionRedemptions PromotionRedemption[]
+  gamePurchaseQuotes   GamePurchaseQuote[]
+  legacyBalanceClaims  LegacyBalanceClaim[]
 
   @@map("users")
+}
+
+model LegacyBalanceClaim {
+  id             String    @id @default(cuid())
+  provider       String
+  externalIdHash String    @map("external_id_hash")
+  currency       String    @default("IC")
+  amount         BigInt
+  status         String    @default("pending")
+  claimedByUserId String?  @map("claimed_by_user_id")
+  claimedAt      DateTime? @map("claimed_at")
+  sourceSnapshot Json?     @map("source_snapshot")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  claimedByUser User? @relation(fields: [claimedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, externalIdHash])
+  @@index([status, createdAt])
+  @@index([claimedByUserId])
+  @@map("legacy_balance_claims")
 }
 
 model PaymentPackage {
@@ -118,9 +143,9 @@ model PaymentIntent {
   userId           String              @map("user_id")
   packageId        String              @map("package_id")
   provider         String
-  providerIntentId String?             @unique @map("provider_intent_id")
+  providerIntentId String?             @map("provider_intent_id")
   reference        String              @unique
-  idempotencyKey   String              @unique @map("idempotency_key")
+  idempotencyKey   String              @map("idempotency_key")
   amountThb        Decimal             @map("amount_thb") @db.Decimal(10, 2)
   pointsAmount     BigInt              @map("points_amount")
   status           PaymentIntentStatus @default(pending)
@@ -136,6 +161,8 @@ model PaymentIntent {
   package       PaymentPackage        @relation(fields: [packageId], references: [id])
   webhookEvents PaymentWebhookEvent[]
 
+  @@unique([userId, idempotencyKey])
+  @@unique([provider, providerIntentId])
   @@index([userId, createdAt])
   @@index([status, expiresAt])
   @@map("payment_intents")
@@ -148,6 +175,7 @@ model PaymentWebhookEvent {
   paymentIntentId String?   @map("payment_intent_id")
   signature       String?
   payload         Json
+  payloadHash     String    @map("payload_hash")
   status          String    @default("received")
   error           String?
   processedAt     DateTime? @map("processed_at")
@@ -182,15 +210,17 @@ model WalletAccount {
 }
 
 model LedgerTransaction {
-  id             String   @id @default(cuid())
-  idempotencyKey String   @unique @map("idempotency_key")
+  id             String    @id @default(cuid())
+  idempotencyKey String    @unique @map("idempotency_key")
+  requestHash    String    @map("request_hash")
   type           String
-  referenceType  String?  @map("reference_type")
-  referenceId    String?  @map("reference_id")
+  referenceType  String?   @map("reference_type")
+  referenceId    String?   @map("reference_id")
   description    String?
   metadata       Json?
-  createdBy      String?  @map("created_by")
-  createdAt      DateTime @default(now()) @map("created_at")
+  createdBy      String?   @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  postedAt       DateTime? @map("posted_at")
 
   entries LedgerEntry[]
 
@@ -240,8 +270,15 @@ model Product {
   description String?
   price       Int // Points price
 
+  // Typed cluster catalog. deliveryPayload is the authoritative immutable
+  // definition used to build a DeliveryJob for item/dino/engram/kit products.
+  productType          ProductType @default(item) @map("product_type")
+  externalKey          String?     @unique @map("external_key")
+  deliveryPayload      Json?       @map("delivery_payload")
+  requiredCapabilities String[]    @default([]) @map("required_capabilities")
+
   // ARK Item Data
-  itemBlueprint String  @map("item_blueprint") // Blueprint path
+  itemBlueprint String? @map("item_blueprint") // Legacy single-item projection
   quantity      Int     @default(1)
   quality       Int     @default(0) // 0=Primitive to 5=Ascendant
   isBlueprint   Boolean @default(false) @map("is_blueprint")
@@ -261,22 +298,56 @@ model Product {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  category Category? @relation(fields: [categoryId], references: [id])
-  orders   Order[]
-  cartItems CartItem[]
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  orders     Order[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  gamePurchaseQuotes GamePurchaseQuote[]
 
+  @@index([productType, isActive])
   @@map("products")
 }
 
+enum ProductType {
+  item
+  dino
+  engram
+  kit
+  bundle
+  command
+  entitlement
+}
+
 // เซิร์ฟเวอร์ ARK
+model Cluster {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  servers Server[]
+
+  @@map("clusters")
+}
+
 model Server {
   id            Int       @id @default(autoincrement())
+  clusterId     String?   @map("cluster_id")
   name          String
   map           String? // TheIsland, Ragnarok, etc.
   apiKey        String    @unique @map("api_key")
   webhookUrl    String?   @map("webhook_url") // Discord webhook
   isActive      Boolean   @default(true) @map("is_active")
   lastHeartbeat DateTime? @map("last_heartbeat")
+  playerCount   Int       @default(0) @map("player_count")
+  pluginVersion String?   @map("plugin_version")
+  pluginBuildHash String? @map("plugin_build_hash")
+  arkApiVersion String?   @map("ark_api_version")
+  protocolVersion Int     @default(1) @map("protocol_version")
+  capabilities  String[]  @default([])
+  drainMode     Boolean   @default(false) @map("drain_mode")
 
   // Chat Display Settings
   chatTag   String? @map("chat_tag") // "[PVP5]" - short tag for chat
@@ -293,7 +364,13 @@ model Server {
   deliveryJobs     DeliveryJob[]
   cartItems        CartItem[]
   credentials      ServerCredential[]
+  orderItems       OrderItem[]
+  dinoListingsOrigin DinoListing[] @relation("DinoOriginServer")
+  dinoListingsDelivery DinoListing[] @relation("DinoDeliveryServer")
+  gamePurchaseQuotes GamePurchaseQuote[]
+  cluster          Cluster?           @relation(fields: [clusterId], references: [id], onDelete: SetNull)
 
+  @@index([clusterId, isActive])
   @@map("servers")
 }
 
@@ -305,16 +382,16 @@ model Server {
 // old keyId can be revoked independently; an overlap window may keep both active so
 // rotation is zero-downtime.
 model ServerCredential {
-  id        String   @id @default(uuid())
-  serverId  Int      @map("server_id")
-  keyId     String   @unique @map("key_id")
+  id         String    @id @default(uuid())
+  serverId   Int       @map("server_id")
+  keyId      String    @unique @map("key_id")
   // Encrypted HMAC secret (deterministic AES-256-CBC, same scheme as User.apiKey).
-  secretEnc String   @map("secret_enc")
-  label     String?
-  status    String   @default("active") // "active" | "revoked"
-  createdAt DateTime @default(now()) @map("created_at")
-  rotatedAt DateTime? @map("rotated_at")
-  revokedAt DateTime? @map("revoked_at")
+  secretEnc  String    @map("secret_enc")
+  label      String?
+  status     String    @default("active") // "active" | "revoked"
+  createdAt  DateTime  @default(now()) @map("created_at")
+  rotatedAt  DateTime? @map("rotated_at")
+  revokedAt  DateTime? @map("revoked_at")
   lastUsedAt DateTime? @map("last_used_at")
 
   server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
@@ -333,25 +410,149 @@ model Order {
   quantity   Int @default(1)
   totalPrice Int @map("total_price")
 
-  // Status: pending, queued, delivered, failed, refunded
+  // Order state machine (ENTERPRISE_REDESIGN_PLAN_TH.md §8 / src/services/orderState.ts):
+  // draft -> pending_payment -> paid -> queued -> delivering -> delivered
+  // plus failed / refunded / cancelled. Default is the legacy "pending" only for rows
+  // created by the deprecated single-item order.controller path; the M3 checkout flow
+  // writes explicit state-machine statuses.
   status String @default("pending")
 
   // Delivery tracking
   deliveredAt      DateTime? @map("delivered_at")
   deliveryAttempts Int       @default(0) @map("delivery_attempts")
   lastError        String?   @map("last_error")
-  
-  checkoutSessionId String?  @map("checkout_session_id")
+
+  // Refund / lifecycle timestamps
+  paidAt     DateTime? @map("paid_at")
+  queuedAt   DateTime? @map("queued_at")
+  refundedAt DateTime? @map("refunded_at")
+
+  checkoutSessionId String? @map("checkout_session_id")
+  // Additive bridge used during the legacy Order -> OrderItem cutover.
+  orderGroupId      String? @map("order_group_id")
 
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-  server  Server  @relation(fields: [serverId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id])
+  server      Server       @relation(fields: [serverId], references: [id])
+  fulfillment Fulfillment?
+  orderGroup  OrderGroup?  @relation(fields: [orderGroupId], references: [id], onDelete: SetNull)
+  orderItem   OrderItem?   @relation("LegacyOrderItem")
 
+  @@index([orderGroupId])
   @@map("orders")
+}
+
+// Customer-visible purchase and wallet settlement boundary. One group may contain
+// multiple independently delivered OrderItems.
+model OrderGroup {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  checkoutSessionId String?   @unique @map("checkout_session_id")
+  status            String    @default("pending_payment")
+  currency          String    @default("IC")
+  subtotal          BigInt
+  discount          BigInt    @default(0)
+  total             BigInt
+  promotionSnapshot Json?     @map("promotion_snapshot")
+  paidAt            DateTime? @map("paid_at")
+  completedAt       DateTime? @map("completed_at")
+  cancelledAt       DateTime? @map("cancelled_at")
+  refundedAt        DateTime? @map("refunded_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  checkoutSession      CheckoutSession?      @relation(fields: [checkoutSessionId], references: [id], onDelete: SetNull)
+  items                OrderItem[]
+  legacyOrders         Order[]
+  promotionRedemptions PromotionRedemption[]
+
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@map("order_groups")
+}
+
+// Immutable commercial snapshot for one line. Product is optional so catalog deletion
+// never destroys receipt history; fulfillment status is owned at line granularity.
+model OrderItem {
+  id            String    @id @default(uuid())
+  orderGroupId  String    @map("order_group_id")
+  legacyOrderId String?   @unique @map("legacy_order_id")
+  lineNo        Int       @map("line_no")
+  productId     Int?      @map("product_id")
+  serverId      Int       @map("server_id")
+  productName   String    @map("product_name")
+  productType    ProductType @default(item) @map("product_type")
+  deliveryPayload Json?      @map("delivery_payload")
+  itemBlueprint String?      @map("item_blueprint")
+  quality       Int       @default(0)
+  isBlueprint   Boolean   @default(false) @map("is_blueprint")
+  quantity      Int
+  unitPrice     BigInt    @map("unit_price")
+  subtotal      BigInt
+  discount      BigInt    @default(0)
+  total         BigInt
+  status        String    @default("paid")
+  paidAt        DateTime? @map("paid_at")
+  queuedAt      DateTime? @map("queued_at")
+  deliveredAt   DateTime? @map("delivered_at")
+  failedAt      DateTime? @map("failed_at")
+  refundedAt    DateTime? @map("refunded_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  orderGroup  OrderGroup   @relation(fields: [orderGroupId], references: [id], onDelete: Cascade)
+  legacyOrder Order?       @relation("LegacyOrderItem", fields: [legacyOrderId], references: [id], onDelete: SetNull)
+  product     Product?     @relation(fields: [productId], references: [id], onDelete: SetNull)
+  server      Server       @relation(fields: [serverId], references: [id], onDelete: Restrict)
+  fulfillment Fulfillment?
+
+  @@unique([orderGroupId, lineNo])
+  @@index([orderGroupId, status])
+  @@index([productId])
+  @@index([serverId, status])
+  @@map("order_items")
+}
+
+// One Fulfillment per Order (ENTERPRISE_REDESIGN_PLAN_TH.md §16 Cart -> ... -> Order ->
+// Fulfillment, §18 delivery orchestrator). Bridges an Order to its DeliveryJob and records
+// the delivery timeline (claimed / delivered / failed timestamps + attempt count). The
+// DeliveryJob carries the operational lease/idempotency state; Fulfillment carries the
+// durable per-order delivery summary surfaced in GET /orders/{id}.
+model Fulfillment {
+  id            String  @id @default(uuid())
+  orderId       String? @unique @map("order_id")
+  orderItemId   String? @unique @map("order_item_id")
+  deliveryJobId String? @unique @map("delivery_job_id")
+  serverId      Int     @map("server_id")
+  playerSteamId String  @map("player_steam_id")
+  deliveryKey   String  @map("delivery_key")
+
+  // queued -> claimed -> delivered | failed (mirrors the DeliveryJob lifecycle)
+  status    String  @default("queued")
+  attempts  Int     @default(0)
+  lastError String? @map("last_error")
+  receiptId String? @map("receipt_id")
+
+  queuedAt    DateTime  @default(now()) @map("queued_at")
+  claimedAt   DateTime? @map("claimed_at")
+  deliveredAt DateTime? @map("delivered_at")
+  failedAt    DateTime? @map("failed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  order       Order?       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem   OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  deliveryJob DeliveryJob? @relation(fields: [deliveryJobId], references: [id], onDelete: SetNull)
+
+  @@unique([deliveryKey])
+  @@index([serverId, status])
+  @@map("fulfillments")
 }
 
 // ประวัติ Points
@@ -791,6 +992,9 @@ model DinoListing {
 
   // Seller
   sellerId String @map("seller_id")
+  originServerId Int? @map("origin_server_id")
+  assetLockId String? @unique @map("asset_lock_id")
+  assetFingerprint String? @unique @map("asset_fingerprint")
 
   // Dino Basic Info
   species       String // "Rex", "Giga", "Argentavis"
@@ -865,6 +1069,8 @@ model DinoListing {
   // Relations
   seller User  @relation("DinoSeller", fields: [sellerId], references: [id])
   buyer  User? @relation("DinoBuyer", fields: [buyerId], references: [id])
+  originServer Server? @relation("DinoOriginServer", fields: [originServerId], references: [id], onDelete: SetNull)
+  deliveryServer Server? @relation("DinoDeliveryServer", fields: [deliveryServerId], references: [id], onDelete: SetNull)
 
   @@index([sellerId])
   @@index([buyerId])
@@ -872,6 +1078,8 @@ model DinoListing {
   @@index([status])
   @@index([price])
   @@index([createdAt])
+  @@index([originServerId, status])
+  @@index([deliveryServerId, deliveryStatus])
   @@map("dino_listings")
 }
 
@@ -988,6 +1196,7 @@ enum DeliveryJobStatus {
   leased
   completed
   failed
+  dead_letter
 }
 
 model UserSession {
@@ -1001,10 +1210,10 @@ model UserSession {
   expiresAt  DateTime @map("expires_at")
   lastUsedAt DateTime @default(now()) @map("last_used_at")
 
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("user_sessions")
   @@index([userId])
+  @@map("user_sessions")
 }
 
 model DeliveryJob {
@@ -1019,17 +1228,22 @@ model DeliveryJob {
   leaseToken     String?           @map("lease_token")
   leaseExpiresAt DateTime?         @map("lease_expires_at")
   attempts       Int               @default(0)
+  maxAttempts    Int               @default(5) @map("max_attempts")
+  // Backoff (CR-PLUGIN-002 / §18): after a transient failure the job is not eligible to be
+  // re-claimed until nextRetryAt. Exponential backoff is computed from `attempts`.
+  nextRetryAt    DateTime?         @map("next_retry_at")
   receiptId      String?           @map("receipt_id")
   error          String?
   gameTimestamp  DateTime?         @map("game_timestamp")
   createdAt      DateTime          @default(now()) @map("created_at")
   updatedAt      DateTime          @updatedAt @map("updated_at")
 
-  server         Server            @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  server      Server       @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  fulfillment Fulfillment?
 
-  @@map("delivery_jobs")
   @@index([serverId, status])
   @@index([playerSteamId, status])
+  @@map("delivery_jobs")
 }
 
 model DinoAssetLock {
@@ -1037,6 +1251,7 @@ model DinoAssetLock {
   species          String
   level            Int
   sellerSteamId    String   @map("seller_steam_id")
+  originServerId   Int      @map("origin_server_id")
   status           String   @default("prepared") // "prepared", "confirmed", "expired"
   assetFingerprint String?  @map("asset_fingerprint")
   price            Int?
@@ -1045,9 +1260,10 @@ model DinoAssetLock {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  @@map("dino_asset_locks")
   @@index([sellerSteamId])
   @@index([expiresAt, status])
+  @@index([originServerId, status])
+  @@map("dino_asset_locks")
 }
 
 model Cart {
@@ -1057,7 +1273,7 @@ model Cart {
   updatedAt DateTime   @updatedAt @map("updated_at")
   items     CartItem[]
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("carts")
 }
@@ -1071,26 +1287,141 @@ model CartItem {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  server  Server  @relation(fields: [serverId], references: [id], onDelete: Cascade)
 
-  @@map("cart_items")
   @@unique([cartId, productId, serverId])
+  @@map("cart_items")
 }
 
 model CheckoutSession {
-  id             String   @id @default(uuid())
-  userId         String   @map("user_id")
-  cartSnapshot   Json     @map("cart_snapshot")
-  totalAmount    BigInt   @map("total_amount")
-  status         String   @default("pending") // "pending", "completed", "expired"
-  idempotencyKey String   @unique @map("idempotency_key")
-  expiresAt      DateTime @map("expires_at")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  cartSnapshot      Json     @map("cart_snapshot")
+  subtotalAmount    BigInt   @default(0) @map("subtotal_amount")
+  discountAmount    BigInt   @default(0) @map("discount_amount")
+  totalAmount       BigInt   @map("total_amount")
+  promotionSnapshot Json?    @map("promotion_snapshot")
+  status            String   @default("pending") // "pending", "completed", "expired"
+  idempotencyKey    String   @map("idempotency_key")
+  expiresAt         DateTime @map("expires_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderGroup           OrderGroup?
+  promotionRedemptions PromotionRedemption[]
 
+  @@unique([userId, idempotencyKey])
   @@map("checkout_sessions")
+}
+
+model GamePurchaseQuote {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  serverId        Int      @map("server_id")
+  productId       Int      @map("product_id")
+  quantity        Int
+  unitPrice       Int      @map("unit_price")
+  totalPrice      Int      @map("total_price")
+  productSnapshot Json     @map("product_snapshot")
+  status          String   @default("pending")
+  orderId         String?  @unique @map("order_id")
+  expiresAt       DateTime @map("expires_at")
+  completedAt     DateTime? @map("completed_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  server  Server  @relation(fields: [serverId], references: [id], onDelete: Restrict)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, expiresAt])
+  @@index([serverId, status])
+  @@map("game_purchase_quotes")
+}
+
+model PromotionCampaign {
+  id                String    @id @default(cuid())
+  code              String    @unique
+  name              String
+  description       String?
+  status            String    @default("draft")
+  currency          String    @default("IC")
+  discountType      String    @map("discount_type")
+  discountValue     BigInt    @map("discount_value")
+  maxDiscount       BigInt?   @map("max_discount")
+  minSubtotal       BigInt    @default(0) @map("min_subtotal")
+  minQuantity       Int       @default(0) @map("min_quantity")
+  priority          Int       @default(100)
+  stackable         Boolean   @default(false)
+  exclusive         Boolean   @default(false)
+  requiresVoucher   Boolean   @default(false) @map("requires_voucher")
+  usageLimitTotal   Int?      @map("usage_limit_total")
+  usageLimitPerUser Int?      @map("usage_limit_per_user")
+  redeemedCount     Int       @default(0) @map("redeemed_count")
+  startsAt          DateTime? @map("starts_at")
+  endsAt            DateTime? @map("ends_at")
+  scopes            Json?
+  metadata          Json?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  vouchers    VoucherCode[]
+  redemptions PromotionRedemption[]
+
+  @@index([status, startsAt, endsAt])
+  @@index([priority])
+  @@map("promotion_campaigns")
+}
+
+model VoucherCode {
+  id                String    @id @default(cuid())
+  campaignId        String    @map("campaign_id")
+  codeHash          String    @unique @map("code_hash")
+  status            String    @default("active")
+  usageLimitTotal   Int?      @map("usage_limit_total")
+  usageLimitPerUser Int?      @map("usage_limit_per_user")
+  redeemedCount     Int       @default(0) @map("redeemed_count")
+  startsAt          DateTime? @map("starts_at")
+  endsAt            DateTime? @map("ends_at")
+  metadata          Json?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  campaign    PromotionCampaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  redemptions PromotionRedemption[]
+
+  @@index([campaignId, status])
+  @@map("voucher_codes")
+}
+
+model PromotionRedemption {
+  id                String    @id @default(cuid())
+  userId            String    @map("user_id")
+  campaignId        String    @map("campaign_id")
+  voucherId         String?   @map("voucher_id")
+  checkoutSessionId String?   @map("checkout_session_id")
+  orderGroupId      String?   @map("order_group_id")
+  status            String    @default("redeemed")
+  currency          String    @default("IC")
+  discountAmount    BigInt    @map("discount_amount")
+  snapshot          Json
+  createdAt         DateTime  @default(now()) @map("created_at")
+  redeemedAt        DateTime? @map("redeemed_at")
+  releasedAt        DateTime? @map("released_at")
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  campaign        PromotionCampaign @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  voucher         VoucherCode?      @relation(fields: [voucherId], references: [id], onDelete: SetNull)
+  checkoutSession CheckoutSession?  @relation(fields: [checkoutSessionId], references: [id], onDelete: SetNull)
+  orderGroup      OrderGroup?       @relation(fields: [orderGroupId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([campaignId, status])
+  @@index([voucherId, status])
+  @@index([checkoutSessionId])
+  @@index([orderGroupId])
+  @@map("promotion_redemptions")
 }

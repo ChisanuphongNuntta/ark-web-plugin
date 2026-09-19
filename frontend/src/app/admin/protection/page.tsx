@@ -1,5 +1,10 @@
 'use client';
 
+import { Button } from '@/components/ui/Button';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
+
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { protectionAdminApi } from '@/lib/api';
@@ -17,8 +22,6 @@ import {
   History,
   BarChart3,
 } from 'lucide-react';
-import LaserCard from '@/components/LaserCard';
-import LaserButton from '@/components/LaserButton';
 
 interface ProtectionData {
   id: number;
@@ -207,7 +210,7 @@ export default function ProtectionAdminPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <LaserCard className="border-cyan-500/20">
+        <GlassCard className="border-cyan-500/20">
           <div className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-cyan-500/10">
@@ -219,9 +222,9 @@ export default function ProtectionAdminPage() {
               </div>
             </div>
           </div>
-        </LaserCard>
+        </GlassCard>
 
-        <LaserCard className="border-emerald-500/20">
+        <GlassCard className="border-emerald-500/20">
           <div className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-emerald-500/10">
@@ -233,9 +236,9 @@ export default function ProtectionAdminPage() {
               </div>
             </div>
           </div>
-        </LaserCard>
+        </GlassCard>
 
-        <LaserCard className="border-green-500/20">
+        <GlassCard className="border-green-500/20">
           <div className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-green-500/10">
@@ -247,9 +250,9 @@ export default function ProtectionAdminPage() {
               </div>
             </div>
           </div>
-        </LaserCard>
+        </GlassCard>
 
-        <LaserCard className="border-yellow-500/20">
+        <GlassCard className="border-yellow-500/20">
           <div className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-yellow-500/10">
@@ -261,9 +264,9 @@ export default function ProtectionAdminPage() {
               </div>
             </div>
           </div>
-        </LaserCard>
+        </GlassCard>
 
-        <LaserCard className="border-orange-500/20">
+        <GlassCard className="border-orange-500/20">
           <div className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-orange-500/10">
@@ -275,7 +278,7 @@ export default function ProtectionAdminPage() {
               </div>
             </div>
           </div>
-        </LaserCard>
+        </GlassCard>
       </div>
 
       {/* Tabs */}
@@ -317,7 +320,7 @@ export default function ProtectionAdminPage() {
 
       {/* Content */}
       {activeTab === 'list' && (
-        <LaserCard>
+        <GlassCard>
           <div className="p-6">
             {/* Filters */}
             <div className="flex gap-4 mb-6">
@@ -421,11 +424,11 @@ export default function ProtectionAdminPage() {
               </div>
             )}
           </div>
-        </LaserCard>
+        </GlassCard>
       )}
 
       {activeTab === 'logs' && (
-        <LaserCard>
+        <GlassCard>
           <div className="p-6">
             {logsLoading ? (
               <div className="flex justify-center py-12">
@@ -463,11 +466,11 @@ export default function ProtectionAdminPage() {
               </div>
             )}
           </div>
-        </LaserCard>
+        </GlassCard>
       )}
 
       {activeTab === 'grant' && (
-        <LaserCard className="border-green-500/20">
+        <GlassCard className="border-green-500/20">
           <div className="p-6">
             <h2 className="text-xl font-bold text-green-400 mb-6 flex items-center gap-2">
               <Plus className="h-6 w-6" />
@@ -555,7 +558,7 @@ export default function ProtectionAdminPage() {
                 </div>
               )}
 
-              <LaserButton
+              <Button
                 variant="primary"
                 onClick={() => grantMutation.mutate()}
                 loading={grantMutation.isPending}
@@ -564,7 +567,7 @@ export default function ProtectionAdminPage() {
                 className="w-full mt-6"
               >
                 Grant Protection
-              </LaserButton>
+              </Button>
 
               {grantMutation.isError && (
                 <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400">
@@ -579,7 +582,7 @@ export default function ProtectionAdminPage() {
               )}
             </div>
           </div>
-        </LaserCard>
+        </GlassCard>
       )}
     </div>
   );

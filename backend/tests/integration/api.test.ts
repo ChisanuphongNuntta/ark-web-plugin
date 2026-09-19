@@ -53,6 +53,12 @@ describe('Products API', () => {
     const { status } = await api('/api/products/999999');
     expect(status).toBe(404);
   });
+
+  it('GET /api/products supports category alias and search combined', async () => {
+    const { status, body } = await api('/api/products?categoryId=spheres&search=sphere');
+    expect(status).toBe(200);
+    expect(Array.isArray(body.products)).toBe(true);
+  });
 });
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────

@@ -21,10 +21,13 @@
   --iris-ink: 5 7 13;        /* Obsidian Navy  #05070D */
   --iris-midnight: 8 13 23;  /* derived deep field      */
   --iris-river: 7 26 36;     /* Deep River     #071A24 */
+  --iris-violet: 13 9 26;    /* Frozen Midnight Violet #0D091A */
+  --iris-slate: 21 18 38;    /* Iris Slate     #151226 */
 
   /* --- Brand light --- */
   --iris-cyan: 55 229 210;   /* Iris Cyan      #37E5D2 */
   --iris-orchid: 167 123 255;/* Royal Orchid   #A77BFF */
+  --iris-magenta: 232 61 132;/* Glowing Magenta #E83D84 */
 
   /* --- Luxury accent --- */
   --iris-gold: 221 187 114;  /* Champagne Gold #DDBB72 */
@@ -39,6 +42,9 @@
   --color-iris-cyan: #37E5D2;
   --color-royal-orchid: #A77BFF;
   --color-champagne-gold: #DDBB72;
+  --color-frozen-violet: #0D091A;
+  --color-iris-slate: #151226;
+  --color-glowing-magenta: #E83D84;
 
   /* --- Semantic surface / line / focus tokens --- */
   --surface-1: rgba(12, 22, 31, 0.72);
@@ -61,9 +67,12 @@ body {
   background:
     radial-gradient(circle at 16% -8%, rgba(55, 229, 210, 0.12), transparent 34rem),
     radial-gradient(circle at 88% 16%, rgba(167, 123, 255, 0.1), transparent 30rem),
-    linear-gradient(180deg, #05070d 0%, #07121a 48%, #05070d 100%);
+    linear-gradient(180deg, #0d091a 0%, #07121a 48%, #05070d 100%);
   font-family: var(--font-iris-sans), sans-serif;
 }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, input, select, textarea { font: inherit; }

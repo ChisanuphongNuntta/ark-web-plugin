@@ -1,0 +1,26 @@
+<svg width="900" height="900" viewBox="0 0 900 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="900" rx="96" fill="#05070D"/>
+  <path d="M134 198C320 77 543 70 751 213L450 826L134 198Z" fill="url(#aura)" opacity=".62"/>
+  <path d="M455 108L552 514L450 786L344 512L455 108Z" fill="#F5F1E8"/>
+  <path d="M455 108L552 514L450 786V108Z" fill="#37E5D2"/>
+  <path d="M329 525H574" stroke="#DDBB72" stroke-width="44" stroke-linecap="round"/>
+  <path d="M389 594H513" stroke="#A77BFF" stroke-width="46" stroke-linecap="round"/>
+  <path d="M451 608V752" stroke="#DDBB72" stroke-width="34" stroke-linecap="round"/>
+  <path d="M450 147L505 504L451 681L397 504L450 147Z" stroke="#071A24" stroke-width="12"/>
+  <circle cx="450" cy="551" r="39" fill="#05070D" stroke="#37E5D2" stroke-width="13"/>
+  <g opacity=".18" stroke-width="2">
+    <path d="M130 318H770" stroke="#37E5D2"/>
+    <path d="M130 610H770" stroke="#DDBB72"/>
+    <path d="M318 130V770" stroke="#A77BFF"/>
+    <path d="M610 130V770" stroke="#37E5D2"/>
+  </g>
+  <text x="88" y="118" fill="#37E5D2" font-family="Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="8">TEK ARMORY</text>
+  <text x="88" y="792" fill="#F5F1E8" font-family="Arial, sans-serif" font-size="58" font-weight="800" letter-spacing="3">SWORD</text>
+  <defs>
+    <linearGradient id="aura" x1="166" y1="151" x2="761" y2="711" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#37E5D2"/>
+      <stop offset=".52" stop-color="#A77BFF"/>
+      <stop offset="1" stop-color="#DDBB72"/>
+    </linearGradient>
+  </defs>
+</svg>

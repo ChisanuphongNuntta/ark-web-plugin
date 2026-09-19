@@ -1,0 +1,54 @@
+<svg width="960" height="720" viewBox="0 0 960 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="720" rx="56" fill="#05070D"/>
+  <rect x="34" y="34" width="892" height="652" rx="42" fill="url(#surface)" stroke="url(#stroke)" stroke-width="2"/>
+  <path d="M120 530C210 390 308 470 394 344C506 179 650 194 825 116" stroke="url(#river)" stroke-width="22" stroke-linecap="round" opacity=".45"/>
+  <path d="M145 548C250 426 342 480 424 362C534 204 670 214 804 146" stroke="#37E5D2" stroke-width="3" stroke-linecap="round" opacity=".72"/>
+  <circle cx="480" cy="332" r="128" fill="#071A24" stroke="url(#ring)" stroke-width="3"/>
+  <circle cx="480" cy="332" r="92" fill="#07121A" stroke="#37E5D2" stroke-opacity=".36"/>
+  <path d="M431 327C431 299.386 453.386 277 481 277H529C556.614 277 579 299.386 579 327V371C579 381.493 570.493 390 560 390H491L440 431V390H431C403.386 390 381 367.614 381 340V327H431Z" fill="url(#bubble)" stroke="#37E5D2" stroke-width="3"/>
+  <circle cx="449" cy="334" r="10" fill="#DDBB72"/>
+  <circle cx="486" cy="334" r="10" fill="#37E5D2"/>
+  <circle cx="523" cy="334" r="10" fill="#A77BFF"/>
+  <g opacity=".88">
+    <rect x="130" y="150" width="210" height="74" rx="22" fill="#071A24" stroke="#DDBB72" stroke-opacity=".35"/>
+    <rect x="624" y="432" width="220" height="84" rx="24" fill="#071A24" stroke="#37E5D2" stroke-opacity=".4"/>
+    <rect x="652" y="190" width="150" height="54" rx="18" fill="#071A24" stroke="#A77BFF" stroke-opacity=".45"/>
+    <path d="M166 182H290" stroke="#F5F1E8" stroke-opacity=".5" stroke-width="7" stroke-linecap="round"/>
+    <path d="M166 204H250" stroke="#37E5D2" stroke-opacity=".55" stroke-width="7" stroke-linecap="round"/>
+    <path d="M664 462H793" stroke="#F5F1E8" stroke-opacity=".5" stroke-width="7" stroke-linecap="round"/>
+    <path d="M664 486H755" stroke="#DDBB72" stroke-opacity=".55" stroke-width="7" stroke-linecap="round"/>
+    <path d="M682 218H770" stroke="#F5F1E8" stroke-opacity=".45" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g opacity=".45">
+    <path d="M94 90H870" stroke="#F5F1E8" stroke-opacity=".08"/>
+    <path d="M94 630H870" stroke="#F5F1E8" stroke-opacity=".08"/>
+    <path d="M96 90V630" stroke="#F5F1E8" stroke-opacity=".08"/>
+    <path d="M864 90V630" stroke="#F5F1E8" stroke-opacity=".08"/>
+  </g>
+  <defs>
+    <linearGradient id="surface" x1="90" y1="58" x2="845" y2="661" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B2430"/>
+      <stop offset=".55" stop-color="#07121A"/>
+      <stop offset="1" stop-color="#10112A"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="34" y1="34" x2="926" y2="686" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#37E5D2"/>
+      <stop offset=".48" stop-color="#DDBB72"/>
+      <stop offset="1" stop-color="#A77BFF"/>
+    </linearGradient>
+    <linearGradient id="river" x1="126" y1="530" x2="821" y2="119" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#37E5D2"/>
+      <stop offset=".54" stop-color="#DDBB72"/>
+      <stop offset="1" stop-color="#A77BFF"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="356" y1="214" x2="606" y2="456" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#37E5D2"/>
+      <stop offset=".52" stop-color="#DDBB72"/>
+      <stop offset="1" stop-color="#A77BFF"/>
+    </linearGradient>
+    <linearGradient id="bubble" x1="383" y1="279" x2="564" y2="424" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#123748"/>
+      <stop offset="1" stop-color="#07111F"/>
+    </linearGradient>
+  </defs>
+</svg>

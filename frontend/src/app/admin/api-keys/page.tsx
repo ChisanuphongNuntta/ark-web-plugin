@@ -21,9 +21,9 @@ import {
   Download,
 } from 'lucide-react';
 import Link from 'next/link';
-import LaserCard from '@/components/LaserCard';
-import LaserButton from '@/components/LaserButton';
-import LaserModal from '@/components/LaserModal';
+import Surface from '@/components/ui/Surface';
+import { Button } from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
 
 interface ApiKeyUser {
   id: string;
@@ -217,12 +217,12 @@ export default function AdminApiKeysPage() {
 
   if (!canManageApiKeys) {
     return (
-      <LaserCard className="border-red-500/30">
+      <Surface className="border-red-500/30">
         <div className="text-center py-12">
           <p className="text-red-400">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
           <p className="text-gray-500 text-sm mt-2">เฉพาะ Server Admin และ Root เท่านั้น</p>
         </div>
-      </LaserCard>
+      </Surface>
     );
   }
 
@@ -247,7 +247,7 @@ export default function AdminApiKeysPage() {
 
       {/* Message Alert */}
       {message && (
-        <LaserCard className={message.type === 'success' ? 'border-green-500/30' : 'border-red-500/30'}>
+        <Surface className={message.type === 'success' ? 'border-green-500/30' : 'border-red-500/30'}>
           <div className={`p-4 ${message.type === 'success' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
             <div className="flex items-center gap-3">
               {message.type === 'success' ? (
@@ -260,11 +260,11 @@ export default function AdminApiKeysPage() {
               </span>
             </div>
           </div>
-        </LaserCard>
+        </Surface>
       )}
 
       {/* Search */}
-      <LaserCard glowOnHover>
+      <Surface glowOnHover>
         <div className="p-4">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -282,7 +282,7 @@ export default function AdminApiKeysPage() {
             />
           </div>
         </div>
-      </LaserCard>
+      </Surface>
 
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -296,7 +296,7 @@ export default function AdminApiKeysPage() {
           {/* API Keys Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {data?.apiKeys?.map((apiKeyUser: ApiKeyUser) => (
-              <LaserCard key={apiKeyUser.id} glowOnHover>
+              <Surface key={apiKeyUser.id} glowOnHover>
                 <div className="p-5">
                   {/* User Header */}
                   <div className="flex items-center gap-4 mb-4">
@@ -426,7 +426,7 @@ export default function AdminApiKeysPage() {
                         ) : (
                           <Download className="h-4 w-4" />
                         )}
-                        📦
+                        Plugin Package
                       </button>
                     )}
                     <button
@@ -454,17 +454,17 @@ export default function AdminApiKeysPage() {
                     </button>
                   </div>
                 </div>
-              </LaserCard>
+              </Surface>
             ))}
 
             {(!data?.apiKeys || data.apiKeys.length === 0) && (
               <div className="col-span-2">
-                <LaserCard>
+                <Surface>
                   <div className="py-12 text-center text-gray-400">
                     <Key className="h-12 w-12 mx-auto mb-4 text-emerald-400/50" />
                     <p>ไม่พบ API Keys</p>
                   </div>
-                </LaserCard>
+                </Surface>
               </div>
             )}
           </div>
@@ -472,31 +472,31 @@ export default function AdminApiKeysPage() {
           {/* Pagination */}
           {data?.pagination && data.pagination.totalPages > 1 && (
             <div className="flex justify-center items-center gap-4">
-              <LaserButton
+              <Button
                 variant="secondary"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
               >
                 ก่อนหน้า
-              </LaserButton>
+              </Button>
               <div className="px-4 py-2 bg-black/40 rounded-xl border border-emerald-500/20">
                 <span className="text-gray-400">หน้า </span>
                 <span className="text-emerald-400 font-bold">{page}</span>
                 <span className="text-gray-400"> / {data.pagination.totalPages}</span>
               </div>
-              <LaserButton
+              <Button
                 variant="secondary"
                 onClick={() => setPage((p) => Math.min(data.pagination.totalPages, p + 1))}
                 disabled={page === data.pagination.totalPages}
               >
                 ถัดไป
-              </LaserButton>
+              </Button>
             </div>
           )}
         </>
       )}
-      {/* Laser Modal */}
-      <LaserModal
+      {/* Accessible Dialog */}
+      <Dialog
         isOpen={modalConfig.isOpen}
         onClose={closeModal}
         onConfirm={modalConfig.onConfirm}
@@ -506,7 +506,7 @@ export default function AdminApiKeysPage() {
         cancelText={modalConfig.cancelText}
       >
         {modalConfig.content}
-      </LaserModal>
+      </Dialog>
     </div>
   );
 }

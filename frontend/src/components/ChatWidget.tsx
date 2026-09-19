@@ -123,9 +123,11 @@ export default function ChatWidget() {
   if (!isOpen) {
     return (
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
         className="fixed bottom-4 right-4 z-50 bg-gradient-to-r from-emerald-600 to-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
         title="Open Chat"
+        aria-label="เปิดหน้าต่างแชท"
       >
         <MessageSquare size={24} />
       </button>
@@ -143,8 +145,10 @@ export default function ChatWidget() {
             <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
           </div>
           <button
+            type="button"
             onClick={() => setIsOpen(false)}
             className="text-gray-400 hover:text-white transition-colors"
+            aria-label="ปิดหน้าต่างแชท"
           >
             <X size={20} />
           </button>
@@ -153,6 +157,7 @@ export default function ChatWidget() {
         {/* Server tabs */}
         <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
           <button
+            type="button"
             onClick={() => setSelectedServer(null)}
             className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
               selectedServer === null
@@ -165,6 +170,7 @@ export default function ChatWidget() {
           </button>
           {servers.map((server) => (
             <button
+              type="button"
               key={server.id}
               onClick={() => setSelectedServer(server.id)}
               className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
@@ -260,8 +266,10 @@ export default function ChatWidget() {
               className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
             />
             <button
+              type="button"
               onClick={handleSend}
               disabled={!inputValue.trim()}
+              aria-label="ส่งข้อความ"
               className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
             >
               <Send size={20} />

@@ -15,6 +15,9 @@ export default defineConfig({
     ignoreHTTPSErrors: true,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
+    extraHTTPHeaders: {
+      'x-e2e-test': 'true',
+    },
   },
 
   projects: [
@@ -24,7 +27,7 @@ export default defineConfig({
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: { ...devices['Firefox'] },
     },
     {
       name: 'mobile-chrome',

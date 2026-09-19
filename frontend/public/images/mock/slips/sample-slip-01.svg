@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="slipBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E241B"/>
+      <stop offset="100%" stop-color="#05100B"/>
+    </linearGradient>
+    <linearGradient id="kbankGreen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00A950"/>
+      <stop offset="100%" stop-color="#128045"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Card -->
+  <rect width="400" height="600" rx="20" fill="url(#slipBg)" stroke="#00A950" stroke-opacity="0.3" stroke-width="2"/>
+  
+  <!-- Header Bar -->
+  <rect x="20" y="20" width="360" height="60" rx="12" fill="url(#kbankGreen)"/>
+  <text x="40" y="55" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="900" letter-spacing="1">KBANK e-SLIP</text>
+  <text x="360" y="55" text-anchor="end" fill="#E0FFE8" font-family="monospace" font-size="12">โอนเงินสำเร็จ</text>
+
+  <!-- Amount Area -->
+  <rect x="20" y="95" width="360" height="110" rx="12" fill="#000000" fill-opacity="0.4" stroke="#ffffff" stroke-opacity="0.06"/>
+  <text x="200" y="135" text-anchor="middle" fill="#8E9B96" font-family="system-ui, sans-serif" font-size="12" font-weight="600">จำนวนเงินโอน (THB)</text>
+  <text x="200" y="180" text-anchor="middle" fill="#00FF7F" font-family="system-ui, sans-serif" font-size="34" font-weight="900">฿ 299.00</text>
+
+  <!-- Transaction Details -->
+  <g transform="translate(35, 235)" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="12">
+    <text x="0" y="0" fill="#6B7E76" font-weight="600">จากบัญชี:</text>
+    <text x="330" y="0" text-anchor="end" font-weight="700">นาย กิตติศักดิ์ xxx-x-x8821-x</text>
+
+    <text x="0" y="35" fill="#6B7E76" font-weight="600">ไปยังบัญชี:</text>
+    <text x="330" y="35" text-anchor="end" font-weight="700" fill="#37E5D2">IRIS EXPEDITION CO., LTD.</text>
+
+    <text x="0" y="70" fill="#6B7E76" font-weight="600">ธนาคารปลายทาง:</text>
+    <text x="330" y="70" text-anchor="end" font-weight="700">กสิกรไทย (KBANK)</text>
+
+    <text x="0" y="105" fill="#6B7E76" font-weight="600">เลขที่อ้างอิง:</text>
+    <text x="330" y="105" text-anchor="end" font-family="monospace" font-weight="700" fill="#DDBB72">KBANK-TRX-948271</text>
+
+    <text x="0" y="140" fill="#6B7E76" font-weight="600">วัน-เวลาที่ทำรายการ:</text>
+    <text x="330" y="140" text-anchor="end" font-weight="700">15 ส.ค. 2026, 18:42 น.</text>
+
+    <text x="0" y="175" fill="#6B7E76" font-weight="600">รหัสตรวจสอบ QR:</text>
+    <text x="330" y="175" text-anchor="end" font-family="monospace" fill="#8E9B96">00400001006948271</text>
+  </g>
+
+  <!-- QR Code Mock box -->
+  <rect x="140" y="445" width="120" height="120" rx="10" fill="#FFFFFF"/>
+  <rect x="150" y="455" width="30" height="30" fill="#000000"/>
+  <rect x="220" y="455" width="30" height="30" fill="#000000"/>
+  <rect x="150" y="525" width="30" height="30" fill="#000000"/>
+  <rect x="190" y="490" width="20" height="20" fill="#000000"/>
+  <text x="200" y="582" text-anchor="middle" fill="#52625B" font-family="system-ui, sans-serif" font-size="10">สแกนตรวจสอบสลิปแท้ 100%</text>
+</svg>

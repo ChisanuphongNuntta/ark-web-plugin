@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+  <title id="title">Rex Level 300 mock art</title>
+  <desc id="desc">Cinematic rex silhouette for marketplace product art.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="70%"><stop stop-color="#26334B"/><stop offset=".55" stop-color="#071A24"/><stop offset="1" stop-color="#05070D"/></radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="900" height="900" fill="url(#bg)"/>
+  <path d="M90 640c140-126 560-122 720 0" fill="none" stroke="#37E5D2" stroke-opacity=".22" stroke-width="5"/>
+  <g transform="translate(108 300)" filter="url(#glow)">
+    <path d="M104 236c42-118 150-178 300-166 92 8 180 48 236 116l74 10-48 42 48 36-88 22c-62 78-152 110-270 94l-42 108h-74l26-126-104-48-36 174H52l36-198z" fill="#0A1018" stroke="#DDBB72" stroke-width="12" stroke-linejoin="round"/>
+    <path d="M528 168h44l-28 26zM574 204h40l-30 24z" fill="#37E5D2"/>
+    <circle cx="554" cy="154" r="12" fill="#37E5D2"/>
+</svg>

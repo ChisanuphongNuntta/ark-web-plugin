@@ -29,9 +29,9 @@ REPORT_FILE="$REPORT_DIR/security_report_$TIMESTAMP.txt"
 
 # Logging functions
 log() { echo -e "$1" | tee -a "$REPORT_FILE"; }
-log_pass() { log "${GREEN}[PASS]${NC} $1"; ((PASSED++)); }
-log_fail() { log "${RED}[FAIL]${NC} $1"; ((FAILED++)); }
-log_warn() { log "${YELLOW}[WARN]${NC} $1"; ((WARNINGS++)); }
+log_pass() { log "${GREEN}[PASS]${NC} $1"; PASSED=$((PASSED + 1)); }
+log_fail() { log "${RED}[FAIL]${NC} $1"; FAILED=$((FAILED + 1)); }
+log_warn() { log "${YELLOW}[WARN]${NC} $1"; WARNINGS=$((WARNINGS + 1)); }
 log_info() { log "${BLUE}[INFO]${NC} $1"; }
 
 # Header

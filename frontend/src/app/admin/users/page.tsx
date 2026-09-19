@@ -1,5 +1,10 @@
 'use client';
 
+import { Button } from '@/components/ui/Button';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
+
+
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, UserRole } from '@/lib/store';
@@ -22,9 +27,6 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
-import LaserCard from '@/components/LaserCard';
-import LaserButton from '@/components/LaserButton';
-import LaserModal from '@/components/LaserModal';
 
 interface User {
   id: string;
@@ -272,12 +274,12 @@ export default function AdminUsersPage() {
 
   if (!canManageServerUsers) {
     return (
-      <LaserCard className="border-red-500/30">
+      <GlassCard className="border-red-500/30">
         <div className="text-center py-12">
           <p className="text-red-400">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
           <p className="text-gray-500 text-sm mt-2">เฉพาะ Server Admin และ Root เท่านั้น</p>
         </div>
-      </LaserCard>
+      </GlassCard>
     );
   }
 
@@ -348,7 +350,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Search */}
-      <LaserCard glowOnHover>
+      <GlassCard glowOnHover>
         <div className="p-4">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -366,7 +368,7 @@ export default function AdminUsersPage() {
             />
           </div>
         </div>
-      </LaserCard>
+      </GlassCard>
 
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -377,7 +379,7 @@ export default function AdminUsersPage() {
         </div>
       ) : (
         <>
-          <LaserCard className="overflow-visible">
+          <GlassCard className="overflow-visible">
             <div className="overflow-visible">
               <table className="w-full">
                 <thead>
@@ -541,30 +543,30 @@ export default function AdminUsersPage() {
                 </tbody>
               </table>
             </div>
-          </LaserCard>
+          </GlassCard>
 
           {/* Pagination */}
           {data?.pagination && data.pagination.totalPages > 1 && (
             <div className="flex justify-center items-center gap-4">
-              <LaserButton
+              <Button
                 variant="secondary"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
               >
                 ก่อนหน้า
-              </LaserButton>
+              </Button>
               <div className="px-4 py-2 bg-black/40 rounded-xl border border-emerald-500/20">
                 <span className="text-gray-400">หน้า </span>
                 <span className="text-emerald-400 font-bold">{page}</span>
                 <span className="text-gray-400"> / {data.pagination.totalPages}</span>
               </div>
-              <LaserButton
+              <Button
                 variant="secondary"
                 onClick={() => setPage((p) => Math.min(data.pagination.totalPages, p + 1))}
                 disabled={page === data.pagination.totalPages}
               >
                 ถัดไป
-              </LaserButton>
+              </Button>
             </div>
           )}
         </>
@@ -576,7 +578,7 @@ export default function AdminUsersPage() {
           className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={(e) => e.target === e.currentTarget && closeCoinModal()}
         >
-          <LaserCard className="w-full max-w-lg mx-4 relative animate-in fade-in zoom-in duration-200">
+          <GlassCard className="w-full max-w-lg mx-4 relative animate-in fade-in zoom-in duration-200">
             {/* Close Button */}
             <button
               onClick={closeCoinModal}
@@ -772,7 +774,7 @@ export default function AdminUsersPage() {
 
                 {/* Actions */}
                 <div className="flex gap-3 pt-2">
-                  <LaserButton
+                  <Button
                     type="submit"
                     variant={coinAction === 'remove' ? 'secondary' : 'primary'}
                     loading={adjustPointsMutation.isPending}
@@ -782,10 +784,10 @@ export default function AdminUsersPage() {
                     {coinAction === 'set' && 'กำหนด IC'}
                     {coinAction === 'add' && 'เพิ่ม IC'}
                     {coinAction === 'remove' && 'หัก IC'}
-                  </LaserButton>
-                  <LaserButton type="button" variant="secondary" onClick={closeCoinModal}>
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={closeCoinModal}>
                     ยกเลิก
-                  </LaserButton>
+                  </Button>
                 </div>
               </form>
 
@@ -794,21 +796,36 @@ export default function AdminUsersPage() {
                 กด <kbd className="px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">ESC</kbd> เพื่อปิด
               </p>
             </div>
-          </LaserCard>
+          </GlassCard>
         </div>
       )}
       {/* Modal - Alert & Confirm */}
-      <LaserModal
-        isOpen={modalConfig.isOpen}
-        onClose={closeModal}
-        onConfirm={modalConfig.onConfirm}
-        title={modalConfig.title}
-        variant={modalConfig.variant}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-      >
-        {modalConfig.content}
-      </LaserModal>
+      <Dialog open={modalConfig?.isOpen ?? false} onOpenChange={(open) => !open && closeModal?.()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{modalConfig?.title || 'แจ้งเตือน'}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-sm text-iris-muted">
+            {modalConfig?.content}
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            {!(modalConfig as any)?.singleButton && (
+              <Button variant="outline" onClick={closeModal}>
+                {modalConfig?.cancelText || 'ยกเลิก'}
+              </Button>
+            )}
+            <Button
+              variant={modalConfig?.variant === 'danger' ? 'danger' : 'primary'}
+              onClick={() => {
+                modalConfig?.onConfirm?.();
+                closeModal?.();
+              }}
+            >
+              {modalConfig?.confirmText || 'ตกลง'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

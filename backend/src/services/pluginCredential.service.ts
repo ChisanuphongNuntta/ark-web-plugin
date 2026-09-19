@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
-import { encryptDeterministic, decrypt } from '../utils/encryption.js';
+import { encrypt, decrypt } from '../utils/encryption.js';
 
 /**
  * Server / plugin signing credential service (M2 hardening, CR-PLUGIN-001).
@@ -55,7 +55,7 @@ export class PluginCredentialService {
       data: {
         serverId,
         keyId,
-        secretEnc: encryptDeterministic(secret),
+        secretEnc: encrypt(secret),
         label: label ?? null,
         status: 'active',
       },

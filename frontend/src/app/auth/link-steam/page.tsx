@@ -64,7 +64,7 @@ function LinkSteamContent() {
       <div className="card p-8 text-center">
         {status === 'loading' && (
           <>
-            <Loader2 className="h-12 w-12 animate-spin text-ark-accent mx-auto mb-4" />
+            <Loader2 className="h-12 w-12 animate-spin text-iris-cyan mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-2">กำลังเชื่อม Steam</h1>
             <p className="text-gray-400">รอสักครู่...</p>
           </>
@@ -100,7 +100,7 @@ export default function LinkSteamPage() {
       fallback={
         <div className="max-w-md mx-auto mt-20">
           <div className="card p-8 text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-ark-accent mx-auto mb-4" />
+            <Loader2 className="h-12 w-12 animate-spin text-iris-cyan mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-2">กำลังโหลด...</h1>
           </div>
         </div>

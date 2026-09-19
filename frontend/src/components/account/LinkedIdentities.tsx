@@ -2,45 +2,42 @@
 
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link2, UserCheck, ShieldAlert, Info, Loader2 } from 'lucide-react';
+import { Link2, UserCheck, ShieldAlert, Info, ExternalLink } from 'lucide-react';
 import { identityApi } from '@/lib/contracts/client';
 import type { IdentityProvider, LinkedIdentity } from '@/lib/contracts/types';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 
 const PROVIDER_META: Record<
   IdentityProvider,
-  { label: string; accent: string; border: string; hint: string; linkable: boolean }
+  { label: string; accent: string; border: string; hint: string }
 > = {
   discord: {
     label: 'Discord',
     accent: 'text-indigo-400',
     border: 'border-l-indigo-500',
     hint: 'บัญชีหลักที่ใช้สมัครและกู้คืน IRIS ID',
-    linkable: false, // signup provider — not linkable from here per contract
   },
   steam: {
     label: 'Steam',
     accent: 'text-iris-cyan',
     border: 'border-l-iris-cyan',
     hint: 'ใช้พิสูจน์สิทธิ์ครอบครอง (Steam OpenID) เพื่อรับสินค้าเข้าตัวละคร',
-    linkable: true,
   },
   epic: {
     label: 'Epic Games',
     accent: 'text-iris-orchid',
     border: 'border-l-iris-orchid',
     hint: 'ใช้พิสูจน์สิทธิ์ครอบครอง (Epic OAuth) สำหรับผู้เล่นผ่าน Epic',
-    linkable: true,
   },
 };
 
 const IDENTITIES_KEY = ['account', 'identities'];
+const STEAM_AUTH_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/steam`;
 
 export function LinkedIdentities() {
   const queryClient = useQueryClient();
@@ -49,29 +46,9 @@ export function LinkedIdentities() {
     queryFn: () => identityApi.getIdentities(),
   });
 
-  const [draftAccountId, setDraftAccountId] = React.useState<Record<string, string>>({});
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = React.useState<string | null>(null);
   const [pendingProvider, setPendingProvider] = React.useState<IdentityProvider | null>(null);
-
-  const linkMutation = useMutation({
-    mutationFn: ({ provider, accountId }: { provider: 'steam' | 'epic'; accountId: string }) =>
-      identityApi.link(provider, { accountId }),
-    onMutate: ({ provider }) => {
-      setActionError(null);
-      setActionSuccess(null);
-      setPendingProvider(provider);
-    },
-    onSuccess: (next, { provider }) => {
-      queryClient.setQueryData(IDENTITIES_KEY, next);
-      setActionSuccess(`เชื่อมต่อ ${PROVIDER_META[provider].label} สำเร็จ`);
-      setDraftAccountId((p) => ({ ...p, [provider]: '' }));
-    },
-    onError: (_e, { provider }) => {
-      setActionError(`เชื่อมต่อ ${PROVIDER_META[provider].label} ไม่สำเร็จ ต้องผ่านการพิสูจน์สิทธิ์ครอบครอง (proof-of-control)`);
-    },
-    onSettled: () => setPendingProvider(null),
-  });
 
   const unlinkMutation = useMutation({
     mutationFn: (provider: 'steam' | 'epic' | 'discord') => identityApi.unlink(provider),
@@ -146,13 +123,8 @@ export function LinkedIdentities() {
             key={identity.provider}
             identity={identity}
             isLinked={identity.providerAccountId !== null}
-            draft={draftAccountId[identity.provider] ?? ''}
-            onDraftChange={(v) => setDraftAccountId((p) => ({ ...p, [identity.provider]: v }))}
             isPending={pendingProvider === identity.provider}
-            onLink={(accountId) => {
-              if (identity.provider === 'discord') return;
-              linkMutation.mutate({ provider: identity.provider, accountId });
-            }}
+            onStartSteamAuth={() => window.location.assign(STEAM_AUTH_URL)}
             onUnlink={() => unlinkMutation.mutate(identity.provider)}
           />
         ))}
@@ -177,18 +149,14 @@ export function LinkedIdentities() {
 function IdentityCard({
   identity,
   isLinked,
-  draft,
-  onDraftChange,
   isPending,
-  onLink,
+  onStartSteamAuth,
   onUnlink,
 }: {
   identity: LinkedIdentity;
   isLinked: boolean;
-  draft: string;
-  onDraftChange: (v: string) => void;
   isPending: boolean;
-  onLink: (accountId: string) => void;
+  onStartSteamAuth: () => void;
   onUnlink: () => void;
 }) {
   const meta = PROVIDER_META[identity.provider];
@@ -248,27 +216,21 @@ function IdentityCard({
               </p>
             )}
           </>
-        ) : meta.linkable ? (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const v = draft.trim();
-              if (v) onLink(v);
-            }}
-            className="flex gap-2"
+        ) : identity.provider === 'steam' ? (
+          <Button
+            type="button"
+            variant="cyan"
+            size="sm"
+            className="w-full"
+            onClick={onStartSteamAuth}
           >
-            <Input
-              placeholder={identity.provider === 'steam' ? 'Steam ID (64-bit)' : 'Epic Account ID'}
-              value={draft}
-              onChange={(e) => onDraftChange(e.target.value)}
-              disabled={isPending}
-              className="py-1.5 px-3 text-xs"
-              aria-label={`${meta.label} account id`}
-            />
-            <Button type="submit" variant="cyan" size="sm" className="shrink-0 px-3" isLoading={isPending} disabled={!draft.trim()}>
-              {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'เชื่อมต่อ'}
-            </Button>
-          </form>
+            <ExternalLink className="h-3.5 w-3.5" />
+            เชื่อมต่อด้วย Steam
+          </Button>
+        ) : identity.provider === 'epic' ? (
+          <Button type="button" variant="ghost" size="sm" className="w-full" disabled>
+            Epic OAuth — เร็ว ๆ นี้
+          </Button>
         ) : (
           <p className="text-[10px] text-iris-muted text-center">เชื่อมต่อผ่านการสมัครเท่านั้น</p>
         )}

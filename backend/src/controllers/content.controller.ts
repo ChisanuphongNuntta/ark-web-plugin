@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { unlink } from 'fs/promises';
+import path from 'path';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import { AuthRequest } from '../middlewares/auth.js';
@@ -624,7 +625,8 @@ export class ContentController {
         throw new AppError('No file uploaded', 400);
       }
 
-      const { alt, caption, folder = 'uploads' } = req.body;
+      const { alt, caption } = req.body;
+      const folder = (req as any).uploadFolder || 'uploads';
 
       // Create media record
       const mediaFile = await prisma.mediaFile.create({
@@ -670,7 +672,9 @@ export class ContentController {
       const updateData: any = {};
       if (alt !== undefined) updateData.alt = alt;
       if (caption !== undefined) updateData.caption = caption;
-      if (folder !== undefined) updateData.folder = folder;
+      if (folder !== undefined && folder !== existingFile.folder) {
+        throw new AppError('Moving uploaded files between folders is not supported', 400);
+      }
 
       const mediaFile = await prisma.mediaFile.update({
         where: { id: parseInt(id) },
@@ -701,7 +705,12 @@ export class ContentController {
 
       // Delete physical file from disk (ignore error if file already missing)
       if (file.path) {
-        await unlink(file.path).catch(() => {});
+        const uploadRoot = path.resolve(process.cwd(), 'public', 'uploads');
+        const resolvedFile = path.resolve(file.path);
+        if (!resolvedFile.startsWith(`${uploadRoot}${path.sep}`)) {
+          throw new AppError('Stored media path is outside the upload directory', 409);
+        }
+        await unlink(resolvedFile).catch(() => {});
       }
 
       await prisma.mediaFile.delete({

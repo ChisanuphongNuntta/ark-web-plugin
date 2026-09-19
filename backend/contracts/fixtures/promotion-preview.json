@@ -1,0 +1,24 @@
+{
+  "currency": "IC",
+  "subtotal": "500",
+  "discountTotal": "75",
+  "total": "425",
+  "applications": [
+    {
+      "campaignId": "promo_summer_2026",
+      "campaignCode": "SUMMER2026",
+      "campaignName": "Summer Ark Festival",
+      "voucherId": "voucher_summer_15",
+      "voucherCode": "SUMMER15",
+      "discountAmount": "75",
+      "allocation": [
+        {
+          "lineNo": 1,
+          "productId": 101,
+          "serverId": 1,
+          "amount": "75"
+        }
+      ]
+    }
+  ]
+}

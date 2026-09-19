@@ -5,59 +5,54 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Create categories
-  const categories = await Promise.all([
-    prisma.category.upsert({
-      where: { id: 1 },
+  // Create categories sequentially to ensure correct autoincrement sequence and IDs
+  const categoryData = [
+    {
+      id: 1,
+      name: 'Weapons',
+      description: 'Powerful weapons for your survival',
+      icon: '⚔️',
+      sortOrder: 1,
+    },
+    {
+      id: 2,
+      name: 'Armor',
+      description: 'Protect yourself from dangers',
+      icon: '🛡️',
+      sortOrder: 2,
+    },
+    {
+      id: 3,
+      name: 'Resources',
+      description: 'Building and crafting materials',
+      icon: '📦',
+      sortOrder: 3,
+    },
+    {
+      id: 4,
+      name: 'Creatures',
+      description: 'Tamed creatures and eggs',
+      icon: '🦖',
+      sortOrder: 4,
+    },
+    {
+      id: 5,
+      name: 'Kits',
+      description: 'Starter and special kits',
+      icon: '🎁',
+      sortOrder: 5,
+    },
+  ];
+
+  const categories = [];
+  for (const cat of categoryData) {
+    const created = await prisma.category.upsert({
+      where: { id: cat.id },
       update: {},
-      create: {
-        name: 'Weapons',
-        description: 'Powerful weapons for your survival',
-        icon: '⚔️',
-        sortOrder: 1,
-      },
-    }),
-    prisma.category.upsert({
-      where: { id: 2 },
-      update: {},
-      create: {
-        name: 'Armor',
-        description: 'Protect yourself from dangers',
-        icon: '🛡️',
-        sortOrder: 2,
-      },
-    }),
-    prisma.category.upsert({
-      where: { id: 3 },
-      update: {},
-      create: {
-        name: 'Resources',
-        description: 'Building and crafting materials',
-        icon: '📦',
-        sortOrder: 3,
-      },
-    }),
-    prisma.category.upsert({
-      where: { id: 4 },
-      update: {},
-      create: {
-        name: 'Creatures',
-        description: 'Tamed creatures and eggs',
-        icon: '🦖',
-        sortOrder: 4,
-      },
-    }),
-    prisma.category.upsert({
-      where: { id: 5 },
-      update: {},
-      create: {
-        name: 'Kits',
-        description: 'Starter and special kits',
-        icon: '🎁',
-        sortOrder: 5,
-      },
-    }),
-  ]);
+      create: cat,
+    });
+    categories.push(created);
+  }
 
   console.log(`✅ Created ${categories.length} categories`);
 

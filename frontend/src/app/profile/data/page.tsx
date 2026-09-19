@@ -131,7 +131,7 @@ export default function DataManagementPage() {
           {requestTypes.map((rt) => (
             <div
               key={rt.type}
-              className="flex items-center justify-between p-4 bg-ark-darker rounded-lg"
+              className="flex items-center justify-between p-4 bg-black/40 rounded-lg"
             >
               <div>
                 <h4 className="font-medium">{rt.label}</h4>
@@ -161,7 +161,7 @@ export default function DataManagementPage() {
             {requestsData.requests.map((req: any) => (
               <div
                 key={req.id}
-                className="flex items-center justify-between p-4 bg-ark-darker rounded-lg"
+                className="flex items-center justify-between p-4 bg-black/40 rounded-lg"
               >
                 <div>
                   <div className="flex items-center gap-2">
@@ -247,7 +247,7 @@ export default function DataManagementPage() {
             </ul>
 
             <p className="text-sm text-gray-400 mb-2">
-              พิมพ์ <code className="bg-ark-darker px-2 py-1 rounded">DELETE_MY_DATA</code> เพื่อยืนยัน:
+              พิมพ์ <code className="bg-black/40 px-2 py-1 rounded">DELETE_MY_DATA</code> เพื่อยืนยัน:
             </p>
             <input
               type="text"

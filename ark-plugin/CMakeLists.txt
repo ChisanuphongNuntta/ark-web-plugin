@@ -16,10 +16,16 @@ set(SOURCES
     src/Commands.h
     src/HttpClient.cpp
     src/HttpClient.h
+    src/RequestSigning.cpp
+    src/RequestSigning.h
+    src/RequestPolicy.cpp
+    src/RequestPolicy.h
     src/GameThreadDispatcher.cpp
     src/GameThreadDispatcher.h
     src/DeliveryJournal.cpp
     src/DeliveryJournal.h
+    src/DinoPayload.cpp
+    src/DinoPayload.h
     src/WalletNotifications.cpp
     src/WalletNotifications.h
     src/Config.cpp
@@ -118,4 +124,41 @@ if(BUILD_TESTING)
         target_link_options(WalletNotificationsTests PRIVATE /Brepro)
     endif()
     add_test(NAME WalletNotificationsTests COMMAND WalletNotificationsTests)
+
+    add_executable(RequestPolicyTests
+        tests/RequestPolicyTests.cpp
+        src/RequestPolicy.cpp
+        src/RequestPolicy.h
+    )
+    target_include_directories(RequestPolicyTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    if(MSVC)
+        target_compile_options(RequestPolicyTests PRIVATE /utf-8)
+        target_link_options(RequestPolicyTests PRIVATE /Brepro)
+    endif()
+    add_test(NAME RequestPolicyTests COMMAND RequestPolicyTests)
+
+    add_executable(RequestSigningTests
+        tests/RequestSigningTests.cpp
+        src/RequestSigning.cpp
+        src/RequestSigning.h
+    )
+    target_include_directories(RequestSigningTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    if(MSVC)
+        target_compile_options(RequestSigningTests PRIVATE /utf-8)
+        target_link_options(RequestSigningTests PRIVATE /Brepro)
+    endif()
+    target_link_libraries(RequestSigningTests PRIVATE bcrypt)
+    add_test(NAME RequestSigningTests COMMAND RequestSigningTests)
+
+    add_executable(DinoPayloadTests
+        tests/DinoPayloadTests.cpp
+        src/DinoPayload.cpp
+        src/DinoPayload.h
+    )
+    target_include_directories(DinoPayloadTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    if(MSVC)
+        target_compile_options(DinoPayloadTests PRIVATE /utf-8)
+        target_link_options(DinoPayloadTests PRIVATE /Brepro)
+    endif()
+    add_test(NAME DinoPayloadTests COMMAND DinoPayloadTests)
 endif()

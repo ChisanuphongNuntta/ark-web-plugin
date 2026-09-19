@@ -20,6 +20,10 @@ import type {
   FeaturedResponse,
   LinkedIdentitiesResponse,
   SessionWithRisk,
+  OrderListResponse,
+  OrderDetailResponse,
+  PaymentPackagesResponse,
+  SlipTopupSubmission,
 } from './types';
 
 /** Mirrors fixtures/products.json (GET /products). */
@@ -29,11 +33,11 @@ export const productsFixture: ProductListResponse = {
       id: 1,
       name: 'Ascendant Longneck Rifle',
       description:
-        'ปืนสไนเปอร์คุณภาพสูงสุด ระดับ Ascendant เหมาะสำหรับผู้ล่าที่ต้องการความแม่นยำสูงในระยะไกล',
+        'ปืนสไนเปอร์คุณภาพสูงสุด ระดับ Ascendant เหมาะสำหรับผู้ล่าที่ต้องการความแม่นยำสูงในระยะไกล พร้อมสโคปอินฟราเรด',
       itemBlueprint:
         "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponOneShotRifle.PrimalItem_WeaponOneShotRifle'",
       price: 500,
-      imageUrl: null,
+      imageUrl: '/images/mock/products/ascendant-longneck.svg',
       quantity: 1,
       quality: 5,
       isBlueprint: false,
@@ -43,11 +47,11 @@ export const productsFixture: ProductListResponse = {
       id: 2,
       name: 'Tek Sword',
       description:
-        'ดาบ Tek ขับเคลื่อนด้วยพลังงานควอนตัม ให้ความเร็วในการโจมตีและพลังทำลายล้างระดับสูงสุด',
+        'ดาบ Tek ขับเคลื่อนด้วยพลังงานควอนตัม ให้ความเร็วในการโจมตีและพลังทำลายล้างระดับสูงสุดพร้อมฟังก์ชันเจาะเกราะ',
       itemBlueprint:
         "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponTekSword.PrimalItem_WeaponTekSword'",
       price: 1200,
-      imageUrl: null,
+      imageUrl: '/images/mock/products/tek-sword.svg',
       quantity: 1,
       quality: 5,
       isBlueprint: false,
@@ -56,10 +60,10 @@ export const productsFixture: ProductListResponse = {
     {
       id: 3,
       name: 'Mastercraft Riot Helmet',
-      description: 'หมวกกันน็อค Mastercraft ป้องกันการบาดเจ็บที่ศีรษะระดับสูง',
+      description: 'หมวกกันน็อค Mastercraft ป้องกันการบาดเจ็บที่ศีรษะระดับสูง เพิ่มความทนทานต่อการน็อคเอาต์',
       itemBlueprint: null,
       price: 350,
-      imageUrl: null,
+      imageUrl: '/images/mock/products/riot-helmet.svg',
       quantity: 1,
       quality: 4,
       isBlueprint: false,
@@ -69,11 +73,11 @@ export const productsFixture: ProductListResponse = {
       id: 4,
       name: 'Rex Level 300 (Bred)',
       description:
-        'ไดโนเสาร์ Rex ที่ได้รับการเพาะพันธุ์ระดับ 300 พร้อม Stats สูงสุด เหมาะสำหรับการล่าบอสทุกประเภท',
+        'ไทแรนโนซอรัส เร็กซ์ สายเลือดแท้ระดับ 300 เพาะพันธุ์สำเร็จ Stats พลังโจมตีและพลังชีวิตระดับสูงสุด พร้อมส่งมอบเข้าเซิร์ฟเวอร์ทันที',
       itemBlueprint:
         "Blueprint'/Game/PrimalEarth/Dinos/Rex/Rex_Character_BP.Rex_Character_BP'",
       price: 8000,
-      imageUrl: null,
+      imageUrl: '/images/products/rex_level_300.jpg',
       quantity: 1,
       quality: 5,
       isBlueprint: false,
@@ -81,39 +85,121 @@ export const productsFixture: ProductListResponse = {
     },
     {
       id: 5,
-      name: 'Argentavis Level 250',
-      description: 'นกยักษ์ Argentavis ความเร็วในการบินสูง เหมาะสำหรับการขนส่งระยะไกล',
-      itemBlueprint: null,
-      price: 3500,
-      imageUrl: null,
+      name: 'Giganotosaurus Boss Level 350 (Mutated)',
+      description:
+        'กิกาโนโตซอรัสสายพันธุ์มิวเททสีเพลิงมหาศาล Level 350 พลังทำลายล้างบอส กวาดล้างศัตรูในสงครามและถ้ำระดับสูง',
+      itemBlueprint:
+        "Blueprint'/Game/PrimalEarth/Dinos/Giganotosaurus/Gigant_Character_BP.Gigant_Character_BP'",
+      price: 15000,
+      imageUrl: '/images/products/giganotosaurus_boss.jpg',
       quantity: 1,
-      quality: 3,
+      quality: 5,
       isBlueprint: false,
       category: { id: 1, name: 'ไดโนเสาร์', icon: '🦕' },
     },
     {
       id: 6,
-      name: 'Element x500',
-      description: 'ทรัพยากร Element จำนวน 500 หน่วย สำหรับสร้างอุปกรณ์ Tek ระดับสูง',
+      name: 'Lightning Wyvern Level 225 (High Stat)',
+      description:
+        'มังกรสายฟ้า Wyvern ระดับ 225 ลำแสงพายุสายฟ้าทำลายล้างความเร็วสูง ความเร็วในการบินและต้านทานสภาพอากาศยอดเยี่ยม',
+      itemBlueprint:
+        "Blueprint'/Game/ScorchedEarth/Dinos/Wyvern/Wyvern_Character_BP_Lightning.Wyvern_Character_BP_Lightning'",
+      price: 9500,
+      imageUrl: '/images/products/wyvern_lightning.jpg',
+      quantity: 1,
+      quality: 4,
+      isBlueprint: false,
+      category: { id: 1, name: 'ไดโนเสาร์', icon: '🦕' },
+    },
+    {
+      id: 7,
+      name: 'Carcharodontosaurus Bloodrage Level 320',
+      description:
+        'คาร์คาโรดอนโทซอรัสสายบ้าคลั่ง Level 320 สะสม Stack พลังโจมตีไร้ขีดจำกัด เหมาะสำหรับการเก็บเกี่ยวทรัพยากรและต่อสู้บอส',
+      itemBlueprint:
+        "Blueprint'/Game/PrimalEarth/Dinos/Carcha/Carcha_Character_BP.Carcha_Character_BP'",
+      price: 14000,
+      imageUrl: '/images/products/carcharodontosaurus.jpg',
+      quantity: 1,
+      quality: 5,
+      isBlueprint: false,
+      category: { id: 1, name: 'ไดโนเสาร์', icon: '🦕' },
+    },
+    {
+      id: 8,
+      name: 'Shadowmane Alpha Pair Level 300 (Bioluminescent)',
+      description:
+        'แชโดว์เมนสายเรืองแสง Alpha Level 300 สัตว์นักล่าเงาลอบสังหาร ล่องหน ลากดึง และสร้างเกราะสะท้อนการโจมตีให้เพื่อนร่วมทีม',
+      itemBlueprint:
+        "Blueprint'/Game/Genesis2/Dinos/Shadowmane/LionFishLion_Character_BP.LionFishLion_Character_BP'",
+      price: 12500,
+      imageUrl: '/images/products/shadowmane_alpha.jpg',
+      quantity: 1,
+      quality: 5,
+      isBlueprint: false,
+      category: { id: 1, name: 'ไดโนเสาร์', icon: '🦕' },
+    },
+    {
+      id: 9,
+      name: 'Element Cache x500',
+      description: 'ทรัพยากร Element จำนวน 500 หน่วย สำหรับสร้างและเติมพลังงานอุปกรณ์ Tek ระดับสูง',
       itemBlueprint: null,
       price: 2000,
-      imageUrl: null,
+      imageUrl: '/images/mock/products/element-cache.svg',
       quantity: 500,
       quality: 0,
       isBlueprint: false,
       category: { id: 4, name: 'ทรัพยากร', icon: '💎' },
     },
+    {
+      id: 10,
+      name: 'Ascendant Tek Armor Full Set',
+      description: 'ชุดเกราะ Tek ครบชุดระดับ Ascendant ป้องกันความเสียหายสูงสุด บิน ดำน้ำ และวิ่งพุ่งชนความเร็วสูง',
+      itemBlueprint: null,
+      price: 6500,
+      imageUrl: '/images/mock/products/riot-helmet.svg',
+      quantity: 1,
+      quality: 5,
+      isBlueprint: false,
+      category: { id: 3, name: 'เกราะ', icon: '🛡️' },
+    },
+    {
+      id: 11,
+      name: 'Exceptional Kibble Bundle x200',
+      description: 'อาหาร Kibble คุณภาพสูงสุด 200 ชิ้น ช่วยให้การ Tame ไดโนเสาร์สำเร็จลุล่วง 100% พร้อมค่า Bonus Stat สูงสุด',
+      itemBlueprint: null,
+      price: 1800,
+      imageUrl: '/images/mock/products/element-cache.svg',
+      quantity: 200,
+      quality: 3,
+      isBlueprint: false,
+      category: { id: 4, name: 'ทรัพยากร', icon: '💎' },
+    },
+    {
+      id: 12,
+      name: 'Industrial Forge Blueprint (Mastercraft)',
+      description: 'พิมพ์เขียวเตาหลอมอุตสาหกรรม หลอมโลหะและแร่ปริมาณมหาศาลรวดเร็ว สร้างไอเทมแบบคราฟต์ได้ไม่จำกัดครั้ง',
+      itemBlueprint:
+        "Blueprint'/Game/PrimalEarth/CoreBlueprints/Items/Structures/BuildingBases/PrimalItemStructure_IndustrialForge.PrimalItemStructure_IndustrialForge'",
+      price: 2200,
+      imageUrl: '/images/mock/products/ascendant-longneck.svg',
+      quantity: 1,
+      quality: 4,
+      isBlueprint: true,
+      category: { id: 5, name: 'สิ่งปลูกสร้าง', icon: '🏰' },
+    },
   ],
-  pagination: { page: 1, limit: 20, total: 6, totalPages: 1 },
+  pagination: { page: 1, limit: 20, total: 12, totalPages: 1 },
 };
 
 /** Derived categories view (GET /products/categories). */
 export const categoriesFixture: CategoriesResponse = {
   categories: [
-    { id: 1, name: 'ไดโนเสาร์', icon: '🦕', _count: { products: 2 } },
+    { id: 1, name: 'ไดโนเสาร์', icon: '🦕', _count: { products: 5 } },
     { id: 2, name: 'อาวุธ', icon: '⚔️', _count: { products: 2 } },
-    { id: 3, name: 'เกราะ', icon: '🛡️', _count: { products: 1 } },
-    { id: 4, name: 'ทรัพยากร', icon: '💎', _count: { products: 1 } },
+    { id: 3, name: 'เกราะ', icon: '🛡️', _count: { products: 2 } },
+    { id: 4, name: 'ทรัพยากร', icon: '💎', _count: { products: 2 } },
+    { id: 5, name: 'สิ่งปลูกสร้าง', icon: '🏰', _count: { products: 1 } },
   ],
 };
 
@@ -300,6 +386,89 @@ export const walletTransactionsFixture: WalletTransactionsResponse = {
   pagination: { page: 1, limit: 20, total: 2, totalPages: 1 },
 };
 
+/** Mirrors fixtures/orders.json (GET /orders — paginated list). */
+export const ordersFixture: OrderListResponse = {
+  orders: [
+    {
+      id: 'd3f1c2a0-1111-4aaa-8bbb-000000000001',
+      userId: '9a75908e-5b12-4217-ba6e-cc7887e5b56a',
+      productId: 1,
+      serverId: 1,
+      quantity: 2,
+      totalPrice: 1000,
+      status: 'delivered',
+      deliveredAt: '2026-06-20T03:08:00.000Z',
+      deliveryAttempts: 1,
+      lastError: null,
+      paidAt: '2026-06-20T03:05:30.000Z',
+      queuedAt: '2026-06-20T03:05:30.000Z',
+      refundedAt: null,
+      checkoutSessionId: '7f09c693-e18e-4a67-b50a-9d297e28b8cf',
+      createdAt: '2026-06-20T03:05:30.000Z',
+      updatedAt: '2026-06-20T03:08:00.000Z',
+      product: {
+        id: 1,
+        name: 'Ascendant Longneck Rifle',
+        price: 500,
+        itemBlueprint:
+          "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponOneShotRifle.PrimalItem_WeaponOneShotRifle'",
+        quantity: 1,
+        quality: 5,
+        isBlueprint: false,
+      },
+      server: { id: 1, name: 'IRIS-PVE-TheIsland-01', map: 'TheIsland' },
+    },
+    {
+      id: 'd3f1c2a0-2222-4aaa-8bbb-000000000002',
+      userId: '9a75908e-5b12-4217-ba6e-cc7887e5b56a',
+      productId: 2,
+      serverId: 1,
+      quantity: 1,
+      totalPrice: 1200,
+      status: 'failed',
+      deliveredAt: null,
+      deliveryAttempts: 5,
+      lastError: 'player not online after max attempts',
+      paidAt: '2026-06-20T02:40:00.000Z',
+      queuedAt: '2026-06-20T02:40:00.000Z',
+      refundedAt: null,
+      checkoutSessionId: 'aa11bb22-cc33-44dd-88ee-ff0011223344',
+      createdAt: '2026-06-20T02:40:00.000Z',
+      updatedAt: '2026-06-20T02:55:00.000Z',
+      product: {
+        id: 2,
+        name: 'Tek Sword',
+        price: 1200,
+        itemBlueprint:
+          "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponTekSword.PrimalItem_WeaponTekSword'",
+        quantity: 1,
+        quality: 5,
+        isBlueprint: false,
+      },
+      server: { id: 1, name: 'IRIS-PVE-TheIsland-01', map: 'TheIsland' },
+    },
+  ],
+  pagination: { page: 1, limit: 20, total: 2, totalPages: 1 },
+};
+
+/** Mirrors fixtures/order-detail.json (GET /orders/{id}). */
+export const orderDetailFixture: OrderDetailResponse = {
+  order: ordersFixture.orders[0],
+  delivery: {
+    status: 'delivered',
+    attempts: 1,
+    lastError: null,
+    receiptId: 'rcpt-9a3f2b1c',
+  },
+  timeline: [
+    { status: 'created', at: '2026-06-20T03:05:30.000Z' },
+    { status: 'paid', at: '2026-06-20T03:05:30.000Z' },
+    { status: 'queued', at: '2026-06-20T03:05:30.000Z' },
+    { status: 'delivering', at: '2026-06-20T03:07:10.000Z' },
+    { status: 'delivered', at: '2026-06-20T03:08:00.000Z' },
+  ],
+};
+
 /** Mirrors fixtures/linked-identities.json (Account Center linked identities). */
 export const linkedIdentitiesFixture: LinkedIdentitiesResponse = {
   userId: 'b3f1c2a4-1111-4d2e-9a8b-000000000001',
@@ -369,3 +538,53 @@ export const sessionsFixture: SessionWithRisk[] = [
     riskReasons: ['new_ip', 'new_device'],
   },
 ];
+
+/** Mirrors GET /payments/packages */
+export const paymentPackagesFixture: PaymentPackagesResponse = {
+  packages: [
+    { id: 'pkg-1', name: 'Basic Pack 100', priceThb: '35', points: '100', bonusPoints: '0', totalPoints: '100', tier: 'basic', isPopular: false },
+    { id: 'pkg-2', name: 'Basic Pack 300', priceThb: '99', points: '300', bonusPoints: '10', totalPoints: '310', tier: 'basic', isPopular: false },
+    { id: 'pkg-3', name: 'Standard Pack 500', priceThb: '159', points: '500', bonusPoints: '25', totalPoints: '525', tier: 'standard', isPopular: false },
+    { id: 'pkg-4', name: 'Standard Pack 1000', priceThb: '299', points: '1000', bonusPoints: '100', totalPoints: '1100', tier: 'standard', isPopular: true },
+    { id: 'pkg-5', name: 'Premium Pack 2500', priceThb: '699', points: '2500', bonusPoints: '350', totalPoints: '2850', tier: 'premium', isPopular: false },
+    { id: 'pkg-6', name: 'Premium Pack 5000', priceThb: '1299', points: '5000', bonusPoints: '1000', totalPoints: '6000', tier: 'premium', isPopular: false },
+    { id: 'pkg-7', name: 'Legendary Pack 10000', priceThb: '2499', points: '10000', bonusPoints: '2500', totalPoints: '12500', tier: 'legendary', isPopular: false },
+  ],
+};
+
+/** Mirrors Pending Slip Topups for Admin Approval */
+export const pendingTopupsFixture: SlipTopupSubmission[] = [
+  {
+    id: 'topup-slip-001',
+    userId: 'user-001',
+    userName: 'Krit (Survivor #8821)',
+    userDiscordId: '298172948192847102',
+    packageId: 'pkg-4',
+    packageName: 'Standard Pack 1000 IC',
+    amountThb: 299,
+    pointsToCredit: 1100,
+    slipImageUrl: '/images/mock/slips/sample-slip-01.svg',
+    transferBank: 'KBANK (กสิกรไทย)',
+    transferRef: 'KBANK-TRX-948271',
+    transferredAt: '2026-08-15T18:42:00.000Z',
+    status: 'pending_approval',
+    createdAt: '2026-08-15T18:43:10.000Z',
+  },
+  {
+    id: 'topup-slip-002',
+    userId: 'user-002',
+    userName: 'Aom (Tribe Leader Alpha)',
+    userDiscordId: '381927481928374829',
+    packageId: 'pkg-6',
+    packageName: 'Premium Pack 5000 IC',
+    amountThb: 1299,
+    pointsToCredit: 6000,
+    slipImageUrl: '/images/mock/slips/sample-slip-02.svg',
+    transferBank: 'SCB (ไทยพาณิชย์)',
+    transferRef: 'SCB-E-SLIP-554109',
+    transferredAt: '2026-08-15T19:15:30.000Z',
+    status: 'pending_approval',
+    createdAt: '2026-08-15T19:16:05.000Z',
+  },
+];
+

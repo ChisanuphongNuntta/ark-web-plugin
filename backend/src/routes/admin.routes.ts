@@ -25,6 +25,7 @@ router.get('/stats', requireAdmin as any, adminController.getDashboardStats as a
 // ============================================
 
 // Products management
+router.get('/products', requireWebsiteAdmin as any, adminController.getProducts as any);
 router.post('/products', requireWebsiteAdmin as any, adminController.createProduct as any);
 router.put('/products/:id', requireWebsiteAdmin as any, adminController.updateProduct as any);
 router.delete('/products/:id', requireWebsiteAdmin as any, adminController.deleteProduct as any);

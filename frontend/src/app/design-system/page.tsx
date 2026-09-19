@@ -28,7 +28,7 @@ export default function DesignSystemPage() {
     setTimeout(() => {
       setBtnLoading(false);
       setBtnSuccess(true);
-    }, 2000);
+    }, 600);
   };
 
   const triggerError = () => {
@@ -38,7 +38,7 @@ export default function DesignSystemPage() {
     setTimeout(() => {
       setBtnLoading(false);
       setBtnError(true);
-    }, 1500);
+    }, 600);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,7 +59,7 @@ export default function DesignSystemPage() {
   return (
     <div className="pb-24 bg-iris-ink text-iris-pearl min-h-screen">
       {/* Scroll-driven Hero Banner */}
-      <PrismaticRiverGate />
+      <header className="page-shell frozen-intro"><p className="eyebrow">IRIS DESIGN SYSTEM</p><h1>Frozen Expedition</h1><p>สี ตัวอักษร และองค์ประกอบที่ใช้ร่วมกันทั้งเว็บไซต์</p></header>
 
       <div className="page-shell mt-16 space-y-20" id="visual-tokens">
         {/* SECTION 1: Brand Design Tokens */}
@@ -70,43 +70,43 @@ export default function DesignSystemPage() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="p-4 rounded-2xl bg-[#05070D] border border-white/10 flex flex-col justify-between h-36">
-              <span className="font-mono text-xs text-white/50">#05070D</span>
+            <div className="p-4 rounded-2xl bg-[#06111D] border border-white/10 flex flex-col justify-between h-36">
+              <span className="font-mono text-xs text-white/50">#06111D</span>
               <div>
                 <p className="font-bold text-sm">Obsidian Navy</p>
                 <p className="text-xs text-iris-muted">สีพื้นหลัก / ราตรีนิล</p>
               </div>
             </div>
             
-            <div className="p-4 rounded-2xl bg-[#071A24] border border-white/10 flex flex-col justify-between h-36">
-              <span className="font-mono text-xs text-white/50">#071A24</span>
+            <div className="p-4 rounded-2xl bg-[#102637] border border-white/10 flex flex-col justify-between h-36">
+              <span className="font-mono text-xs text-white/50">#102637</span>
               <div>
                 <p className="font-bold text-sm">Deep River</p>
                 <p className="text-xs text-iris-muted">แผ่นน้ำลึก / ชลธารคราม</p>
               </div>
             </div>
             
-            <div className="p-4 rounded-2xl bg-[#37E5D2] text-[#05070D] border border-white/10 flex flex-col justify-between h-36">
-              <span className="font-mono text-xs text-[#05070D]/60">#37E5D2</span>
+            <div className="p-4 rounded-2xl bg-[#A0E0F4] text-[#06111D] border border-white/10 flex flex-col justify-between h-36">
+              <span className="font-mono text-xs text-[#06111D]/60">#A0E0F4</span>
               <div>
-                <p className="font-bold text-sm">Iris Cyan</p>
-                <p className="text-xs text-[#05070D]/75">แสงสีฟ้าปริซึม / นิลบลู</p>
+                <p className="font-bold text-sm">Glacier Blue</p>
+                <p className="text-xs text-[#06111D]/75">แสงสีฟ้าปริซึม / นิลบลู</p>
               </div>
             </div>
             
-            <div className="p-4 rounded-2xl bg-[#A77BFF] text-white border border-white/10 flex flex-col justify-between h-36">
-              <span className="font-mono text-xs text-white/60">#A77BFF</span>
+            <div className="p-4 rounded-2xl bg-[#93B9D6] text-white border border-white/10 flex flex-col justify-between h-36">
+              <span className="font-mono text-xs text-white/60">#93B9D6</span>
               <div>
-                <p className="font-bold text-sm">Royal Orchid</p>
+                <p className="font-bold text-sm">Frost Silver</p>
                 <p className="text-xs text-white/75">ม่วงกลีบกล้วยไม้หลวง</p>
               </div>
             </div>
             
-            <div className="p-4 rounded-2xl bg-[#DDBB72] text-[#05070D] border border-white/10 flex flex-col justify-between h-36">
-              <span className="font-mono text-xs text-[#05070D]/60">#DDBB72</span>
+            <div className="p-4 rounded-2xl bg-[#DDBB72] text-[#06111D] border border-white/10 flex flex-col justify-between h-36">
+              <span className="font-mono text-xs text-[#06111D]/60">#DDBB72</span>
               <div>
                 <p className="font-bold text-sm">Champagne Gold</p>
-                <p className="text-xs text-[#05070D]/75">ทองนพคุณหรูหรา / สุวรรณรัตน์</p>
+                <p className="text-xs text-[#06111D]/75">ทองนพคุณหรูหรา / สุวรรณรัตน์</p>
               </div>
             </div>
           </div>
@@ -170,10 +170,10 @@ export default function DesignSystemPage() {
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-bold uppercase text-iris-muted">ตัวนำการทดสอบ</span>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="cyan" onClick={triggerLoading}>
+                  <Button id="sim-success-btn" size="sm" variant="cyan" onClick={triggerLoading}>
                     จำลองโหลด → สำเร็จ
                   </Button>
-                  <Button size="sm" variant="gold" onClick={triggerError}>
+                  <Button id="sim-error-btn" size="sm" variant="gold" onClick={triggerError}>
                     จำลองโหลด → ล้มเหลว
                   </Button>
                 </div>
@@ -188,7 +188,7 @@ export default function DesignSystemPage() {
                 <div className="space-y-4">
                   <div className="flex flex-col gap-2">
                     <span className="text-xs text-iris-muted font-mono">Primary (default / loading / success / error)</span>
-                    <Button variant="primary" isLoading={btnLoading} isSuccess={btnSuccess} isError={btnError} successText="ทำรายการเสร็จสิ้น!" errorText="ล้มเหลว กรุณาลองใหม่">
+                    <Button id="target-sim-button" variant="primary" isLoading={btnLoading} isSuccess={btnSuccess} isError={btnError} successText="ทำรายการเสร็จสิ้น!" errorText="ล้มเหลว กรุณาลองใหม่">
                       ชำระเงินทันที
                     </Button>
                   </div>

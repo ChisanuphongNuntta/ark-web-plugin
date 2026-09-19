@@ -14,7 +14,10 @@ router.post('/', orderController.createOrder as any);
 // Get user's orders
 router.get('/', orderController.getUserOrders as any);
 
-// Get order detail
+// Get order detail (with delivery timeline)
 router.get('/:id', orderController.getOrderById as any);
+
+// Refund a delivered/failed order back to the wallet (delivered|failed -> refunded)
+router.post('/:id/refund', orderController.refundOrder as any);
 
 export default router;

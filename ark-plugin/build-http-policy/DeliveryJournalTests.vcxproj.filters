@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="F:\ARK Iris\Heart-Plugin\ark-plugin\tests\DeliveryJournalTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\ARK Iris\Heart-Plugin\ark-plugin\src\DeliveryJournal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="F:\ARK Iris\Heart-Plugin\ark-plugin\src\DeliveryJournal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="F:\ARK Iris\Heart-Plugin\ark-plugin\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{779E3ED0-C7A8-3F3A-BA2E-78C14979CD64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{9FC65DAF-1039-34E3-867D-CDEB2E725621}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

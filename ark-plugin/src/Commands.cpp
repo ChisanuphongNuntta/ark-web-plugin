@@ -1,7 +1,11 @@
 #include "Commands.h"
 #include "HeartShop.h"
 #include "Protection.h"
+#include "DinoPayload.h"
+#include "RequestSigning.h"
 #include <Logger/Logger.h>
+#include <algorithm>
+#include <vector>
 
 namespace HeartShop
 {
@@ -15,7 +19,7 @@ namespace Commands
             Log::GetLog()->warn("Command blocked - License not verified");
             if (Player)
             {
-                FString ErrorMsg = L"[HeartShop] Plugin not licensed. Contact server admin.";
+                FString ErrorMsg = L"Plugin not licensed. Contact server admin.";
                 ArkApi::GetApiUtils().SendChatMessage(Player, L"HeartShop", *ErrorMsg);
             }
             return false;
@@ -130,13 +134,22 @@ namespace Commands
         if (!CheckLicense(Player))
             return;
 
-        Log::GetLog()->info("Player {} used /shop command", GetSteamId(Player));
+        Log::GetLog()->info("Player {} used /shop command (IRIS shop alias)", GetSteamId(Player));
 
-        std::string ShopUrlTemplate = PluginConfig->GetMessage("ShopUrl");
-        FString ShopMessage = FString(ArkApi::Tools::Utf8Decode(ShopUrlTemplate).c_str());
-        ShopMessage = ShopMessage.Replace(L"{url}", L"https://yourshop.com", ESearchCase::IgnoreCase);
-
-        SendMessage(Player, ShopMessage);
+        // /shop is the familiar entry point for players, but IRIS owns catalog ranking,
+        // pricing, quotes and confirmation. Route the legacy command into the same
+        // backend-authoritative flow instead of showing a hard-coded website placeholder.
+        FString IrisShopCommand = L"/iris shop";
+        if (Message)
+        {
+            TArray<FString> ShopParts;
+            Message->TrimStartAndEnd().ParseIntoArray(ShopParts, L" ", true);
+            for (int Index = 1; Index < ShopParts.Num(); ++Index)
+            {
+                IrisShopCommand += L" " + ShopParts[Index];
+            }
+        }
+        IrisCommand(Player, &IrisShopCommand, Mode);
     }
 
     void LinkCommand(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode)
@@ -195,7 +208,7 @@ namespace Commands
         FString StatusMsg;
         if (isPlayerProtected)
         {
-            StatusMsg = L"[HeartShop] Your Protection Status: ACTIVE";
+            StatusMsg = L"Your Protection Status: ACTIVE";
             SendMessage(Player, StatusMsg);
 
             StatusMsg = L"Your base, dinos, and character are protected from PvP damage.";
@@ -203,7 +216,7 @@ namespace Commands
         }
         else if (isTribeProtected)
         {
-            StatusMsg = L"[HeartShop] Tribe Protection Status: ACTIVE";
+            StatusMsg = L"Tribe Protection Status: ACTIVE";
             SendMessage(Player, StatusMsg);
 
             StatusMsg = L"Your tribe's base and dinos are protected from PvP damage.";
@@ -211,7 +224,7 @@ namespace Commands
         }
         else
         {
-            StatusMsg = L"[HeartShop] Protection Status: INACTIVE";
+            StatusMsg = L"Protection Status: INACTIVE";
             SendMessage(Player, StatusMsg);
 
             StatusMsg = L"You are not currently protected. New players receive temporary protection.";
@@ -248,7 +261,7 @@ namespace Commands
 
         if (Parts.Num() < 2)
         {
-            FString UsageMsg = L"[HeartShop] Usage: /sell <price> - Look at your tamed dino to list it for sale";
+            FString UsageMsg = L"Usage: /sell <price> - Look at your tamed dino to list it for sale";
             SendMessage(Player, UsageMsg);
             return;
         }
@@ -256,7 +269,7 @@ namespace Commands
         int Price = FCString::Atoi(*Parts[1]);
         if (Price <= 0)
         {
-            FString ErrorMsg = L"[HeartShop] Invalid price. Please enter a positive number.";
+            FString ErrorMsg = L"Invalid price. Please enter a positive number.";
             SendMessage(Player, ErrorMsg);
             return;
         }
@@ -267,7 +280,7 @@ namespace Commands
         AShooterCharacter* PlayerChar = Player->GetPlayerCharacter();
         if (!PlayerChar)
         {
-            FString ErrorMsg = L"[HeartShop] Unable to find your character.";
+            FString ErrorMsg = L"Unable to find your character.";
             SendMessage(Player, ErrorMsg);
             return;
         }
@@ -294,7 +307,7 @@ namespace Commands
 
         if (!TargetDino)
         {
-            FString ErrorMsg = L"[HeartShop] You must be looking at or riding a tamed dino to sell it.";
+            FString ErrorMsg = L"You must be looking at or riding a tamed dino to sell it.";
             SendMessage(Player, ErrorMsg);
             return;
         }
@@ -304,7 +317,7 @@ namespace Commands
         int DinoTeam = TargetDino->TargetingTeamField();
         if (PlayerTeam != DinoTeam)
         {
-            FString ErrorMsg = L"[HeartShop] You can only sell dinos that belong to your tribe.";
+            FString ErrorMsg = L"You can only sell dinos that belong to your tribe.";
             SendMessage(Player, ErrorMsg);
             return;
         }
@@ -317,6 +330,41 @@ namespace Commands
         // Get blueprint path
         FString BlueprintPath = ArkApi::GetApiUtils().GetBlueprint(TargetDino);
         std::string BlueprintPathStr = BlueprintPath.ToString();
+
+        // Capture ARK's native dino snapshot before any network call or game
+        // mutation. This blob is what preserves mutations, colors, imprint,
+        // ancestry, stat allocation and other game-version-specific fields.
+        FARKDinoData NativeDinoData{};
+        TargetDino->GetDinoData(&NativeDinoData);
+        const int NativeDataSize = NativeDinoData.DinoData.Num();
+        if (!NativeDinoData.DinoClass || NativeDataSize <= 0 || NativeDataSize > 1024 * 1024)
+        {
+            SendMessage(Player, L"This dino could not be serialized safely and was not removed.");
+            Log::GetLog()->error(
+                "Native dino serialization rejected for SteamID {} (size={})",
+                SteamIdStr,
+                NativeDataSize);
+            return;
+        }
+
+        std::vector<unsigned char> NativeBytes;
+        NativeBytes.reserve(static_cast<std::size_t>(NativeDataSize));
+        for (int Index = 0; Index < NativeDataSize; ++Index)
+        {
+            NativeBytes.push_back(NativeDinoData.DinoData[Index]);
+        }
+        const std::string NativeBytesString(
+            reinterpret_cast<const char*>(NativeBytes.data()),
+            NativeBytes.size());
+        const std::string EncodedNativeData = DinoPayload::EncodeBase64(
+            NativeBytes.data(),
+            NativeBytes.size());
+        const std::string NativeDataSha256 = RequestSigning::CalculateSha256Hex(NativeBytesString);
+        if (EncodedNativeData.empty() || NativeDataSha256.size() != 64)
+        {
+            SendMessage(Player, L"Dino snapshot integrity check failed; the dino was not removed.");
+            return;
+        }
 
         // Get species name from blueprint path
         std::string ClassNameStr = BlueprintPathStr;
@@ -405,14 +453,14 @@ namespace Commands
         Payload["baseOxygen"] = BaseOxygen;
         Payload["baseFood"] = BaseFood;
         Payload["baseWeight"] = BaseWeight;
-        Payload["baseMelee"] = BaseMelee;
+        Payload["baseDamage"] = BaseMelee;
         Payload["baseSpeed"] = BaseSpeed;
         Payload["addedHealth"] = AddedHealth;
         Payload["addedStamina"] = AddedStamina;
         Payload["addedOxygen"] = AddedOxygen;
         Payload["addedFood"] = AddedFood;
         Payload["addedWeight"] = AddedWeight;
-        Payload["addedMelee"] = AddedMelee;
+        Payload["addedDamage"] = AddedMelee;
         Payload["addedSpeed"] = AddedSpeed;
         Payload["imprintQuality"] = ImprintQuality;
         Payload["colorRegion0"] = ColorRegions[0];
@@ -423,43 +471,73 @@ namespace Commands
         Payload["colorRegion5"] = ColorRegions[5];
         Payload["maternalMutations"] = MaternalMutations;
         Payload["paternalMutations"] = PaternalMutations;
+        Payload["dinoDataVersion"] = 1;
+        Payload["cryopodData"] = EncodedNativeData;
+        Payload["dinoDataSha256"] = NativeDataSha256;
+        Payload["dinoDataSize"] = NativeDataSize;
+        Payload["nativeDinoName"] = NativeDinoData.DinoName.ToString();
+        Payload["nativeDinoNameInMap"] = NativeDinoData.DinoNameInMap.ToString();
         Payload["price"] = Price;
+        const unsigned int DinoId1 = TargetDino->DinoID1Field();
+        const unsigned int DinoId2 = TargetDino->DinoID2Field();
+        Payload["dinoId1"] = DinoId1;
+        Payload["dinoId2"] = DinoId2;
+        Payload["assetFingerprint"] = DeliveryJournal::Fingerprint(Payload.dump());
 
-        // Send to API
-        Http->CreateDinoListing(Payload, [Player, TargetDino, DinoNameStr, Price](bool Success, const nlohmann::json& Response) {
-            if (!Player)
+        nlohmann::json Prepare;
+        Prepare["species"] = ClassNameStr;
+        Prepare["level"] = Level;
+        Prepare["sellerSteamId"] = SteamIdStr;
+
+        // Stage a short-lived, server-scoped lock before touching game state. The callback
+        // captures stable identifiers and an immutable snapshot only; raw game pointers are
+        // re-resolved on the game thread after the network round-trip.
+        Http->PrepareDinoLock(Prepare, [SteamId, DinoId1, DinoId2, Payload](bool Success, const nlohmann::json& Response) mutable {
+            auto* CurrentPlayer = ArkApi::GetApiUtils().FindPlayerFromSteamId(SteamId);
+            if (!Success)
+            {
+                if (CurrentPlayer)
+                {
+                    SendMessage(CurrentPlayer, L"Dino trading is unavailable; your dino was not removed.");
+                }
                 return;
-
-            if (Success)
-            {
-                try
-                {
-                    std::string ListingId = Response["listing"]["id"].get<std::string>();
-
-                    // Destroy the dino since it's now listed for sale
-                    if (TargetDino && TargetDino->IsValidLowLevel())
-                    {
-                        TargetDino->Destroy(false, false);
-                    }
-
-                    std::string SuccessMsg = "[HeartShop] Successfully listed " + DinoNameStr + " for " + std::to_string(Price) + " points!";
-                    FString SuccessMsgFS = FString(ArkApi::Tools::Utf8Decode(SuccessMsg).c_str());
-                    SendMessage(Player, SuccessMsgFS);
-
-                    Log::GetLog()->info("Dino listing created: {}", ListingId);
-                }
-                catch (const std::exception& e)
-                {
-                    Log::GetLog()->error("Error parsing sell response: {}", e.what());
-                    FString ErrorMsg = L"[HeartShop] Error creating listing. Please try again.";
-                    SendMessage(Player, ErrorMsg);
-                }
             }
-            else
+
+            const std::string AssetLockId = Response.value("assetLockId", "");
+            auto* World = ArkApi::GetApiUtils().GetWorld();
+            auto* CurrentDino = World
+                ? APrimalDinoCharacter::FindDinoWithID(World, DinoId1, DinoId2)
+                : nullptr;
+            if (AssetLockId.empty() || !CurrentPlayer || !CurrentDino || !CurrentDino->IsValidLowLevel())
             {
-                FString ErrorMsg = L"[HeartShop] Failed to create listing. Make sure your account is linked.";
-                SendMessage(Player, ErrorMsg);
+                if (CurrentPlayer)
+                {
+                    SendMessage(CurrentPlayer, L"Listing cancelled; the player or dino state changed.");
+                }
+                return;
             }
+            if (CurrentPlayer->TargetingTeamField() != CurrentDino->TargetingTeamField())
+            {
+                SendMessage(CurrentPlayer, L"Listing cancelled; you no longer own this dino.");
+                return;
+            }
+
+            Payload["assetLockId"] = AssetLockId;
+            if (!Journal ||
+                Journal->Begin("dino_listing", AssetLockId, Payload.dump()) != DeliveryJournal::BeginResult::Started ||
+                !Journal->MarkMutating("dino_listing", AssetLockId))
+            {
+                if (Journal) Journal->Abort("dino_listing", AssetLockId);
+                SendMessage(CurrentPlayer, L"Listing cancelled; local safety journal is unavailable.");
+                return;
+            }
+
+            // From this point a crash is recoverable: the durable mutating record contains
+            // both dino IDs and the complete confirm payload. Startup recovery checks whether
+            // the dino still exists before deciding to cancel or idempotently confirm.
+            CurrentDino->Destroy(false, false);
+            SendMessage(CurrentPlayer, L"Dino secured. Finalizing marketplace listing...");
+            ConfirmPreparedDinoListing(AssetLockId, Payload, SteamId);
         });
     }
 
@@ -473,7 +551,7 @@ namespace Commands
 
         Log::GetLog()->info("Player {} used /market command", GetSteamId(Player));
 
-        FString MarketMsg = L"[HeartShop] Dino Marketplace";
+        FString MarketMsg = L"Dino Marketplace";
         SendMessage(Player, MarketMsg);
 
         FString UrlMsg = L"Visit our website to browse and buy dinos!";
@@ -502,17 +580,23 @@ namespace Commands
     }
 
     // ==========================================
-    // Unified Ecosystem Companion (read-only)
+    // Unified Ecosystem Companion and transactional in-game shop
     // ==========================================
     //
-    // /iris [companion]
-    //   Shows the player's IRIS Wallet balance and pending deliveries.
+    // /iris [status|shop|buy|confirm|claim]
+    //   Shows backend-owned wallet state and performs quote/confirm purchases.
     //
-    // STRICT READ-ONLY: every value displayed here is owned by the backend
+    // STRICT SERVER AUTHORITY: every value displayed here is owned by the backend
     // (wallet ledger projection + delivery queue). The plugin renders the
     // backend-supplied amounts verbatim as strings and never performs any
-    // arithmetic, currency conversion, caching, or local balance tracking.
+    // arithmetic, currency conversion, caching, pricing, or local balance tracking.
     // See ENTERPRISE_REDESIGN_PLAN_TH.md sections 14 and 20.
+    //
+    // Data sources (M3 backend, signed hmacAuth, server-scoped):
+    //   GET /plugin/player/{steamId}/wallet            (WalletBalance; decimal strings)
+    //   GET /plugin/player/{steamId}/pending-deliveries ({ pending })
+    // The 'refundable' account (refunds land there, not 'available') is part of the
+    // accounts map; we show 'available' for the spendable balance.
     void IrisCommand(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode)
     {
         if (!Player)
@@ -524,14 +608,137 @@ namespace Commands
         uint64 SteamId = GetSteamId(Player);
         std::string SteamIdStr = std::to_string(SteamId);
 
-        Log::GetLog()->info("Player {} used /iris companion command", SteamIdStr);
+        Log::GetLog()->info("Player {} used /iris command", SteamIdStr);
+
+        FString Command = Message ? Message->TrimStartAndEnd() : FString(L"/iris");
+        TArray<FString> Parts;
+        Command.ParseIntoArray(Parts, L" ", true);
+        const std::string Subcommand = Parts.Num() >= 2 ? Parts[1].ToString() : "status";
+
+        if (Subcommand == "shop")
+        {
+            std::string Search;
+            for (int i = 2; i < Parts.Num(); i++)
+            {
+                if (!Search.empty()) Search += " ";
+                Search += Parts[i].ToString();
+            }
+            Http->GetCatalog(SteamIdStr, Search, [SteamId](bool Success, const nlohmann::json& Response) {
+                auto* CurrentPlayer = ArkApi::GetApiUtils().FindPlayerFromSteamId(SteamId);
+                if (!CurrentPlayer) return;
+                if (!Success || !Response.contains("products") || !Response["products"].is_array())
+                {
+                    SendMessage(CurrentPlayer, L"IRIS Shop is temporarily unavailable.");
+                    return;
+                }
+                const auto& Products = Response["products"];
+                if (Products.empty())
+                {
+                    SendMessage(CurrentPlayer, L"No compatible products found.");
+                    return;
+                }
+
+                std::string Announcement = "IRIS SHOP  |  CLUSTER CATALOG\n";
+                constexpr size_t MaxVisibleProducts = 8;
+                const size_t VisibleProducts = (std::min)(Products.size(), MaxVisibleProducts);
+                for (size_t Index = 0; Index < VisibleProducts; ++Index)
+                {
+                    const auto& Product = Products[Index];
+                    const std::string TypeTag = Product.value("productType", "item") == "dino" ? "[DINO] " : "";
+                    const std::string Line = "#" + std::to_string(Product.value("id", 0)) + " " + TypeTag +
+                        Product.value("name", "Item") + " - " +
+                        std::to_string(Product.value("price", 0)) + " IC" +
+                        (Product.value("recommended", false)
+                            ? "  [RECOMMENDED]"
+                            : "");
+                    Announcement += Line + "\n";
+                }
+                if (Products.size() > VisibleProducts)
+                {
+                    Announcement += "+ " + std::to_string(Products.size() - VisibleProducts) +
+                        " more - use /shop <search>\n";
+                }
+                Announcement += "BUY: /iris buy <product-id> [quantity]";
+                SendAnnouncement(
+                    CurrentPlayer,
+                    FString(ArkApi::Tools::Utf8Decode(Announcement).c_str()),
+                    18.0f);
+            });
+            return;
+        }
+
+        if (Subcommand == "buy")
+        {
+            if (Parts.Num() < 3)
+            {
+                SendMessage(Player, L"Usage: /iris buy <product-id> [quantity]");
+                return;
+            }
+            const int ProductId = FCString::Atoi(*Parts[2]);
+            const int Quantity = Parts.Num() >= 4 ? FCString::Atoi(*Parts[3]) : 1;
+            if (ProductId <= 0 || Quantity <= 0 || Quantity > 100)
+            {
+                SendMessage(Player, L"Invalid product ID or quantity.");
+                return;
+            }
+            Http->CreatePurchaseQuote(SteamIdStr, ProductId, Quantity, [SteamId](bool Success, const nlohmann::json& Response) {
+                auto* CurrentPlayer = ArkApi::GetApiUtils().FindPlayerFromSteamId(SteamId);
+                if (!CurrentPlayer) return;
+                if (!Success)
+                {
+                    const std::string Error = Response.value("error", "Unable to create purchase quote");
+                    SendMessage(CurrentPlayer, FString(ArkApi::Tools::Utf8Decode("[IRIS] " + Error).c_str()));
+                    return;
+                }
+                const std::string QuoteId = Response.value("quoteId", "");
+                const std::string ProductName = Response.value("productName", "Item");
+                const int Quantity = Response.value("quantity", 1);
+                const int Total = Response.value("totalPrice", 0);
+                const std::string Line = "Quote: " + ProductName + " x" + std::to_string(Quantity) +
+                    " = " + std::to_string(Total) + " IC";
+                SendMessage(CurrentPlayer, FString(ArkApi::Tools::Utf8Decode(Line).c_str()));
+                SendMessage(CurrentPlayer, FString(ArkApi::Tools::Utf8Decode(
+                    "Confirm within 2 minutes: /iris confirm " + QuoteId).c_str()));
+            });
+            return;
+        }
+
+        if (Subcommand == "confirm")
+        {
+            if (Parts.Num() < 3)
+            {
+                SendMessage(Player, L"Usage: /iris confirm <quote-id>");
+                return;
+            }
+            const std::string QuoteId = Parts[2].ToString();
+            Http->ConfirmPurchaseQuote(SteamIdStr, QuoteId, [SteamId](bool Success, const nlohmann::json& Response) {
+                auto* CurrentPlayer = ArkApi::GetApiUtils().FindPlayerFromSteamId(SteamId);
+                if (!CurrentPlayer) return;
+                if (!Success)
+                {
+                    const std::string Error = Response.value("error", "Purchase confirmation failed");
+                    SendMessage(CurrentPlayer, FString(ArkApi::Tools::Utf8Decode("[IRIS] " + Error).c_str()));
+                    return;
+                }
+                SendMessage(CurrentPlayer, L"Purchase confirmed. Delivery queued - use /iris claim.");
+                PollPendingOrders();
+            });
+            return;
+        }
+
+        if (Subcommand == "claim")
+        {
+            SendMessage(Player, L"Checking your pending deliveries...");
+            PollPendingOrders();
+            return;
+        }
 
         SendMessage(Player, L"IRIS Companion - fetching your wallet and deliveries...");
 
         // 1) Wallet balance (read-only projection of the ledger).
-        Http->GetWalletBalance(SteamIdStr, [Player, SteamIdStr](bool Success, const nlohmann::json& Response) {
-            if (!Player)
-                return;
+        Http->GetWalletBalance(SteamIdStr, [SteamId, SteamIdStr](bool Success, const nlohmann::json& Response) {
+            auto* Player = ArkApi::GetApiUtils().FindPlayerFromSteamId(SteamId);
+            if (!Player) return;
 
             if (!Success || !Response.is_object())
             {
@@ -569,9 +776,9 @@ namespace Commands
         });
 
         // 2) Pending deliveries (read-only count from the delivery queue projection).
-        Http->GetPendingDeliveries(SteamIdStr, [Player](bool Success, const nlohmann::json& Response) {
-            if (!Player)
-                return;
+        Http->GetPendingDeliveries(SteamIdStr, [SteamId](bool Success, const nlohmann::json& Response) {
+            auto* Player = ArkApi::GetApiUtils().FindPlayerFromSteamId(SteamId);
+            if (!Player) return;
 
             if (!Success || !Response.is_object())
             {

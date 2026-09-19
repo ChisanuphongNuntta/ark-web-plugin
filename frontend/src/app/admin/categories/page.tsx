@@ -13,10 +13,13 @@ import {
   FolderOpen,
   Package,
   AlertTriangle,
+  ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
-import LaserCard from '@/components/LaserCard';
-import LaserButton from '@/components/LaserButton';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
 
 interface Category {
   id: number;
@@ -49,11 +52,10 @@ export default function AdminCategoriesPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-categories'],
     queryFn: () => productApi.getCategories().then((res) => res.data),
-    enabled: !!user?.isAdmin,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => adminApi.createCategory(data),
+    mutationFn: (data: typeof formData) => adminApi.createCategory(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
       queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -62,7 +64,7 @@ export default function AdminCategoriesPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
+    mutationFn: ({ id, data }: { id: number; data: typeof formData }) =>
       adminApi.updateCategory(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
@@ -86,7 +88,7 @@ export default function AdminCategoriesPage() {
       name: '',
       description: '',
       icon: '',
-      sortOrder: (data?.categories?.length || 0) + 1,
+      sortOrder: 0,
       isActive: true,
     });
     setShowModal(true);
@@ -107,13 +109,6 @@ export default function AdminCategoriesPage() {
   const closeModal = () => {
     setShowModal(false);
     setEditingCategory(null);
-    setFormData({
-      name: '',
-      description: '',
-      icon: '',
-      sortOrder: 0,
-      isActive: true,
-    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -125,87 +120,70 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const handleDelete = (id: number) => {
-    deleteMutation.mutate(id);
-  };
-
-  // Common emoji icons for categories
-  const commonIcons = ['📦', '🦖', '🐟', '🦎', '⛏️', '🗡️', '🎒', '🏠', '🔧', '✨', '🎮', '💎'];
-
   if (authLoading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="relative">
-          <div className="absolute inset-0 bg-emerald-500/30 rounded-full blur-xl animate-pulse"></div>
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-400 relative" />
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
       </div>
     );
   }
 
   if (!user?.isAdmin) {
     return (
-      <LaserCard className="border-red-500/30">
-        <div className="text-center py-12">
-          <p className="text-red-400">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
-        </div>
-      </LaserCard>
+      <GlassCard variant="danger" className="p-12 text-center">
+        <p className="text-rose-400 font-bold">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
+      </GlassCard>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-slide-up">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <Link href="/admin" className="text-gray-400 hover:text-white text-sm">
-            &larr; กลับ Admin
+          <Link href="/admin">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              กลับ Admin
+            </Button>
           </Link>
-          <h1 className="text-3xl font-bold mt-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-3">
-            <FolderOpen className="h-8 w-8 text-emerald-400" />
-            จัดการหมวดหมู่
+          <h1 className="mt-2 text-2xl sm:text-3xl font-black text-iris-pearl flex items-center gap-3">
+            <FolderOpen className="h-7 w-7 text-iris-cyan" />
+            จัดการหมวดหมู่สินค้า
           </h1>
         </div>
-        <LaserButton
+        <Button
           variant="primary"
           onClick={openCreateModal}
-          icon={<Plus className="h-5 w-5" />}
         >
-          เพิ่มหมวดหมู่
-        </LaserButton>
+          <Plus className="h-4 w-4 mr-1.5" />
+          เพิ่มหมวดหมู่ใหม่
+        </Button>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="relative">
-            <div className="absolute inset-0 bg-emerald-500/30 rounded-full blur-xl animate-pulse"></div>
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-400 relative" />
-          </div>
+        <div className="flex justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {data?.categories?.map((category: Category) => (
-            <LaserCard key={category.id} glowOnHover>
-              <div className="p-6">
-                <div className="flex items-start justify-between">
+            <GlassCard key={category.id} hoverEffect="lift" className="p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-emerald-500/20 rounded-xl blur-lg"></div>
-                      <div className="relative text-4xl p-2 bg-black/40 rounded-xl border border-emerald-500/20">
-                        {category.icon || '📦'}
-                      </div>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-iris-cyan/10 border border-iris-cyan/30 text-iris-cyan text-xl">
+                      {category.icon || '📦'}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">{category.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm text-gray-400 flex items-center gap-1">
+                      <h3 className="font-bold text-base text-iris-pearl">{category.name}</h3>
+                      <div className="flex items-center gap-2 mt-1 text-xs">
+                        <span className="text-iris-muted flex items-center gap-1">
                           <Package className="h-3 w-3" />
                           {category._count?.products || 0} สินค้า
                         </span>
                         {!category.isActive && (
-                          <span className="px-2 py-0.5 rounded text-xs bg-red-500/20 text-red-400">
-                            ปิดใช้งาน
-                          </span>
+                          <Badge variant="muted">ปิดใช้งาน</Badge>
                         )}
                       </div>
                     </div>
@@ -213,210 +191,166 @@ export default function AdminCategoriesPage() {
                 </div>
 
                 {category.description && (
-                  <p className="text-sm text-gray-400 mt-3 line-clamp-2">
+                  <p className="text-xs text-iris-muted mt-3 line-clamp-2">
                     {category.description}
                   </p>
                 )}
-
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-emerald-500/10">
-                  <LaserButton
-                    variant="secondary"
-                    onClick={() => openEditModal(category)}
-                    icon={<Edit2 className="h-4 w-4" />}
-                    className="flex-1"
-                  >
-                    แก้ไข
-                  </LaserButton>
-                  <button
-                    onClick={() => setDeleteConfirm(category.id)}
-                    className="p-2 hover:bg-red-500/20 rounded-lg text-red-400 transition-colors"
-                    title="ลบ"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </button>
-                </div>
               </div>
-            </LaserCard>
+
+              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openEditModal(category)}
+                  className="flex-1"
+                >
+                  <Edit2 className="h-3.5 w-3.5 mr-1" />
+                  แก้ไข
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => setDeleteConfirm(category.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </GlassCard>
           ))}
 
           {(!data?.categories || data.categories.length === 0) && (
-            <LaserCard className="col-span-full">
-              <div className="text-center py-12">
-                <div className="relative inline-block mb-4">
-                  <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl"></div>
-                  <FolderOpen className="h-16 w-16 text-emerald-400/50 relative mx-auto" />
-                </div>
-                <p className="text-gray-400">ยังไม่มีหมวดหมู่</p>
-                <LaserButton
-                  variant="primary"
-                  onClick={openCreateModal}
-                  icon={<Plus className="h-5 w-5" />}
-                  className="mt-4"
-                >
+            <GlassCard className="col-span-full p-12 text-center">
+              <FolderOpen className="mx-auto h-12 w-12 text-iris-muted/40 mb-3" />
+              <p className="text-iris-muted">ยังไม่มีหมวดหมู่สินค้าในระบบ</p>
+              <div className="mt-4">
+                <Button variant="primary" onClick={openCreateModal}>
+                  <Plus className="h-4 w-4 mr-1.5" />
                   เพิ่มหมวดหมู่แรก
-                </LaserButton>
+                </Button>
               </div>
-            </LaserCard>
+            </GlassCard>
           )}
         </div>
       )}
 
-      {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <LaserCard className="w-full max-w-md mx-4">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  {editingCategory ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}
-                </h2>
-                <button
-                  onClick={closeModal}
-                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+      {/* Create/Edit Dialog */}
+      <Dialog open={showModal} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCategory ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}
+            </DialogTitle>
+            <DialogDescription>
+              กำหนดชื่อ ไอคอน และลำดับการแสดงผลของหมวดหมู่สินค้า
+            </DialogDescription>
+          </DialogHeader>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">ชื่อหมวดหมู่ *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="input w-full"
-                    placeholder="เช่น สัตว์บก, อาวุธ"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">รายละเอียด</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="input w-full h-20 resize-none"
-                    placeholder="รายละเอียดหมวดหมู่..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">ไอคอน (Emoji)</label>
-                  <div className="flex gap-2 mb-2 flex-wrap">
-                    {commonIcons.map((icon) => (
-                      <button
-                        key={icon}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, icon })}
-                        className={`p-2 text-xl rounded-lg transition-all ${
-                          formData.icon === icon
-                            ? 'bg-emerald-500/30 border border-emerald-500'
-                            : 'bg-black/40 border border-emerald-500/20 hover:border-emerald-500/50'
-                        }`}
-                      >
-                        {icon}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.icon}
-                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                    className="input w-full"
-                    placeholder="หรือใส่ emoji เอง"
-                    maxLength={2}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">ลำดับการแสดง</label>
-                    <input
-                      type="number"
-                      value={formData.sortOrder}
-                      onChange={(e) =>
-                        setFormData({ ...formData, sortOrder: Number(e.target.value) })
-                      }
-                      className="input w-full"
-                      min="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">สถานะ</label>
-                    <select
-                      value={formData.isActive ? 'active' : 'inactive'}
-                      onChange={(e) =>
-                        setFormData({ ...formData, isActive: e.target.value === 'active' })
-                      }
-                      className="input w-full"
-                    >
-                      <option value="active">เปิดใช้งาน</option>
-                      <option value="inactive">ปิดใช้งาน</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <LaserButton
-                    type="submit"
-                    variant="primary"
-                    loading={createMutation.isPending || updateMutation.isPending}
-                    className="flex-1"
-                  >
-                    {editingCategory ? 'บันทึก' : 'เพิ่มหมวดหมู่'}
-                  </LaserButton>
-                  <LaserButton type="button" variant="secondary" onClick={closeModal}>
-                    ยกเลิก
-                  </LaserButton>
-                </div>
-              </form>
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-iris-muted">
+                ชื่อหมวดหมู่ *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="เช่น ไดโนเสาร์ Apex, อาวุธ Tek"
+                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-iris-pearl focus:border-iris-cyan focus:outline-none"
+              />
             </div>
-          </LaserCard>
-        </div>
-      )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm !== null && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <LaserCard className="w-full max-w-md mx-4 border-red-500/30">
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4 text-red-400">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-red-500/30 rounded-full blur-lg"></div>
-                  <AlertTriangle className="h-8 w-8 relative" />
-                </div>
-                <h2 className="text-xl font-bold">ยืนยันการลบ</h2>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-iris-muted">
+                คำอธิบาย
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="คำอธิบายสั้นๆ เกี่ยวกับหมวดหมู่นี้"
+                rows={2}
+                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2 text-sm text-iris-pearl focus:border-iris-cyan focus:outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-iris-muted">
+                  ไอคอน (Icon Key / Emoji)
+                </label>
+                <input
+                  type="text"
+                  value={formData.icon}
+                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                  placeholder="เช่น 🦖, ⚔️, 🛡️"
+                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-iris-pearl focus:border-iris-cyan focus:outline-none"
+                />
               </div>
-
-              <p className="text-gray-300 mb-2">คุณต้องการลบหมวดหมู่นี้หรือไม่?</p>
-              <p className="text-sm text-gray-400 mb-6">
-                สินค้าในหมวดหมู่นี้จะไม่ถูกลบ แต่จะไม่มีหมวดหมู่
-              </p>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleDelete(deleteConfirm)}
-                  disabled={deleteMutation.isPending}
-                  className="flex-1 btn bg-red-500 hover:bg-red-600 disabled:opacity-50"
-                >
-                  {deleteMutation.isPending ? (
-                    <Loader2 className="h-5 w-5 animate-spin mx-auto" />
-                  ) : (
-                    'ลบหมวดหมู่'
-                  )}
-                </button>
-                <LaserButton
-                  variant="secondary"
-                  onClick={() => setDeleteConfirm(null)}
-                >
-                  ยกเลิก
-                </LaserButton>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-iris-muted">
+                  ลำดับการแสดงผล
+                </label>
+                <input
+                  type="number"
+                  value={formData.sortOrder}
+                  onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-iris-pearl focus:border-iris-cyan focus:outline-none"
+                />
               </div>
             </div>
-          </LaserCard>
-        </div>
-      )}
+
+            <div className="flex items-center gap-2 pt-2">
+              <input
+                type="checkbox"
+                id="catIsActive"
+                checked={formData.isActive}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                className="h-4 w-4 rounded border-white/10 bg-black/50 text-iris-cyan focus:ring-iris-cyan"
+              />
+              <label htmlFor="catIsActive" className="text-xs text-iris-pearl cursor-pointer font-bold">
+                เปิดใช้งานหมวดหมู่นี้ (Active)
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={closeModal}>
+                ยกเลิก
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                isLoading={createMutation.isPending || updateMutation.isPending}
+              >
+                {editingCategory ? 'บันทึกการแก้ไข' : 'สร้างหมวดหมู่'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={Boolean(deleteConfirm)} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>ยืนยันการลบหมวดหมู่?</DialogTitle>
+            <DialogDescription>
+              การลบหมวดหมู่นี้อาจส่งผลต่อสินค้าที่อยู่ในหมวดหมู่ดังกล่าว คุณแน่ใจหรือไม่ว่าต้องการดำเนินการต่อ
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+              ยกเลิก
+            </Button>
+            <Button
+              variant="danger"
+              isLoading={deleteMutation.isPending}
+              onClick={() => deleteConfirm && deleteMutation.mutate(deleteConfirm)}
+            >
+              ยืนยันการลบ
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

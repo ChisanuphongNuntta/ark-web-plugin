@@ -70,7 +70,12 @@ describe('CR-PLUGIN-007/008 — game companion (server-scoped, read-only)', () =
           referenceType: 'external',
           referenceId: 'pi_1',
           createdAt: new Date('2026-06-20T04:15:30.000Z'),
+          postedAt: new Date('2026-06-20T04:15:31.000Z'),
           entries: [
+            {
+              amount: -5000n,
+              account: { userId: null, key: 'system:issuance:IC', currency: 'IC' },
+            },
             {
               amount: 5000n,
               account: { userId: 'u1', key: 'user:u1:available:IC', currency: 'IC' },
@@ -86,14 +91,21 @@ describe('CR-PLUGIN-007/008 — game companion (server-scoped, read-only)', () =
       expect(ev.eventType).toBe('wallet.transaction.posted');
       expect(ev.playerSteamId).toBe('s1');
       expect(ev.userId).toBe('u1');
-      expect(ev.entries[0]).toEqual({ accountKey: 'user:u1:available:IC', amount: '5000', currency: 'IC' });
-      expect(result.lastTimestamp).toBe('2026-06-20T04:15:30.000Z');
+      expect(ev.entries).toContainEqual({ accountKey: 'user:u1:available:IC', amount: '5000', currency: 'IC' });
+      expect(ev.entries).toHaveLength(2);
+      expect(result.lastCursor).toEqual(expect.any(String));
+      expect(result.lastTimestamp).toBe('2026-06-20T04:15:31.000Z');
     });
 
     it('returns an empty page (no events) when the server has no associated players', async () => {
       db.deliveryJob.findMany.mockResolvedValueOnce([]);
       const result = await pluginCompanionService.getWalletEvents(7, '2026-06-20T00:00:00.000Z');
-      expect(result).toEqual({ success: true, events: [], lastTimestamp: '2026-06-20T00:00:00.000Z' });
+      expect(result).toEqual({
+        success: true,
+        events: [],
+        lastCursor: '2026-06-20T00:00:00.000Z',
+        lastTimestamp: '2026-06-20T00:00:00.000Z',
+      });
       expect(db.ledgerTransaction.findMany).not.toHaveBeenCalled();
     });
 
@@ -104,9 +116,9 @@ describe('CR-PLUGIN-007/008 — game companion (server-scoped, read-only)', () =
 
       await pluginCompanionService.getWalletEvents(7, '2026-06-20T03:06:00.000Z');
       const callArg = db.ledgerTransaction.findMany.mock.calls[0][0];
-      expect(callArg.where.createdAt.gt).toBeInstanceOf(Date);
-      expect(callArg.where.createdAt.gt.toISOString()).toBe('2026-06-20T03:06:00.000Z');
-      expect(callArg.orderBy).toEqual({ createdAt: 'asc' });
+      expect(callArg.where.AND[0].postedAt.gt).toBeInstanceOf(Date);
+      expect(callArg.where.AND[0].postedAt.gt.toISOString()).toBe('2026-06-20T03:06:00.000Z');
+      expect(callArg.orderBy).toEqual([{ postedAt: 'asc' }, { id: 'asc' }]);
     });
   });
 });

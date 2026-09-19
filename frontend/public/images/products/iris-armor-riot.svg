@@ -1,0 +1,19 @@
+<svg width="900" height="900" viewBox="0 0 900 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="900" rx="96" fill="#05070D"/>
+  <path d="M165 220C296 123 603 120 735 220V434C735 614 615 738 450 802C286 738 165 614 165 434V220Z" fill="url(#shield)"/>
+  <path d="M220 278C334 210 567 210 680 278V430C680 574 586 678 450 734C314 678 220 574 220 430V278Z" fill="#071A24" stroke="#DDBB72" stroke-width="16"/>
+  <path d="M287 347C365 306 535 306 613 347V435C613 534 548 604 450 645C352 604 287 534 287 435V347Z" fill="#111827"/>
+  <path d="M306 398H594" stroke="#37E5D2" stroke-width="30" stroke-linecap="round"/>
+  <path d="M352 481H548" stroke="#A77BFF" stroke-width="24" stroke-linecap="round"/>
+  <path d="M450 232V717" stroke="#F5F1E8" stroke-opacity=".18" stroke-width="8"/>
+  <circle cx="450" cy="543" r="42" fill="#05070D" stroke="#DDBB72" stroke-width="12"/>
+  <text x="86" y="118" fill="#DDBB72" font-family="Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="8">MASTERCRAFT</text>
+  <text x="86" y="792" fill="#F5F1E8" font-family="Arial, sans-serif" font-size="54" font-weight="800" letter-spacing="3">RIOT ARMOR</text>
+  <defs>
+    <linearGradient id="shield" x1="183" y1="174" x2="712" y2="797" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#37E5D2" stop-opacity=".55"/>
+      <stop offset=".5" stop-color="#A77BFF" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#DDBB72" stop-opacity=".45"/>
+    </linearGradient>
+  </defs>
+</svg>

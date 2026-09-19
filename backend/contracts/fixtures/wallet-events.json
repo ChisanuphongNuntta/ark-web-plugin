@@ -16,6 +16,11 @@
           "accountKey": "user:9a75908e-5b12-4217-ba6e-cc7887e5b56a:available:IC",
           "amount": "-1000",
           "currency": "IC"
+        },
+        {
+          "accountKey": "system:revenue:IC",
+          "amount": "1000",
+          "currency": "IC"
         }
       ]
     },
@@ -34,9 +39,15 @@
           "accountKey": "user:9a75908e-5b12-4217-ba6e-cc7887e5b56a:available:IC",
           "amount": "5000",
           "currency": "IC"
+        },
+        {
+          "accountKey": "system:issuance:IC",
+          "amount": "-5000",
+          "currency": "IC"
         }
       ]
     }
   ],
+  "lastCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTA2LTIwVDA0OjE1OjMwLjAwMFoiLCJpZCI6ImNrbDF0eDAwMDF0b3B1cGNyZWRpdDAyIn0",
   "lastTimestamp": "2026-06-20T04:15:30.000Z"
 }

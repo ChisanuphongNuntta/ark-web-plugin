@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+  <title id="title">Tek Sword mock art</title>
+  <desc id="desc">Glowing cyan Tek sword on a dark luxury background.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="44%" r="62%"><stop stop-color="#143B4A"/><stop offset=".5" stop-color="#071A24"/><stop offset="1" stop-color="#05070D"/></radialGradient>
+    <linearGradient id="blade" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#EFFFFD"/><stop offset=".45" stop-color="#37E5D2"/><stop offset="1" stop-color="#A77BFF"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="900" height="900" fill="url(#bg)"/>
+  <g stroke="#DDBB72" stroke-opacity=".22" fill="none"><circle cx="450" cy="450" r="330"/><circle cx="450" cy="450" r="242"/></g>
+  <g transform="translate(450 458) rotate(42)" filter="url(#glow)">
+    <path d="M-40-335 0-430 40-335 28 145h-56z" fill="url(#blade)" stroke="#D9FFFF" stroke-width="6"/>
+    <rect x="-105" y="130" width="210" height="38" rx="19" fill="#DDBB72"/>
+    <rect x="-32" y="164" width="64" height="190" rx="28" fill="#071A24" stroke="#37E5D2" stroke-width="8"/>
+    <circle cx="0" cy="126" r="38" fill="#05070D" stroke="#DDBB72" stroke-width="10"/>
+  </g>
+  <text x="74" y="112" fill="#37E5D2" font-family="Arial, sans-serif" font-size="42" font-weight="800" letter-spacing="9">TEK SWORD</text>
+</svg>

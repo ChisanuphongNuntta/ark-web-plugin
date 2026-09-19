@@ -1,5 +1,5 @@
 import { Router, Response, NextFunction } from 'express';
-import { authenticate, AuthRequest } from '../middlewares/auth.js';
+import { authenticate, AuthRequest, requireWebsiteAdmin } from '../middlewares/auth.js';
 import * as pdpaController from '../controllers/pdpa.controller.js';
 
 const router = Router();
@@ -33,8 +33,8 @@ router.get('/export', pdpaController.exportMyData as any);
 router.post('/delete', pdpaController.deleteMyData as any);
 
 // Admin routes
-router.get('/admin/requests', pdpaController.getAllDataRequests as any);
-router.patch('/admin/requests/:id', pdpaController.processDataRequest as any);
-router.post('/admin/policy', pdpaController.createPolicy as any);
+router.get('/admin/requests', requireWebsiteAdmin as any, pdpaController.getAllDataRequests as any);
+router.patch('/admin/requests/:id', requireWebsiteAdmin as any, pdpaController.processDataRequest as any);
+router.post('/admin/policy', requireWebsiteAdmin as any, pdpaController.createPolicy as any);
 
 export default router;

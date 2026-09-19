@@ -181,6 +181,7 @@ export function WalletPanel() {
           <div className="flex flex-wrap gap-2">
             {TOPUP_PRESETS.map((amount) => (
               <button
+                type="button"
                 key={amount}
                 onClick={() => setTopupPreset(amount)}
                 aria-pressed={topupPreset === amount}
@@ -326,6 +327,7 @@ function TransactionRow({
         </div>
 
         <button
+          type="button"
           onClick={onToggle}
           className="h-8 w-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition shrink-0"
           aria-label="แสดงรายละเอียดบัญชีสองด้าน"

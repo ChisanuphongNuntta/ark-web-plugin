@@ -46,6 +46,12 @@ int main()
         Expect(
             Journal.Begin("dino", "listing-1", "payload-b") == DeliveryJournal::BeginResult::Started,
             "dino delivery should start");
+        const auto PendingBeforeMutation = Journal.Pending("dino");
+        Expect(PendingBeforeMutation.size() == 1, "prepared dino should be enumerable");
+        Expect(PendingBeforeMutation[0].Payload == "payload-b", "pending payload should be durable");
+        Expect(Journal.MarkMutating("dino", "listing-1"), "dino should enter mutating state durably");
+        const auto PendingAfterMutation = Journal.Pending("dino");
+        Expect(PendingAfterMutation[0].State == "mutating", "mutating state should be observable");
         Expect(Journal.Abort("dino", "listing-1"), "known failed mutation should be abortable");
         Expect(
             Journal.Begin("dino", "listing-1", "payload-b") == DeliveryJournal::BeginResult::Started,
@@ -61,6 +67,44 @@ int main()
         Expect(
             Restarted.Begin("dino", "listing-1", "payload-b") == DeliveryJournal::BeginResult::UncertainPrepared,
             "prepared state should survive restart and block automatic redelivery");
+    }
+
+    {
+        const auto FailurePath = TestRoot / "completion-failure-journal.json";
+        DeliveryJournal Journal(FailurePath);
+        Expect(Journal.Load(), "completion-failure journal should initialize");
+        Expect(
+            Journal.Begin("dino_marketplace", "delivery-locked", "payload-c") ==
+                DeliveryJournal::BeginResult::Started,
+            "delivery should be prepared before simulating persistence failure");
+
+        // Deny delete sharing on the destination. MoveFileEx(REPLACE_EXISTING)
+        // must fail while this handle is open, deterministically exercising the
+        // rollback path without adding a production-only fault injection hook.
+        HANDLE LockedJournal = CreateFileW(
+            FailurePath.c_str(),
+            GENERIC_READ,
+            FILE_SHARE_READ,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr);
+        Expect(LockedJournal != INVALID_HANDLE_VALUE, "test should lock journal destination");
+        if (LockedJournal != INVALID_HANDLE_VALUE)
+        {
+            Expect(
+                !Journal.Complete("dino_marketplace", "delivery-locked"),
+                "completion must report an atomic persistence failure");
+            CloseHandle(LockedJournal);
+
+            Expect(
+                Journal.Begin("dino_marketplace", "delivery-locked", "payload-c") ==
+                    DeliveryJournal::BeginResult::UncertainPrepared,
+                "failed completion must remain prepared in memory and block acknowledgement");
+            Expect(
+                Journal.Complete("dino_marketplace", "delivery-locked"),
+                "completion should succeed after the destination lock is released");
+        }
     }
 
     std::filesystem::remove_all(TestRoot);

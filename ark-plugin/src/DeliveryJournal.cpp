@@ -75,6 +75,7 @@ namespace HeartShop
             {"deliveryType", DeliveryType},
             {"deliveryId", DeliveryId},
             {"payloadFingerprint", PayloadFingerprint},
+            {"payload", Payload},
             {"receiptId", Key},
             {"state", "prepared"},
             {"preparedAt", UnixMilliseconds()}
@@ -100,9 +101,20 @@ namespace HeartShop
             return false;
         }
 
+        // Completion is allowed to become observable only after it is durable.
+        // Keep the prior prepared record so a failed atomic replace cannot leave
+        // this process believing the delivery completed while the on-disk
+        // journal still says prepared. That mismatch could otherwise cause a
+        // later duplicate poll in the same process to acknowledge the delivery.
+        const auto Previous = Deliveries[Key];
         Deliveries[Key]["state"] = "completed";
         Deliveries[Key]["completedAt"] = UnixMilliseconds();
-        return PersistLocked();
+        if (!PersistLocked())
+        {
+            Deliveries[Key] = Previous;
+            return false;
+        }
+        return true;
     }
 
     bool DeliveryJournal::Abort(
@@ -129,6 +141,51 @@ namespace HeartShop
             return false;
         }
         return true;
+    }
+
+    bool DeliveryJournal::MarkMutating(
+        const std::string& DeliveryType,
+        const std::string& DeliveryId)
+    {
+        std::lock_guard<std::mutex> Lock(m_Mutex);
+        const std::string Key = MakeKey(DeliveryType, DeliveryId);
+        auto& Deliveries = m_Data["deliveries"];
+        if (!Deliveries.contains(Key) || Deliveries[Key].value("state", "") != "prepared")
+        {
+            return false;
+        }
+        const auto Previous = Deliveries[Key];
+        Deliveries[Key]["state"] = "mutating";
+        Deliveries[Key]["mutatingAt"] = UnixMilliseconds();
+        if (!PersistLocked())
+        {
+            Deliveries[Key] = Previous;
+            return false;
+        }
+        return true;
+    }
+
+    std::vector<DeliveryJournal::PendingRecord> DeliveryJournal::Pending(
+        const std::string& DeliveryType)
+    {
+        std::lock_guard<std::mutex> Lock(m_Mutex);
+        std::vector<PendingRecord> Result;
+        const auto& Deliveries = m_Data["deliveries"];
+        for (auto It = Deliveries.begin(); It != Deliveries.end(); ++It)
+        {
+            const auto& Record = It.value();
+            const std::string State = Record.value("state", "");
+            if (Record.value("deliveryType", "") != DeliveryType || State == "completed")
+            {
+                continue;
+            }
+            Result.push_back({
+                Record.value("deliveryId", ""),
+                State,
+                Record.value("payload", "")
+            });
+        }
+        return Result;
     }
 
     std::string DeliveryJournal::MakeKey(

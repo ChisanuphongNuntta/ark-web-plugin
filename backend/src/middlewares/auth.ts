@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../config/database.js';
 import { AppError } from './errorHandler.js';
-import { encryptDeterministic } from '../utils/encryption.js';
+import { encryptDeterministic, encryptDeterministicLegacy } from '../utils/encryption.js';
 import redis from '../config/redis.js';
 import pluginCredentialService from '../services/pluginCredential.service.js';
 
@@ -327,11 +327,34 @@ export const authenticatePlugin = async (
         apiKey: true,
         apiKeyIp: true,
         apiKeyCreatedAt: true,
+        apiKeyServerId: true,
         isBanned: true,
       },
     });
 
-    // 2. If not found, try finding by Plain Text (Legacy/Migration)
+    // 2. Migrate rows encrypted with the previous deterministic AES-CBC format.
+    if (!user) {
+      user = await prisma.user.findUnique({
+        where: { apiKey: encryptDeterministicLegacy(apiKey) },
+        select: {
+          id: true,
+          discordId: true,
+          discordUsername: true,
+          steamId: true,
+          apiKey: true,
+          apiKeyIp: true,
+          apiKeyCreatedAt: true,
+          apiKeyServerId: true,
+          isBanned: true,
+        },
+      });
+      if (user) {
+        await prisma.user.update({ where: { id: user.id }, data: { apiKey: encryptedKey } });
+        user.apiKey = encryptedKey;
+      }
+    }
+
+    // 3. If not found, try finding by Plain Text (oldest migration format)
     if (!user) {
       user = await prisma.user.findUnique({
         where: { apiKey: apiKey }, // Plain text lookup
@@ -343,6 +366,7 @@ export const authenticatePlugin = async (
           apiKey: true,
           apiKeyIp: true,
           apiKeyCreatedAt: true,
+          apiKeyServerId: true,
           isBanned: true,
           role: true,
         },
@@ -366,6 +390,9 @@ export const authenticatePlugin = async (
 
     if (user.isBanned) {
       throw new AppError('User account is banned', 403);
+    }
+    if (user.apiKeyServerId == null || user.apiKeyServerId !== serverId) {
+      throw new AppError('Legacy API key is not authorized for this server', 403);
     }
 
     const bypassIpCheck = process.env.BYPASS_PLUGIN_IP_CHECK === 'true' || process.env.NODE_ENV === 'development';
@@ -447,36 +474,10 @@ export const authenticateSignedPlugin = async (
       credentialId = credential.id;
       scopedServerId = credential.serverId;
     } else {
-      // Legacy overlap path: treat the keyId value as a User.apiKey (identifier == secret).
-      const encryptedKey = encryptDeterministic(keyId);
-      const user = await prisma.user.findUnique({
-        where: { apiKey: encryptedKey },
-        select: {
-          id: true,
-          discordId: true,
-          discordUsername: true,
-          steamId: true,
-          apiKey: true,
-          apiKeyIp: true,
-          isBanned: true,
-        },
-      });
-
-      if (!user) {
-        throw new AppError('Invalid API key', 401);
-      }
-      if (user.isBanned) {
-        throw new AppError('User account is banned', 403);
-      }
-
-      console.warn(
-        `[Plugin Auth][DEPRECATION] Signed request using legacy User.apiKey as HMAC secret ` +
-        `(keyId acted as secret) for user ${user.discordUsername ?? user.id}. ` +
-        `Migrate this server to an issued {keyId, secret} ServerCredential.`
-      );
-
-      signingSecret = keyId; // legacy: the wire value doubled as the secret
-      pluginUser = user;
+      // Signed requests must use a server-scoped credential where keyId and secret
+      // are distinct. Legacy user API keys remain available only on the explicitly
+      // deprecated X-API-Key path above.
+      throw new AppError('Unknown or revoked plugin credential', 401);
     }
 
     // Validate body SHA256
@@ -525,6 +526,9 @@ export const authenticateSignedPlugin = async (
       serverId = parseInt(requestedServerIdStr, 10);
       if (isNaN(serverId) || serverId <= 0) {
         throw new AppError('Invalid Server ID', 400);
+      }
+      if (pluginUser?.apiKeyServerId == null || pluginUser.apiKeyServerId !== serverId) {
+        throw new AppError('Legacy API key is not authorized for this server', 403);
       }
     }
 

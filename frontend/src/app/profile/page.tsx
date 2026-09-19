@@ -29,13 +29,16 @@ import { DeviceSessions } from '@/components/account/DeviceSessions';
 
 type ProfileTab = 'console' | 'wallet' | 'identity';
 
-export default function ProfilePage() {
+function ProfileContent() {
   const { user } = useAuthStore();
   const searchParams = useSearchParams();
   const steamError = searchParams.get('error');
+  const linkSteamRequested = searchParams.get('linkSteam') === 'true';
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = React.useState<ProfileTab>('console');
+  const [activeTab, setActiveTab] = React.useState<ProfileTab>(() =>
+    linkSteamRequested ? 'identity' : 'console'
+  );
   const [claimMessage, setClaimMessage] = React.useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: profileData } = useQuery({
@@ -80,7 +83,7 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto py-20 px-4">
         <EmptyState
           title="กรุณาเข้าสู่ระบบก่อนทำรายการ"
-          description="คุณจำเป็นต้องเชื่อมต่อบัญชีเข้าสู่ระบบเพื่อใช้งาน Survivor Console และกระเป๋าเงินดิจิทัล"
+          description="คุณจำเป็นต้องเชื่อมต่อบัญชีเข้าสู่ระบบเพื่อใช้งาน บัญชีผู้เล่น และกระเป๋าเงินดิจิทัล"
           actionText="เข้าสู่ระบบทันที"
           onAction={() => {
             window.location.href = `${apiUrl}/auth/discord`;
@@ -106,7 +109,7 @@ export default function ProfilePage() {
       {/* Header + balance HUD */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-white/5">
         <div>
-          <span className="eyebrow">User Dashboard</span>
+          <span className="eyebrow">YOUR BASECAMP</span>
           <h1 className="font-display text-3xl font-extrabold text-iris-pearl uppercase tracking-tight flex items-center gap-2.5">
             <User className="h-8 w-8 text-iris-cyan" />
             <span>Account Center</span>
@@ -145,6 +148,7 @@ export default function ProfilePage() {
       <div className="flex flex-wrap border-b border-white/5 gap-1.5" role="tablist">
         {tabs.map((tab) => (
           <button
+            type="button"
             key={tab.id}
             role="tab"
             aria-selected={activeTab === tab.id}
@@ -289,10 +293,23 @@ export default function ProfilePage() {
       {/* ACCOUNT CENTER: identities + device sessions */}
       {activeTab === 'identity' && (
         <div className="space-y-10 animate-slide-up">
+          {linkSteamRequested && (
+            <div className="rounded-xl border border-iris-cyan/25 bg-iris-cyan/10 px-4 py-3 text-sm text-iris-pearl">
+              เชื่อมบัญชี Steam โดยกดปุ่มด้านล่าง ระบบจะพาไปยืนยันตัวตนกับ Steam โดยตรง
+            </div>
+          )}
           <LinkedIdentities />
           <DeviceSessions />
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <React.Suspense fallback={<div className="max-w-4xl mx-auto py-20 px-4 text-center text-iris-muted">กำลังโหลดข้อมูล...</div>}>
+      <ProfileContent />
+    </React.Suspense>
   );
 }

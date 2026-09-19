@@ -43,6 +43,7 @@ namespace HeartShop
 
     // Player helpers
     void SendMessage(AShooterPlayerController* Player, const FString& Message);
+    void SendAnnouncement(AShooterPlayerController* Player, const FString& Message, float DisplayTime = 15.0f);
     uint64 GetSteamId(AShooterPlayerController* Player);
     bool GiveItemToPlayer(AShooterPlayerController* Player, const FString& Blueprint, int Quantity, float Quality, bool IsBlueprint);
 
@@ -50,7 +51,16 @@ namespace HeartShop
     {
         Execute,
         AcknowledgeOnly,
-        Blocked
+        // Permanent block: a real integrity problem (payload changed for an existing
+        // delivery id). Report with /fail so the backend consumes an attempt and can
+        // eventually dead-letter + refund.
+        Blocked,
+        // Transient block: the plugin could not safely *attempt* the delivery right now
+        // (journal not loaded, could not persist the prepared record, or an uncertain
+        // prepared record from a prior crash). Nothing was delivered. Return the lease
+        // with /release so the backend does NOT consume an attempt and does NOT
+        // prematurely dead-letter/refund an order that simply needs a retry.
+        Deferred
     };
 
     DeliveryAction PrepareDelivery(
@@ -59,6 +69,11 @@ namespace HeartShop
         const std::string& Payload);
     bool CompleteDelivery(const std::string& DeliveryType, const std::string& DeliveryId);
     bool AbortDelivery(const std::string& DeliveryType, const std::string& DeliveryId);
+    void ConfirmPreparedDinoListing(
+        const std::string& AssetLockId,
+        const nlohmann::json& Payload,
+        uint64 NotifySteamId = 0);
+    void RecoverPendingDinoListings();
 
     // Hook typedefs
     typedef void(*HandleNewPlayer_t)(AShooterGameMode*, AShooterPlayerController*, UPrimalPlayerData*, AShooterCharacter*, bool);

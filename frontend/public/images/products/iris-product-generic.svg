@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" fill="none">
+<defs><linearGradient id="ice" x1="170" y1="130" x2="440" y2="500" gradientUnits="userSpaceOnUse"><stop stop-color="#D7F4FF"/><stop offset="1" stop-color="#5489A6"/></linearGradient></defs>
+<path d="M320 104 448 234 416 424 320 504 224 424 192 234Z" fill="#183C50" stroke="#78B2CB" stroke-width="2"/>
+<path d="m320 104 38 180 90-50-32 190-58-140-38 220-96-80 58-140-90-50 128-130Z" fill="url(#ice)" fill-opacity=".22" stroke="#B8E8F9" stroke-opacity=".55" stroke-width="2"/>
+<path d="m320 104-38 180h76M224 424l96 80 96-80M282 284l38 220" stroke="#C0EBF8" stroke-opacity=".45" stroke-width="2"/>
+<circle cx="320" cy="308" r="235" stroke="#9DD5EA" stroke-opacity=".12" stroke-dasharray="2 12"/>
+<text x="320" y="574" text-anchor="middle" fill="#9FC7D8" font-family="Arial,sans-serif" font-size="16" letter-spacing="6">IRIS · EXPEDITION</text></svg>

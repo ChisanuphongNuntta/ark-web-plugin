@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import gameShopController from '../controllers/game-shop.controller.js';
 import { PluginController } from '../controllers/plugin.controller.js';
 import { authenticatePluginFlexible, authenticateSignedPlugin } from '../middlewares/auth.js';
 
@@ -8,6 +9,9 @@ const pluginController = new PluginController();
 // --- SIGNED SUITE (Milestone 2 / CR-PLUGIN-001) ---
 // Heartbeat (Capability Heartbeat)
 router.post('/heartbeat', authenticateSignedPlugin as any, pluginController.heartbeat as any);
+router.get('/catalog', authenticateSignedPlugin as any, gameShopController.listCatalog as any);
+router.post('/purchase/quote', authenticateSignedPlugin as any, gameShopController.createQuote as any);
+router.post('/purchase/confirm', authenticateSignedPlugin as any, gameShopController.confirmQuote as any);
 
 // Delivery claim and lease (Atomic Orders)
 router.post('/deliveries/claim', authenticateSignedPlugin as any, pluginController.claimDeliveries as any);
@@ -26,25 +30,27 @@ router.get('/wallet/events', authenticateSignedPlugin as any, pluginController.g
 
 // --- LEGACY SUITE (CR-PLUGIN-006) ---
 // These endpoints now accept hmacAuth (signed requests) AND, during the migration overlap
-// window, the legacy X-API-Key (logged as a deprecation). See authenticatePluginFlexible.
-router.use(authenticatePluginFlexible);
+// window, the legacy X-API-Key (logged as a deprecation). Authentication is attached to each
+// concrete route instead of using a catch-all router.use(). The catch-all used to authenticate
+// nested /api/plugin/chat, /market, and /protection requests once here and then a second time in
+// their own routers, causing the valid nonce to be rejected as a replay on the second check.
 
 // Verify license and register IP
-router.get('/verify', pluginController.verifyLicense as any);
+router.get('/verify', authenticatePluginFlexible as any, pluginController.verifyLicense as any);
 
 // Get pending orders for this server
-router.get('/orders/pending', pluginController.getPendingOrders as any);
+router.get('/orders/pending', authenticatePluginFlexible as any, pluginController.getPendingOrders as any);
 
 // Mark order as delivered
-router.post('/orders/:orderId/deliver', pluginController.markDelivered as any);
+router.post('/orders/:orderId/deliver', authenticatePluginFlexible as any, pluginController.markDelivered as any);
 
 // Mark order as failed
-router.post('/orders/:orderId/fail', pluginController.markFailed as any);
+router.post('/orders/:orderId/fail', authenticatePluginFlexible as any, pluginController.markFailed as any);
 
 // Update player stats
-router.post('/stats', pluginController.updatePlayerStats as any);
+router.post('/stats', authenticatePluginFlexible as any, pluginController.updatePlayerStats as any);
 
 // Get player info by Steam ID
-router.get('/player/:steamId', pluginController.getPlayerBySteamId as any);
+router.get('/player/:steamId', authenticatePluginFlexible as any, pluginController.getPlayerBySteamId as any);
 
 export default router;

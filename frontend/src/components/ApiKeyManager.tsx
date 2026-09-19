@@ -24,7 +24,8 @@ import {
   Download,
 } from 'lucide-react';
 import { userApi, adminApi } from '@/lib/api';
-import LaserModal from '@/components/LaserModal';
+import { Button } from '@/components/ui/Button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
 
 interface ApiKeyManagerProps {
   apiKey?: string | null;
@@ -322,9 +323,11 @@ export default function ApiKeyManager({
 
                     {/* Action Buttons */}
                     <button
+                      type="button"
                       onClick={() => setShowKey(!showKey)}
                       className="relative px-4 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 rounded-xl transition-all hover:scale-105"
                       title={showKey ? 'ซ่อน Key' : 'แสดง Key'}
+                      aria-label={showKey ? 'ซ่อน API Key' : 'แสดง API Key'}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/0 via-emerald-600/20 to-emerald-600/0 blur-sm"></div>
                       {showKey ? (
@@ -335,9 +338,11 @@ export default function ApiKeyManager({
                     </button>
 
                     <button
+                      type="button"
                       onClick={handleCopyKey}
                       className="relative px-4 bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 rounded-xl transition-all hover:scale-105"
                       title="คัดลอก Key"
+                      aria-label="คัดลอก API Key"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/0 via-cyan-600/20 to-cyan-600/0 blur-sm"></div>
                       <Copy className="relative h-5 w-5 text-cyan-300" />
@@ -541,7 +546,7 @@ export default function ApiKeyManager({
                     <li>
                       วาง API Key ลงในช่อง{' '}
                       <code className="px-2 py-1 bg-cyan-500/20 rounded text-xs text-cyan-300 font-mono border border-cyan-500/30">
-                        "ApiKey"
+                        &quot;ApiKey&quot;
                       </code>
                     </li>
                     <li>บันทึกไฟล์และรีสตาร์ท ARK Server</li>
@@ -593,16 +598,27 @@ export default function ApiKeyManager({
         </div>
       </div>
 
-      <LaserModal
-        isOpen={modalConfig.isOpen}
-        onClose={closeModal}
-        onConfirm={modalConfig.onConfirm}
-        title={modalConfig.title}
-        variant={modalConfig.variant as any}
-        confirmText={modalConfig.confirmText}
-      >
-        {modalConfig.content}
-      </LaserModal>
+      <Dialog open={modalConfig.isOpen} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{modalConfig.title}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-sm text-iris-muted">
+            {modalConfig.content}
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant={modalConfig.variant === 'danger' ? 'danger' : 'primary'}
+              onClick={() => {
+                modalConfig.onConfirm?.();
+                closeModal();
+              }}
+            >
+              {modalConfig.confirmText || 'ตกลง'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

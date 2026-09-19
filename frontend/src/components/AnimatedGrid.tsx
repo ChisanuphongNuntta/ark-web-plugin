@@ -1,6 +1,12 @@
 'use client';
+
 import React from "react";
 import { motion } from "framer-motion";
+
+const seeded = (index: number, salt: number) => {
+  const value = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+  return value - Math.floor(value);
+};
 
 export const AnimatedGrid = () => {
   return (
@@ -36,27 +42,33 @@ export const AnimatedGrid = () => {
         />
       </div>
       {/* Floating particles mimicking TEK energy */}
-      {Array.from({ length: 20 }).map((_, i) => (
-        <motion.div
+      {Array.from({ length: 20 }).map((_, i) => {
+        const x = seeded(i, 1) * 100;
+        const y = seeded(i, 2) * 100;
+        const opacity = seeded(i, 3) * 0.5 + 0.1;
+        const scale = seeded(i, 4) * 1.5 + 0.5;
+        const destinationY = seeded(i, 5) * -100;
+        const duration = seeded(i, 6) * 10 + 10;
+        return <motion.div
           key={i}
-          className="absolute w-1 h-1 bg-ark-primary rounded-full shadow-[0_0_10px_rgba(16,185,129,0.8)]"
+          className="absolute w-1 h-1 bg-iris-cyan rounded-full shadow-[0_0_10px_rgba(16,185,129,0.8)]"
           initial={{
-            x: Math.random() * 100 + 'vw',
-            y: Math.random() * 100 + 'vh',
-            opacity: Math.random() * 0.5 + 0.1,
-            scale: Math.random() * 1.5 + 0.5
+            x: `${x}vw`,
+            y: `${y}vh`,
+            opacity,
+            scale,
           }}
           animate={{
-            y: [null, Math.random() * -100 + 'vh'],
+            y: [null, `${destinationY}vh`],
             opacity: [null, 0]
           }}
           transition={{
-            duration: Math.random() * 10 + 10,
+            duration,
             repeat: Infinity,
             ease: "linear"
           }}
-        />
-      ))}
+        />;
+      })}
     </div>
   );
 };

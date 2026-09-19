@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+  <title id="title">Argentavis mock art</title>
+  <desc id="desc">Flying Argentavis silhouette with cyan river light.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#05070D"/><stop offset=".52" stop-color="#092332"/><stop offset="1" stop-color="#1A1432"/></linearGradient>
+  </defs>
+  <rect width="900" height="900" fill="url(#bg)"/>
+  <path d="M82 654c172-86 544-86 736 0" stroke="#DDBB72" stroke-opacity=".25" stroke-width="5" fill="none"/>
+  <g transform="translate(450 438)">
+    <path d="M-338 0c110-86 220-120 338-56 118-64 228-30 338 56-130-22-220-4-278 54 56 48 94 112 112 192-76-80-138-128-188-144-48 16-112 64-188 144 18-80 56-144 112-192C-118-4-208-22-338 0z" fill="#0B121B" stroke="#37E5D2" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M-54-54 0-120 54-54 18 42h-36z" fill="#DDBB72"/>
+  </g>
+  <text x="74" y="112" fill="#37E5D2" font-family="Arial, sans-serif" font-size="36" font-weight="800" letter-spacing="7">ARGENTAVIS</text>
+</svg>

@@ -143,10 +143,16 @@ describe('Milestone 2 - IRIS ID & Signed Plugin Verification', () => {
     });
 
     it('prepares asset lock successfully', async () => {
-      const lock = { id: 'lock-1', species: 'Rex', level: 100, sellerSteamId: 'steam-123', expiresAt: new Date() };
+      process.env.ENABLE_DINO_TRADING = 'true';
+      const steamId = '76561198000000001';
+      const lock = { id: 'lock-1', species: 'Rex', level: 100, sellerSteamId: steamId, expiresAt: new Date() };
       db.dinoAssetLock.create.mockResolvedValueOnce(lock);
+      db.server.findUnique.mockResolvedValueOnce({
+        id: 1,
+        capabilities: ['marketplace.asset-lock.v1', 'marketplace.dino-native.v2'],
+      });
 
-      const req: any = { body: { species: 'Rex', level: 100, sellerSteamId: 'steam-123' } };
+      const req: any = { body: { species: 'Rex', level: 100, sellerSteamId: steamId }, serverId: 1 };
       const res: any = { json: vi.fn() };
       const next = vi.fn();
 
@@ -159,30 +165,41 @@ describe('Milestone 2 - IRIS ID & Signed Plugin Verification', () => {
     });
 
     it('confirms asset lock and creates listing', async () => {
-      const lock = { id: 'lock-1', species: 'Rex', level: 100, sellerSteamId: 'steam-123', status: 'prepared', expiresAt: new Date(Date.now() + 100000) };
+      process.env.ENABLE_DINO_TRADING = 'true';
+      const lock = { id: 'lock-1', species: 'Rex', level: 100, sellerSteamId: '76561198000000001', originServerId: 1, status: 'prepared', expiresAt: new Date(Date.now() + 100000) };
       db.dinoAssetLock.findUnique.mockResolvedValueOnce(lock);
       db.user.findUnique.mockResolvedValueOnce({ id: 'user-1' });
-      db.dinoListing.create.mockResolvedValueOnce({ id: 'list-1' });
+      const tx: any = {
+        dinoAssetLock: {
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        dinoListing: { create: vi.fn().mockResolvedValue({ id: 'list-1' }) },
+      };
+      db.$transaction.mockImplementationOnce((callback: any) => callback(tx));
 
       const req: any = {
         body: {
           assetLockId: 'lock-1',
-          assetFingerprint: 'fingerprint-abc',
+          assetFingerprint: 'abcdef0123456789',
           price: 100,
+          dinoDataVersion: 1,
+          cryopodData: Buffer.from('native-dino').toString('base64'),
+          dinoDataSize: Buffer.byteLength('native-dino'),
+          dinoDataSha256: crypto.createHash('sha256').update('native-dino').digest('hex'),
         },
+        serverId: 1,
       };
       const res: any = { json: vi.fn() };
       const next = vi.fn();
 
       await pluginController.confirmLock(req, res, next);
 
-      expect(db.dinoListing.create).toHaveBeenCalled();
-      expect(db.dinoAssetLock.update).toHaveBeenCalledWith({
+      expect(tx.dinoListing.create).toHaveBeenCalled();
+      expect(tx.dinoAssetLock.update).toHaveBeenCalledWith({
         where: { id: 'lock-1' },
         data: {
           status: 'confirmed',
-          assetFingerprint: 'fingerprint-abc',
-          price: 100,
           listingId: 'list-1',
         },
       });

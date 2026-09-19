@@ -5,6 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 export const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+  timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,12 +16,16 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Only redirect to login if not already on login/auth pages
+      // Only redirect to login if not already on login/auth pages and visiting a protected route
       if (typeof window !== 'undefined') {
         const currentPath = window.location.pathname;
         const authPaths = ['/login', '/auth/callback', '/auth/link-steam'];
+        const protectedPrefixes = ['/orders', '/admin', '/market/my-listings', '/market/my-purchases'];
 
-        if (!authPaths.some(path => currentPath.startsWith(path))) {
+        const isProtected = protectedPrefixes.some(prefix => currentPath.startsWith(prefix));
+        const isAuthPath = authPaths.some(path => currentPath.startsWith(path));
+
+        if (isProtected && !isAuthPath) {
           window.location.href = '/login';
         }
       }
@@ -93,6 +98,7 @@ export const adminApi = {
     api.post(`/admin/users/${id}/points`, { amount, reason }),
 
   // Products
+  getProducts: () => api.get('/admin/products'),
   createProduct: (data: any) => api.post('/admin/products', data),
   updateProduct: (id: number, data: any) => api.put(`/admin/products/${id}`, data),
   deleteProduct: (id: number) => api.delete(`/admin/products/${id}`),
@@ -269,6 +275,7 @@ export const dinoMarketApi = {
   getListingById: (id: string) => api.get(`/market/listings/${id}`),
   getSpeciesList: () => api.get('/market/species'),
   getStats: () => api.get('/market/stats'),
+  getDeliveryServers: () => api.get('/servers'),
 
   // Authenticated
   getMyListings: (params?: { status?: string; page?: number; limit?: number }) =>
@@ -276,7 +283,7 @@ export const dinoMarketApi = {
   getMyPurchases: (params?: { page?: number; limit?: number }) =>
     api.get('/market/my/purchases', { params }),
   cancelListing: (id: string) => api.post(`/market/listings/${id}/cancel`),
-  buyDino: (id: string) => api.post(`/market/listings/${id}/buy`),
+  buyDino: (id: string, serverId: number) => api.post(`/market/listings/${id}/buy`, { serverId }),
 };
 
 // PDPA API
@@ -300,6 +307,23 @@ export const pdpaApi = {
   exportData: () => api.get('/pdpa/export'),
   deleteData: (confirmation: string) =>
     api.post('/pdpa/delete', { confirmation }),
+};
+
+// Payment API
+export const paymentApi = {
+  getPackages: () => api.get('/payments/packages').then((r) => r.data),
+  createIntent: (payload: { packageId: string; provider: string }, idempotencyKey?: string) => {
+    const key =
+      idempotencyKey ||
+      (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `topup-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+    return api
+      .post('/payments/intents', payload, {
+        headers: { 'Idempotency-Key': key },
+      })
+      .then((r) => r.data);
+  },
 };
 
 export default api;

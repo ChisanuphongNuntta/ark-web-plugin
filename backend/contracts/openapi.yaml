@@ -40,6 +40,90 @@ paths:
                     items: { $ref: '#/components/schemas/LedgerTransaction' }
                   pagination: { $ref: '#/components/schemas/Pagination' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+  /payments/packages:
+    get:
+      operationId: listPaymentPackages
+      tags: [Payments]
+      responses:
+        '200':
+          description: Active top-up packages.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [packages]
+                properties:
+                  packages:
+                    type: array
+                    items: { $ref: '#/components/schemas/PaymentPackage' }
+  /payments/intents:
+    post:
+      operationId: createPaymentIntent
+      tags: [Payments]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 255 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [packageId]
+              properties:
+                packageId: { type: string }
+                provider: { type: string, default: sandbox }
+      responses:
+        '201':
+          description: Payment intent created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentIntentResult' }
+        '200':
+          description: Idempotent replay of the existing intent.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentIntentResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { description: The idempotency key was reused with different input. }
+  /payments/intents/{id}:
+    get:
+      operationId: getPaymentIntent
+      tags: [Payments]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: User-owned payment intent.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentIntent' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /payments/webhooks/{provider}:
+    post:
+      operationId: receivePaymentWebhook
+      tags: [Payments]
+      description: >-
+        Provider callback. The sandbox adapter requires `X-Payment-Signature` containing an
+        HMAC-SHA256 of the canonical compact JSON request body. Provider event IDs are deduplicated.
+      parameters:
+        - { in: path, name: provider, required: true, schema: { type: string } }
+        - { in: header, name: X-Payment-Signature, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Event accepted or recognized as a duplicate.
+        '400': { description: Amount, reference, or payload mismatch. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
   /auth/me:
     get:
       operationId: getCurrentUser
@@ -245,6 +329,13 @@ paths:
     post:
       operationId: completeDelivery
       tags: [Plugin]
+      summary: Complete a delivery (idempotent on deliveryKey)
+      description: >-
+        Marks a leased delivery as completed and transitions the underlying order
+        delivering -> delivered (§18). IDEMPOTENT on `deliveryKey`: a duplicate callback for
+        an already-completed job returns the ORIGINAL receipt with `duplicate: true` and does
+        NOT deliver or settle the order a second time. The lease token is NOT re-checked on a
+        duplicate (it may have rotated). Only the first completion flips the order.
       security: [{ hmacAuth: [] }]
       parameters:
         - { in: path, name: deliveryKey, required: true, schema: { type: string } }
@@ -255,7 +346,20 @@ paths:
             schema: { $ref: '#/components/schemas/DeliveryReceipt' }
       responses:
         '200':
-          description: Delivery marked as completed.
+          description: Delivery completed (or already completed — idempotent).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  deliveryKey: { type: string }
+                  receiptId: { type: [string, 'null'] }
+                  duplicate:
+                    type: boolean
+                    description: true when this was a repeated callback for an already-completed delivery.
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -263,6 +367,13 @@ paths:
     post:
       operationId: failDelivery
       tags: [Plugin]
+      summary: Report a delivery failure (retry with backoff, then dead-letter)
+      description: >-
+        Reports a delivery failure (§18 rules 7-8). A transient failure under the attempt
+        limit returns the job to `pending` with an exponential backoff (`nextRetryAt`) and
+        moves the order delivering -> queued. Once `attempts` reaches `maxAttempts` the job is
+        routed to the dead-letter queue and the order moves to `failed` (refundable). Failing
+        an already-completed job is an idempotent no-op success (`duplicate: true`).
       security: [{ hmacAuth: [] }]
       parameters:
         - { in: path, name: deliveryKey, required: true, schema: { type: string } }
@@ -278,7 +389,20 @@ paths:
                 error: { type: string }
       responses:
         '200':
-          description: Delivery marked as failed.
+          description: Failure recorded (retry scheduled or dead-lettered).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  retry: { type: boolean, description: true if the job will be re-claimed after backoff. }
+                  deadLetter: { type: boolean, description: true if attempts were exhausted and the job is dead-lettered. }
+                  nextRetryAt: { type: [string, 'null'], format: date-time }
+                  attempts: { type: integer }
+                  duplicate: { type: boolean }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -413,15 +537,16 @@ paths:
         Server-scoped wallet event feed for the in-game companion (CR-PLUGIN-008). Returns
         `wallet.transaction.posted` events (see contracts/events) for players associated with the
         calling credential's server, with ADDITIVE `playerSteamId` + `userId` attribution fields.
-        Cursor pagination: pass the previous `lastTimestamp` as `?since=`. Read-only, signed with
+        Cursor pagination: pass the previous opaque `lastCursor` as `?cursor=`. The cursor uses
+        `(postedAt,id)` ordering so equal timestamps and late commits cannot skip events. Read-only, signed with
         `hmacAuth`.
       security: [{ hmacAuth: [] }]
       parameters:
         - in: query
-          name: since
+          name: cursor
           required: false
-          schema: { type: string, format: date-time }
-          description: Return events strictly after this timestamp (the previous response's lastTimestamp).
+          schema: { type: string }
+          description: Opaque cursor returned in the previous response's lastCursor.
         - in: query
           name: limit
           required: false
@@ -433,12 +558,13 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [success, events, lastTimestamp]
+                required: [success, events, lastCursor]
                 properties:
                   success: { type: boolean }
                   events:
                     type: array
                     items: { $ref: '#/components/schemas/WalletEvent' }
+                  lastCursor: { type: [string, 'null'] }
                   lastTimestamp: { type: [string, 'null'], format: date-time }
         '401': { $ref: '#/components/responses/Unauthorized' }
   /plugin/verify:
@@ -576,6 +702,47 @@ paths:
               schema: { $ref: '#/components/schemas/Cart' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+  /cart/sync:
+    post:
+      operationId: syncCart
+      tags: [Cart]
+      summary: Bulk "replace cart" (M3, §16)
+      description: >-
+        Atomically REPLACES the server cart with the posted line set after re-validating
+        price / stock / server-compatibility / per-user limits server-side. The server cart
+        remains authoritative; the frontend SHOULD call this once before
+        `POST /checkout/session` instead of replaying line-by-line add/update/delete.
+        Duplicate `(productId, serverId)` lines are merged by summing quantity; lines with
+        quantity <= 0 are dropped. Re-sending the same line set is idempotent (the cart is
+        fully replaced each call). On any validation failure the cart is left untouched.
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lines]
+              properties:
+                lines:
+                  type: array
+                  maxItems: 100
+                  items:
+                    type: object
+                    required: [productId, serverId, quantity]
+                    properties:
+                      productId: { type: integer }
+                      serverId: { type: integer }
+                      quantity: { type: integer }
+      responses:
+        '200':
+          description: The replaced cart.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /checkout/session:
     post:
       operationId: createCheckoutSession
@@ -589,7 +756,14 @@ paths:
               type: object
               required: [idempotencyKey]
               properties:
-                idempotencyKey: { type: string }
+                idempotencyKey: { type: string, minLength: 1, maxLength: 255 }
+                voucherCode:
+                  type: string
+                  description: Optional single voucher code; normalized server-side.
+                voucherCodes:
+                  type: array
+                  maxItems: 5
+                  items: { type: string }
       responses:
         '200':
           description: Created checkout session.
@@ -612,9 +786,10 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [success, orderIds, totalSpent]
+                required: [success, orderGroupId, orderIds, totalSpent]
                 properties:
                   success: { type: boolean }
+                  orderGroupId: { type: string }
                   orderIds:
                     type: array
                     items: { type: string }
@@ -622,6 +797,164 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '409': { $ref: '#/components/responses/BadRequest' }
+  /promotions/preview:
+    post:
+      operationId: previewCheckoutPromotion
+      tags: [Promotions]
+      summary: Preview automatic promotions and voucher discounts against the authenticated server cart.
+      description: >-
+        Uses the persisted server-side cart as the source of truth and returns the
+        same promotion math that `POST /checkout/session` will snapshot. The frontend
+        must treat this as advisory; final price is the CheckoutSession total returned
+        by the backend.
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                voucherCode: { type: string }
+                voucherCodes:
+                  type: array
+                  maxItems: 5
+                  items: { type: string }
+      responses:
+        '200':
+          description: Promotion evaluation for the current cart.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromotionEvaluation' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /promotions/evaluate:
+    post:
+      operationId: evaluateCheckoutPromotion
+      tags: [Promotions]
+      summary: Alias of /promotions/preview for frontend contract clarity.
+      description: >-
+        Evaluates automatic promotions and voucher discounts against the persisted
+        server-side cart. This endpoint is an alias of `/promotions/preview`; final
+        pricing is still locked only by `POST /checkout/session`.
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                voucherCode: { type: string }
+                voucherCodes:
+                  type: array
+                  maxItems: 5
+                  items: { type: string }
+      responses:
+        '200':
+          description: Promotion evaluation for the current cart.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromotionEvaluation' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /orders:
+    get:
+      operationId: getUserOrders
+      tags: [Orders]
+      summary: List the authenticated user's orders
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, default: 20 } }
+        - in: query
+          name: status
+          description: Optional filter by order state-machine status.
+          schema: { $ref: '#/components/schemas/OrderStatus' }
+      responses:
+        '200':
+          description: Paginated list of the user's orders.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [orders, pagination]
+                properties:
+                  orders:
+                    type: array
+                    items: { $ref: '#/components/schemas/Order' }
+                  pagination: { $ref: '#/components/schemas/Pagination' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /orders/{id}:
+    get:
+      operationId: getOrderById
+      tags: [Orders]
+      summary: Get one order with its delivery timeline
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: The order, a delivery summary, and a chronological status timeline.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [order, timeline]
+                properties:
+                  order: { $ref: '#/components/schemas/Order' }
+                  delivery:
+                    oneOf:
+                      - { $ref: '#/components/schemas/DeliverySummary' }
+                      - { type: 'null' }
+                  timeline:
+                    type: array
+                    description: Chronological delivery events (null timestamps omitted).
+                    items: { $ref: '#/components/schemas/TimelineEvent' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /orders/{id}/refund:
+    post:
+      operationId: refundOrder
+      tags: [Orders]
+      summary: Refund a delivered/failed order to the wallet
+      description: >-
+        Refunds a `delivered` or `failed` order. Money flows ONLY through the IRIS Wallet
+        double-entry ledger (§14): platform revenue is debited and the buyer's `refundable`
+        wallet account is credited (zero-sum). `pointsBalance` is never written directly.
+        The order transitions `delivered|failed -> refunded`, guarded by the state machine,
+        and the ledger idempotency key (`order:refund:{id}`) prevents a double refund.
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Refund posted (or already refunded — idempotent).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, orderId, status, refundedAmount]
+                properties:
+                  success: { type: boolean }
+                  orderId: { type: string }
+                  status: { type: string, const: refunded }
+                  refundedAmount: { type: string, pattern: '^[0-9]+$' }
+                  alreadyRefunded: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Order is not in a refundable state (only delivered/failed are refundable).
   /products:
     get:
       operationId: listProducts
@@ -948,6 +1281,44 @@ components:
           type: object
           additionalProperties: { type: string, pattern: '^-?[0-9]+$' }
         total: { type: string, pattern: '^-?[0-9]+$' }
+    PaymentPackage:
+      type: object
+      required: [id, slug, name, priceThb, points, bonusPoints, totalPoints]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        name: { type: string }
+        priceThb: { type: string, pattern: '^\d+(\.\d{1,2})?$' }
+        points: { type: string, pattern: '^\d+$' }
+        bonusPoints: { type: string, pattern: '^\d+$' }
+        totalPoints: { type: string, pattern: '^\d+$' }
+    PaymentIntent:
+      type: object
+      required: [id, userId, packageId, provider, reference, amountThb, pointsAmount, status, expiresAt, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        packageId: { type: string }
+        provider: { type: string }
+        providerIntentId: { type: [string, 'null'] }
+        reference: { type: string }
+        amountThb: { type: string, pattern: '^\d+(\.\d{1,2})?$' }
+        pointsAmount: { type: string, pattern: '^\d+$' }
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, expired, refunded]
+        paymentUrl: { type: [string, 'null'], format: uri }
+        qrPayload: { type: [string, 'null'] }
+        expiresAt: { type: string, format: date-time }
+        completedAt: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PaymentIntentResult:
+      type: object
+      required: [intent, replayed]
+      properties:
+        intent: { $ref: '#/components/schemas/PaymentIntent' }
+        replayed: { type: boolean }
     WalletEvent:
       type: object
       description: >-
@@ -971,7 +1342,7 @@ components:
           description: Additive — IRIS user id this event is attributed to.
         entries:
           type: array
-          minItems: 1
+          minItems: 2
           items:
             type: object
             required: [accountKey, amount, currency]
@@ -1055,17 +1426,142 @@ components:
             map: { type: [string, 'null'] }
     CheckoutSession:
       type: object
-      required: [id, userId, cartSnapshot, totalAmount, status, idempotencyKey, expiresAt]
+      required: [id, userId, cartSnapshot, subtotalAmount, discountAmount, totalAmount, status, idempotencyKey, expiresAt]
       properties:
         id: { type: string }
         userId: { type: string }
-        cartSnapshot: { type: object }
+        cartSnapshot:
+          type: object
+          description: Immutable checkout snapshot. New sessions use `{ lines, promotion }`; legacy sessions may have stored the line array directly.
+          properties:
+            lines:
+              type: array
+              items: { $ref: '#/components/schemas/CheckoutSnapshotLine' }
+            promotion: { $ref: '#/components/schemas/PromotionEvaluation' }
+        subtotalAmount: { type: string, pattern: '^[0-9]+$' }
+        discountAmount: { type: string, pattern: '^[0-9]+$' }
         totalAmount: { type: string, pattern: '^[0-9]+$' }
+        promotionSnapshot:
+          oneOf:
+            - { $ref: '#/components/schemas/PromotionEvaluation' }
+            - { type: 'null' }
         status: { type: string, enum: [pending, completed, expired] }
         idempotencyKey: { type: string }
         expiresAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    CheckoutSnapshotLine:
+      type: object
+      required: [lineNo, productId, serverId, quantity, price, name, itemBlueprint, quality, isBlueprint]
+      properties:
+        lineNo: { type: integer, minimum: 1 }
+        productId: { type: integer }
+        serverId: { type: integer }
+        categoryId: { type: [integer, 'null'] }
+        quantity: { type: integer, minimum: 1 }
+        price: { type: integer, minimum: 0 }
+        name: { type: string }
+        itemBlueprint: { type: string }
+        quality: { type: integer }
+        isBlueprint: { type: boolean }
+    PromotionEvaluation:
+      type: object
+      required: [currency, subtotal, discountTotal, total, applications]
+      properties:
+        currency: { type: string, enum: [IC] }
+        subtotal: { type: string, pattern: '^[0-9]+$' }
+        discountTotal: { type: string, pattern: '^[0-9]+$' }
+        total: { type: string, pattern: '^[0-9]+$' }
+        voucherCodes:
+          type: array
+          items: { type: string }
+        applications:
+          type: array
+          items: { $ref: '#/components/schemas/PromotionApplication' }
+    PromotionApplication:
+      type: object
+      required: [campaignId, campaignCode, campaignName, discountAmount, allocation]
+      properties:
+        campaignId: { type: string }
+        campaignCode: { type: string }
+        campaignName: { type: string }
+        voucherId: { type: string }
+        voucherCode: { type: string }
+        discountAmount: { type: string, pattern: '^[0-9]+$' }
+        allocation:
+          type: array
+          items:
+            type: object
+            required: [lineNo, productId, serverId, amount]
+            properties:
+              lineNo: { type: integer, minimum: 1 }
+              productId: { type: integer }
+              serverId: { type: integer }
+              amount: { type: string, pattern: '^[0-9]+$' }
+    OrderStatus:
+      type: string
+      description: >-
+        Order state machine (§8). Canonical happy path:
+        draft -> pending_payment -> paid -> queued -> delivering -> delivered.
+        Branch/terminal: failed (dead-lettered delivery, refundable), refunded, cancelled.
+        Legacy single-item orders may still report "pending".
+      enum:
+        - draft
+        - pending_payment
+        - paid
+        - queued
+        - delivering
+        - delivered
+        - failed
+        - refunded
+        - cancelled
+        - pending
+    Order:
+      type: object
+      required: [id, userId, productId, serverId, quantity, totalPrice, status, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        productId: { type: integer }
+        serverId: { type: integer }
+        quantity: { type: integer }
+        totalPrice:
+          type: integer
+          description: Iris Coin amount charged for this order (integer; the wallet ledger is the money source of truth).
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        deliveredAt: { type: [string, 'null'], format: date-time }
+        deliveryAttempts: { type: integer }
+        lastError: { type: [string, 'null'] }
+        paidAt: { type: [string, 'null'], format: date-time }
+        queuedAt: { type: [string, 'null'], format: date-time }
+        refundedAt: { type: [string, 'null'], format: date-time }
+        checkoutSessionId: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        product: { $ref: '#/components/schemas/Product' }
+        server:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            map: { type: [string, 'null'] }
+    DeliverySummary:
+      type: object
+      description: Per-order delivery summary (from the Fulfillment row) on GET /orders/{id}.
+      required: [status]
+      properties:
+        status: { type: string, enum: [queued, claimed, delivered, failed] }
+        attempts: { type: integer }
+        lastError: { type: [string, 'null'] }
+        receiptId: { type: [string, 'null'] }
+    TimelineEvent:
+      type: object
+      required: [status, at]
+      properties:
+        status:
+          type: string
+          enum: [created, paid, queued, delivering, delivered, failed, refunded]
+        at: { type: string, format: date-time }
     Category:
       type: object
       required: [id, name]

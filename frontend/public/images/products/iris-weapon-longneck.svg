@@ -1,0 +1,31 @@
+<svg width="900" height="900" viewBox="0 0 900 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="900" rx="96" fill="#05070D"/>
+  <path d="M0 650C170 580 260 705 430 630C620 546 691 622 900 522V900H0V650Z" fill="url(#river)"/>
+  <circle cx="705" cy="190" r="210" fill="url(#orb)" opacity=".72"/>
+  <path d="M153 545L685 268L724 338L193 615L153 545Z" fill="#DDBB72"/>
+  <path d="M210 555L648 327" stroke="#37E5D2" stroke-width="28" stroke-linecap="round"/>
+  <path d="M600 260L738 322" stroke="#F5F1E8" stroke-width="20" stroke-linecap="round"/>
+  <path d="M230 613L308 705" stroke="#A77BFF" stroke-width="42" stroke-linecap="round"/>
+  <path d="M344 476L406 591" stroke="#F5F1E8" stroke-width="30" stroke-linecap="round"/>
+  <path d="M132 620L222 574" stroke="#37E5D2" stroke-width="34" stroke-linecap="round"/>
+  <g opacity=".28">
+    <path d="M136 188H764" stroke="#37E5D2" stroke-width="2"/>
+    <path d="M136 722H764" stroke="#DDBB72" stroke-width="2"/>
+    <path d="M188 136V764" stroke="#A77BFF" stroke-width="2"/>
+    <path d="M722 136V764" stroke="#37E5D2" stroke-width="2"/>
+  </g>
+  <text x="86" y="118" fill="#DDBB72" font-family="Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="8">ASCENDANT</text>
+  <text x="86" y="792" fill="#F5F1E8" font-family="Arial, sans-serif" font-size="54" font-weight="800" letter-spacing="3">LONGNECK</text>
+  <defs>
+    <linearGradient id="river" x1="85" y1="677" x2="802" y2="724" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#071A24"/>
+      <stop offset=".48" stop-color="#0A2E38"/>
+      <stop offset="1" stop-color="#17102D"/>
+    </linearGradient>
+    <radialGradient id="orb" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(705 190) rotate(90) scale(210)">
+      <stop stop-color="#37E5D2"/>
+      <stop offset=".58" stop-color="#A77BFF" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#05070D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

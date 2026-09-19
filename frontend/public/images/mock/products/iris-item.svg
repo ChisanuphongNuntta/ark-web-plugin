@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+  <title id="title">IRIS item placeholder</title>
+  <desc id="desc">Luxury cyan and gold abstract game item capsule.</desc>
+  <defs>
+    <radialGradient id="g" cx="50%" cy="38%" r="60%">
+      <stop offset="0" stop-color="#37E5D2" stop-opacity=".55"/>
+      <stop offset=".45" stop-color="#A77BFF" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#05070D"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" x2="1">
+      <stop stop-color="#DDBB72"/>
+      <stop offset=".55" stop-color="#fff2bd"/>
+      <stop offset="1" stop-color="#8f6f2f"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="900" fill="#05070D"/>
+  <rect x="48" y="48" width="804" height="804" rx="72" fill="url(#g)" stroke="#37E5D2" stroke-opacity=".35" stroke-width="4"/>
+  <g fill="none" stroke="#DDBB72" stroke-opacity=".45">
+    <path d="M120 610c150-120 510-120 660 0"/>
+    <path d="M150 690c132-74 468-74 600 0"/>
+  </g>
+  <g transform="translate(450 430) rotate(45)">
+    <rect x="-128" y="-128" width="256" height="256" rx="44" fill="#071A24" stroke="url(#gold)" stroke-width="12"/>
+    <rect x="-78" y="-78" width="156" height="156" rx="30" fill="#37E5D2" fill-opacity=".18" stroke="#37E5D2" stroke-width="8"/>
+    <rect x="-34" y="-98" width="68" height="196" rx="34" fill="url(#gold)"/>
+  </g>
+  <circle cx="450" cy="450" r="320" fill="none" stroke="#37E5D2" stroke-opacity=".12" stroke-width="2"/>
+</svg>

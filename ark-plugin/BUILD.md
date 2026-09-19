@@ -24,8 +24,8 @@ From the workspace root:
 & .\ark-plugin\scripts\Build-Plugin.ps1
 ```
 
-The command performs a fresh CMake configure, builds `Release`, verifies the
-expected runtime bundle, and creates:
+The command performs a fresh CMake configure, builds `Release`, runs the plugin
+CTest suite, verifies the expected runtime bundle, and creates:
 
 ```text
 ark-plugin/artifacts/HeartShop-<version>-win-x64-Release/

@@ -8,12 +8,30 @@ import fs from 'fs';
 
 const router = Router();
 const contentController = new ContentController();
+const uploadRoot = path.resolve(process.cwd(), 'public', 'uploads');
+
+const safeFolder = (value: unknown): string => {
+  const folder = typeof value === 'string' && value.length > 0 ? value : 'uploads';
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(folder)) {
+    throw new Error('Invalid upload folder');
+  }
+  return folder;
+};
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const folder = req.body.folder || 'uploads';
-    const uploadPath = path.join(process.cwd(), 'public', 'uploads', folder);
+    let folder: string;
+    try {
+      folder = safeFolder(req.body.folder);
+    } catch (error) {
+      return cb(error as Error, '');
+    }
+    const uploadPath = path.resolve(uploadRoot, folder);
+    if (!uploadPath.startsWith(`${uploadRoot}${path.sep}`)) {
+      return cb(new Error('Invalid upload path'), '');
+    }
+    (req as any).uploadFolder = folder;
 
     // Create directory if not exists
     if (!fs.existsSync(uploadPath)) {
@@ -23,7 +41,16 @@ const storage = multer.diskStorage({
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
+    const extensions: Record<string, string> = {
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/gif': '.gif',
+      'image/webp': '.webp',
+      'video/mp4': '.mp4',
+      'video/webm': '.webm',
+    };
+    const ext = extensions[file.mimetype];
+    if (!ext) return cb(new Error('Invalid file type'), '');
     const filename = `${uuidv4()}${ext}`;
     cb(null, filename);
   },
@@ -33,14 +60,11 @@ const fileFilter = (req: any, file: any, cb: any) => {
   // Allowed file types
   const allowedMimes = [
     'image/jpeg',
-    'image/jpg',
     'image/png',
     'image/gif',
     'image/webp',
-    'image/svg+xml',
     'video/mp4',
     'video/webm',
-    'application/pdf',
   ];
 
   if (allowedMimes.includes(file.mimetype)) {

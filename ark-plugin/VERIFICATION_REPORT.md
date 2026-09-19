@@ -1,91 +1,76 @@
 # HeartShop Plugin Verification Report
 
-Date: 2026-06-20
+Date: 2026-06-20  
 Canonical target: `ark-plugin/` -> `HeartShop.dll`
-Compiler: MSVC 19.38.33133.0 (Visual Studio 2022, 14.38.33130)
-CMake: Visual Studio 17 2022 generator, x64
 
----
+## Verified locally
 
-## Milestone 1 — Reproducible Build + Idempotency Journal ✅
+- Fresh Visual Studio 2022 x64 Release configure and build passed.
+- CTest passed 4/4: `DeliveryJournalTests`, `WalletNotificationsTests`,
+  `RequestPolicyTests`, and `RequestSigningTests`.
+- Two successful final builds were byte-identical. DLL SHA-256:
+  `7f8fea5719443557d7dad62926f3f65e683bb7f93d198fec3cfd5be2d89fff74`.
+- Production TLS rejected the current untrusted localhost certificate.
+- HMAC requests use a 128-bit Windows CSPRNG nonce and sign the exact path and
+  query sent over WinHTTP.
+- Request signing has deterministic C++ unit coverage for SHA-256 body hashes,
+  HMAC-SHA256, canonical string ordering, nonce format, and signed endpoint
+  classification, including Backend flexible-auth legacy plugin routes.
+- HTTP is limited to eight concurrent workers. The circuit opens after five
+  final transient failures for 30 seconds and permits one half-open probe.
+- GET/HEAD retry at most twice with 250/500 ms backoff. Mutating requests are
+  never retried automatically.
+- Delivery claim/lease/complete/fail/release is integrated with the Backend
+  contract. Completion is journalled durably before acknowledgement.
+- Duplicate completed deliveries replay only the acknowledgement. Prepared or
+  payload-mismatched records block a second game mutation.
+- A forced `MoveFileEx` persistence failure proves that an unsuccessful journal
+  completion rolls back to `prepared` and cannot be acknowledged as durable.
+- HTTP callbacks that access Unreal objects execute on the game thread; plugin
+  unload waits for request workers.
+- Heartbeat reports the actual ArkApi version and circuit state and does not
+  advertise the unsafe P2P lock capability.
+- Server1 runtime smoke test loaded `HeartShop.dll` under ArkApi 3.56, accepted
+  a ServerCredential signed heartbeat, rejected nonce replay, and initialized
+  after legacy plugin routes were moved to HMAC flexible auth. Signed `/verify`,
+  `/deliveries/claim`, and `/wallet/events` smoke requests returned 200.
 
-- Fresh Visual Studio 2022 x64 Release configure and build (`--fresh`).
-- CTest: `DeliveryJournalTests` 1/1 passed.
-- Two sequential builds from identical inputs produced the same DLL SHA-256:
-  `86992a5f0a389782e6996680c133c53c671fb48431e2dd4f7cab148f4f5e1346`
-  (502272 bytes; verified `build-canonical` vs `build-verify`).
-- `/Brepro` linker flag suppresses volatile PE timestamps, enabling binary
-  reproducibility across separate build invocations on the same machine.
-- Durable journal tests cover prepared duplicate blocking, completion replay,
-  changed-payload rejection, known-failure retry, and restart recovery.
-- Item and dino completion is persisted before backend acknowledgement. A lost
-  acknowledgement causes acknowledgement replay, not asset replay.
+## Backend contract status
 
-## Milestone 2 — HMAC-SHA256 Request Signing ✅
+- CR-PLUGIN-001 (HMAC/scoped credentials): implemented by Backend and Plugin.
+- CR-PLUGIN-002/003 (claim lease and delivery receipt): implemented by Backend
+  and Plugin.
+- CR-PLUGIN-004 (P2P lock): routes exist but confirm is not transactional or
+  idempotent and cancel/expiry-return is missing. `/sell` must remain blocked
+  from the new lock flow; see `P2P_SAFETY_AUDIT.md`.
+- CR-PLUGIN-005 (compatibility): Plugin sends telemetry, but Backend does not
+  yet persist it or return minimum/supported protocol versions.
 
-- All delivery and heartbeat endpoints are HMAC-SHA256 signed.
-- Signed endpoints: `/heartbeat`, `/deliveries/claim`, `/deliveries/**`,
-  `/market/prepare-lock`, `/market/confirm-lock`.
-- Headers sent: `X-Plugin-Key-Id`, `X-Plugin-Version`, `X-Request-Timestamp`,
-  `X-Request-Nonce`, `X-Content-SHA256`, `X-Signature`.
-- Canonical string: `METHOD\nPATH\nTIMESTAMP\nNONCE\nSHA256(body)`.
-- Invalid localhost certificate rejected (`SEC_E_UNTRUSTED_ROOT`); diagnostic
-  insecure access received HTTP 401 without credential.
-- HTTP callbacks that touch Unreal state execute through the game-thread
-  dispatcher. Plugin unload waits for active request workers.
-- Capability heartbeat reports `pluginVersion`, `buildSha256`, and:
-  `["hmac_signatures", "atomic_claims", "p2p_locks"]`.
+## Sandbox verification
 
-## Milestone 3 — Delivery Claim/Lease + Idempotency ✅
+The sandbox is reachable but its localhost certificate is not currently trusted.
+For local development only, Server1 currently uses the localhost-only invalid
+certificate bypass. For production, install a trusted certificate/CA and set
+`Security.AllowInvalidCertificates` back to `false`.
 
-`PollPendingOrders()` (HeartShop.cpp:508-711) implements the full lease flow:
-
-1. **Claim**: `POST /plugin/deliveries/claim` (replaces old GET orders/pending).
-2. **Offline player**: `POST /deliveries/{key}/release` returns to backend queue.
-3. **Online player — Journal guard** via `PrepareDelivery` / `Journal->Begin`:
-   - `AlreadyCompleted` -> skips game mutation, re-sends
-     `POST /deliveries/{key}/complete` with stored `receiptId` (ACK replay).
-   - `UncertainPrepared` / `PayloadMismatch` / `PersistenceError` ->
-     `POST /deliveries/{key}/fail`; journal blocks duplicate asset grant.
-   - `Started` -> proceeds to game mutation.
-4. **Game mutation**:
-   - `order`: `GiveItemToPlayer` (blueprint, quantity, quality).
-   - `dino_marketplace`: `SpawnDinoForPlayer` (blueprint, gender, level).
-   - Success: `Journal->Complete` persisted first, then
-     `POST /deliveries/{key}/complete` with `localJournalReceiptId`.
-   - Failure: `Journal->Abort` + `POST /deliveries/{key}/fail` with error.
-
-**Idempotency guarantee**: a duplicate `deliveryKey` with identical payload
-returns `AlreadyCompleted` — no game mutation is re-executed. A changed payload
-for an existing ID is blocked as `PayloadMismatch`.
-
----
-
-## Not yet provable without Backend contract/fixtures
-
-- Atomic delivery claim/lease server ownership (backend-side enforcement).
-- P2P prepare-lock/remove/confirm, return, and delivery receipt.
-- Safe persistent retry/offline queue and circuit breaker for mutating requests.
-- Version/capability negotiation in heartbeat (backend acknowledgement).
-- Nonce replay rejection (backend enforcement).
-
-These are specified as CR-PLUGIN-001 through CR-PLUGIN-005 in
-`INTEGRATION_AUDIT.md`. Implementing them unilaterally would change the API
-contract and is intentionally blocked pending Backend sandbox fixtures.
-
----
-
-## Sandbox smoke test
-
-Install a trusted certificate for the sandbox, provide a scoped credential only
-through the process environment, then run:
+After installing the sandbox CA and obtaining an issued `keyId`/`secret`, run:
 
 ```powershell
-$env:HEARTSHOP_API_KEY = '<sandbox-scoped-secret>'
+$env:HEARTSHOP_KEY_ID = '<sandbox-key-id>'
+$env:HEARTSHOP_HMAC_SECRET = '<sandbox-secret>'
 .\tests\Invoke-BackendSandboxTest.ps1
-Remove-Item Env:\HEARTSHOP_API_KEY
+Remove-Item Env:\HEARTSHOP_KEY_ID, Env:\HEARTSHOP_HMAC_SECRET
 ```
 
-The smoke test checks TLS verification, pending item/dino claim, idempotent
-re-claim (duplicate blocking), offline lease release, and heartbeat. It does
-not settle deliveries or mutate P2P assets without backend-issued fixtures.
+The test sends a signed heartbeat and proves replay rejection by submitting the
+same timestamp, nonce, body hash, and signature twice. Secrets are not written
+to disk.
+
+## Remaining gates
+
+- Backend P2P prepare/confirm must become transactional and idempotent and gain
+  abort, expiry reconciliation, return jobs, and stable receipts.
+- Backend heartbeat must return a compatibility verdict and supported protocol
+  range.
+- A Backend-issued delivery fixture is required for end-to-end lease-expiry and
+  duplicate-completion testing against the live sandbox.

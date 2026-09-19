@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import crypto from 'crypto';
 import prisma from '../../src/config/database.js';
 import { authenticatePluginFlexible } from '../../src/middlewares/auth.js';
-import { encryptDeterministic } from '../../src/utils/encryption.js';
+import { encrypt, encryptDeterministic } from '../../src/utils/encryption.js';
 import redis from '../../src/config/redis.js';
 
 vi.mock('../../src/config/redis.js', () => ({
@@ -27,7 +27,7 @@ describe('CR-PLUGIN-006 — flexible legacy plugin auth (hmacAuth + X-API-Key ov
       id: 'cred-flex-1',
       serverId: 5,
       keyId,
-      secretEnc: encryptDeterministic(secret),
+      secretEnc: encrypt(secret),
       status: 'active',
     });
     db.server.findUnique.mockResolvedValueOnce({ id: 5, name: 'srv5', isActive: true });
@@ -74,6 +74,7 @@ describe('CR-PLUGIN-006 — flexible legacy plugin auth (hmacAuth + X-API-Key ov
       apiKey: encryptDeterministic('legacy-key-006'),
       apiKeyIp: null,
       apiKeyCreatedAt: null,
+      apiKeyServerId: 1,
       isBanned: false,
     });
     db.user.update.mockResolvedValueOnce({});

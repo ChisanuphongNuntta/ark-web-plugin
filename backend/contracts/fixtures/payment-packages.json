@@ -1,0 +1,15 @@
+{
+  "packages": [
+    {
+      "id": "pkg-300",
+      "slug": "iris-300",
+      "name": "300 + 10 Iris Coin",
+      "priceThb": "99",
+      "points": "300",
+      "bonusPoints": "10",
+      "totalPoints": "310",
+      "isActive": true,
+      "sortOrder": 20
+    }
+  ]
+}

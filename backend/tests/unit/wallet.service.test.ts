@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import prisma from '../../src/config/database.js';
-import walletService from '../../src/services/wallet.service.js';
+import walletService, { walletRequestHashFor } from '../../src/services/wallet.service.js';
 
 const db = prisma as any;
 
@@ -20,17 +20,19 @@ describe('WalletService', () => {
   });
 
   it('returns the original transaction for a repeated idempotency key', async () => {
+    const input = {
+      idempotencyKey: 'same-key', type: 'credit',
+      entries: [{ accountKey: 'a', amount: 10n }, { accountKey: 'b', amount: -10n }],
+    };
     const existing = {
       id: 'tx-1', idempotencyKey: 'same-key', type: 'credit', createdAt: new Date(),
+      requestHash: walletRequestHashFor(input, input.entries),
       entries: [{ id: 'entry-1', amount: 10n, balanceAfter: 10n, account: { key: 'a', type: 'available', currency: 'IC' } }],
     };
     const tx = { ledgerTransaction: { findUnique: vi.fn().mockResolvedValue(existing) } };
     db.$transaction.mockImplementationOnce((callback: any) => callback(tx));
 
-    const result = await walletService.post({
-      idempotencyKey: 'same-key', type: 'credit',
-      entries: [{ accountKey: 'a', amount: 10n }, { accountKey: 'b', amount: -10n }],
-    });
+    const result = await walletService.post(input);
 
     expect(result.id).toBe('tx-1');
     expect(result.entries[0].amount).toBe('10');
@@ -44,6 +46,7 @@ describe('WalletService', () => {
       ledgerTransaction: {
         findUnique: vi.fn().mockResolvedValue(null),
         create: vi.fn().mockResolvedValue({ id: 'tx-zero' }),
+        update: vi.fn().mockResolvedValue({}),
         findUniqueOrThrow: vi.fn().mockImplementation(() => ({
           id: 'tx-zero', idempotencyKey: 'zero-sum', type: 'credit', createdAt: new Date(),
           entries: createdEntries.map((e, i) => ({ id: `e${i}`, amount: e.amount, balanceAfter: e.balanceAfter, account: { key: e.accountId, type: e.accountId, currency: 'IC' } })),

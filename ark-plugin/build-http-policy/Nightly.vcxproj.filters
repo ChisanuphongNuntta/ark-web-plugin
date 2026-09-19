@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="F:\ARK Iris\Heart-Plugin\ark-plugin\build-http-policy\CMakeFiles\2bdb84f6da67924ddf36bfbc88f903fe\Nightly.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="F:\ARK Iris\Heart-Plugin\ark-plugin\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="F:\ARK Iris\Heart-Plugin\ark-plugin\build-http-policy\CMakeFiles\Nightly" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{01819769-E1DA-3997-BB0E-DEB90159AA49}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -28,6 +28,8 @@ export class ServerController {
           chatTag: true,
           chatColor: true,
           chatIcon: true,
+          drainMode: true,
+          capabilities: true,
         },
         orderBy: { id: 'asc' },
       });
@@ -42,6 +44,8 @@ export class ServerController {
         chatTag: server.chatTag,
         chatColor: server.chatColor,
         chatIcon: server.chatIcon,
+        drainMode: server.drainMode,
+        supportsDinoDelivery: (server.capabilities ?? []).includes('delivery.dino.v2'),
       }));
 
       res.json({ servers: result });

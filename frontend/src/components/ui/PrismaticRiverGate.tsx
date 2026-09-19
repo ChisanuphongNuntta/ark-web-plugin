@@ -99,6 +99,7 @@ export function PrismaticRiverGate() {
           </a>
           
           <button
+            type="button"
             onClick={toggleMotion}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/10 bg-black/40 backdrop-blur-md px-5 py-2.5 text-xs font-bold text-iris-pearl hover:bg-white/5 transition"
             aria-label={motionDisabled ? "เปิดใช้งานเอฟเฟกต์การเคลื่อนไหว" : "ปิดเอฟเฟกต์การเคลื่อนไหว"}

@@ -13,6 +13,8 @@
     "transactionType": { "type": "string" },
     "referenceType": { "type": ["string", "null"] },
     "referenceId": { "type": ["string", "null"] },
+    "playerSteamId": { "type": ["string", "null"] },
+    "userId": { "type": ["string", "null"] },
     "entries": {
       "type": "array",
       "minItems": 2,

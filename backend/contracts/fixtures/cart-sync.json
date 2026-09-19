@@ -1,0 +1,55 @@
+{
+  "_note": "POST /cart/sync — bulk atomic replace (M3, §16). 'request' is the body the frontend sends; 'response' is the replaced server cart (same shape as GET /cart). Duplicate (productId, serverId) lines are merged; quantity <= 0 lines are dropped.",
+  "request": {
+    "lines": [
+      { "productId": 1, "serverId": 1, "quantity": 2 },
+      { "productId": 2, "serverId": 1, "quantity": 1 }
+    ]
+  },
+  "response": {
+    "id": "8b9db8d7-048a-4422-9df7-f6558e0a300d",
+    "userId": "9a75908e-5b12-4217-ba6e-cc7887e5b56a",
+    "createdAt": "2026-06-20T03:00:00.000Z",
+    "updatedAt": "2026-06-20T03:10:00.000Z",
+    "items": [
+      {
+        "id": "e939a3f2-1b6d-4952-ba63-5ffc4d3bc30f",
+        "cartId": "8b9db8d7-048a-4422-9df7-f6558e0a300d",
+        "productId": 1,
+        "serverId": 1,
+        "quantity": 2,
+        "createdAt": "2026-06-20T03:10:00.000Z",
+        "updatedAt": "2026-06-20T03:10:00.000Z",
+        "product": {
+          "id": 1,
+          "name": "Ascendant Longneck Rifle",
+          "price": 500,
+          "itemBlueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponOneShotRifle.PrimalItem_WeaponOneShotRifle'",
+          "quantity": 1,
+          "quality": 5,
+          "isBlueprint": false
+        },
+        "server": { "id": 1, "name": "IRIS-PVE-TheIsland-01", "map": "TheIsland" }
+      },
+      {
+        "id": "f1a2b3c4-2c7e-4a63-9b74-6aad5e4cd41a",
+        "cartId": "8b9db8d7-048a-4422-9df7-f6558e0a300d",
+        "productId": 2,
+        "serverId": 1,
+        "quantity": 1,
+        "createdAt": "2026-06-20T03:10:00.000Z",
+        "updatedAt": "2026-06-20T03:10:00.000Z",
+        "product": {
+          "id": 2,
+          "name": "Tek Sword",
+          "price": 1200,
+          "itemBlueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponTekSword.PrimalItem_WeaponTekSword'",
+          "quantity": 1,
+          "quality": 5,
+          "isBlueprint": false
+        },
+        "server": { "id": 1, "name": "IRIS-PVE-TheIsland-01", "map": "TheIsland" }
+      }
+    ]
+  }
+}

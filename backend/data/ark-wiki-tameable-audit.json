@@ -1,0 +1,5071 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-12T16:03:09.794Z",
+  "source": "https://ark.wiki.gg/wiki/Creature",
+  "sourceApi": "https://ark.wiki.gg/api.php",
+  "sourceLicense": "CC BY-NC-SA 4.0; factual blueprint audit only, no Wiki media copied into the commercial catalog",
+  "policy": "Legacy IRIS ArkShop config remains authoritative for price and activation. Wiki-only rows require manual economic/safety review.",
+  "stats": {
+    "wikiTameableRows": 312,
+    "officialAseRows": 238,
+    "configured": 202,
+    "manualReview": 36
+  },
+  "creatures": [
+    {
+      "name": "Aberrant Achatina",
+      "article": "Aberrant Achatina",
+      "entityId": "Achatina_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Achatina/Achatina_Character_BP_Aberrant.Achatina_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Achatina/Achatina_Character_BP_Aberrant.Achatina_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantachatina"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Anglerfish",
+      "article": "Aberrant Anglerfish",
+      "entityId": "Angler_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Anglerfish/Angler_Character_BP_Aberrant.Angler_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Anglerfish/Angler_Character_BP_Aberrant.Angler_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantanglerfish"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Ankylosaurus",
+      "article": "Aberrant Ankylosaurus",
+      "entityId": "Ankylo_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Ankylo/Ankylo_Character_BP_Aberrant.Ankylo_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Ankylo/Ankylo_Character_BP_Aberrant.Ankylo_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantankylosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Araneo",
+      "article": "Aberrant Araneo",
+      "entityId": "SpiderS_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Spider-Small/SpiderS_Character_BP_Aberrant.SpiderS_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Spider-Small/SpiderS_Character_BP_Aberrant.SpiderS_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantaraneo"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Arthropluera",
+      "article": "Aberrant Arthropluera",
+      "entityId": "Arthro_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Arthropluera/Arthro_Character_BP_Aberrant.Arthro_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Arthropluera/Arthro_Character_BP_Aberrant.Arthro_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantarthropluera"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Baryonyx",
+      "article": "Aberrant Baryonyx",
+      "entityId": "Baryonyx_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Baryonyx/Baryonyx_Character_BP_Aberrant.Baryonyx_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Baryonyx/Baryonyx_Character_BP_Aberrant.Baryonyx_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantbaryonyx"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Beelzebufo",
+      "article": "Aberrant Beelzebufo",
+      "entityId": "Toad_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Toad/Toad_Character_BP_Aberrant.Toad_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Toad/Toad_Character_BP_Aberrant.Toad_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantbeelzebufo"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Carbonemys",
+      "article": "Aberrant Carbonemys",
+      "entityId": "Turtle_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Turtle/Turtle_Character_BP_Aberrant.Turtle_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Turtle/Turtle_Character_BP_Aberrant.Turtle_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantcarbonemys"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Carnotaurus",
+      "article": "Aberrant Carnotaurus",
+      "entityId": "Carno_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Carno/Carno_Character_BP_Aberrant.Carno_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Carno/Carno_Character_BP_Aberrant.Carno_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantcarnotaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Coelacanth",
+      "article": "Aberrant Coelacanth",
+      "entityId": "Coel_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Coelacanth/Coel_Character_BP_Aberrant.Coel_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Coelacanth/Coel_Character_BP_Aberrant.Coel_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Aberrant Dimetrodon",
+      "article": "Aberrant Dimetrodon",
+      "entityId": "Dimetro_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Dimetrodon/Dimetro_Character_BP_Aberrant.Dimetro_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Dimetrodon/Dimetro_Character_BP_Aberrant.Dimetro_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantdimetrodon"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Dimorphodon",
+      "article": "Aberrant Dimorphodon",
+      "entityId": "Dimorph_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Dimorphodon/Dimorph_Character_BP_Aberrant.Dimorph_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Dimorphodon/Dimorph_Character_BP_Aberrant.Dimorph_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantdimorphodon"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Diplocaulus",
+      "article": "Aberrant Diplocaulus",
+      "entityId": "Diplocaulus_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Diplocaulus/Diplocaulus_Character_BP_Aberrant.Diplocaulus_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Diplocaulus/Diplocaulus_Character_BP_Aberrant.Diplocaulus_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantdiplocaulus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Diplodocus",
+      "article": "Aberrant Diplodocus",
+      "entityId": "Diplodocus_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Diplodocus/Diplodocus_Character_BP_Aberrant.Diplodocus_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Diplodocus/Diplodocus_Character_BP_Aberrant.Diplodocus_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantdiplodocus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Dire Bear",
+      "article": "Aberrant Dire Bear",
+      "entityId": "Direbear_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Direbear/Direbear_Character_BP_Aberrant.Direbear_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Direbear/Direbear_Character_BP_Aberrant.Direbear_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantdirebear"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Dodo",
+      "article": "Aberrant Dodo",
+      "entityId": "Dodo_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP_Aberrant.Dodo_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP_Aberrant.Dodo_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantdodo"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Doedicurus",
+      "article": "Aberrant Doedicurus",
+      "entityId": "Doed_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Doedicurus/Doed_Character_BP_Aberrant.Doed_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Doedicurus/Doed_Character_BP_Aberrant.Doed_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantdoedicurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Dung Beetle",
+      "article": "Aberrant Dung Beetle",
+      "entityId": "DungBeetle_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/DungBeetle/DungBeetle_Character_BP_Aberrant.DungBeetle_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/DungBeetle/DungBeetle_Character_BP_Aberrant.DungBeetle_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantdungbeetle"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Electrophorus",
+      "article": "Aberrant Electrophorus",
+      "entityId": "Eel_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Eel/Eel_Character_BP_Aberrant.Eel_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Eel/Eel_Character_BP_Aberrant.Eel_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantelectrophorus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Equus",
+      "article": "Aberrant Equus",
+      "entityId": "Equus_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Equus/Equus_Character_BP_Aberrant.Equus_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Equus/Equus_Character_BP_Aberrant.Equus_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantequus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Gigantopithecus",
+      "article": "Aberrant Gigantopithecus",
+      "entityId": "Bigfoot_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Bigfoot/Bigfoot_Character_BP_Aberrant.Bigfoot_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Bigfoot/Bigfoot_Character_BP_Aberrant.Bigfoot_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantgigantopithecus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Iguanodon",
+      "article": "Aberrant Iguanodon",
+      "entityId": "Iguanodon_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Iguanodon/Iguanodon_Character_BP_Aberrant.Iguanodon_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Iguanodon/Iguanodon_Character_BP_Aberrant.Iguanodon_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantiguanodon"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Lystrosaurus",
+      "article": "Aberrant Lystrosaurus",
+      "entityId": "Lystro_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Lystrosaurus/Lystro_Character_BP_Aberrant.Lystro_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Lystrosaurus/Lystro_Character_BP_Aberrant.Lystro_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantlystrosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Manta",
+      "article": "Aberrant Manta",
+      "entityId": "Manta_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Manta/Manta_Character_BP_Aberrant.Manta_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Manta/Manta_Character_BP_Aberrant.Manta_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantmanta"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Megalania",
+      "article": "Aberrant Megalania",
+      "entityId": "Megalania_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Megalania/Megalania_Character_BP_Aberrant.Megalania_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Megalania/Megalania_Character_BP_Aberrant.Megalania_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantmegalania"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Megalosaurus",
+      "article": "Aberrant Megalosaurus",
+      "entityId": "Megalosaurus_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Megalosaurus/Megalosaurus_Character_BP_Aberrant.Megalosaurus_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Megalosaurus/Megalosaurus_Character_BP_Aberrant.Megalosaurus_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantmegalosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Moschops",
+      "article": "Aberrant Moschops",
+      "entityId": "Moschops_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Moschops/Moschops_Character_BP_Aberrant.Moschops_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Moschops/Moschops_Character_BP_Aberrant.Moschops_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantmoschops"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Otter",
+      "article": "Aberrant Otter",
+      "entityId": "Otter_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Otter/Otter_Character_BP_Aberrant.Otter_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Otter/Otter_Character_BP_Aberrant.Otter_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantotter"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Oviraptor",
+      "article": "Aberrant Oviraptor",
+      "entityId": "Oviraptor_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Oviraptor/Oviraptor_Character_BP_Aberrant.Oviraptor_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Oviraptor/Oviraptor_Character_BP_Aberrant.Oviraptor_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Aberrant Ovis",
+      "article": "Aberrant Ovis",
+      "entityId": "Sheep_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Sheep/Sheep_Character_BP_Aberrant.Sheep_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Sheep/Sheep_Character_BP_Aberrant.Sheep_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantovis"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Paraceratherium",
+      "article": "Aberrant Paraceratherium",
+      "entityId": "Paracer_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Paraceratherium/Paracer_Character_BP_Aberrant.Paracer_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Paraceratherium/Paracer_Character_BP_Aberrant.Paracer_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantparaceratherium"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Parasaur",
+      "article": "Aberrant Parasaur",
+      "entityId": "Para_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Para/Para_Character_BP_Aberrant.Para_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Para/Para_Character_BP_Aberrant.Para_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantparasaur"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Piranha",
+      "article": "Aberrant Piranha",
+      "entityId": "Piranha_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Piranha/Piranha_Character_BP_Aberrant.Piranha_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Piranha/Piranha_Character_BP_Aberrant.Piranha_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Aberrant Pulmonoscorpius",
+      "article": "Aberrant Pulmonoscorpius",
+      "entityId": "Scorpion_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Scorpion/Scorpion_Character_BP_Aberrant.Scorpion_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Scorpion/Scorpion_Character_BP_Aberrant.Scorpion_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantpulmonoscorpius"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Purlovia",
+      "article": "Aberrant Purlovia",
+      "entityId": "Purlovia_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Purlovia/Purlovia_Character_BP_Aberrant.Purlovia_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Purlovia/Purlovia_Character_BP_Aberrant.Purlovia_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantpurlovia"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Raptor",
+      "article": "Aberrant Raptor",
+      "entityId": "Raptor_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Raptor/Raptor_Character_BP_Aberrant.Raptor_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Raptor/Raptor_Character_BP_Aberrant.Raptor_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantraptor"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Salmon",
+      "article": "Aberrant Salmon",
+      "entityId": "Salmon_Character_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Salmon/Salmon_Character_Aberrant.Salmon_Character_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Salmon/Salmon_Character_Aberrant.Salmon_Character_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Aberrant Sarco",
+      "article": "Aberrant Sarco",
+      "entityId": "Sarco_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Sarco/Sarco_Character_BP_Aberrant.Sarco_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Sarco/Sarco_Character_BP_Aberrant.Sarco_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantsarco"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Spino",
+      "article": "Aberrant Spino",
+      "entityId": "Spino_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Spino/Spino_Character_BP_Aberrant.Spino_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Spino/Spino_Character_BP_Aberrant.Spino_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantspinosaur"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Stegosaurus",
+      "article": "Aberrant Stegosaurus",
+      "entityId": "Stego_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Stego/Stego_Character_BP_Aberrant.Stego_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Stego/Stego_Character_BP_Aberrant.Stego_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberrantstegosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Titanoboa",
+      "article": "Aberrant Titanoboa",
+      "entityId": "BoaFrill_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/BoaFrill/BoaFrill_Character_BP_Aberrant.BoaFrill_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/BoaFrill/BoaFrill_Character_BP_Aberrant.BoaFrill_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberranttitanoboa"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Triceratops",
+      "article": "Aberrant Triceratops",
+      "entityId": "Trike_Character_BP_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Trike/Trike_Character_BP_Aberrant.Trike_Character_BP_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Trike/Trike_Character_BP_Aberrant.Trike_Character_BP_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "aberranttriceratops"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Aberrant Trilobite",
+      "article": "Aberrant Trilobite",
+      "entityId": "Trilobite_Character_Aberrant_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Trilobite/Trilobite_Character_Aberrant.Trilobite_Character_Aberrant'",
+      "taxonomicGroup": "Aberrant Creatures",
+      "dlcs": [
+        "Aberration"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Trilobite/Trilobite_Character_Aberrant.Trilobite_Character_Aberrant'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Achatina",
+      "article": "Achatina",
+      "entityId": "Achatina_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Achatina/Achatina_Character_BP.Achatina_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Achatina/Achatina_Character_BP.Achatina_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "achatina1",
+        "achatina2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Allosaurus",
+      "article": "Allosaurus",
+      "entityId": "Allo_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Allosaurus/Allo_Character_BP.Allo_Character_BP_C'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Astraeos",
+        "Lost Colony",
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Allosaurus/Allo_Character_BP.Allo_Character_BP_C'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "allosaurus1",
+        "allosaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Anglerfish",
+      "article": "Anglerfish",
+      "entityId": "Angler_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Anglerfish/Angler_Character_BP.Angler_Character_BP'",
+      "taxonomicGroup": "Fish",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Anglerfish/Angler_Character_BP.Angler_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "anglerfish1",
+        "anglerfish2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Araneo",
+      "article": "Araneo",
+      "entityId": "SpiderS_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Spider-Small/SpiderS_Character_BP.SpiderS_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Spider-Small/SpiderS_Character_BP.SpiderS_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "araneo1",
+        "araneo2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Archaeopteryx",
+      "article": "Archaeopteryx",
+      "entityId": "Archa_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Archaeopteryx/Archa_Character_BP.Archa_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Archaeopteryx/Archa_Character_BP.Archa_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "archaeopteryx1",
+        "archaeopteryx2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Argentavis",
+      "article": "Argentavis",
+      "entityId": "Argent_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Argentavis/Argent_Character_BP.Argent_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Argentavis/Argent_Character_BP.Argent_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "argentavis1",
+        "argentavis2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Arthropluera",
+      "article": "Arthropluera",
+      "entityId": "Arthro_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Arthropluera/Arthro_Character_BP.Arthro_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Arthropluera/Arthro_Character_BP.Arthro_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "arthropluera1",
+        "arthropluera2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Astrocetus",
+      "article": "Astrocetus",
+      "entityId": "SpaceWhale_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/SpaceWhale/SpaceWhale_Character_BP.SpaceWhale_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Genesis: Part 1",
+        "Genesis: Part 2"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/SpaceWhale/SpaceWhale_Character_BP.SpaceWhale_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "astrocetus1",
+        "astrocetus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Astrodelphis",
+      "article": "Astrodelphis",
+      "entityId": "SpaceDolphin_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/SpaceDolphin/SpaceDolphin_Character_BP.SpaceDolphin_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Genesis: Part 2",
+        "Genesis: Part 2"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/SpaceDolphin/SpaceDolphin_Character_BP.SpaceDolphin_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "astrodelphis1",
+        "astrodelphis2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Baryonyx",
+      "article": "Baryonyx",
+      "entityId": "Baryonyx_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Baryonyx/Baryonyx_Character_BP.Baryonyx_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Baryonyx/Baryonyx_Character_BP.Baryonyx_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "baryonyx1",
+        "baryonyx2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Basilisk",
+      "article": "Basilisk",
+      "entityId": "Basilisk_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Aberration/Dinos/Basilisk/Basilisk_Character_BP.Basilisk_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "Aberration",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Aberration",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Aberration/Dinos/Basilisk/Basilisk_Character_BP.Basilisk_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "basilisk1",
+        "basilisk2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Basilosaurus",
+      "article": "Basilosaurus",
+      "entityId": "Basilosaurus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Basilosaurus/Basilosaurus_Character_BP.Basilosaurus_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Basilosaurus/Basilosaurus_Character_BP.Basilosaurus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "basilosaurus1",
+        "basilosaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Beelzebufo",
+      "article": "Beelzebufo",
+      "entityId": "Toad_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Toad/Toad_Character_BP.Toad_Character_BP'",
+      "taxonomicGroup": "Amphibians",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Toad/Toad_Character_BP.Toad_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "beelzebufo1",
+        "beelzebufo2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Blood Crystal Wyvern",
+      "article": "Blood Crystal Wyvern",
+      "entityId": "CrystalWyvern_Character_BP_Blood_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/CrystalWyvern/CrystalWyvern_Character_BP_Blood.CrystalWyvern_Character_BP_Blood'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "Crystal Isles"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/CrystalWyvern/CrystalWyvern_Character_BP_Blood.CrystalWyvern_Character_BP_Blood'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "bloodcrystalwyvern1",
+        "bloodcrystalwyvern2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Bloodstalker",
+      "article": "Bloodstalker",
+      "entityId": "BogSpider_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BogSpider/BogSpider_Character_BP.BogSpider_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Genesis: Part 1",
+        "Genesis: Part 2"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BogSpider/BogSpider_Character_BP.BogSpider_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "bloodstalker1",
+        "bloodstalker2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Brontosaurus",
+      "article": "Brontosaurus",
+      "entityId": "Sauropod_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Sauropod/Sauropod_Character_BP.Sauropod_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Sauropod/Sauropod_Character_BP.Sauropod_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "brontosaurus1",
+        "brontosaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Bulbdog",
+      "article": "Bulbdog",
+      "entityId": "LanternPug_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Aberration/Dinos/LanternPug/LanternPug_Character_BP.LanternPug_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Fjordur",
+        "Astraeos",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Aberration/Dinos/LanternPug/LanternPug_Character_BP.LanternPug_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "bulbdog1",
+        "bulbdog2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Carbonemys",
+      "article": "Carbonemys",
+      "entityId": "Turtle_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Turtle/Turtle_Character_BP.Turtle_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Turtle/Turtle_Character_BP.Turtle_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "carbonemys1",
+        "carbonemys2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Carnotaurus",
+      "article": "Carnotaurus",
+      "entityId": "Carno_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Carno/Carno_Character_BP.Carno_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Carno/Carno_Character_BP.Carno_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "carnotaurus1",
+        "carnotaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Castoroides",
+      "article": "Castoroides",
+      "entityId": "Beaver_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Beaver/Beaver_Character_BP.Beaver_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Beaver/Beaver_Character_BP.Beaver_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "castoroides1",
+        "castoroides2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Chalicotherium",
+      "article": "Chalicotherium",
+      "entityId": "Chalico_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Chalicotherium/Chalico_Character_BP.Chalico_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Chalicotherium/Chalico_Character_BP.Chalico_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "chalicotherium1",
+        "chalicotherium2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Coelacanth",
+      "article": "Coelacanth",
+      "entityId": "Coel_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Coelacanth/Coel_Character_BP.Coel_Character_BP'",
+      "taxonomicGroup": "Fish",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Coelacanth/Coel_Character_BP.Coel_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Compy",
+      "article": "Compy",
+      "entityId": "Compy_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Compy/Compy_Character_BP.Compy_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Compy/Compy_Character_BP.Compy_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "compy1",
+        "compy2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Crystal Wyvern",
+      "article": "Crystal Wyvern",
+      "entityId": "CrystalWyvern_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/CrystalWyvern/CrystalWyvern_Character_BP.CrystalWyvern_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Crystal Isles"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/CrystalWyvern/CrystalWyvern_Character_BP.CrystalWyvern_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Daeodon",
+      "article": "Daeodon",
+      "entityId": "Daeodon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Daeodon/Daeodon_Character_BP.Daeodon_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Daeodon/Daeodon_Character_BP.Daeodon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "daeodon1",
+        "daeodon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Desert Titan",
+      "article": "Desert Titan",
+      "entityId": "DesertKaiju_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Extinction/Dinos/DesertKaiju/DesertKaiju_Character_BP.DesertKaiju_Character_BP'",
+      "taxonomicGroup": "Bosses",
+      "dlcs": [
+        "Extinction"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Extinction/Dinos/DesertKaiju/DesertKaiju_Character_BP.DesertKaiju_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    },
+    {
+      "name": "Dimetrodon",
+      "article": "Dimetrodon",
+      "entityId": "Dimetro_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Dimetrodon/Dimetro_Character_BP.Dimetro_Character_BP'",
+      "taxonomicGroup": "Synapsids",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Dimetrodon/Dimetro_Character_BP.Dimetro_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "dimetrodon1",
+        "dimetrodon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Dimorphodon",
+      "article": "Dimorphodon",
+      "entityId": "Dimorph_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Dimorphodon/Dimorph_Character_BP.Dimorph_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Dimorphodon/Dimorph_Character_BP.Dimorph_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "dimorphodon1",
+        "dimorphodon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Diplocaulus",
+      "article": "Diplocaulus",
+      "entityId": "Diplocaulus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Diplocaulus/Diplocaulus_Character_BP.Diplocaulus_Character_BP'",
+      "taxonomicGroup": "Amphibians",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Diplocaulus/Diplocaulus_Character_BP.Diplocaulus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "diplocaulus1",
+        "diplocaulus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Diplodocus",
+      "article": "Diplodocus",
+      "entityId": "Diplodocus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Diplodocus/Diplodocus_Character_BP.Diplodocus_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Diplodocus/Diplodocus_Character_BP.Diplodocus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "diplodocus1",
+        "diplodocus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Dire Bear",
+      "article": "Dire Bear",
+      "entityId": "Direbear_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Direbear/Direbear_Character_BP.Direbear_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Direbear/Direbear_Character_BP.Direbear_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "direbear1",
+        "direbear2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Dire Bear",
+      "article": "Spirit Direbear",
+      "entityId": "Direbear_LL_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Mods/Ragnarok/Custom_Assets/Bosses/LifeLabyrinth/Bear/Direbear_LL_Character_BP.Direbear_LL_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Ragnarok"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Mods/Ragnarok/Custom_Assets/Bosses/LifeLabyrinth/Bear/Direbear_LL_Character_BP.Direbear_LL_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Dire Polar Bear",
+      "article": "Dire Polar Bear",
+      "entityId": "Polar_Bear_C",
+      "blueprint": "Blueprint'/Game/Mods/Ragnarok/Custom_Assets/Dinos/Polar_Bear/Polar_Bear.Polar_Bear'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Ragnarok",
+        "Valguero"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Mods/Ragnarok/Custom_Assets/Dinos/Polar_Bear/Polar_Bear.Polar_Bear'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Direwolf",
+      "article": "Direwolf",
+      "entityId": "Direwolf_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Direwolf/Direwolf_Character_BP.Direwolf_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Direwolf/Direwolf_Character_BP.Direwolf_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "direwolf1",
+        "direwolf2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Direwolf",
+      "article": "Spirit Direwolf",
+      "entityId": "Direwolf_LL_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Mods/Ragnarok/Custom_Assets/Bosses/LifeLabyrinth/Wolf/Direwolf_LL_Character_BP.Direwolf_LL_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Ragnarok"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Mods/Ragnarok/Custom_Assets/Bosses/LifeLabyrinth/Wolf/Direwolf_LL_Character_BP.Direwolf_LL_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Dodo",
+      "article": "Dodo",
+      "entityId": "Dodo_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP.Dodo_Character_BP_C'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP.Dodo_Character_BP_C'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "dodo1",
+        "dodo2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "DodoRex",
+      "article": "DodoRex",
+      "entityId": "DodoRex_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/DodoRex/DodoRex_Character_BP.DodoRex_Character_BP'",
+      "taxonomicGroup": "Event Creatures",
+      "dlcs": [],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/DodoRex/DodoRex_Character_BP.DodoRex_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    },
+    {
+      "name": "Doedicurus",
+      "article": "Doedicurus",
+      "entityId": "Doed_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Doedicurus/Doed_Character_BP.Doed_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Doedicurus/Doed_Character_BP.Doed_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "doedicurus1",
+        "doedicurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Dung Beetle",
+      "article": "Dung Beetle",
+      "entityId": "DungBeetle_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/DungBeetle/DungBeetle_Character_BP.DungBeetle_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/DungBeetle/DungBeetle_Character_BP.DungBeetle_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "dungbeetle1",
+        "dungbeetle2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Dunkleosteus",
+      "article": "Dunkleosteus",
+      "entityId": "Dunkle_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Dunkleosteus/Dunkle_Character_BP.Dunkle_Character_BP'",
+      "taxonomicGroup": "Fish",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Dunkleosteus/Dunkle_Character_BP.Dunkle_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "dunkleosteus1",
+        "dunkleosteus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Electrophorus",
+      "article": "Electrophorus",
+      "entityId": "Eel_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Eel/Eel_Character_BP.Eel_Character_BP'",
+      "taxonomicGroup": "Fish",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Eel/Eel_Character_BP.Eel_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "electrophorus1",
+        "electrophorus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Ember Crystal Wyvern",
+      "article": "Ember Crystal Wyvern",
+      "entityId": "CrystalWyvern_Character_BP_Ember_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/CrystalWyvern/CrystalWyvern_Character_BP_Ember.CrystalWyvern_Character_BP_Ember'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "Crystal Isles"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/CrystalWyvern/CrystalWyvern_Character_BP_Ember.CrystalWyvern_Character_BP_Ember'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "embercrystalwyvern1",
+        "embercrystalwyvern2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Equus",
+      "article": "Equus",
+      "entityId": "Equus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Equus/Equus_Character_BP.Equus_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Equus/Equus_Character_BP.Equus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "equus1",
+        "equus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Featherlight",
+      "article": "Featherlight",
+      "entityId": "LanternBird_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Aberration/Dinos/LanternBird/LanternBird_Character_BP.LanternBird_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "Aberration",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Fjordur",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Aberration/Dinos/LanternBird/LanternBird_Character_BP.LanternBird_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "featherlight1",
+        "featherlight2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Ferox",
+      "article": "Ferox",
+      "entityId": "Shapeshifter_Small_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/Shapeshifter/Shapeshifter_Small/Shapeshifter_Small_Character_BP.Shapeshifter_Small_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/Shapeshifter/Shapeshifter_Small/Shapeshifter_Small_Character_BP.Shapeshifter_Small_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "ferox1",
+        "ferox2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Ferox",
+      "article": "Ferox (Large)",
+      "entityId": "Shapeshifter_Large_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/Shapeshifter/Shapeshifter_Large/Shapeshifter_Large_Character_BP.Shapeshifter_Large_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Lost Island"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/Shapeshifter/Shapeshifter_Large/Shapeshifter_Large_Character_BP.Shapeshifter_Large_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Forest Titan",
+      "article": "Forest Titan",
+      "entityId": "ForestKaiju_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Extinction/Dinos/ForestKaiju/ForestKaiju_Character_BP.ForestKaiju_Character_BP'",
+      "taxonomicGroup": "Bosses",
+      "dlcs": [
+        "Extinction"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Extinction/Dinos/ForestKaiju/ForestKaiju_Character_BP.ForestKaiju_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    },
+    {
+      "name": "Gacha",
+      "article": "Gacha",
+      "entityId": "Gacha_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Extinction/Dinos/Gacha/Gacha_Character_BP.Gacha_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Extinction",
+        "Genesis: Part 2",
+        "Fjordur",
+        "Extinction",
+        "Genesis: Part 2",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Extinction/Dinos/Gacha/Gacha_Character_BP.Gacha_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "gacha1",
+        "gacha2",
+        "gacha3"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Gallimimus",
+      "article": "Gallimimus",
+      "entityId": "Galli_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Gallimimus/Galli_Character_BP.Galli_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Gallimimus/Galli_Character_BP.Galli_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "gallimimus1",
+        "gallimimus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Gasbags",
+      "article": "Gasbags",
+      "entityId": "GasBags_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Extinction/Dinos/GasBag/GasBags_Character_BP.GasBags_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "Extinction",
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Fjordur",
+        "Extinction",
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Extinction/Dinos/GasBag/GasBags_Character_BP.GasBags_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "gasbags1",
+        "gasbags2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Giant Bee",
+      "article": "Giant Bee",
+      "entityId": "Bee_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Bee/Bee_Character_BP.Bee_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Bee/Bee_Character_BP.Bee_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Giant Queen Bee",
+      "article": "Giant Queen Bee",
+      "entityId": "Bee_Queen_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Bee/Bee_Queen_Character_BP.Bee_Queen_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Bee/Bee_Queen_Character_BP.Bee_Queen_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "giantqueenbee1",
+        "giantqueenbee2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Giganotosaurus",
+      "article": "Giganotosaurus",
+      "entityId": "Gigant_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Giganotosaurus/Gigant_Character_BP.Gigant_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Giganotosaurus/Gigant_Character_BP.Gigant_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "giganotosaurus1",
+        "giganotosaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Gigantopithecus",
+      "article": "Gigantopithecus",
+      "entityId": "Bigfoot_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Bigfoot/Bigfoot_Character_BP.Bigfoot_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Bigfoot/Bigfoot_Character_BP.Bigfoot_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "gigantopithecus1",
+        "gigantopithecus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Glowtail",
+      "article": "Glowtail",
+      "entityId": "LanternLizard_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Aberration/Dinos/LanternLizard/LanternLizard_Character_BP.LanternLizard_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "Aberration",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Astraeos",
+        "Aberration",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Aberration/Dinos/LanternLizard/LanternLizard_Character_BP.LanternLizard_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "glowtail1",
+        "glowtail2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Griffin",
+      "article": "Griffin",
+      "entityId": "Griffin_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Griffin/Griffin_Character_BP.Griffin_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "Ragnarok",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur",
+        "Ragnarok",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Griffin/Griffin_Character_BP.Griffin_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "griffin1",
+        "griffin2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Hesperornis",
+      "article": "Hesperornis",
+      "entityId": "Hesperornis_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Hesperornis/Hesperornis_Character_BP.Hesperornis_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Hesperornis/Hesperornis_Character_BP.Hesperornis_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "hesperornis1",
+        "hesperornis2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Hyaenodon",
+      "article": "Hyaenodon",
+      "entityId": "Hyaenodon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Hyaenodon/Hyaenodon_Character_BP.Hyaenodon_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Hyaenodon/Hyaenodon_Character_BP.Hyaenodon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "hyaenodon1",
+        "hyaenodon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Ice Titan",
+      "article": "Ice Titan",
+      "entityId": "IceKaiju_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Extinction/Dinos/IceKaiju/IceKaiju_Character_BP.IceKaiju_Character_BP'",
+      "taxonomicGroup": "Bosses",
+      "dlcs": [
+        "Extinction"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Extinction/Dinos/IceKaiju/IceKaiju_Character_BP.IceKaiju_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    },
+    {
+      "name": "Ichthyornis",
+      "article": "Ichthyornis",
+      "entityId": "Ichthyornis_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Ichthyornis/Ichthyornis_Character_BP.Ichthyornis_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Ichthyornis/Ichthyornis_Character_BP.Ichthyornis_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "ichthyornis1",
+        "ichthyornis2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Ichthyosaurus",
+      "article": "Ichthyosaurus",
+      "entityId": "Dolphin_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Dolphin/Dolphin_Character_BP.Dolphin_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Dolphin/Dolphin_Character_BP.Dolphin_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "ichthyosaurus1",
+        "ichthyosaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Iguanodon",
+      "article": "Iguanodon",
+      "entityId": "Iguanodon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Iguanodon/Iguanodon_Character_BP.Iguanodon_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Iguanodon/Iguanodon_Character_BP.Iguanodon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "iguanodon1",
+        "iguanodon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Jerboa",
+      "article": "Jerboa",
+      "entityId": "Jerboa_Character_BP_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/Jerboa/Jerboa_Character_BP.Jerboa_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Astraeos",
+        "Scorched Earth",
+        "Ragnarok",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/Jerboa/Jerboa_Character_BP.Jerboa_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "jerboa1",
+        "jerboa2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Kairuku",
+      "article": "Kairuku",
+      "entityId": "Kairuku_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Kairuku/Kairuku_Character_BP.Kairuku_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Kairuku/Kairuku_Character_BP.Kairuku_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "kairuku1",
+        "kairuku2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Kaprosuchus",
+      "article": "Kaprosuchus",
+      "entityId": "Kaprosuchus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Kaprosuchus/Kaprosuchus_Character_BP.Kaprosuchus_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Kaprosuchus/Kaprosuchus_Character_BP.Kaprosuchus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "kaprosuchus1",
+        "kaprosuchus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Karkinos",
+      "article": "Karkinos",
+      "entityId": "Crab_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Aberration/Dinos/Crab/Crab_Character_BP.Crab_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Fjordur",
+        "Ragnarok",
+        "Astraeos",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Aberration/Dinos/Crab/Crab_Character_BP.Crab_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "karkinos1",
+        "karkinos2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Kentrosaurus",
+      "article": "Kentrosaurus",
+      "entityId": "Kentro_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Kentrosaurus/Kentro_Character_BP.Kentro_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Kentrosaurus/Kentro_Character_BP.Kentro_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "kentrosaurus1",
+        "kentrosaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Lamprey",
+      "article": "Lamprey",
+      "entityId": "Lamprey_Character_C",
+      "blueprint": "Blueprint'/Game/Aberration/Dinos/Lamprey/Lamprey_Character.Lamprey_Character'",
+      "taxonomicGroup": "Fish",
+      "dlcs": [
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Fjordur",
+        "Lost Colony",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Aberration/Dinos/Lamprey/Lamprey_Character.Lamprey_Character'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Leech",
+      "article": "Diseased Leech",
+      "entityId": "Leech_Character_Diseased_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Leech/Leech_Character_Diseased.Leech_Character_Diseased'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Leech/Leech_Character_Diseased.Leech_Character_Diseased'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Leech",
+      "article": "Leech",
+      "entityId": "Leech_Character_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Leech/Leech_Character.Leech_Character'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Leech/Leech_Character.Leech_Character'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Liopleurodon",
+      "article": "Liopleurodon",
+      "entityId": "Liopleurodon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Liopleurodon/Liopleurodon_Character_BP.Liopleurodon_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Liopleurodon/Liopleurodon_Character_BP.Liopleurodon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Lymantria",
+      "article": "Lymantria",
+      "entityId": "Moth_Character_BP_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/Moth/Moth_Character_BP.Moth_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Astraeos",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/Moth/Moth_Character_BP.Moth_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "lymantria1",
+        "lymantria2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Lystrosaurus",
+      "article": "Lystrosaurus",
+      "entityId": "Lystro_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Lystrosaurus/Lystro_Character_BP.Lystro_Character_BP'",
+      "taxonomicGroup": "Synapsids",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Lystrosaurus/Lystro_Character_BP.Lystro_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "lystrosaurus1",
+        "lystrosaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Maewing",
+      "article": "Maewing",
+      "entityId": "MilkGlider_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/MilkGlider/MilkGlider_Character_BP.MilkGlider_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/MilkGlider/MilkGlider_Character_BP.MilkGlider_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "maewing1",
+        "maewing2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Mammoth",
+      "article": "Mammoth",
+      "entityId": "Mammoth_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Mammoth/Mammoth_Character_BP.Mammoth_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Mammoth/Mammoth_Character_BP.Mammoth_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "mammoth1",
+        "mammoth2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Managarmr",
+      "article": "Managarmr",
+      "entityId": "IceJumper_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Extinction/Dinos/IceJumper/IceJumper_Character_BP.IceJumper_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Extinction",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Astraeos",
+        "Lost Colony",
+        "Extinction",
+        "Genesis: Part 2",
+        "Lost Island"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Extinction/Dinos/IceJumper/IceJumper_Character_BP.IceJumper_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "managarmr1",
+        "managarmr2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Manta",
+      "article": "Manta",
+      "entityId": "Manta_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Manta/Manta_Character_BP.Manta_Character_BP'",
+      "taxonomicGroup": "Fish",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Manta/Manta_Character_BP.Manta_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "manta1",
+        "manta2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Mantis",
+      "article": "Mantis",
+      "entityId": "Mantis_Character_BP_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/Mantis/Mantis_Character_BP.Mantis_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/Mantis/Mantis_Character_BP.Mantis_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "mantis1",
+        "mantis2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Megachelon",
+      "article": "Megachelon",
+      "entityId": "GiantTurtle_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/GiantTurtle/GiantTurtle_Character_BP.GiantTurtle_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Genesis: Part 1",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/GiantTurtle/GiantTurtle_Character_BP.GiantTurtle_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "megachelon1",
+        "megachelon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Megalania",
+      "article": "Megalania",
+      "entityId": "Megalania_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Megalania/Megalania_Character_BP.Megalania_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Megalania/Megalania_Character_BP.Megalania_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "megalania1",
+        "megalania2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Megaloceros",
+      "article": "Megaloceros",
+      "entityId": "Stag_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Stag/Stag_Character_BP.Stag_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Stag/Stag_Character_BP.Stag_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "megaloceros1",
+        "megaloceros2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Megalodon",
+      "article": "Megalodon",
+      "entityId": "Megalodon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Megalodon/Megalodon_Character_BP.Megalodon_Character_BP'",
+      "taxonomicGroup": "Fish",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Megalodon/Megalodon_Character_BP.Megalodon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "megalodon1",
+        "megalodon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Megalosaurus",
+      "article": "Megalosaurus",
+      "entityId": "Megalosaurus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Megalosaurus/Megalosaurus_Character_BP.Megalosaurus_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Megalosaurus/Megalosaurus_Character_BP.Megalosaurus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "megalosaurus1",
+        "megalosaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Mega Mek",
+      "article": "Mega Mek",
+      "entityId": "MegaMek_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Extinction/Dinos/Mek/MegaMek_Character_BP.MegaMek_Character_BP'",
+      "taxonomicGroup": null,
+      "dlcs": [
+        "Extinction"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Extinction/Dinos/Mek/MegaMek_Character_BP.MegaMek_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    },
+    {
+      "name": "Megatherium",
+      "article": "Megatherium",
+      "entityId": "Megatherium_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Megatherium/Megatherium_Character_BP.Megatherium_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Megatherium/Megatherium_Character_BP.Megatherium_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "megatherium1",
+        "megatherium2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Mek",
+      "article": "Mek",
+      "entityId": "Mek_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Extinction/Dinos/Mek/Mek_Character_BP.Mek_Character_BP'",
+      "taxonomicGroup": null,
+      "dlcs": [
+        "Extinction",
+        "Genesis: Part 2"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Extinction/Dinos/Mek/Mek_Character_BP.Mek_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "mek1",
+        "mek2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Mesopithecus",
+      "article": "Mesopithecus",
+      "entityId": "Monkey_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Monkey/Monkey_Character_BP.Monkey_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Monkey/Monkey_Character_BP.Monkey_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "mesopithecus1",
+        "mesopithecus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Microraptor",
+      "article": "Microraptor",
+      "entityId": "Microraptor_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Microraptor/Microraptor_Character_BP.Microraptor_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Microraptor/Microraptor_Character_BP.Microraptor_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "microraptor1",
+        "microraptor2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Morellatops",
+      "article": "Morellatops",
+      "entityId": "camelsaurus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/Camelsaurus/camelsaurus_Character_BP.camelsaurus_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Astraeos",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Crystal Isles",
+        "Lost Island"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/Camelsaurus/camelsaurus_Character_BP.camelsaurus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "morellatops1",
+        "morellatops2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Mosasaurus",
+      "article": "Mosasaurus",
+      "entityId": "Mosa_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Mosasaurus/Mosa_Character_BP.Mosa_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Mosasaurus/Mosa_Character_BP.Mosa_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "mosasaurus1",
+        "mosasaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Moschops",
+      "article": "Moschops",
+      "entityId": "Moschops_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Moschops/Moschops_Character_BP.Moschops_Character_BP'",
+      "taxonomicGroup": "Synapsids",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Moschops/Moschops_Character_BP.Moschops_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "moschops1",
+        "moschops2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Noglin",
+      "article": "Noglin",
+      "entityId": "BrainSlug_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BrainSlug/BrainSlug_Character_BP.BrainSlug_Character_BP'",
+      "taxonomicGroup": "Synapsids",
+      "dlcs": [
+        "Genesis: Part 2",
+        "Genesis: Part 2"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BrainSlug/BrainSlug_Character_BP.BrainSlug_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "noglin1",
+        "noglin2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Onyc",
+      "article": "Onyc",
+      "entityId": "Bat_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Bat/Bat_Character_BP.Bat_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur",
+        "Astraeos",
+        "Lost Colony",
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Bat/Bat_Character_BP.Bat_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Otter",
+      "article": "Otter",
+      "entityId": "Otter_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Otter/Otter_Character_BP.Otter_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Otter/Otter_Character_BP.Otter_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "otter1",
+        "otter2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Oviraptor",
+      "article": "Oviraptor",
+      "entityId": "Oviraptor_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Oviraptor/Oviraptor_Character_BP.Oviraptor_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Oviraptor/Oviraptor_Character_BP.Oviraptor_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "oviraptor1",
+        "oviraptor2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Ovis",
+      "article": "Ovis",
+      "entityId": "Sheep_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Sheep/Sheep_Character_BP.Sheep_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Sheep/Sheep_Character_BP.Sheep_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "ovis1",
+        "ovis2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Pachy",
+      "article": "Pachy",
+      "entityId": "Pachy_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Pachy/Pachy_Character_BP.Pachy_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Pachy/Pachy_Character_BP.Pachy_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "pachy1",
+        "pachy2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Pachyrhinosaurus",
+      "article": "Pachyrhinosaurus",
+      "entityId": "Pachyrhino_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Pachyrhinosaurus/Pachyrhino_Character_BP.Pachyrhino_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Pachyrhinosaurus/Pachyrhino_Character_BP.Pachyrhino_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "pachyrhinosaurus1",
+        "pachyrhinosaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Paraceratherium",
+      "article": "Paraceratherium",
+      "entityId": "Paracer_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Paraceratherium/Paracer_Character_BP.Paracer_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Paraceratherium/Paracer_Character_BP.Paracer_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "paraceratherium1",
+        "paraceratherium2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Parasaur",
+      "article": "Parasaur",
+      "entityId": "Para_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Para/Para_Character_BP.Para_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Para/Para_Character_BP.Para_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "parasaur1",
+        "parasaur2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Pegomastax",
+      "article": "Pegomastax",
+      "entityId": "Pegomastax_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Pegomastax/Pegomastax_Character_BP.Pegomastax_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Pegomastax/Pegomastax_Character_BP.Pegomastax_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "pegomastax1",
+        "pegomastax2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Pelagornis",
+      "article": "Pelagornis",
+      "entityId": "Pela_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Pelagornis/Pela_Character_BP.Pela_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Pelagornis/Pela_Character_BP.Pela_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "pelagornis1",
+        "pelagornis2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Phiomia",
+      "article": "Phiomia",
+      "entityId": "Phiomia_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Phiomia/Phiomia_Character_BP.Phiomia_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Phiomia/Phiomia_Character_BP.Phiomia_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "phiomia1",
+        "phiomia2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Phoenix",
+      "article": "Phoenix",
+      "entityId": "Phoenix_Character_BP_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/Phoenix/Phoenix_Character_BP.Phoenix_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "Scorched Earth",
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Astraeos",
+        "Scorched Earth"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/Phoenix/Phoenix_Character_BP.Phoenix_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "phoenix1",
+        "phoenix2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Piranha",
+      "article": "Piranha",
+      "entityId": "Piranha_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Piranha/Piranha_Character_BP.Piranha_Character_BP'",
+      "taxonomicGroup": "Fish",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Piranha/Piranha_Character_BP.Piranha_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Procoptodon",
+      "article": "Procoptodon",
+      "entityId": "Procoptodon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Procoptodon/Procoptodon_Character_BP.Procoptodon_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Procoptodon/Procoptodon_Character_BP.Procoptodon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "procoptodon1",
+        "procoptodon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Pteranodon",
+      "article": "Pteranodon",
+      "entityId": "Ptero_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Ptero/Ptero_Character_BP.Ptero_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Ptero/Ptero_Character_BP.Ptero_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "pteranodon1",
+        "pteranodon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Pulmonoscorpius",
+      "article": "Pulmonoscorpius",
+      "entityId": "Scorpion_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Scorpion/Scorpion_Character_BP.Scorpion_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Scorpion/Scorpion_Character_BP.Scorpion_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "pulmonoscorpius1",
+        "pulmonoscorpius2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Purlovia",
+      "article": "Purlovia",
+      "entityId": "Purlovia_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Purlovia/Purlovia_Character_BP.Purlovia_Character_BP'",
+      "taxonomicGroup": "Synapsids",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Purlovia/Purlovia_Character_BP.Purlovia_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "purlovia1",
+        "purlovia2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Quetzal",
+      "article": "Quetzal",
+      "entityId": "Quetz_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Quetzalcoatlus/Quetz_Character_BP.Quetz_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Quetzalcoatlus/Quetz_Character_BP.Quetz_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "quetzal1",
+        "quetzal2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Allosaurus",
+      "article": "R-Allosaurus",
+      "entityId": "Allo_Character_BP_Rockwell_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Allo_Character_BP_Rockwell.Allo_Character_BP_Rockwell'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Allo_Character_BP_Rockwell.Allo_Character_BP_Rockwell'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rallosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Raptor",
+      "article": "Raptor",
+      "entityId": "Raptor_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Raptor/Raptor_Character_BP.Raptor_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Raptor/Raptor_Character_BP.Raptor_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "raptor1",
+        "raptor2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Rare X-Sabertooth Salmon",
+      "article": "Rare X-Sabertooth Salmon",
+      "entityId": "Rare_Lunar_Salmon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Lunar_Salmon/Rare_Lunar_Salmon_Character_BP.Rare_Lunar_Salmon_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Lunar_Salmon/Rare_Lunar_Salmon_Character_BP.Rare_Lunar_Salmon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Ravager",
+      "article": "Ravager",
+      "entityId": "CaveWolf_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Aberration/Dinos/CaveWolf/CaveWolf_Character_BP.CaveWolf_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Astraeos",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Aberration/Dinos/CaveWolf/CaveWolf_Character_BP.CaveWolf_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "ravager1",
+        "ravager2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Brontosaurus",
+      "article": "R-Brontosaurus",
+      "entityId": "Sauropod_Character_BP_Rockwell_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Sauropod_Character_BP_Rockwell.Sauropod_Character_BP_Rockwell'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Sauropod_Character_BP_Rockwell.Sauropod_Character_BP_Rockwell'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rbrontosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Carbonemys",
+      "article": "R-Carbonemys",
+      "entityId": "Turtle_Character_BP_Rockwell_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Turtle_Character_BP_Rockwell.Turtle_Character_BP_Rockwell'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Turtle_Character_BP_Rockwell.Turtle_Character_BP_Rockwell'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rcarbonemys"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Carnotaurus",
+      "article": "R-Carnotaurus",
+      "entityId": "Carno_Character_BP_Rockwell_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Carno_Character_BP_Rockwell.Carno_Character_BP_Rockwell'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Carno_Character_BP_Rockwell.Carno_Character_BP_Rockwell'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rcarnotaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Daeodon",
+      "article": "R-Daeodon",
+      "entityId": "Daeodon_Character_BP_Eden_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Daeodon_Character_BP_Eden.Daeodon_Character_BP_Eden'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Daeodon_Character_BP_Eden.Daeodon_Character_BP_Eden'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rdaeodon"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Dilophosaur",
+      "article": "R-Dilophosaur",
+      "entityId": "Dilo_Character_BP_Rockwell_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Dilo_Character_BP_Rockwell.Dilo_Character_BP_Rockwell'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Dilo_Character_BP_Rockwell.Dilo_Character_BP_Rockwell'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rdilophosaur"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Direwolf",
+      "article": "R-Direwolf",
+      "entityId": "Direwolf_Character_BP_Eden_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Direwolf_Character_BP_Eden.Direwolf_Character_BP_Eden'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Direwolf_Character_BP_Eden.Direwolf_Character_BP_Eden'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rdirewolf"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Equus",
+      "article": "R-Equus",
+      "entityId": "Equus_Character_BP_Eden_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Equus_Character_BP_Eden.Equus_Character_BP_Eden'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Equus_Character_BP_Eden.Equus_Character_BP_Eden'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "requus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Rex",
+      "article": "Rex",
+      "entityId": "Rex_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Rex/Rex_Character_BP.Rex_Character_BP_C'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Astraeos",
+        "Lost Colony",
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Rex/Rex_Character_BP.Rex_Character_BP_C'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rex1",
+        "rex2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Gasbags",
+      "article": "R-Gasbags",
+      "entityId": "GasBags_Character_BP_Eden_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/GasBags_Character_BP_Eden.GasBags_Character_BP_Eden'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/GasBags_Character_BP_Eden.GasBags_Character_BP_Eden'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rgasbags"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Giganotosaurus",
+      "article": "R-Giganotosaurus",
+      "entityId": "Gigant_Character_BP_Rockwell_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Gigant_Character_BP_Rockwell.Gigant_Character_BP_Rockwell'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Gigant_Character_BP_Rockwell.Gigant_Character_BP_Rockwell'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rgiganotosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Megatherium",
+      "article": "R-Megatherium",
+      "entityId": "Megatherium_Character_BP_Eden_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Megatherium_Character_BP_Eden.Megatherium_Character_BP_Eden'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Megatherium_Character_BP_Eden.Megatherium_Character_BP_Eden'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rmegatherium"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Rock Elemental",
+      "article": "Chalk Golem",
+      "entityId": "ChalkGolem_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Mods/Valguero/Assets/Dinos/RockGolem/ChalkGolem/ChalkGolem_Character_BP.ChalkGolem_Character_BP'",
+      "taxonomicGroup": null,
+      "dlcs": [
+        "Valguero"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Mods/Valguero/Assets/Dinos/RockGolem/ChalkGolem/ChalkGolem_Character_BP.ChalkGolem_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Rock Elemental",
+      "article": "Ice Golem",
+      "entityId": "IceGolem_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/IceGolem/IceGolem_Character_BP.IceGolem_Character_BP'",
+      "taxonomicGroup": null,
+      "dlcs": [
+        "Valguero",
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/IceGolem/IceGolem_Character_BP.IceGolem_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Rock Elemental",
+      "article": "Rock Elemental",
+      "entityId": "RockGolem_Character_BP_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/RockGolem/RockGolem_Character_BP.RockGolem_Character_BP'",
+      "taxonomicGroup": null,
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Astraeos",
+        "Lost Colony",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/RockGolem/RockGolem_Character_BP.RockGolem_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rockelemental1",
+        "rockelemental2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Roll Rat",
+      "article": "Roll Rat",
+      "entityId": "MoleRat_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Aberration/Dinos/MoleRat/MoleRat_Character_BP.MoleRat_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Fjordur",
+        "Astraeos",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Aberration/Dinos/MoleRat/MoleRat_Character_BP.MoleRat_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rollrat1",
+        "rollrat2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Parasaur",
+      "article": "R-Parasaur",
+      "entityId": "Para_Character_BP_Eden_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Para_Character_BP_Eden.Para_Character_BP_Eden'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Para_Character_BP_Eden.Para_Character_BP_Eden'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rparasaur"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Procoptodon",
+      "article": "R-Procoptodon",
+      "entityId": "Procoptodon_Character_BP_Eden_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Procoptodon_Character_BP_Eden.Procoptodon_Character_BP_Eden'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Procoptodon_Character_BP_Eden.Procoptodon_Character_BP_Eden'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rprocoptodon"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Quetzal",
+      "article": "R-Quetzal",
+      "entityId": "Quetz_Character_BP_Rockwell_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Quetz_Character_BP_Rockwell.Quetz_Character_BP_Rockwell'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Quetz_Character_BP_Rockwell.Quetz_Character_BP_Rockwell'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rquetzal"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Snow Owl",
+      "article": "R-Snow Owl",
+      "entityId": "Owl_Character_BP_Eden_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Owl_Character_BP_Eden.Owl_Character_BP_Eden'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Owl_Character_BP_Eden.Owl_Character_BP_Eden'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rsnowowl"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Thylacoleo",
+      "article": "R-Thylacoleo",
+      "entityId": "Thylacoleo_Character_BP_Eden_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Thylacoleo_Character_BP_Eden.Thylacoleo_Character_BP_Eden'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Thylacoleo_Character_BP_Eden.Thylacoleo_Character_BP_Eden'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rthylacoleo"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "R-Velonasaur",
+      "article": "R-Velonasaur",
+      "entityId": "Spindles_Character_BP_Rockwell_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Spindles_Character_BP_Rockwell.Spindles_Character_BP_Rockwell'",
+      "taxonomicGroup": "R-Creatures",
+      "dlcs": [
+        "Genesis: Part 2"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/BiomeVariants/Spindles_Character_BP_Rockwell.Spindles_Character_BP_Rockwell'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "rvelonasaur"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Sabertooth",
+      "article": "Sabertooth",
+      "entityId": "Saber_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Saber/Saber_Character_BP.Saber_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Saber/Saber_Character_BP.Saber_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "sabertooth1",
+        "sabertooth2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Sabertooth Salmon",
+      "article": "Sabertooth Salmon",
+      "entityId": "Salmon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Salmon/Salmon_Character_BP.Salmon_Character_BP'",
+      "taxonomicGroup": "Fish",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Salmon/Salmon_Character_BP.Salmon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Sarco",
+      "article": "Sarco",
+      "entityId": "Sarco_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Sarco/Sarco_Character_BP.Sarco_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Sarco/Sarco_Character_BP.Sarco_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "sarco1",
+        "sarco2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Shadowmane",
+      "article": "Shadowmane",
+      "entityId": "LionfishLion_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/LionfishLion/LionfishLion_Character_BP.LionfishLion_Character_BP'",
+      "taxonomicGroup": "Fish",
+      "dlcs": [
+        "Genesis: Part 2",
+        "Fjordur",
+        "Genesis: Part 2",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/LionfishLion/LionfishLion_Character_BP.LionfishLion_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "shadowmane1",
+        "shadowmane2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Shinehorn",
+      "article": "Shinehorn",
+      "entityId": "LanternGoat_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Aberration/Dinos/LanternGoat/LanternGoat_Character_BP.LanternGoat_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "Aberration",
+        "Ragnarok",
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Fjordur",
+        "Aberration",
+        "Genesis: Part 1",
+        "Genesis: Part 2",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Aberration/Dinos/LanternGoat/LanternGoat_Character_BP.LanternGoat_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "shinehorn1",
+        "shinehorn2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Snow Owl",
+      "article": "Snow Owl",
+      "entityId": "Owl_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Extinction/Dinos/Owl/Owl_Character_BP.Owl_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "Extinction",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Astraeos",
+        "Lost Colony",
+        "Extinction",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Extinction/Dinos/Owl/Owl_Character_BP.Owl_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "snowowl1",
+        "snowowl2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Spino",
+      "article": "Spino",
+      "entityId": "Spino_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Spino/Spino_Character_BP.Spino_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Spino/Spino_Character_BP.Spino_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "spino1",
+        "spino2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Stegosaurus",
+      "article": "Stegosaurus",
+      "entityId": "Stego_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Stego/Stego_Character_BP.Stego_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Stego/Stego_Character_BP.Stego_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "stegosaurus1",
+        "stegosaurus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Tapejara",
+      "article": "Tapejara",
+      "entityId": "Tapejara_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Tapejara/Tapejara_Character_BP.Tapejara_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Tapejara/Tapejara_Character_BP.Tapejara_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "tapejara1",
+        "tapejara2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Tek Parasaur",
+      "article": "Tek Parasaur",
+      "entityId": "BionicPara_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Para/BionicPara_Character_BP.BionicPara_Character_BP'",
+      "taxonomicGroup": "Tek Creatures",
+      "dlcs": [],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Para/BionicPara_Character_BP.BionicPara_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "tekparasaur"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Tek Quetzal",
+      "article": "Tek Quetzal",
+      "entityId": "BionicQuetz_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Quetzalcoatlus/BionicQuetz_Character_BP.BionicQuetz_Character_BP'",
+      "taxonomicGroup": "Tek Creatures",
+      "dlcs": [],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Quetzalcoatlus/BionicQuetz_Character_BP.BionicQuetz_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "tekquetzal"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Tek Raptor",
+      "article": "Tek Raptor",
+      "entityId": "BionicRaptor_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Raptor/BionicRaptor_Character_BP.BionicRaptor_Character_BP'",
+      "taxonomicGroup": "Tek Creatures",
+      "dlcs": [],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Raptor/BionicRaptor_Character_BP.BionicRaptor_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "tekraptor"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Tek Rex",
+      "article": "Tek Rex",
+      "entityId": "BionicRex_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Rex/BionicRex_Character_BP.BionicRex_Character_BP'",
+      "taxonomicGroup": "Tek Creatures",
+      "dlcs": [],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Rex/BionicRex_Character_BP.BionicRex_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "tekrex"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Tek Stegosaurus",
+      "article": "Tek Stegosaurus",
+      "entityId": "BionicStego_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Stego/BionicStego_Character_BP.BionicStego_Character_BP'",
+      "taxonomicGroup": "Tek Creatures",
+      "dlcs": [],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Stego/BionicStego_Character_BP.BionicStego_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "tekstegosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Tek Stryder",
+      "article": "Tek Stryder",
+      "entityId": "TekStrider_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/TekStrider/TekStrider_Character_BP.TekStrider_Character_BP'",
+      "taxonomicGroup": "Mechanical Creatures",
+      "dlcs": [
+        "Genesis: Part 2",
+        "Genesis: Part 2"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/TekStrider/TekStrider_Character_BP.TekStrider_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Tek Triceratops",
+      "article": "Tek Triceratops",
+      "entityId": "BionicTrike_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Trike/BionicTrike_Character_BP.BionicTrike_Character_BP'",
+      "taxonomicGroup": "Tek Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Trike/BionicTrike_Character_BP.BionicTrike_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "tektriceratops"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Terror Bird",
+      "article": "Terror Bird",
+      "entityId": "TerrorBird_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/TerrorBird/TerrorBird_Character_BP.TerrorBird_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/TerrorBird/TerrorBird_Character_BP.TerrorBird_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "terrorbird1",
+        "terrorbird2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Therizinosaur",
+      "article": "Therizinosaur",
+      "entityId": "Therizino_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Therizinosaurus/Therizino_Character_BP.Therizino_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Therizinosaurus/Therizino_Character_BP.Therizino_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "therizinosaur1",
+        "therizinosaur2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Thorny Dragon",
+      "article": "Thorny Dragon",
+      "entityId": "SpineyLizard_Character_BP_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/SpineyLizard/SpineyLizard_Character_BP.SpineyLizard_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Astraeos",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/SpineyLizard/SpineyLizard_Character_BP.SpineyLizard_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "thornydragon1",
+        "thornydragon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Thylacoleo",
+      "article": "Thylacoleo",
+      "entityId": "Thylacoleo_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Thylacoleo/Thylacoleo_Character_BP.Thylacoleo_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Thylacoleo/Thylacoleo_Character_BP.Thylacoleo_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "thylacoleo1",
+        "thylacoleo2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Titanoboa",
+      "article": "Titanoboa",
+      "entityId": "BoaFrill_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/BoaFrill/BoaFrill_Character_BP.BoaFrill_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/BoaFrill/BoaFrill_Character_BP.BoaFrill_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "titanoboa1",
+        "titanoboa2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Titanosaur",
+      "article": "Titanosaur",
+      "entityId": "Titanosaur_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Titanosaur/Titanosaur_Character_BP.Titanosaur_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Titanosaur/Titanosaur_Character_BP.Titanosaur_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    },
+    {
+      "name": "Triceratops",
+      "article": "Triceratops",
+      "entityId": "Trike_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Trike/Trike_Character_BP.Trike_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Trike/Trike_Character_BP.Trike_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "triceratops1",
+        "triceratops2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Trilobite",
+      "article": "Trilobite",
+      "entityId": "Trilobite_Character_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Trilobite/Trilobite_Character.Trilobite_Character'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Aberration",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Trilobite/Trilobite_Character.Trilobite_Character'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "Troodon",
+      "article": "Troodon",
+      "entityId": "Troodon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Troodon/Troodon_Character_BP.Troodon_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Troodon/Troodon_Character_BP.Troodon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "troodon1",
+        "troodon2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Tropeognathus",
+      "article": "Tropeognathus",
+      "entityId": "Tropeognathus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Tropeognathus/Tropeognathus_Character_BP.Tropeognathus_Character_BP'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Fjordur",
+        "Crystal Isles",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Tropeognathus/Tropeognathus_Character_BP.Tropeognathus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "tropeognathus1",
+        "tropeognathus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Tropical Crystal Wyvern",
+      "article": "Tropical Crystal Wyvern",
+      "entityId": "CrystalWyvern_Character_BP_WS_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/CrystalWyvern/CrystalWyvern_Character_BP_WS.CrystalWyvern_Character_BP_WS'",
+      "taxonomicGroup": "Reptiles",
+      "dlcs": [
+        "Crystal Isles"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/CrystalWyvern/CrystalWyvern_Character_BP_WS.CrystalWyvern_Character_BP_WS'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "tropicalcrystalwyvern1",
+        "tropicalcrystalwyvern2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Tusoteuthis",
+      "article": "Tusoteuthis",
+      "entityId": "Tusoteuthis_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Tusoteuthis/Tusoteuthis_Character_BP.Tusoteuthis_Character_BP'",
+      "taxonomicGroup": "Invertebrates",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Tusoteuthis/Tusoteuthis_Character_BP.Tusoteuthis_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "tusoteuthis1",
+        "tusoteuthis2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Unicorn",
+      "article": "Unicorn",
+      "entityId": "Equus_Character_BP_Unicorn_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Equus/Equus_Character_BP_Unicorn.Equus_Character_BP_Unicorn'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "Ragnarok",
+        "Valguero",
+        "Crystal Isles",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Equus/Equus_Character_BP_Unicorn.Equus_Character_BP_Unicorn'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "unicorn1",
+        "unicorn2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Velonasaur",
+      "article": "Velonasaur",
+      "entityId": "Spindles_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Extinction/Dinos/Spindles/Spindles_Character_BP.Spindles_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "Extinction",
+        "Genesis: Part 2",
+        "Fjordur",
+        "Astraeos",
+        "Extinction",
+        "Genesis: Part 2",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Extinction/Dinos/Spindles/Spindles_Character_BP.Spindles_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "velonasaur1",
+        "velonasaur2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Voidwyrm",
+      "article": "Voidwyrm",
+      "entityId": "TekWyvern_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis2/Dinos/TekWyvern/TekWyvern_Character_BP.TekWyvern_Character_BP'",
+      "taxonomicGroup": "Mechanical Creatures",
+      "dlcs": [
+        "Genesis: Part 2",
+        "Genesis: Part 2"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis2/Dinos/TekWyvern/TekWyvern_Character_BP.TekWyvern_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "voidwyrm1",
+        "voidwyrm2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Vulture",
+      "article": "Vulture",
+      "entityId": "Vulture_Character_BP_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/Vulture/Vulture_Character_BP.Vulture_Character_BP'",
+      "taxonomicGroup": "Birds",
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur",
+        "Lost Colony",
+        "Scorched Earth",
+        "Ragnarok",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/Vulture/Vulture_Character_BP.Vulture_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "vulture1",
+        "vulture2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Woolly Rhino",
+      "article": "Woolly Rhino",
+      "entityId": "Rhino_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/WoollyRhino/Rhino_Character_BP.Rhino_Character_BP'",
+      "taxonomicGroup": "Mammals",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/WoollyRhino/Rhino_Character_BP.Rhino_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "woollyrhino1",
+        "woollyrhino2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Allosaurus",
+      "article": "X-Allosaurus",
+      "entityId": "Volcano_Allo_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Volcano_Allosaurus/Volcano_Allo_Character_BP.Volcano_Allo_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Volcano_Allosaurus/Volcano_Allo_Character_BP.Volcano_Allo_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xallosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Ankylosaurus",
+      "article": "X-Ankylosaurus",
+      "entityId": "Volcano_Ankylo_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Volcano_Ankylosaurus/Volcano_Ankylo_Character_BP.Volcano_Ankylo_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Volcano_Ankylosaurus/Volcano_Ankylo_Character_BP.Volcano_Ankylo_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xankylosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Argentavis",
+      "article": "X-Argentavis",
+      "entityId": "Snow_Argent_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Snow_Argentavis/Snow_Argent_Character_BP.Snow_Argent_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Snow_Argentavis/Snow_Argent_Character_BP.Snow_Argent_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xargentavis"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Basilosaurus",
+      "article": "X-Basilosaurus",
+      "entityId": "Ocean_Basilosaurus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Ocean_Basilosaurus/Ocean_Basilosaurus_Character_BP.Ocean_Basilosaurus_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Ocean_Basilosaurus/Ocean_Basilosaurus_Character_BP.Ocean_Basilosaurus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xbasilosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Dunkeosteus",
+      "article": "X-Dunkleosteus",
+      "entityId": "Ocean_Dunkle_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Ocean_Dunkleosteus/Ocean_Dunkle_Character_BP.Ocean_Dunkle_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Ocean_Dunkleosteus/Ocean_Dunkle_Character_BP.Ocean_Dunkle_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xdunkleosteus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Ichthyosaurus",
+      "article": "X-Ichthyosaurus",
+      "entityId": "Ocean_Dolphin_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Ocean_Dolphin/Ocean_Dolphin_Character_BP.Ocean_Dolphin_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Ocean_Dolphin/Ocean_Dolphin_Character_BP.Ocean_Dolphin_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xichthyosaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Megalodon",
+      "article": "X-Megalodon",
+      "entityId": "Ocean_Megalodon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Ocean_Megalodon/Ocean_Megalodon_Character_BP.Ocean_Megalodon_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Ocean_Megalodon/Ocean_Megalodon_Character_BP.Ocean_Megalodon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xmegalodon"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Mosasaurus",
+      "article": "X-Mosasaurus",
+      "entityId": "Ocean_Mosa_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Ocean_Mosasaurus/Ocean_Mosa_Character_BP.Ocean_Mosa_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Ocean_Mosasaurus/Ocean_Mosa_Character_BP.Ocean_Mosa_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xmosasaurus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Otter",
+      "article": "X-Otter",
+      "entityId": "Snow_Otter_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Snow_Otter/Snow_Otter_Character_BP.Snow_Otter_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Snow_Otter/Snow_Otter_Character_BP.Snow_Otter_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xotter"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Paraceratherium",
+      "article": "X-Paraceratherium",
+      "entityId": "Bog_Paracer_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/BogParaceratherium/Bog_Paracer_Character_BP.Bog_Paracer_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/BogParaceratherium/Bog_Paracer_Character_BP.Bog_Paracer_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xparaceratherium"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Parasaur",
+      "article": "X-Parasaur",
+      "entityId": "Bog_Para_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/BogPara/Bog_Para_Character_BP.Bog_Para_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/BogPara/Bog_Para_Character_BP.Bog_Para_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xparasaur"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Raptor",
+      "article": "X-Raptor",
+      "entityId": "Bog_Raptor_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Bog_Raptor/Bog_Raptor_Character_BP.Bog_Raptor_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Bog_Raptor/Bog_Raptor_Character_BP.Bog_Raptor_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xraptor"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Rex",
+      "article": "X-Rex",
+      "entityId": "Volcano_Rex_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Volcano_Rex/Volcano_Rex_Character_BP.Volcano_Rex_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Volcano_Rex/Volcano_Rex_Character_BP.Volcano_Rex_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xrex"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Rock Elemental",
+      "article": "X-Rock Elemental",
+      "entityId": "Volcano_Golem_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Lava_Golem/Volcano_Golem_Character_BP.Volcano_Golem_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Lava_Golem/Volcano_Golem_Character_BP.Volcano_Golem_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xrockelemental"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Sabertooth",
+      "article": "X-Sabertooth",
+      "entityId": "Snow_Saber_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Snow_Saber/Snow_Saber_Character_BP.Snow_Saber_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Snow_Saber/Snow_Saber_Character_BP.Snow_Saber_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xsabertooth"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Sabertooth Salmon",
+      "article": "X-Sabertooth Salmon",
+      "entityId": "Lunar_Salmon_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Lunar_Salmon/Lunar_Salmon_Character_BP.Lunar_Salmon_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Lunar_Salmon/Lunar_Salmon_Character_BP.Lunar_Salmon_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-unpriced"
+    },
+    {
+      "name": "X-Spino",
+      "article": "X-Spino",
+      "entityId": "Bog_Spino_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Bog_Spino/Bog_Spino_Character_BP.Bog_Spino_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Bog_Spino/Bog_Spino_Character_BP.Bog_Spino_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xspino"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Tapejara",
+      "article": "X-Tapejara",
+      "entityId": "Bog_Tapejara_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Bog_Tapejara/Bog_Tapejara_Character_BP.Bog_Tapejara_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Bog_Tapejara/Bog_Tapejara_Character_BP.Bog_Tapejara_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xtapejara"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Triceratops",
+      "article": "X-Triceratops",
+      "entityId": "Volcano_Trike_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Volcano_Trike/Volcano_Trike_Character_BP.Volcano_Trike_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Volcano_Trike/Volcano_Trike_Character_BP.Volcano_Trike_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xtriceratops"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Woolly Rhino",
+      "article": "X-Woolly Rhino",
+      "entityId": "Snow_Rhino_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Snow_WoollyRhino/Snow_Rhino_Character_BP.Snow_Rhino_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Snow_WoollyRhino/Snow_Rhino_Character_BP.Snow_Rhino_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xwoollyrhino"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "X-Yutyrannus",
+      "article": "X-Yutyrannus",
+      "entityId": "Snow_Yutyrannus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/Genesis/Dinos/BiomeVariants/Snow_Yutyrannus/Snow_Yutyrannus_Character_BP.Snow_Yutyrannus_Character_BP'",
+      "taxonomicGroup": "X-Creatures",
+      "dlcs": [
+        "Genesis: Part 1"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/Genesis/Dinos/BiomeVariants/Snow_Yutyrannus/Snow_Yutyrannus_Character_BP.Snow_Yutyrannus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "xyutyrannus"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Yutyrannus",
+      "article": "Yutyrannus",
+      "entityId": "Yutyrannus_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Yutyrannus/Yutyrannus_Character_BP.Yutyrannus_Character_BP'",
+      "taxonomicGroup": "Dinosaurs",
+      "dlcs": [
+        "The Island",
+        "The Center",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Genesis: Part 1",
+        "Crystal Isles",
+        "Genesis: Part 2",
+        "Lost Island",
+        "Fjordur"
+      ],
+      "isVariant": false,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Yutyrannus/Yutyrannus_Character_BP.Yutyrannus_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [
+        "yutyrannus1",
+        "yutyrannus2"
+      ],
+      "shopStatus": "configured"
+    },
+    {
+      "name": "Zombie Wyvern",
+      "article": "Zombie Fire Wyvern",
+      "entityId": "Wyvern_Character_BP_ZombieFire_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/Wyvern/Wyvern_Character_BP_ZombieFire.Wyvern_Character_BP_ZombieFire'",
+      "taxonomicGroup": "Event Creatures",
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/Wyvern/Wyvern_Character_BP_ZombieFire.Wyvern_Character_BP_ZombieFire'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    },
+    {
+      "name": "Zombie Wyvern",
+      "article": "Zombie Lightning Wyvern",
+      "entityId": "Wyvern_Character_BP_ZombieLightning_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/Wyvern/Wyvern_Character_BP_ZombieLightning.Wyvern_Character_BP_ZombieLightning'",
+      "taxonomicGroup": "Event Creatures",
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/Wyvern/Wyvern_Character_BP_ZombieLightning.Wyvern_Character_BP_ZombieLightning'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    },
+    {
+      "name": "Zombie Wyvern",
+      "article": "Zombie Poison Wyvern",
+      "entityId": "Wyvern_Character_BP_ZombiePoison_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/Wyvern/Wyvern_Character_BP_ZombiePoison.Wyvern_Character_BP_ZombiePoison'",
+      "taxonomicGroup": "Event Creatures",
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/Wyvern/Wyvern_Character_BP_ZombiePoison.Wyvern_Character_BP_ZombiePoison'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    },
+    {
+      "name": "Zombie Wyvern",
+      "article": "Zombie Wyvern",
+      "entityId": "Wyvern_Character_BP_ZombieBase_C",
+      "blueprint": "Blueprint'/Game/ScorchedEarth/Dinos/Wyvern/Wyvern_Character_BP_ZombieBase.Wyvern_Character_BP_ZombieBase'",
+      "taxonomicGroup": "Event Creatures",
+      "dlcs": [
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero",
+        "Scorched Earth",
+        "Ragnarok",
+        "Extinction",
+        "Valguero"
+      ],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/ScorchedEarth/Dinos/Wyvern/Wyvern_Character_BP_ZombieBase.Wyvern_Character_BP_ZombieBase'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    },
+    {
+      "name": "Zomdodo",
+      "article": "Zomdodo",
+      "entityId": "ZombieDodo_Character_BP_C",
+      "blueprint": "Blueprint'/Game/PrimalEarth/Dinos/Dodo/ZombieDodo_Character_BP.ZombieDodo_Character_BP'",
+      "taxonomicGroup": "Event Creatures",
+      "dlcs": [],
+      "isVariant": true,
+      "spawnCommand": "admincheat SpawnDino \"Blueprint'/Game/PrimalEarth/Dinos/Dodo/ZombieDodo_Character_BP.ZombieDodo_Character_BP'\" 500 0 0 <level>",
+      "legacyShopKeys": [],
+      "shopStatus": "manual-review-special"
+    }
+  ]
+}

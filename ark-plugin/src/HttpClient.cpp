@@ -1,12 +1,12 @@
 #include "HttpClient.h"
 #include "GameThreadDispatcher.h"
+#include "RequestSigning.h"
 #include <Logger/Logger.h>
 #include <thread>
 #include <Windows.h>
 #include <winhttp.h>
 #include <iomanip>
 #include <sstream>
-#include <bcrypt.h>
 #include <random>
 #include <chrono>
 #include <fstream>
@@ -14,114 +14,31 @@
 #include <API/ARK/Ark.h>
 
 #pragma comment(lib, "winhttp.lib")
-#pragma comment(lib, "bcrypt.lib")
 
 namespace HeartShop
 {
     extern const char* Version;
 namespace
 {
-    std::string ToHex(const unsigned char* data, ULONG length)
+    std::string UrlEncode(const std::string& Value)
     {
-        std::ostringstream oss;
-        for (ULONG i = 0; i < length; ++i)
+        std::ostringstream Encoded;
+        Encoded << std::uppercase << std::hex;
+        for (const unsigned char Character : Value)
         {
-            oss << std::hex << std::setfill('0') << std::setw(2) << (int)data[i];
-        }
-        return oss.str();
-    }
-
-    std::string CalculateSha256(const std::string& Input)
-    {
-        BCRYPT_ALG_HANDLE hAlg = NULL;
-        BCRYPT_HASH_HANDLE hHash = NULL;
-        DWORD cbHashObject = 0;
-        DWORD cbHash = 0;
-        DWORD cbData = 0;
-        std::string result = "";
-
-        if (!BCRYPT_SUCCESS(BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, NULL, 0)))
-        {
-            Log::GetLog()->error("BCryptOpenAlgorithmProvider SHA256 failed");
-            return "";
-        }
-
-        if (BCRYPT_SUCCESS(BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PBYTE)&cbHashObject, sizeof(DWORD), &cbData, 0)))
-        {
-            std::vector<unsigned char> hashObject(cbHashObject);
-            if (BCRYPT_SUCCESS(BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PBYTE)&cbHash, sizeof(DWORD), &cbData, 0)))
+            if ((Character >= 'a' && Character <= 'z') ||
+                (Character >= 'A' && Character <= 'Z') ||
+                (Character >= '0' && Character <= '9') ||
+                Character == '-' || Character == '_' || Character == '.' || Character == '~')
             {
-                std::vector<unsigned char> hash(cbHash);
-                if (BCRYPT_SUCCESS(BCryptCreateHash(hAlg, &hHash, hashObject.data(), cbHashObject, NULL, 0, 0)))
-                {
-                    if (BCRYPT_SUCCESS(BCryptHashData(hHash, (PBYTE)Input.c_str(), (ULONG)Input.length(), 0)))
-                    {
-                        if (BCRYPT_SUCCESS(BCryptFinishHash(hHash, hash.data(), cbHash, 0)))
-                        {
-                            result = ToHex(hash.data(), cbHash);
-                        }
-                    }
-                    BCryptDestroyHash(hHash);
-                }
+                Encoded << Character;
+            }
+            else
+            {
+                Encoded << '%' << std::setw(2) << std::setfill('0') << static_cast<int>(Character);
             }
         }
-
-        BCryptCloseAlgorithmProvider(hAlg, 0);
-        return result;
-    }
-
-    std::string CalculateHmacSha256(const std::string& Input, const std::string& Key)
-    {
-        BCRYPT_ALG_HANDLE hAlg = NULL;
-        BCRYPT_HASH_HANDLE hHash = NULL;
-        DWORD cbHashObject = 0;
-        DWORD cbHash = 0;
-        DWORD cbData = 0;
-        std::string result = "";
-
-        if (!BCRYPT_SUCCESS(BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, NULL, BCRYPT_ALG_HANDLE_HMAC_FLAG)))
-        {
-            Log::GetLog()->error("BCryptOpenAlgorithmProvider HMAC-SHA256 failed");
-            return "";
-        }
-
-        if (BCRYPT_SUCCESS(BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PBYTE)&cbHashObject, sizeof(DWORD), &cbData, 0)))
-        {
-            std::vector<unsigned char> hashObject(cbHashObject);
-            if (BCRYPT_SUCCESS(BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PBYTE)&cbHash, sizeof(DWORD), &cbData, 0)))
-            {
-                std::vector<unsigned char> hash(cbHash);
-                if (BCRYPT_SUCCESS(BCryptCreateHash(hAlg, &hHash, hashObject.data(), cbHashObject, (PUCHAR)Key.c_str(), (ULONG)Key.length(), 0)))
-                {
-                    if (BCRYPT_SUCCESS(BCryptHashData(hHash, (PBYTE)Input.c_str(), (ULONG)Input.length(), 0)))
-                    {
-                        if (BCRYPT_SUCCESS(BCryptFinishHash(hHash, hash.data(), cbHash, 0)))
-                        {
-                            result = ToHex(hash.data(), cbHash);
-                        }
-                    }
-                    BCryptDestroyHash(hHash);
-                }
-            }
-        }
-
-        BCryptCloseAlgorithmProvider(hAlg, 0);
-        return result;
-    }
-
-    std::string GenerateNonce()
-    {
-        static const char alphabet[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        std::string nonce;
-        nonce.reserve(16);
-        std::random_device rd;
-        std::mt19937 generator(rd());
-        std::uniform_int_distribution<int> distribution(0, sizeof(alphabet) - 2);
-        for (int i = 0; i < 16; ++i)
-        {
-            nonce += alphabet[distribution(generator)];
-        }
-        return nonce;
+        return Encoded.str();
     }
 
     std::string GetCurrentDllSha256()
@@ -137,7 +54,7 @@ namespace
             {
                 std::string content((std::istreambuf_iterator<char>(file)),
                                     std::istreambuf_iterator<char>());
-                return CalculateSha256(content);
+                return RequestSigning::CalculateSha256Hex(content);
             }
         }
         return "";
@@ -154,28 +71,6 @@ namespace
         return ss.str();
     }
 
-    bool IsSignedEndpoint(const std::string& Endpoint)
-    {
-        // Companion read-only projections are signed plugin routes. They live under
-        // /player/{id}/... so we match the suffix; the bare legacy /player/{id} remains on
-        // the unsigned bearer path until CR-PLUGIN-006 migrates it.
-        const bool IsCompanion =
-            Endpoint.rfind("/player/", 0) == 0 &&
-            (Endpoint.size() >= 7 &&
-             (Endpoint.rfind("/wallet") == Endpoint.size() - 7 ||
-              Endpoint.rfind("/pending-deliveries") == Endpoint.size() - 19));
-
-        // Wallet event projection for notification sync is also a signed plugin route.
-        const bool IsWalletEvents = Endpoint.rfind("/wallet/events", 0) == 0;
-
-        return Endpoint == "/heartbeat" ||
-               Endpoint == "/deliveries/claim" ||
-               Endpoint.rfind("/deliveries/", 0) == 0 ||
-               Endpoint == "/market/prepare-lock" ||
-               Endpoint == "/market/confirm-lock" ||
-               IsCompanion ||
-               IsWalletEvents;
-    }
 }
 
     HttpClient::HttpClient(
@@ -190,6 +85,7 @@ namespace
         , m_ServerId(ServerId)
         , m_AllowInvalidCertificates(AllowInvalidCertificates)
         , m_RequestState(std::make_shared<RequestState>())
+        , m_RequestPolicy(std::make_shared<RequestPolicy>())
     {
     }
 
@@ -227,14 +123,43 @@ namespace
 
     void HttpClient::SendHeartbeat(int PlayerCount, HttpCallback Callback)
     {
+        const auto CircuitState = m_RequestPolicy->State(std::chrono::steady_clock::now());
+        const char* CircuitStateName = "closed";
+        if (CircuitState == RequestPolicy::CircuitState::Open)
+        {
+            CircuitStateName = "open";
+        }
+        else if (CircuitState == RequestPolicy::CircuitState::HalfOpen)
+        {
+            CircuitStateName = "half-open";
+        }
+
         nlohmann::json Body;
         Body["playerCount"] = PlayerCount;
         Body["pluginVersion"] = Version;
         Body["buildSha256"] = GetCurrentDllSha256();
-        Body["arkApiVersion"] = "1.0";
-        Body["capabilities"] = nlohmann::json::array({ "hmac_signatures", "atomic_claims", "p2p_locks" });
+        Body["arkApiVersion"] = std::to_string(ArkApi::Tools::GetApiVersion());
+        Body["protocolVersion"] = 1;
+        Body["capabilities"] = nlohmann::json::array({
+            "hmac_signatures",
+            "atomic_claims",
+            "delivery_receipts",
+            "local_idempotency_journal",
+            "read_retry",
+            "circuit_breaker",
+            "delivery.item.v1",
+            "delivery.item.bundle.v1",
+            "delivery.dino.catalog.v1",
+            "game-shop.quote-confirm.v1",
+            "marketplace.asset-lock.v1",
+            "marketplace.dino-native.v2",
+            "delivery.dino.v2",
+            "protocol.v1"
+        });
+        // Requests are admitted or rejected immediately; there is deliberately
+        // no in-memory mutation queue that could be lost on plugin shutdown.
         Body["queueDepth"] = 0;
-        Body["circuitBreakerState"] = "closed";
+        Body["circuitBreakerState"] = CircuitStateName;
         DoPost("/heartbeat", Body, Callback);
     }
 
@@ -250,11 +175,13 @@ namespace
         DoGet("/player/" + SteamId, Callback);
     }
 
-    // Companion read-only projections. These are server-signed plugin routes (target of
-    // CR-PLUGIN-007 in the handoff). Until the backend exposes a dedicated companion
-    // endpoint, the caller (Companion command) reads balance/pending counts from the
-    // existing signed /player/{steamId} projection. The plugin only displays these values
-    // and never computes or stores balances locally.
+    // Companion read-only projections (CR-PLUGIN-007, now LIVE in the M3 backend contract).
+    // Dedicated server-scoped, signed plugin routes:
+    //   GET /plugin/player/{steamId}/wallet            -> WalletBalance (decimal strings)
+    //   GET /plugin/player/{steamId}/pending-deliveries -> { pending: <int> }
+    // The configured ApiUrl already ends in /api/plugin, so the path below resolves to the
+    // dedicated companion endpoint (NOT the legacy /plugin/player/{steamId} lookup). The
+    // plugin only displays these values verbatim and never computes or stores balances locally.
     void HttpClient::GetWalletBalance(const std::string& SteamId, HttpCallback Callback)
     {
         DoGet("/player/" + SteamId + "/wallet", Callback);
@@ -263,6 +190,37 @@ namespace
     void HttpClient::GetPendingDeliveries(const std::string& SteamId, HttpCallback Callback)
     {
         DoGet("/player/" + SteamId + "/pending-deliveries", Callback);
+    }
+
+    void HttpClient::GetCatalog(const std::string& SteamId, const std::string& Search, HttpCallback Callback)
+    {
+        std::string Endpoint = "/catalog?steamId=" + UrlEncode(SteamId);
+        if (!Search.empty()) Endpoint += "&search=" + UrlEncode(Search);
+        DoGet(Endpoint, Callback);
+    }
+
+    void HttpClient::CreatePurchaseQuote(
+        const std::string& SteamId,
+        int ProductId,
+        int Quantity,
+        HttpCallback Callback)
+    {
+        nlohmann::json Body;
+        Body["steamId"] = SteamId;
+        Body["productId"] = ProductId;
+        Body["quantity"] = Quantity;
+        DoPost("/purchase/quote", Body, Callback);
+    }
+
+    void HttpClient::ConfirmPurchaseQuote(
+        const std::string& SteamId,
+        const std::string& QuoteId,
+        HttpCallback Callback)
+    {
+        nlohmann::json Body;
+        Body["steamId"] = SteamId;
+        Body["quoteId"] = QuoteId;
+        DoPost("/purchase/confirm", Body, Callback);
     }
 
     void HttpClient::GetWalletEvents(const std::string& Since, HttpCallback Callback)
@@ -324,6 +282,16 @@ namespace
     }
 
     // Dino Market API
+    void HttpClient::PrepareDinoLock(const nlohmann::json& DinoIdentity, HttpCallback Callback)
+    {
+        DoPost("/market/prepare-lock", DinoIdentity, Callback);
+    }
+
+    void HttpClient::ConfirmDinoLock(const nlohmann::json& ListingData, HttpCallback Callback)
+    {
+        DoPost("/market/confirm-lock", ListingData, Callback);
+    }
+
     void HttpClient::CreateDinoListing(const nlohmann::json& DinoData, HttpCallback Callback)
     {
         // Note: This uses /market/plugin/listings endpoint
@@ -406,11 +374,24 @@ namespace
         const int ServerId = m_ServerId;
         const bool AllowInvalidCertificates = m_AllowInvalidCertificates;
         const auto State = m_RequestState;
+        const auto Policy = m_RequestPolicy;
+
+        const auto Admission = Policy->TryAcquire(std::chrono::steady_clock::now());
+        if (Admission != RequestPolicy::Admission::Accepted)
+        {
+            Log::GetLog()->warn("HTTP request rejected: {}",
+                Admission == RequestPolicy::Admission::CircuitOpen ? "circuit open" : "concurrency limit");
+            GameThreadDispatcher::Enqueue([State, Callback]() {
+                if (!State->ShuttingDown.load()) Callback(false, {});
+            });
+            return;
+        }
 
         {
             std::lock_guard<std::mutex> Lock(State->Mutex);
             if (State->ShuttingDown.load())
             {
+                Policy->Release();
                 return;
             }
             ++State->ActiveRequests;
@@ -421,20 +402,26 @@ namespace
         // forever on an ActiveRequests count that has no worker.
         try
         {
-            std::thread([BaseUrl, ApiKey, KeyId, ServerId, AllowInvalidCertificates, State, Method, Endpoint, Body, Callback]() {
+            std::thread([BaseUrl, ApiKey, KeyId, ServerId, AllowInvalidCertificates, State, Policy, Method, Endpoint, Body, Callback]() {
             struct RequestGuard
             {
                 std::shared_ptr<RequestState> State;
+                std::shared_ptr<RequestPolicy> Policy;
 
                 ~RequestGuard()
                 {
+                    Policy->Release();
                     std::lock_guard<std::mutex> Lock(State->Mutex);
                     --State->ActiveRequests;
                     State->Finished.notify_all();
                 }
-            } Guard{State};
+            } Guard{State, Policy};
 
-            auto Complete = [State, Callback](bool Success, nlohmann::json Response) {
+            auto Finalize = [State, Policy, Callback](bool Success, nlohmann::json Response) {
+                const int Status = Response.is_object() ? Response.value("_httpStatus", 0) : 0;
+                const bool Transient = !Success && (Status == 0 || RequestPolicy::IsTransientHttpStatus(Status));
+                Policy->RecordResult(Success, Transient, std::chrono::steady_clock::now());
+                if (Response.is_object()) Response.erase("_httpStatus");
                 if (State->ShuttingDown.load())
                 {
                     return;
@@ -447,6 +434,29 @@ namespace
                             Callback(Success, Response);
                         }
                     });
+            };
+
+            // All attempts stay in this one bounded worker slot. Only read-only methods may
+            // retry; mutating requests complete after exactly one network attempt until the
+            // backend supplies an idempotency contract for them.
+            auto PerformAttempt = std::make_shared<std::function<void(int)>>();
+            *PerformAttempt = [BaseUrl, ApiKey, KeyId, ServerId, AllowInvalidCertificates,
+                               State, Policy, Method, Endpoint, Body, Finalize, PerformAttempt](int Attempt) {
+            auto Complete = [State, Policy, Method, Attempt, Finalize, PerformAttempt](
+                                bool Success, nlohmann::json Response) {
+                const int Status = Response.is_object() ? Response.value("_httpStatus", 0) : 0;
+                const bool TransportFailure = !Success && Status == 0;
+                if (!Success && !State->ShuttingDown.load() &&
+                    Policy->ShouldRetry(Method, Attempt, TransportFailure, Status))
+                {
+                    const auto Delay = Policy->BackoffFor(Attempt);
+                    Log::GetLog()->warn("Retrying read-only HTTP request after {} ms (attempt {})",
+                                        Delay.count(), Attempt + 2);
+                    std::this_thread::sleep_for(Delay);
+                    if (!State->ShuttingDown.load()) (*PerformAttempt)(Attempt + 1);
+                    return;
+                }
+                Finalize(Success, std::move(Response));
             };
 
             try
@@ -482,11 +492,14 @@ namespace
 
                 wchar_t hostName[256] = { 0 };
                 wchar_t urlPath[1024] = { 0 };
+                wchar_t extraInfo[2048] = { 0 };
 
                 urlComp.lpszHostName = hostName;
                 urlComp.dwHostNameLength = sizeof(hostName) / sizeof(wchar_t);
                 urlComp.lpszUrlPath = urlPath;
                 urlComp.dwUrlPathLength = sizeof(urlPath) / sizeof(wchar_t);
+                urlComp.lpszExtraInfo = extraInfo;
+                urlComp.dwExtraInfoLength = sizeof(extraInfo) / sizeof(wchar_t);
 
                 std::wstring WideUrl(FullUrl.begin(), FullUrl.end());
                 if (!WinHttpCrackUrl(WideUrl.c_str(), 0, 0, &urlComp))
@@ -515,10 +528,14 @@ namespace
 
                 // Create request
                 std::wstring WideMethod(Method.begin(), Method.end());
+                // WinHttpOpenRequest receives the path and query together. Keeping this exact
+                // target in the HMAC canonical string prevents signed query endpoints (for
+                // example wallet/events?since=...) from being sent or verified as another URL.
+                const std::wstring RequestTarget = std::wstring(urlPath) + std::wstring(extraInfo);
                 HINTERNET hRequest = WinHttpOpenRequest(
                     hConnect,
                     WideMethod.c_str(),
-                    urlPath,
+                    RequestTarget.c_str(),
                     NULL,
                     WINHTTP_NO_REFERER,
                     WINHTTP_DEFAULT_ACCEPT_TYPES,
@@ -555,18 +572,50 @@ namespace
                 std::string BodyStr = Body.empty() ? "" : Body.dump();
 
                 // Add headers
-                if (IsSignedEndpoint(Endpoint))
+                if (RequestSigning::IsSignedPluginEndpoint(Endpoint))
                 {
-                    std::string PathAndQuery = ArkApi::Tools::Utf8Encode(urlPath);
-                    std::string Nonce = GenerateNonce();
+                    std::string PathAndQuery = ArkApi::Tools::Utf8Encode(RequestTarget);
+                    std::string Nonce = RequestSigning::GenerateNonceHex();
+                    if (Nonce.empty())
+                    {
+                        Log::GetLog()->error("BCryptGenRandom failed while creating request nonce");
+                        WinHttpCloseHandle(hRequest);
+                        WinHttpCloseHandle(hConnect);
+                        WinHttpCloseHandle(hSession);
+                        Complete(false, {});
+                        return;
+                    }
                     long long Timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::system_clock::now().time_since_epoch()).count();
                     std::string TimestampStr = std::to_string(Timestamp);
-                    std::string ContentSha = CalculateSha256(BodyStr);
+                    std::string ContentSha = RequestSigning::CalculateSha256Hex(BodyStr);
+                    if (ContentSha.empty())
+                    {
+                        Log::GetLog()->error("SHA-256 calculation failed while signing request");
+                        WinHttpCloseHandle(hRequest);
+                        WinHttpCloseHandle(hConnect);
+                        WinHttpCloseHandle(hSession);
+                        Complete(false, {});
+                        return;
+                    }
                     // Canonical signing string is unchanged. The HMAC is computed with the
                     // shared secret (ApiKey); the secret is NEVER placed in any header.
-                    std::string CanonicalString = Method + "\n" + PathAndQuery + "\n" + TimestampStr + "\n" + Nonce + "\n" + ContentSha;
-                    std::string Signature = CalculateHmacSha256(CanonicalString, ApiKey);
+                    std::string CanonicalString = RequestSigning::BuildCanonicalRequest(
+                        Method,
+                        PathAndQuery,
+                        TimestampStr,
+                        Nonce,
+                        ContentSha);
+                    std::string Signature = RequestSigning::CalculateHmacSha256Hex(CanonicalString, ApiKey);
+                    if (Signature.empty())
+                    {
+                        Log::GetLog()->error("HMAC-SHA256 calculation failed while signing request");
+                        WinHttpCloseHandle(hRequest);
+                        WinHttpCloseHandle(hConnect);
+                        WinHttpCloseHandle(hSession);
+                        Complete(false, {});
+                        return;
+                    }
 
                     // X-Plugin-Key-Id carries the rotatable credential identifier ONLY. It is
                     // not the secret and is safe to log. The backend resolves keyId -> secret
@@ -651,7 +700,7 @@ namespace
                     WinHttpCloseHandle(hRequest);
                     WinHttpCloseHandle(hConnect);
                     WinHttpCloseHandle(hSession);
-                    Complete(false, {});
+                    Complete(false, nlohmann::json{{"_httpStatus", StatusCode}});
                     return;
                 }
 
@@ -702,10 +751,15 @@ namespace
                 Log::GetLog()->error("HTTP request failed: {}", e.what());
                 Complete(false, {});
             }
+            };
+            (*PerformAttempt)(0);
+            // Break the self-reference after the synchronous attempt chain has completed.
+            *PerformAttempt = {};
             }).detach();
         }
         catch (const std::exception& e)
         {
+            Policy->Release();
             {
                 std::lock_guard<std::mutex> Lock(State->Mutex);
                 --State->ActiveRequests;

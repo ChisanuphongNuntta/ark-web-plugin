@@ -4,6 +4,9 @@
   "description": "Heart Shop ARK Plugin Backend API",
   "type": "module",
   "main": "src/index.ts",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
@@ -11,10 +14,14 @@
     "dev:bun": "bun run --watch src/index.ts",
     "start:bun": "bun run src/index.ts",
     "db:generate": "npx prisma generate",
+    "db:deploy": "node scripts/deploy-database.mjs",
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev",
     "db:studio": "npx prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "catalog:import": "tsx scripts/import-arkshop-catalog.ts",
+    "catalog:audit-wiki": "tsx scripts/sync-ark-wiki-reference.ts",
+    "balances:import": "node scripts/import-arkshop-balances.mjs",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -42,7 +49,8 @@
     "passport-steam": "^1.0.18",
     "redis": "^5.10.0",
     "socket.io": "^4.8.1",
-    "uuid": "^10.0.0",
+    "stripe": "^22.6.2",
+    "uuid": "^14.0.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -56,12 +64,14 @@
     "@types/passport": "^1.0.16",
     "@types/passport-discord": "^0.1.13",
     "@types/supertest": "^6.0.2",
-    "@types/uuid": "^10.0.0",
-    "@vitest/coverage-v8": "^2.1.0",
+    "@vitest/coverage-v8": "^4.1.10",
     "prisma": "^5.22.0",
     "supertest": "^7.0.0",
     "tsx": "^4.19.1",
     "typescript": "^5.6.2",
-    "vitest": "^2.1.0"
+    "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "undici": "6.27.0"
   }
 }

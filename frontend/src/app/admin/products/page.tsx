@@ -1,5 +1,11 @@
 'use client';
 
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { Button } from '@/components/ui/Button';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
+
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store';
@@ -19,13 +25,13 @@ import {
   Save,
   MoreVertical,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Sparkles,
+  Wand2,
 } from 'lucide-react';
 import Link from 'next/link';
-import LaserModal from '@/components/LaserModal';
-import LaserCard from '@/components/LaserCard';
-import LaserButton from '@/components/LaserButton';
-import Image from 'next/image';
+import { ProductArtwork } from '@/components/ProductArtwork';
+import { expandBlueprintPath, COMMON_BLUEPRINT_PRESETS } from '@/lib/blueprintHelper';
 
 interface Product {
   id: number;
@@ -56,6 +62,8 @@ export default function AdminProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'visuals' | 'game'>('basic');
   const [search, setSearch] = useState('');
+  const [draftsOnly, setDraftsOnly] = useState(false);
+  const [page, setPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState<string>('');
 
   const [formData, setFormData] = useState({
@@ -66,16 +74,16 @@ export default function AdminProductsPage() {
     quantity: 1,
     quality: 0,
     isBlueprint: false,
-    isActive: true,
+    isActive: false,
     isFeatured: false,
     categoryId: '',
     imageUrl: '',
     sortOrder: 0,
   });
 
-  const { data: productsData, isLoading } = useQuery({
+  const { data: productsData, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: () => productApi.getAll({ includeInactive: true }).then((res) => res.data),
+    queryFn: () => adminApi.getProducts().then((res) => res.data),
     enabled: !!user?.isAdmin,
   });
 
@@ -136,7 +144,7 @@ export default function AdminProductsPage() {
         quantity: 1,
         quality: 0,
         isBlueprint: false,
-        isActive: true,
+        isActive: false,
         isFeatured: false,
         categoryId: '',
         imageUrl: '',
@@ -155,6 +163,7 @@ export default function AdminProductsPage() {
     e.preventDefault();
     const data = {
       ...formData,
+      itemBlueprint: expandBlueprintPath(formData.itemBlueprint),
       price: Number(formData.price),
       quantity: Number(formData.quantity),
       quality: Number(formData.quality),
@@ -232,13 +241,13 @@ export default function AdminProductsPage() {
   const filteredProducts = productsData?.products?.filter((p: Product) => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = categoryFilter ? p.categoryId?.toString() === categoryFilter : true;
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && (!draftsOnly || !p.isActive);
   });
 
   if (authLoading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-ark-accent" />
+        <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
       </div>
     );
   }
@@ -264,13 +273,14 @@ export default function AdminProductsPage() {
             จัดการสินค้า
           </h1>
         </div>
-        <LaserButton onClick={() => openModal()} icon={<Plus className="h-5 w-5" />}>
+        <Button onClick={() => openModal()} icon={<Plus className="h-5 w-5" />}>
           เพิ่มสินค้า
-        </LaserButton>
+        </Button>
       </div>
 
+      <div className="frozen-editorial-card flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-lg">ตรวจราคาและข้อมูลก่อนเปิดขาย</h2><p className="text-sm text-iris-muted">รายการร่างยังไม่ปรากฏในร้านค้า ตรวจรูป ราคา และการส่งของก่อนเปิดใช้งาน</p></div><button className="btn-secondary" aria-pressed={draftsOnly} onClick={()=>{setDraftsOnly(!draftsOnly);setPage(1);}}>{draftsOnly?'แสดงทั้งหมด':'ดูรายการรอตรวจ'}</button></div>
       {/* Filters */}
-      <LaserCard glowOnHover>
+      <GlassCard glowOnHover>
         <div className="p-4 flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -278,7 +288,7 @@ export default function AdminProductsPage() {
               type="text"
               placeholder="ค้นหาสินค้า..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {setSearch(e.target.value);setPage(1);}}
               className="input pl-10 w-full"
             />
           </div>
@@ -286,7 +296,7 @@ export default function AdminProductsPage() {
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <select
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              onChange={(e) => {setCategoryFilter(e.target.value);setPage(1);}}
               className="input pl-10 w-full appearance-none"
             >
               <option value="">ทุกหมวดหมู่</option>
@@ -298,35 +308,30 @@ export default function AdminProductsPage() {
             </select>
           </div>
         </div>
-      </LaserCard>
+      </GlassCard>
 
+      {isError && <ErrorMessage title="โหลดรายการสินค้าไม่สำเร็จ" message="กรุณาลองใหม่อีกครั้ง" onRetry={() => refetch()} />}
       {/* Products Grid */}
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-ark-accent" />
+          <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredProducts?.map((product: Product) => (
-            <LaserCard key={product.id} className="group relative overflow-hidden flex flex-col h-full hover:border-emerald-500/50 transition-colors">
+          {filteredProducts?.slice((page - 1) * 24, page * 24).map((product: Product) => (
+            <GlassCard key={product.id} className="group relative overflow-hidden flex flex-col h-full hover:border-emerald-500/50 transition-colors">
               {/* Image / Icon */}
               <div className="h-40 bg-black/40 relative flex items-center justify-center overflow-hidden">
-                {product.imageUrl ? (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="text-emerald-500/20 group-hover:text-emerald-500/40 transition-colors">
-                    <Package className="h-16 w-16" />
-                  </div>
-                )}
+                <ProductArtwork
+                  product={product}
+                  alt={product.name}
+                  className="h-full w-full transition-transform group-hover:scale-105"
+                />
 
                 {/* Badges */}
                 <div className="absolute top-2 left-2 flex flex-col gap-1">
                   {product.isFeatured && (
-                    <span className="px-2 py-0.5 rounded bg-ark-gold/20 text-ark-gold text-xs font-bold border border-ark-gold/30 backdrop-blur-sm">
+                    <span className="px-2 py-0.5 rounded bg-iris-gold/20 text-iris-gold text-xs font-bold border border-iris-gold/30 backdrop-blur-sm">
                       แนะนำ
                     </span>
                   )}
@@ -337,15 +342,17 @@ export default function AdminProductsPage() {
                   )}
                 </div>
 
-                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex gap-1 opacity-100 transition-opacity">
                   <button
                     onClick={() => openModal(product)}
+                    aria-label={`แก้ไข ${product.name}`}
                     className="p-2 bg-black/60 rounded-lg hover:bg-emerald-500 text-white transition-colors"
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(product)}
+                    aria-label={`ลบ ${product.name}`}
                     className="p-2 bg-black/60 rounded-lg hover:bg-red-500 text-white transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -353,6 +360,7 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
+              {!product.imageUrl && <p className="px-4 pt-3 text-xs text-amber-200">รอตรวจรูปภาพสินค้า</p>}
               {/* Content */}
               <div className="p-4 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-2">
@@ -372,14 +380,14 @@ export default function AdminProductsPage() {
 
                 <div className="mt-auto flex items-center justify-between pt-3 border-t border-gray-800">
                   <div className="text-emerald-400 font-mono font-bold text-lg">
-                    {product.price.toLocaleString()} P
+                    {product.price.toLocaleString()} IC
                   </div>
                   <div className="text-xs text-gray-500">
                     ID: {product.id}
                   </div>
                 </div>
               </div>
-            </LaserCard>
+            </GlassCard>
           ))}
 
           {/* Add New Card (Empty State) */}
@@ -395,10 +403,14 @@ export default function AdminProductsPage() {
         </div>
       )}
 
+      <nav aria-label="หน้ารายการสินค้า" className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-iris-muted">{filteredProducts?.length || 0} รายการ · หน้า {page} / {Math.max(1, Math.ceil((filteredProducts?.length || 0) / 24))}</p>
+        <div className="flex gap-2"><Button variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>ก่อนหน้า</Button><Button variant="secondary" disabled={page * 24 >= (filteredProducts?.length || 0)} onClick={() => setPage(page + 1)}>ถัดไป</Button></div>
+      </nav>
       {/* Editor Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <LaserCard className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+          <GlassCard className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-800 flex items-center justify-between bg-black/20">
               <h2 className="text-2xl font-bold flex items-center gap-3">
@@ -411,9 +423,9 @@ export default function AdminProductsPage() {
             </div>
 
             {/* Content with Sidebar */}
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
               {/* Sidebar Tabs */}
-              <div className="w-64 bg-black/20 border-r border-gray-800 p-4 flex flex-col gap-2 overflow-y-auto">
+              <div className="w-full md:w-56 shrink-0 bg-black/20 border-r border-gray-800 p-3 flex md:flex-col gap-2 overflow-auto">
                 <button
                   onClick={() => setActiveTab('basic')}
                   className={`flex items-center gap-3 p-3 rounded-lg text-left transition-all ${activeTab === 'basic'
@@ -447,8 +459,10 @@ export default function AdminProductsPage() {
               </div>
 
               {/* Form Content */}
-              <div className="flex-1 overflow-y-auto p-6 bg-black/10">
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 bg-black/10">
                 <form id="product-form" onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
+                  {(createMutation.isError || updateMutation.isError) && <p role="alert" className="rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-sm text-red-200">บันทึกไม่สำเร็จ ข้อมูลในฟอร์มยังอยู่ กรุณาลองอีกครั้ง</p>}
+                  {editingProduct && !editingProduct.isActive && <p className="rounded-xl border border-sky-200/20 bg-sky-100/5 p-3 text-sm text-sky-100">{editingProduct.description || 'ร่างรอตรวจราคา รูปภาพ และการส่งของก่อนเปิดขาย'}</p>}
 
                   {/* BASIC INFO TAB */}
                   {activeTab === 'basic' && (
@@ -471,7 +485,7 @@ export default function AdminProductsPage() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm text-gray-400 mb-1">ราคา (Points) *</label>
+                          <label className="block text-sm text-gray-400 mb-1">ราคา (IC) *</label>
                           <div className="relative">
                             <input
                               type="number"
@@ -572,18 +586,18 @@ export default function AdminProductsPage() {
                               <div className={`w-3 h-3 rounded-full ${formData.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
                             </label>
 
-                            <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-800 bg-black/20 cursor-pointer hover:border-ark-gold/50 transition-colors">
+                            <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-800 bg-black/20 cursor-pointer hover:border-iris-gold/50 transition-colors">
                               <input
                                 type="checkbox"
                                 checked={formData.isFeatured}
                                 onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                                className="w-5 h-5 accent-ark-gold"
+                                className="w-5 h-5 accent-amber-400"
                               />
                               <div className="flex-1">
                                 <div className="font-medium text-white">สินค้าแนะนำ</div>
                                 <div className="text-xs text-gray-500">แสดงในส่วน Featured</div>
                               </div>
-                              {formData.isFeatured && <div className="text-ark-gold">★</div>}
+                              {formData.isFeatured && <div className="text-iris-gold">★</div>}
                             </label>
                           </div>
                         </div>
@@ -597,22 +611,80 @@ export default function AdminProductsPage() {
                       <h3 className="text-lg font-bold border-b border-gray-800 pb-2 mb-4 text-emerald-400">ข้อมูลภายในเกม</h3>
 
                       <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl mb-4">
-                        <h4 className="flex items-center gap-2 font-bold text-blue-400 mb-2">
-                          <Layers className="h-4 w-4" />
-                          Blueprint Path
-                        </h4>
-                        <p className="text-sm text-gray-300 mb-3">
-                          ใส่ Path ของไอเทม (Blueprint) จาก ARK. <br />
-                          <span className="text-xs text-gray-500">ตัวอย่าง: Blueprint'/Game/PrimalEarth/CoreBlueprints/Resources/PrimalItemResource_Polymer.PrimalItemResource_Polymer'</span>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <h4 className="flex items-center gap-2 font-bold text-blue-400">
+                            <Layers className="h-4 w-4" />
+                            Blueprint Path (รองรับชื่อสั้น & AI Format)
+                          </h4>
+                          <span className="text-[11px] font-semibold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <Sparkles className="h-3 w-3" /> Auto-Expand
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-300 mb-2">
+                          พิมพ์ชื่อไอเทมแบบสั้น, Path ย่อย หรือ Blueprint Path เต็มจาก ARK ได้ทันที <br />
+                          <span className="text-xs text-gray-400">
+                            ตัวอย่างแบบสั้น: <code className="text-cyan-300 bg-black/40 px-1 py-0.5 rounded">PrimalItemResource_Polymer</code> หรือ <code className="text-cyan-300 bg-black/40 px-1 py-0.5 rounded">PopOutCake/PrimalItemStructure_BirthdayCake</code>
+                          </span>
                         </p>
                         <input
                           type="text"
                           required
                           value={formData.itemBlueprint}
                           onChange={(e) => setFormData({ ...formData, itemBlueprint: e.target.value })}
-                          className="input w-full font-mono text-xs p-3 bg-black/50 border-blue-500/20 focus:border-blue-500"
-                          placeholder="Blueprint'/Game/...'"
+                          className="input w-full font-mono text-xs p-3 bg-black/50 border-blue-500/20 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
+                          placeholder="เช่น Polymer, Rex_Character_BP, PopOutCake/PrimalItemStructure_BirthdayCake หรือ Blueprint'/'"
                         />
+
+                        {/* Realtime Blueprint Expansion & Helper */}
+                        {formData.itemBlueprint ? (
+                          <div className="mt-3 rounded-xl border border-cyan-500/30 bg-cyan-950/40 p-3 text-xs space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-semibold text-cyan-300 flex items-center gap-1.5">
+                                <Sparkles className="h-3.5 w-3.5 text-cyan-300" />
+                                {formData.itemBlueprint.trim() !== expandBlueprintPath(formData.itemBlueprint)
+                                  ? 'ระบบแปลงเป็น Path เต็มของ Unreal Engine ให้อัตโนมัติ:'
+                                  : 'Path รูปแบบมาตรฐานของ ARK:'}
+                              </span>
+                              {formData.itemBlueprint.trim() !== expandBlueprintPath(formData.itemBlueprint) && (
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, itemBlueprint: expandBlueprintPath(formData.itemBlueprint) })}
+                                  className="px-2.5 py-1 rounded-lg bg-cyan-500/25 hover:bg-cyan-500/40 text-cyan-200 font-bold text-[11px] border border-cyan-400/40 transition flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Wand2 className="h-3 w-3" /> ขยายเป็น Path เต็ม
+                                </button>
+                              )}
+                            </div>
+                            <code className="block font-mono text-[11px] text-slate-200 break-all bg-black/60 p-2.5 rounded-lg border border-cyan-500/20 select-all">
+                              {expandBlueprintPath(formData.itemBlueprint)}
+                            </code>
+                          </div>
+                        ) : null}
+
+                        {/* Quick Presets */}
+                        <div className="mt-3 pt-3 border-t border-blue-500/20">
+                          <p className="text-[11px] font-semibold text-gray-400 mb-2">
+                            ⚡ รายการยอดนิยม (คลิกเพื่อใส่ Blueprint ทันที):
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {COMMON_BLUEPRINT_PRESETS.map((preset) => (
+                              <button
+                                key={preset.shortPath}
+                                type="button"
+                                onClick={() =>
+                                  setFormData({
+                                    ...formData,
+                                    itemBlueprint: preset.shortPath,
+                                    name: formData.name || preset.label.split(' (')[0],
+                                  })
+                                }
+                                className="rounded-lg bg-white/5 hover:bg-cyan-500/20 border border-white/10 hover:border-cyan-400/40 px-2.5 py-1 text-[11px] text-slate-300 hover:text-white transition cursor-pointer"
+                              >
+                                {preset.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
@@ -667,34 +739,49 @@ export default function AdminProductsPage() {
 
             {/* Footer Actions */}
             <div className="p-6 border-t border-gray-800 bg-black/20 flex justify-end gap-3">
-              <LaserButton variant="secondary" onClick={closeModal} disabled={createMutation.isPending || updateMutation.isPending}>
+              <Button variant="secondary" onClick={closeModal} disabled={createMutation.isPending || updateMutation.isPending}>
                 ยกเลิก
-              </LaserButton>
-              <LaserButton
+              </Button>
+              <Button
                 variant="primary"
                 onClick={(e) => handleSubmit(e as any)}
                 loading={createMutation.isPending || updateMutation.isPending}
                 icon={<Save className="h-4 w-4" />}
               >
                 {editingProduct ? 'บันทึกการแก้ไข' : 'เพิ่มสินค้า'}
-              </LaserButton>
+              </Button>
             </div>
-          </LaserCard>
+          </GlassCard>
         </div>
       )}
 
       {/* Laser Modal for alerts */}
-      <LaserModal
-        isOpen={modalConfig.isOpen}
-        onClose={closeModalState}
-        onConfirm={modalConfig.onConfirm}
-        title={modalConfig.title}
-        variant={modalConfig.variant}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-      >
-        {modalConfig.content}
-      </LaserModal>
+      <Dialog open={modalConfig?.isOpen ?? false} onOpenChange={(open) => !open && closeModal?.()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{modalConfig?.title || 'แจ้งเตือน'}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-sm text-iris-muted">
+            {modalConfig?.content}
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            {!(modalConfig as any)?.singleButton && (
+              <Button variant="outline" onClick={closeModal}>
+                {modalConfig?.cancelText || 'ยกเลิก'}
+              </Button>
+            )}
+            <Button
+              variant={modalConfig?.variant === 'danger' ? 'danger' : 'primary'}
+              onClick={() => {
+                modalConfig?.onConfirm?.();
+                closeModal?.();
+              }}
+            >
+              {modalConfig?.confirmText || 'ตกลง'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

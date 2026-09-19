@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import crypto from 'crypto';
 import prisma from '../../src/config/database.js';
 import { authenticateSignedPlugin } from '../../src/middlewares/auth.js';
-import { encryptDeterministic } from '../../src/utils/encryption.js';
+import { encrypt } from '../../src/utils/encryption.js';
 import redis from '../../src/config/redis.js';
 
 // Mock Redis: by default the nonce is fresh ('OK'); individual tests override for replay.
@@ -67,7 +67,7 @@ describe('CR-PLUGIN-001 — HMAC keyId -> secret resolution', () => {
       id: 'cred-1',
       serverId: 7,
       keyId,
-      secretEnc: encryptDeterministic(secret),
+      secretEnc: encrypt(secret),
       status: 'active',
     });
     db.server.findUnique.mockResolvedValueOnce({ id: 7, name: 'PVE-7', isActive: true });
@@ -93,7 +93,7 @@ describe('CR-PLUGIN-001 — HMAC keyId -> secret resolution', () => {
       id: 'cred-2',
       serverId: 7,
       keyId,
-      secretEnc: encryptDeterministic(realSecret),
+      secretEnc: encrypt(realSecret),
       status: 'active',
     });
 
@@ -114,7 +114,7 @@ describe('CR-PLUGIN-001 — HMAC keyId -> secret resolution', () => {
       id: 'cred-3',
       serverId: 7,
       keyId,
-      secretEnc: encryptDeterministic(secret),
+      secretEnc: encrypt(secret),
       status: 'active',
     });
 
@@ -157,30 +157,19 @@ describe('CR-PLUGIN-001 — HMAC keyId -> secret resolution', () => {
     );
   });
 
-  it('falls back to the legacy User.apiKey path during the overlap window (keyId == secret)', async () => {
+  it('rejects a legacy User.apiKey on the signed credential path', async () => {
     const legacyKey = 'legacy-plain-api-key-value-006';
     // No ServerCredential for this keyId → fall back.
     db.serverCredential.findUnique.mockResolvedValueOnce(null);
-    db.user.findUnique.mockResolvedValueOnce({
-      id: 'u-legacy',
-      discordId: 'd1',
-      discordUsername: 'legacy',
-      steamId: 's1',
-      apiKey: encryptDeterministic(legacyKey),
-      apiKeyIp: null,
-      isBanned: false,
-    });
-    db.user.update.mockResolvedValueOnce({});
-    db.server.findUnique.mockResolvedValueOnce({ id: 1, name: 'srv', isActive: true });
 
     // Legacy: the wire keyId doubles as the HMAC secret.
     const req = signedReq({ keyId: legacyKey, secret: legacyKey, serverId: 1 });
     const next = vi.fn();
     await authenticateSignedPlugin(req, {} as any, next);
 
-    expect(next).toHaveBeenCalledTimes(1);
-    expect(next).toHaveBeenCalledWith();
-    expect(req.pluginUser).toMatchObject({ id: 'u-legacy' });
-    expect(req.serverId).toBe(1);
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 401, message: 'Unknown or revoked plugin credential' }),
+    );
+    expect(db.user.findUnique).not.toHaveBeenCalled();
   });
 });

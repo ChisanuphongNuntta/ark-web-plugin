@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { protectionApi } from '@/lib/api';
 import { Shield, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
-import LaserCard from './LaserCard';
+import { GlassCard } from '@/components/ui/GlassCard';
 
 interface ProtectionData {
   hasProtection: boolean;
@@ -65,7 +65,7 @@ export default function ProtectionStatus() {
 
   if (isLoading) {
     return (
-      <LaserCard glowOnHover>
+      <GlassCard hoverEffect="glow">
         <div className="p-6">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -75,7 +75,7 @@ export default function ProtectionStatus() {
             <span className="text-gray-400">กำลังโหลด...</span>
           </div>
         </div>
-      </LaserCard>
+      </GlassCard>
     );
   }
 
@@ -85,7 +85,7 @@ export default function ProtectionStatus() {
 
   if (!data?.hasProtection) {
     return (
-      <LaserCard className="border-gray-500/20">
+      <GlassCard className="border-gray-500/20">
         <div className="p-6">
           <div className="flex items-center gap-4">
             <div className="relative">
@@ -102,14 +102,14 @@ export default function ProtectionStatus() {
             </div>
           </div>
         </div>
-      </LaserCard>
+      </GlassCard>
     );
   }
 
   const { player, tribe } = data;
 
   return (
-    <LaserCard className="border-cyan-500/30 shadow-cyan-500/10" withBeam glowOnHover>
+    <GlassCard className="border-cyan-500/30 shadow-cyan-500/10" hoverEffect="glow">
       <div className="p-6 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -203,6 +203,6 @@ export default function ProtectionStatus() {
           </ul>
         </div>
       </div>
-    </LaserCard>
+    </GlassCard>
   );
 }

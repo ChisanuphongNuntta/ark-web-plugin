@@ -51,7 +51,7 @@ function AuthCallbackContent() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <Loader2 className="h-12 w-12 animate-spin text-ark-accent mb-4" />
+      <Loader2 className="h-12 w-12 animate-spin text-iris-cyan mb-4" />
       <p className="text-gray-400">กำลังเข้าสู่ระบบ...</p>
     </div>
   );
@@ -62,7 +62,7 @@ export default function AuthCallbackPage() {
     <Suspense
       fallback={
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-12 w-12 animate-spin text-ark-accent mb-4" />
+          <Loader2 className="h-12 w-12 animate-spin text-iris-cyan mb-4" />
           <p className="text-gray-400">กำลังโหลด...</p>
         </div>
       }

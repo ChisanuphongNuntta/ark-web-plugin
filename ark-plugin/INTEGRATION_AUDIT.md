@@ -8,21 +8,21 @@ Legacy implementation: `HeartShop/` (`ArkShop.dll`)
 
 | Command | Current behavior | API dependency |
 |---|---|---|
-| `/claim` | Fetches all pending item orders for the server, filters by Steam ID, gives items, then acknowledges each order | `GET /api/plugin/orders/pending`, `POST /api/plugin/orders/{id}/deliver` |
+| `/claim` | Triggers the unified lease-based delivery poll | `POST /api/plugin/deliveries/claim`, `/deliveries/{key}/complete|fail|release` |
 | `/points` | Displays the linked account wallet balance | `GET /api/plugin/player/{steamId}` |
 | `/shop` | Displays the configured store URL | None |
 | `/link` | Displays the player's Steam ID for account linking | None |
 | `/protection` | Displays player protection status | `GET /api/plugin/protection/player/{steamId}` |
 | `/sell <price>` | Captures dino attributes, creates a listing, then destroys the live dino | `POST /api/plugin/market/plugin/listings` |
 | `/market` | Displays marketplace instructions | None |
-| `/claimdino` | Fetches pending dino deliveries, spawns each dino, then acknowledges delivery | `GET /api/plugin/market/plugin/deliveries`, `POST /api/plugin/market/plugin/deliveries/{id}/delivered` |
+| `/claimdino` | Triggers the same unified lease-based item/dino delivery poll | `POST /api/plugin/deliveries/claim`, `/deliveries/{key}/complete|fail|release` |
 
 ## Background integrations
 
 | Integration | Current behavior | API dependency |
 |---|---|---|
 | License verification | Runs during plugin initialization | `GET /api/plugin/verify` |
-| Item order polling | Polls server orders and delivers when the player is online | `GET /api/plugin/orders/pending` |
+| Unified delivery polling | Claims server-scoped leases and delivers to online players | `POST /api/plugin/deliveries/claim` and lease completion routes |
 | Heartbeat | Reports player count | `POST /api/plugin/heartbeat` |
 | Player stats | Reports playtime, kills, and resources | `POST /api/plugin/stats` |
 | Player join | Looks up pending orders | `GET /api/plugin/player/{steamId}` |
@@ -43,6 +43,15 @@ required for the existing behavior.
   acknowledged again without repeating the game mutation. An unresolved
   prepared record is blocked for manual reconciliation.
 - Canonical builds are fresh, tested, packaged, and byte-reproducible.
+- Signed endpoints use scoped HMAC credentials, timestamp, CSPRNG nonce, body
+  hash, and exact path/query canonicalization.
+- Request signing is covered by deterministic C++ tests for body hash, HMAC,
+  canonical path/query ordering, nonce format, and signed endpoint selection.
+- Backend flexible-auth plugin routes (`/verify`, `/stats`, `/player/**`,
+  `/protection/**`, `/chat/plugin/**`, and `/market/plugin/**`) are signed as
+  well, so issued ServerCredentials do not fall back to bearer `X-API-Key`.
+- Delivery polling uses the live Backend claim/lease/receipt contract.
+- HTTP work is concurrency-bounded with a circuit breaker and GET-only retry.
 
 ## Remaining operational risks
 
@@ -51,35 +60,31 @@ required for the existing behavior.
 1. `/sell` creates the database listing before destroying the dino. A crash in
    between can leave both the live dino and a sellable listing. The inverse
    order without a durable local journal could permanently lose the dino.
-2. `/claimdino` uses a console `SpawnDino` command and acknowledges without a
-   verifiable asset fingerprint or spawn receipt.
+2. Dino spawn completion has a durable receipt, but it still lacks a strong
+   game asset fingerprint for automated uncertain-state reconciliation.
 
 ### High
 
-1. HTTP work still has no bounded queue, retry/backoff policy, or circuit
-   breaker. Blind retry is unsafe for listing creation until idempotency keys
-   are accepted by the backend contract.
-2. API keys are bearer secrets without per-request signature, timestamp, nonce,
-   or key ID. Captured requests can be replayed until the key is revoked.
-3. Pending marketplace deliveries are returned broadly and filtered by the
-   plugin/player rather than claimed atomically for a target server/player.
+1. There is no persistent client-side queue for arbitrary mutating requests;
+   adding one is unsafe until each mutation accepts an idempotency key.
+2. P2P prepare/confirm exists but is not yet atomic, idempotent, or reversible.
 
 ### Medium
 
 1. Error response bodies and provider request IDs are discarded, reducing
    incident diagnostics.
 2. URL query construction does not encode values.
-3. Plugin version and supported capabilities are not reported in heartbeat or
-   verification.
+3. Plugin version and capabilities are reported, but Backend does not yet return
+   a compatibility verdict.
 4. `HeartShop.dll` and legacy `ArkShop.dll` are built from different source
    trees, which can cause deployment drift.
 
-## Backend contract change requests
+## Backend contract status
 
-These are proposals for the Backend chat. The plugin must not switch to these
-routes until the contract is accepted and available in the sandbox.
+CR-PLUGIN-001 through CR-PLUGIN-003 are accepted and integrated. CR-PLUGIN-004
+and CR-PLUGIN-005 remain incomplete and must not be treated as production-ready.
 
-### CR-PLUGIN-001: signed plugin requests
+### CR-PLUGIN-001: signed plugin requests (integrated)
 
 Add versioned scoped credentials and verify:
 
@@ -101,7 +106,7 @@ METHOD\nPATH_AND_QUERY\nTIMESTAMP\nNONCE\nCONTENT_SHA256
 Backend requirements: five-minute clock window, nonce replay cache, constant
 time comparison, key rotation overlap, server/plugin scopes, and audit events.
 
-### CR-PLUGIN-002: delivery claim lease
+### CR-PLUGIN-002: delivery claim lease (integrated)
 
 Proposed operations:
 
@@ -116,7 +121,7 @@ The claim response must contain `deliveryKey`, `leaseToken`, `leaseExpiresAt`,
 target server/player, immutable payload hash, and delivery type. Only one active
 lease may exist. Duplicate completion must return the original completed result.
 
-### CR-PLUGIN-003: delivery receipt
+### CR-PLUGIN-003: delivery receipt (integrated)
 
 Completion request should contain:
 
@@ -130,7 +135,7 @@ Completion request should contain:
 
 The backend must settle an order or P2P escrow only after accepting the receipt.
 
-### CR-PLUGIN-004: P2P asset lock protocol
+### CR-PLUGIN-004: P2P asset lock protocol (blocked)
 
 Replace create-then-destroy with a state machine:
 
@@ -142,7 +147,7 @@ The prepare response supplies an `assetLockId` and expiry. Confirm includes an
 asset fingerprint. Abort/expiry returns the asset through an idempotent return
 job. A listing cannot become purchasable before lock confirmation.
 
-### CR-PLUGIN-005: compatibility heartbeat
+### CR-PLUGIN-005: compatibility heartbeat (partial)
 
 Extend verification and heartbeat with backward-compatible fields:
 

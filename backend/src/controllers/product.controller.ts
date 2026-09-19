@@ -10,6 +10,7 @@ export class ProductController {
         search,
         minPrice,
         maxPrice,
+        type,
         page = '1',
         limit = '20',
       } = req.query;
@@ -21,14 +22,46 @@ export class ProductController {
       };
 
       if (categoryId) {
-        where.categoryId = parseInt(categoryId as string);
+        const parsedCat = parseInt(categoryId as string);
+        if (!isNaN(parsedCat)) {
+          where.categoryId = parsedCat;
+        } else {
+          const catStr = (categoryId as string).toLowerCase();
+          const catMap: Record<string, number> = { armor: 3, material: 4 };
+          if (catMap[catStr]) {
+            where.categoryId = catMap[catStr];
+          } else if (catStr === 'blueprint') {
+            where.isBlueprint = true;
+          } else {
+            where.OR = [
+              { name: { contains: catStr, mode: 'insensitive' } },
+              { description: { contains: catStr, mode: 'insensitive' } },
+            ];
+          }
+        }
+      }
+
+      if (type === 'item' || type === 'dino') {
+        where.productType = type;
       }
 
       if (search) {
-        where.OR = [
+        const searchOr = [
           { name: { contains: search as string, mode: 'insensitive' } },
           { description: { contains: search as string, mode: 'insensitive' } },
         ];
+        if (where.OR) {
+          where.AND = [
+            ...(where.AND || []),
+            { OR: where.OR },
+            { OR: searchOr },
+          ];
+          delete where.OR;
+        } else if (where.AND) {
+          where.AND.push({ OR: searchOr });
+        } else {
+          where.OR = searchOr;
+        }
       }
 
       if (minPrice || maxPrice) {

@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { ProductArtwork } from '@/components/ProductArtwork';
 
 interface Product {
   id: number;
@@ -223,17 +224,7 @@ export default function ProductDetailPopup({
               {/* Image box */}
               <div className="relative aspect-square bg-black/40 rounded-2xl border border-white/10 overflow-hidden mb-6 flex items-center justify-center">
                 <div className={`absolute inset-0 ${quality.glowClass} opacity-30`} />
-                {product.imageUrl ? (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-contain relative z-10"
-                  />
-                ) : (
-                  <span className="text-8xl relative z-10" aria-hidden="true">
-                    {product.category?.icon || '📦'}
-                  </span>
-                )}
+                <ProductArtwork product={product} alt={product.name} className="relative z-10 h-full w-full" fit="contain" />
 
                 {/* Tags overlay */}
                 <div className="absolute top-4 left-4 z-20 flex gap-2">

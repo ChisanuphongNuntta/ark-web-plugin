@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
@@ -27,7 +28,7 @@ import {
   Trophy,
   MessageCircle,
 } from 'lucide-react';
-import { api, orderApi, walletApi, adminApi } from '@/lib/api';
+import { api, orderApi, walletApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { ProductCard } from '@/components/ProductCard';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -56,7 +57,8 @@ interface FeaturedProduct {
   imageUrl: string | null;
   quantity: number;
   quality: number;
-  category?: { name: string; icon: string | null } | null;
+  isBlueprint: boolean;
+  category?: { id: number; name: string; icon: string | null } | null;
 }
 
 interface ServerStatus {
@@ -73,7 +75,7 @@ interface ServerStatus {
 function ServerStatusSection() {
   const { data: serversData, isLoading, isError, refetch } = useQuery<{ servers: ServerStatus[] }>({
     queryKey: ['home-servers'],
-    queryFn: () => adminApi.getServers().then(res => res.data),
+    queryFn: () => api.get('/servers').then(res => res.data),
     refetchInterval: 30_000, // Refresh every 30 seconds
     staleTime: 15_000,
   });
@@ -86,16 +88,17 @@ function ServerStatusSection() {
     <section className="page-shell" aria-label="สถานะเซิร์ฟเวอร์">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div>
-          <span className="eyebrow">Live Server Status</span>
-          <h2 className="display-title text-2xl md:text-4xl mt-1">สถานะเซิร์ฟเวอร์ IRIS</h2>
+          <span className="eyebrow text-cyan-300">Live Server Status</span>
+          <h2 className="font-serif text-2xl md:text-3xl font-normal text-iris-pearl mt-1">สถานะเซิร์ฟเวอร์ IRIS</h2>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-xs font-bold text-iris-muted">
             <Users className="h-4 w-4 text-iris-cyan" />
-            <span className="font-mono text-iris-pearl">{totalPlayers.toLocaleString()}</span>
-            <span>ผู้เล่นออนไลน์</span>
+            <span className="font-mono text-iris-pearl">{onlineCount} / {servers.length}</span>
+            <span>เซิร์ฟเวอร์ออนไลน์</span>
           </div>
           <button
+            type="button"
             onClick={() => refetch()}
             className="h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-iris-muted hover:text-iris-cyan hover:border-iris-cyan/30 transition"
             aria-label="รีเฟรชสถานะ"
@@ -171,7 +174,7 @@ function ServerStatusSection() {
                   </div>
                 ) : (
                   <div className="text-[9px] font-bold text-rose-400/70 uppercase tracking-wider">
-                    Server Offline
+                    {svr.isOnline ? 'พร้อมเข้าเล่น' : 'ออฟไลน์'}
                   </div>
                 )}
               </GlassCard>
@@ -218,8 +221,8 @@ function CommunitySection() {
   return (
     <section className="page-shell" aria-label="ชุมชน IRIS">
       <div className="mb-8">
-        <span className="eyebrow">IRIS Community</span>
-        <h2 className="display-title text-2xl md:text-4xl mt-1">ร่วมชุมชน IRIS Thailand</h2>
+        <span className="eyebrow text-cyan-300">IRIS Community</span>
+        <h2 className="font-serif text-2xl md:text-3xl font-normal text-iris-pearl mt-1">ร่วมชุมชน IRIS Thailand</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -250,6 +253,7 @@ function CommunitySection() {
 
 // ——— Main HomeExperience ———
 export function HomeExperience() {
+  const router = useRouter();
   const { user, isLoading: isAuthLoading } = useAuthStore();
   const [searchQuery, setSearchQuery] = React.useState('');
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -292,66 +296,75 @@ export function HomeExperience() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/shop?search=${encodeURIComponent(searchQuery.trim())}`;
+      router.push(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
   return (
-    <div className="pb-24 bg-iris-ink text-iris-pearl min-h-screen space-y-24">
+    <div className="pb-24 bg-iris-ink text-iris-pearl min-h-screen space-y-14">
 
-      {/* ═══ SECTION 1: Prismatic River Gate Hero ═══ */}
+      {/* ═══ SECTION 1: Prismatic River Gate Hero — Frozen Winter Expedition ═══ */}
       <section
-        className="relative isolate min-h-[78vh] md:min-h-[86vh] overflow-hidden flex items-center border-b border-white/5 bg-iris-ink"
+        className="relative isolate min-h-[560px] md:min-h-[640px] overflow-hidden flex items-center border-b border-cyan-400/20 bg-[#030915]"
         aria-label="ยินดีต้อนรับสู่ IRIS Thailand"
       >
-        {/* Background art */}
+        {/* Frozen Background art with parallax scaling */}
         <Image
-          src="/images/hero_background.png"
-          alt=""
+          src="/images/backgrounds/winter_hero_frozen.jpg"
+          alt="ARK Iris Frozen Winter Landscape"
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[60%_48%] opacity-35"
+          className="object-cover object-center opacity-65 transition-transform duration-1000"
           aria-hidden="true"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-iris-ink via-iris-ink/90 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-iris-ink via-transparent to-iris-ink/30" />
-        <div className="iris-grid absolute inset-0 opacity-40 pointer-events-none" aria-hidden="true" />
-        <div className="thai-lattice absolute inset-0 opacity-10 pointer-events-none" aria-hidden="true" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#030915] via-[#030915]/85 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#030915] via-transparent to-[#030915]/40" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(75,228,255,0.12),transparent_60%)] pointer-events-none" aria-hidden="true" />
+        <div className="iris-grid absolute inset-0 opacity-25 pointer-events-none" aria-hidden="true" />
 
-        {/* Ambient prism drifts */}
-        <div className="absolute -left-20 top-20 h-96 w-96 animate-prism-drift rounded-full bg-iris-orchid/15 blur-[120px]" aria-hidden="true" />
-        <div className="absolute right-1/4 top-1/4 h-80 w-80 animate-prism-drift rounded-full bg-iris-cyan/15 blur-[100px] [animation-delay:-3s]" aria-hidden="true" />
+        {/* Ambient Aurora Borealis glows */}
+        <div className="absolute -left-20 top-10 h-[30rem] w-[30rem] animate-pulse rounded-full bg-cyan-400/15 blur-[140px]" aria-hidden="true" />
+        <div className="absolute right-1/4 top-10 h-[26rem] w-[26rem] rounded-full bg-sky-300/10 blur-[130px]" aria-hidden="true" />
 
         <div className="page-shell relative z-10 py-16 md:py-24 flex flex-col justify-center">
           <div className="max-w-3xl space-y-7">
-            <Badge variant="cyan" className="py-1 px-4 border border-iris-cyan/25 bg-iris-river/60 flex items-center gap-1.5 w-fit">
-              <Wifi className="h-3 w-3 text-iris-cyan animate-pulse" aria-hidden="true" />
-              <span>WEB ↔ GAME ECOSYSTEM</span>
-            </Badge>
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant="cyan" className="py-1.5 px-4 border border-cyan-400/30 bg-cyan-950/70 backdrop-blur-md flex items-center gap-2 shadow-[0_0_15px_rgba(75,228,255,0.3)]">
+                <span className="text-sm">❄️</span>
+                <span className="font-bold tracking-wider text-cyan-200">FROZEN EXPEDITION</span>
+              </Badge>
+              <span className="inline-flex items-center gap-1.5 text-xs text-cyan-300/80 font-medium">
+                <Wifi className="h-3.5 w-3.5 text-cyan-400 animate-pulse" aria-hidden="true" />
+                ร้านค้าและชุมชน ARK
+              </span>
+            </div>
 
-            <p className="eyebrow text-iris-gold tracking-[0.24em] font-black">IRIS THAILAND ENTERPRISE</p>
+            <p className="eyebrow text-cyan-300 tracking-[0.25em] font-semibold">
+              ARK · IRIS THAILAND
+            </p>
 
-            <h1 className="font-display text-4xl sm:text-6xl md:text-8xl font-black leading-[1.05] tracking-tight">
-              ทุกการผจญภัย<br />
-              <span className="text-gradient-primary">ไหลต่อเนื่อง</span>
+            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl font-normal leading-[1.38] tracking-tight text-iris-pearl">
+              เหมันต์นิรันดร์<br />
+              <span className="text-cyan-300">
+                FROZEN EXPEDITION
+              </span>
             </h1>
 
-            <p className="max-w-xl text-sm sm:text-lg text-iris-muted leading-relaxed">
-              เชื่อมโยงสิทธิ์การใช้งาน บัญชีกระเป๋าเงินอิเล็กทรอนิกส์ ตลาดซื้อขายแลกเปลี่ยนระหว่างผู้เล่น
-              และระบบส่งไอเท็มเข้าตัวละครเกม ARK ของคุณอย่างไร้รอยต่อใน ID เดียว
+            <p className="max-w-xl text-sm sm:text-base text-cyan-100/80 leading-relaxed">
+              ออกสำรวจโลก ARK ต้อนรับฤดูหนาว เลือกไดโนเสาร์คู่ใจ เตรียมอุปกรณ์ และพบเพื่อนร่วมทางในชุมชน IRIS
             </p>
 
             {/* Universal Search */}
             <form onSubmit={handleSearchSubmit} className="max-w-md" role="search">
               <Input
-                placeholder="ค้นหาสินค้า, สัตว์เลี้ยง, คำแนะนำ..."
+                placeholder="ค้นหาสินค้า, สัตว์เลี้ยง, อาวุธแดนหิมะ..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 aria-label="ค้นหาสินค้าและบริการ"
-                leftIcon={<Search className="h-4 w-4 text-iris-cyan" aria-hidden="true" />}
+                leftIcon={<Search className="h-4 w-4 text-cyan-400" aria-hidden="true" />}
                 rightIcon={
-                  <Button type="submit" size="sm" variant="cyan" className="h-8 min-h-[32px] px-3 py-1 font-bold text-xs rounded-full">
+                  <Button type="submit" size="sm" variant="cyan" className="h-8 min-h-[32px] px-3 py-1 font-bold text-xs rounded-full shadow-[0_0_10px_rgba(75,228,255,0.4)]">
                     ค้นหา
                   </Button>
                 }
@@ -360,12 +373,12 @@ export function HomeExperience() {
 
             <div className="flex flex-wrap gap-4 pt-2">
               <Link href="/shop">
-                <Button variant="primary" rightIcon={<ArrowRight className="h-4 w-4" aria-hidden="true" />}>
-                  เข้าสู่ร้านค้า
+                <Button variant="primary" rightIcon={<ArrowRight className="h-4 w-4" aria-hidden="true" />} className="bg-[#d8f3fc] text-[#092331] font-bold hover:bg-white transition border border-cyan-300/30">
+                  เข้าสู่ร้านค้าเหมันต์
                 </Button>
               </Link>
               <Link href="/market">
-                <Button variant="secondary" leftIcon={<Store className="h-4 w-4" aria-hidden="true" />}>
+                <Button variant="secondary" leftIcon={<Store className="h-4 w-4" aria-hidden="true" />} className="border-slate-700/50 bg-[#102637]/80 hover:border-cyan-400/40 text-iris-pearl">
                   สำรวจตลาดผู้เล่น
                 </Button>
               </Link>
@@ -548,8 +561,8 @@ export function HomeExperience() {
       <div className="page-shell space-y-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <span className="eyebrow">Curated for your survivor</span>
-            <h2 id="catalog-title" className="display-title text-3xl md:text-5xl mt-2">ยอดนิยมจาก IRIS Store</h2>
+            <span className="eyebrow text-cyan-300">Curated for your survivor</span>
+            <h2 id="catalog-title" className="font-serif text-3xl md:text-4xl font-normal text-iris-pearl mt-2">ยอดนิยมจาก IRIS Store</h2>
             <p className="text-xs sm:text-sm text-iris-muted mt-2 max-w-xl">
               สินค้าและสัตว์เลี้ยงคุณภาพยอดนิยมที่พร้อมส่งตรงลงตัวละครของคุณ
             </p>
@@ -617,8 +630,8 @@ export function HomeExperience() {
         <GlassCard variant="flat" hasGrid className="p-8 sm:p-12 thai-lattice">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center relative z-10">
             <div className="space-y-4">
-              <span className="eyebrow text-iris-gold">The IRIS promise</span>
-              <h2 className="font-display text-3xl sm:text-5xl font-bold leading-tight">
+              <span className="eyebrow text-cyan-300">The IRIS promise</span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-normal leading-snug text-iris-pearl">
                 โปร่งใส ปลอดภัย<br />ตรวจสอบธุรกรรมได้จริง
               </h2>
               <p className="text-xs sm:text-sm text-iris-muted leading-relaxed">
@@ -631,17 +644,17 @@ export function HomeExperience() {
               {[
                 {
                   icon: WalletCards,
-                  title: 'ระบบบัญชีสองด้าน (Ledger Verified)',
+                  title: 'ประวัติยอดเงิน',
                   text: 'ทุกรายการทำบัญชีผ่าน double-entry ป้องกันการคำนวณแต้มผิดพลาด',
                 },
                 {
                   icon: ShieldCheck,
-                  title: 'การรับประกันคิวส่งของ (Delivery Orchestrated)',
+                  title: 'ติดตามการรับสินค้า',
                   text: 'ติดตามงานส่งของและกู้คืนสินค้าล้มเหลวด้วยระบบ Rescue Console',
                 },
                 {
                   icon: Gem,
-                  title: 'ความเข้ากันของตัวละคร (Character Sync)',
+                  title: 'เชื่อมบัญชีเกม',
                   text: 'ระบบประเมินความเข้ากันของเซิร์ฟเวอร์กับตัวละครก่อนทำการหักเงิน',
                 },
               ].map(({ icon: Icon, title, text }) => (

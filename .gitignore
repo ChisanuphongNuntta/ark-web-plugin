@@ -12,8 +12,9 @@ out/
 
 # Environment files
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.production.example
 
 # Logs
 logs/
@@ -32,6 +33,15 @@ Thumbs.db
 
 # Testing
 coverage/
+test-results/
+playwright-report/
+frontend/test-results/
+frontend/playwright-report/
+.playwright-cli/
+.agents/
+artifacts/
+output/
+frontend/verify-*.png
 
 # Database
 *.sql.backup
@@ -45,8 +55,8 @@ ark-plugin/build/
 ark-plugin/*.dll
 ark-plugin/*.pdb
 
-# Lockfiles (using Docker/Bun)
-package-lock.json
+# Legacy Bun binary lockfiles. npm package-lock.json is intentionally committed
+# so local, CI and production containers resolve the same dependency graph.
 bun.lockb
 
 # Windows artifacts
@@ -54,10 +64,12 @@ nul
 Thumbs.db
 
 # Backup files
+backups/
 *.backup
 *_backup*
 *.bak
 *.orig
+*.dump
 
 # Security - NEVER commit these
 docker/certs/

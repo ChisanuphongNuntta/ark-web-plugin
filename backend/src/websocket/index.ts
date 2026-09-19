@@ -3,6 +3,8 @@ import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import prisma from '../config/database.js';
 import { chatHandler } from './chat.handler.js';
 
 export let io: Server;
@@ -42,23 +44,31 @@ export async function setupSocketIO(httpServer: HttpServer): Promise<Server> {
   }
 
   // Authentication middleware
-  io.use((socket: AuthenticatedSocket, next) => {
+  io.use(async (socket: AuthenticatedSocket, next) => {
     const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
 
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as {
-          userId: string;
-          discordUsername?: string;
-          discordAvatar?: string;
-        };
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret || jwtSecret.length < 32) throw new Error('JWT secret is not configured');
+        const decoded = jwt.verify(token, jwtSecret) as { userId: string };
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        const [session, user] = await Promise.all([
+          prisma.userSession.findUnique({ where: { token: tokenHash } }),
+          prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: { id: true, discordUsername: true, discordAvatar: true, isBanned: true },
+          }),
+        ]);
+        if (!session || !session.isActive || session.expiresAt < new Date() || !user || user.isBanned) {
+          return next(new Error('Authentication error'));
+        }
         socket.userId = decoded.userId;
-        socket.userName = decoded.discordUsername || 'Anonymous';
-        socket.userAvatar = decoded.discordAvatar;
-      } catch (error) {
-        // Token invalid - allow connection but mark as guest
-        socket.userId = undefined;
-        socket.userName = 'Guest';
+        socket.userName = user.discordUsername || 'Anonymous';
+        socket.userAvatar = user.discordAvatar || undefined;
+      } catch {
+        // A supplied but invalid/revoked token must not be downgraded to a guest.
+        return next(new Error('Authentication error'));
       }
     } else {
       // No token - allow connection as guest (read-only)

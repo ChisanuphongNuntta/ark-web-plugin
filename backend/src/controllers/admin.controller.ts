@@ -8,8 +8,11 @@ import prisma from '../config/database.js';
 import { AuthRequest, UserRole } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import { ServerAdminService } from '../services/serverAdmin.service.js';
-import { decrypt } from '../utils/encryption.js';
+import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
+import { isRefundable } from '../services/orderState.js';
+import pluginCredentialService from '../services/pluginCredential.service.js';
 import archiver from 'archiver';
+import { normalizeBlueprintPath } from '../utils/blueprint.js';
 
 const execAsync = promisify(exec);
 
@@ -156,11 +159,14 @@ export class AdminController {
 
   adjustPoints = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { amount, reason } = req.body;
+      const { amount, reason, idempotencyKey } = req.body;
       const targetUserId = req.params.id;
 
-      if (typeof amount !== 'number') {
+      if (typeof amount !== 'number' || !Number.isInteger(amount)) {
         throw new AppError('Amount is required', 400);
+      }
+      if (amount === 0) {
+        throw new AppError('Amount must be non-zero', 400);
       }
 
       // Check access for server admin
@@ -175,35 +181,61 @@ export class AdminController {
         throw new AppError('You do not have permission to adjust points for this user', 403);
       }
 
-      const user = await prisma.user.update({
-        where: { id: targetUserId },
-        data: { pointsBalance: { increment: amount } },
-      });
-
-      await prisma.pointTransaction.create({
-        data: {
-          userId: user.id,
-          amount,
-          balanceAfter: user.pointsBalance,
-          type: 'admin',
+      // Manual admin adjustment flows through the IRIS Wallet double-entry ledger
+      // (the single source of truth). A positive amount mints from the system issuance
+      // account into the user's available balance; a negative amount burns back to
+      // issuance. User.pointsBalance is kept in sync as a read-only projection inside
+      // walletService.post — no legacy PointTransaction dual-write. The reason and the
+      // acting admin are recorded on the ledger transaction itself (audit trail per §15).
+      // Callers may pass an idempotencyKey to make admin tooling safe against retries.
+      const amountBig = BigInt(amount);
+      await prisma.$transaction(async (tx) => {
+        await walletService.ensureUserAccounts(targetUserId, tx);
+        await walletService.post({
+          idempotencyKey: idempotencyKey?.trim() || `admin:adjust:${crypto.randomUUID()}`,
+          type: 'admin_adjustment',
+          referenceType: 'admin',
+          referenceId: targetUserId,
           description: reason || `Admin adjustment by ${req.user!.discordId}`,
-        },
+          createdBy: req.user!.id,
+          entries: [
+            { accountKey: userAccountKey(targetUserId, 'available'), amount: amountBig },
+            { accountKey: SYSTEM_ACCOUNTS.issuance, amount: -amountBig },
+          ],
+        }, tx);
+      }, { isolationLevel: 'Serializable' });
+
+      const updated = await prisma.user.findUnique({
+        where: { id: targetUserId },
+        select: { pointsBalance: true },
       });
 
       res.json({
         success: true,
-        newBalance: Number(user.pointsBalance),
+        newBalance: Number(updated?.pointsBalance ?? 0n),
       });
     } catch (error) {
       next(error);
     }
   };
 
+  // Authenticated catalog includes drafts; the public endpoint remains active-only.
+  getProducts = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const products = await prisma.product.findMany({ include: { category: true }, orderBy: [{ isActive: 'asc' }, { name: 'asc' }] });
+      res.json({ products });
+    } catch (error) { next(error); }
+  };
+
   // Products management
   createProduct = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const data = { ...req.body };
+      if (data.itemBlueprint) {
+        data.itemBlueprint = normalizeBlueprintPath(data.itemBlueprint);
+      }
       const product = await prisma.product.create({
-        data: req.body,
+        data,
       });
       res.status(201).json({ product });
     } catch (error) {
@@ -213,9 +245,13 @@ export class AdminController {
 
   updateProduct = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const data = { ...req.body };
+      if (data.itemBlueprint) {
+        data.itemBlueprint = normalizeBlueprintPath(data.itemBlueprint);
+      }
       const product = await prisma.product.update({
         where: { id: parseInt(req.params.id) },
-        data: req.body,
+        data,
       });
       res.json({ product });
     } catch (error) {
@@ -315,30 +351,56 @@ export class AdminController {
 
       if (!order) throw new AppError('Order not found', 404);
       if (order.status === 'refunded') throw new AppError('Order already refunded', 400);
+      if (!isRefundable(order.status)) {
+        throw new AppError(`Order in status "${order.status}" is not refundable`, 409);
+      }
+      const { inventoryReclaimed, reclaimReceipt, reason } = req.body ?? {};
+      if (
+        order.status === 'delivered' &&
+        (inventoryReclaimed !== true || typeof reclaimReceipt !== 'string' || reclaimReceipt.trim().length < 8)
+      ) {
+        throw new AppError('Delivered-order refunds require verified inventory recovery and a reclaim receipt', 400);
+      }
 
-      // Refund points
-      const user = await prisma.user.update({
-        where: { id: order.userId },
-        data: { pointsBalance: { increment: order.totalPrice } },
-      });
+      // Reverse the purchase through the IRIS Wallet double-entry ledger: platform
+      // revenue refunds the buyer's refundable balance (§15 — refunds land in the
+      // refundable sub-account, not directly spendable). The ledger is the single source
+      // of truth and original entries are never mutated — we post a new, balanced,
+      // idempotent reversal. No legacy PointTransaction dual-write.
+      //
+      // This shares the SAME idempotency key and entries as OrderController.refundOrder
+      // (POST /orders/:id/refund), so whichever refund path runs first wins and the other
+      // becomes a no-op on the ledger — the two paths can never double-refund an order.
+      await prisma.$transaction(async (tx) => {
+        await walletService.ensureUserAccounts(order.userId, tx);
 
-      // Update order status
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'refunded' },
-      });
+        // Conditional transition guards against a duplicate refund double-crediting.
+        const updatedOrder = await tx.order.updateMany({
+          where: { id: order.id, status: order.status },
+          data: { status: 'refunded', refundedAt: new Date() },
+        });
+        if (updatedOrder.count !== 1) {
+          throw new AppError('Order already refunded', 400);
+        }
 
-      // Record transaction
-      await prisma.pointTransaction.create({
-        data: {
-          userId: order.userId,
-          amount: order.totalPrice,
-          balanceAfter: user.pointsBalance,
-          type: 'refund',
-          description: `Refund for order ${order.id}`,
+        await walletService.post({
+          idempotencyKey: `order:refund:${order.id}`,
+          type: 'order_refund',
+          referenceType: 'order',
           referenceId: order.id,
-        },
-      });
+          description: reason
+            ? `Refund for order ${order.id}: ${String(reason).slice(0, 240)}`
+            : `Refund for order ${order.id}`,
+          metadata: order.status === 'delivered'
+            ? { inventoryReclaimed: true, reclaimReceipt: reclaimReceipt.trim() }
+            : { deliveryFailed: true },
+          createdBy: req.user!.id,
+          entries: [
+            { accountKey: SYSTEM_ACCOUNTS.revenue, amount: -BigInt(order.totalPrice) },
+            { accountKey: userAccountKey(order.userId, 'refundable'), amount: BigInt(order.totalPrice) },
+          ],
+        }, tx);
+      }, { isolationLevel: 'Serializable' });
 
       res.json({ success: true, refundedAmount: order.totalPrice });
     } catch (error) {
@@ -502,6 +564,16 @@ export class AdminController {
 
   getApiKeyByUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const canAccess = await ServerAdminService.canAccessUser(
+        req.user!.id,
+        req.user!.role,
+        req.user!.apiKeyServerId || null,
+        req.params.userId
+      );
+      if (!canAccess) {
+        throw new AppError('You do not have permission to view this API key', 403);
+      }
+
       const user = await prisma.user.findUnique({
         where: { id: req.params.userId },
         select: {
@@ -538,6 +610,16 @@ export class AdminController {
 
   resetApiKeyIp = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const canAccess = await ServerAdminService.canAccessUser(
+        req.user!.id,
+        req.user!.role,
+        req.user!.apiKeyServerId || null,
+        req.params.userId
+      );
+      if (!canAccess) {
+        throw new AppError('You do not have permission to reset this API key', 403);
+      }
+
       const user = await prisma.user.findUnique({
         where: { id: req.params.userId },
       });
@@ -567,6 +649,16 @@ export class AdminController {
 
   revokeApiKey = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const canAccess = await ServerAdminService.canAccessUser(
+        req.user!.id,
+        req.user!.role,
+        req.user!.apiKeyServerId || null,
+        req.params.userId
+      );
+      if (!canAccess) {
+        throw new AppError('You do not have permission to revoke this API key', 403);
+      }
+
       const user = await prisma.user.findUnique({
         where: { id: req.params.userId },
       });
@@ -842,26 +934,19 @@ export class AdminController {
       const { userId } = req.params;
       const serverId = parseInt(req.query.serverId as string) || 1;
 
-      // Look up the user and their API key
+      // The user is used only for an operator-friendly package filename. Plugin
+      // authentication is issued per server and is never tied to a user's API key.
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
           id: true,
           discordUsername: true,
-          apiKey: true,
         },
       });
 
       if (!user) {
         throw new AppError('User not found', 404);
       }
-
-      if (!user.apiKey) {
-        throw new AppError('User does not have an API key. Generate one first.', 400);
-      }
-
-      // Decrypt the API key for embedding in config
-      const plainApiKey = decrypt(user.apiKey);
 
       // Verify server exists
       const server = await prisma.server.findUnique({
@@ -875,6 +960,8 @@ export class AdminController {
       // Check DLL exists
       const pluginDir = path.resolve(process.cwd(), '..', 'ark-plugin');
       const possibleDllPaths = [
+        path.join(pluginDir, 'build-canonical', 'bin', 'Release', 'HeartShop.dll'),
+        path.join(pluginDir, 'build-canonical', 'bin', 'HeartShop.dll'),
         path.join(pluginDir, 'build', 'bin', 'Release', 'HeartShop.dll'),
         path.join(pluginDir, 'build', 'bin', 'HeartShop.dll'),
       ];
@@ -898,11 +985,23 @@ export class AdminController {
         pluginInfo = fs.readFileSync(pluginInfoPath, 'utf-8');
       }
 
-      // Generate config.json with user's API key
+      const pluginApiUrl = process.env.PLUGIN_API_URL;
+      if (!pluginApiUrl || !pluginApiUrl.startsWith('https://')) {
+        throw new AppError('PLUGIN_API_URL must be configured with an HTTPS /api/plugin URL', 500);
+      }
+      const credential = await pluginCredentialService.issue(
+        serverId,
+        `plugin-package:${user.id}:${new Date().toISOString()}`
+      );
+
+      // Generate canonical signed-plugin config with a server-scoped credential.
       const configJson = {
         HeartShop: {
-          ApiKey: plainApiKey,
+          ApiUrl: pluginApiUrl.replace(/\/$/, ''),
+          ApiKey: credential.secret,
+          KeyId: credential.keyId,
           ServerId: serverId,
+          Security: { AllowInvalidCertificates: false },
           PollInterval: 30,
           StatsInterval: 300,
           HeartbeatInterval: 60,

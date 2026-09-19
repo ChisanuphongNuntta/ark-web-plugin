@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { adminApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import LaserModal from '@/components/LaserModal';
+import Dialog from '@/components/ui/Dialog';
 
 interface Server {
   id: number;
@@ -221,7 +221,7 @@ export default function ChatRanksPage() {
         <select
           value={filterServerId}
           onChange={(e) => setFilterServerId(e.target.value)}
-          className="bg-ark-dark border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
+          className="bg-black/60 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
         >
           <option value="all">All Servers</option>
           <option value="global">Global Only</option>
@@ -232,9 +232,9 @@ export default function ChatRanksPage() {
       </div>
 
       {/* Ranks Table */}
-      <div className="bg-ark-dark rounded-lg overflow-hidden">
+      <div className="bg-black/60 rounded-lg overflow-hidden">
         <table className="w-full">
-          <thead className="bg-ark-darker">
+          <thead className="bg-black/40">
             <tr>
               <th className="px-4 py-3 text-left">Priority</th>
               <th className="px-4 py-3 text-left">Preview</th>
@@ -247,9 +247,9 @@ export default function ChatRanksPage() {
           </thead>
           <tbody>
             {filteredRanks.map((rank) => (
-              <tr key={rank.id} className="border-t border-ark-darker hover:bg-ark-darker/50">
+              <tr key={rank.id} className="border-t border-white/5 hover:bg-white/5">
                 <td className="px-4 py-3 text-center">
-                  <span className="bg-ark-darker px-2 py-1 rounded text-sm">{rank.priority}</span>
+                  <span className="bg-black/40 px-2 py-1 rounded text-sm">{rank.priority}</span>
                 </td>
                 <td className="px-4 py-3">
                   <span style={{ color: rank.color }}>
@@ -260,7 +260,7 @@ export default function ChatRanksPage() {
                 </td>
                 <td className="px-4 py-3 font-medium">{rank.name}</td>
                 <td className="px-4 py-3">
-                  <code className="bg-ark-darker px-2 py-1 rounded text-xs text-green-400">
+                  <code className="bg-black/40 px-2 py-1 rounded text-xs text-green-400">
                     {rank.groupKey}
                   </code>
                 </td>
@@ -314,7 +314,7 @@ export default function ChatRanksPage() {
             {filteredRanks.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                  No chat ranks configured. Click "Add Rank" to create one.
+                  No chat ranks configured. Click &quot;Add Rank&quot; to create one.
                 </td>
               </tr>
             )}
@@ -323,19 +323,19 @@ export default function ChatRanksPage() {
       </div>
 
       {/* Info Section */}
-      <div className="mt-8 bg-ark-dark rounded-lg p-6">
+      <div className="mt-8 bg-black/60 rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4">How It Works</h2>
         <div className="space-y-4 text-gray-400 text-sm">
           <div>
             <h3 className="text-white font-medium mb-1">Group Key</h3>
-            <p>The group name from Permissions plugin (e.g., "VIP", "Admin", "Moderator").
-              Players in this group will display with this rank's styling in chat.</p>
+            <p>The group name from Permissions plugin (e.g., &quot;VIP&quot;, &quot;Admin&quot;, &quot;Moderator&quot;).
+              Players in this group will display with this rank&apos;s styling in chat.</p>
           </div>
           <div>
             <h3 className="text-white font-medium mb-1">Priority</h3>
             <p>Higher priority ranks display first when a player has multiple groups.
-              For example, if a player has both "VIP" (priority 10) and "Admin" (priority 100),
-              they'll show as Admin.</p>
+              For example, if a player has both &quot;VIP&quot; (priority 10) and &quot;Admin&quot; (priority 100),
+              they&apos;ll show as Admin.</p>
           </div>
           <div>
             <h3 className="text-white font-medium mb-1">Server-Specific vs Global</h3>
@@ -348,7 +348,7 @@ export default function ChatRanksPage() {
       {/* Add/Edit Modal */}
       {(showModal || editingRank) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-ark-dark rounded-lg p-6 w-full max-w-lg">
+          <div className="bg-black/60 rounded-lg p-6 w-full max-w-lg">
             <h2 className="text-xl font-bold mb-4">
               {editingRank ? 'Edit Chat Rank' : 'Add New Chat Rank'}
             </h2>
@@ -361,7 +361,7 @@ export default function ChatRanksPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="VIP"
-                    className="w-full bg-ark-darker border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
+                    className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
                   />
                 </div>
                 <div>
@@ -371,7 +371,7 @@ export default function ChatRanksPage() {
                     value={formData.groupKey}
                     onChange={(e) => setFormData({ ...formData, groupKey: e.target.value })}
                     placeholder="VIP"
-                    className="w-full bg-ark-darker border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
+                    className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
                   />
                 </div>
               </div>
@@ -384,13 +384,13 @@ export default function ChatRanksPage() {
                       type="color"
                       value={formData.color}
                       onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      className="h-[38px] w-12 bg-ark-darker border border-gray-700 rounded cursor-pointer"
+                      className="h-[38px] w-12 bg-black/40 border border-gray-700 rounded cursor-pointer"
                     />
                     <input
                       type="text"
                       value={formData.color}
                       onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      className="flex-1 bg-ark-darker border border-gray-700 rounded-lg px-2 py-2 focus:outline-none focus:border-green-500 text-sm"
+                      className="flex-1 bg-black/40 border border-gray-700 rounded-lg px-2 py-2 focus:outline-none focus:border-green-500 text-sm"
                     />
                   </div>
                 </div>
@@ -401,7 +401,7 @@ export default function ChatRanksPage() {
                     value={formData.icon}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     placeholder="Crown emoji"
-                    className="w-full bg-ark-darker border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
+                    className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
                   />
                 </div>
                 <div>
@@ -411,7 +411,7 @@ export default function ChatRanksPage() {
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
                     placeholder="0"
-                    className="w-full bg-ark-darker border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
+                    className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
                   />
                 </div>
               </div>
@@ -421,7 +421,7 @@ export default function ChatRanksPage() {
                 <select
                   value={formData.serverId}
                   onChange={(e) => setFormData({ ...formData, serverId: e.target.value })}
-                  className="w-full bg-ark-darker border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
+                  className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
                 >
                   <option value="">Global (all servers)</option>
                   {servers.map((server) => (
@@ -431,7 +431,7 @@ export default function ChatRanksPage() {
               </div>
 
               {/* Preview */}
-              <div className="p-3 bg-ark-darker rounded-lg">
+              <div className="p-3 bg-black/40 rounded-lg">
                 <span className="text-xs text-gray-400 block mb-1">Preview:</span>
                 <span style={{ color: formData.color }}>
                   {formData.icon && `${formData.icon} `}
@@ -463,8 +463,8 @@ export default function ChatRanksPage() {
           </div>
         </div>
       )}
-      {/* Laser Modal */}
-      <LaserModal
+      {/* Accessible Dialog */}
+      <Dialog
         isOpen={modalConfig.isOpen}
         onClose={closeModal}
         onConfirm={modalConfig.onConfirm}
@@ -474,7 +474,7 @@ export default function ChatRanksPage() {
         cancelText={modalConfig.cancelText}
       >
         {modalConfig.content}
-      </LaserModal>
+      </Dialog>
     </div>
   );
 }

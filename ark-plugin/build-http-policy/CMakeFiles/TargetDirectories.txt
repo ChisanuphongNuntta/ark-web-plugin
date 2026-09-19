@@ -1,0 +1,11 @@
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/HeartShop.dir
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/Experimental.dir
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/Nightly.dir
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/Continuous.dir
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/NightlyMemoryCheck.dir
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/DeliveryJournalTests.dir
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/WalletNotificationsTests.dir
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/RequestPolicyTests.dir
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/RUN_TESTS.dir
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/ALL_BUILD.dir
+F:/ARK Iris/Heart-Plugin/ark-plugin/build-http-policy/CMakeFiles/ZERO_CHECK.dir

@@ -1,0 +1,21 @@
+{
+  "intent": {
+    "id": "pi_iris_01",
+    "userId": "user_01",
+    "packageId": "pkg-300",
+    "provider": "sandbox",
+    "providerIntentId": "sb_5812830b74d88d7de931ab54c18792b2",
+    "reference": "IRIS-5812830B74D88D7DE931AB54C18792B2",
+    "idempotencyKey": "topup-checkout-01",
+    "amountThb": "99",
+    "pointsAmount": "310",
+    "status": "pending",
+    "paymentUrl": "https://sandbox-pay.iris.local/pay/sb_5812830b74d88d7de931ab54c18792b2",
+    "qrPayload": "IRIS|SANDBOX|sb_5812830b74d88d7de931ab54c18792b2|99|IRIS-5812830B74D88D7DE931AB54C18792B2",
+    "expiresAt": "2026-06-20T06:15:00.000Z",
+    "completedAt": null,
+    "createdAt": "2026-06-20T06:00:00.000Z",
+    "updatedAt": "2026-06-20T06:00:00.000Z"
+  },
+  "replayed": false
+}

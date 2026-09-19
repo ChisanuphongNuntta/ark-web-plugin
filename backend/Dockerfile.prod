@@ -2,7 +2,7 @@
 # Multi-stage build for security and minimal image size
 
 # Stage 1: Build
-FROM oven/bun:1.2-debian AS builder
+FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -10,21 +10,21 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
-COPY package.json bun.lockb* ./
-RUN bun install --frozen-lockfile 2>/dev/null || bun install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Copy prisma schema and generate client
 COPY prisma ./prisma
-RUN bunx prisma generate
+RUN npx prisma generate
 
 # Copy source code
 COPY . .
 
-# Build TypeScript (if needed)
-RUN bun build src/index.ts --target=bun --outdir=dist || true
+# A production image must never be produced from a failed compile.
+RUN npm run build
 
 # Stage 2: Production
-FROM oven/bun:1.2-debian AS production
+FROM node:22-bookworm-slim AS production
 
 # Create non-root user for security
 RUN groupadd -r heartshop && useradd -r -g heartshop heartshop
@@ -42,15 +42,13 @@ RUN apt-get update && apt-get install -y \
 # Copy built application
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/src ./src
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 
 # Create directories
 RUN mkdir -p /app/logs /app/certs && \
     chown -R heartshop:heartshop /app
-
-# Security: Remove shell and other unnecessary binaries
-RUN rm -rf /bin/sh /bin/bash /usr/bin/wget 2>/dev/null || true
 
 # Switch to non-root user
 USER heartshop
@@ -67,4 +65,6 @@ EXPOSE 3001
 
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["bun", "run", "src/index.ts"]
+# Apply versioned migrations before accepting traffic. Prisma serializes migration
+# application, so parallel replicas cannot partially apply the same migration.
+CMD ["sh", "-c", "npm run db:deploy && exec node dist/index.js"]
