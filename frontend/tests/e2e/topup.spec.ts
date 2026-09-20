@@ -27,6 +27,10 @@ test.describe('Top-up E2E Flow (/topup)', () => {
           version: 0,
         })
       );
+      window.localStorage.setItem(
+        'cookie-consent',
+        JSON.stringify({ necessary: true, analytics: true, marketing: true })
+      );
     }, mockUser);
 
     // Handle OPTIONS preflight requests

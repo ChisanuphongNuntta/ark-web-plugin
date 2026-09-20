@@ -87,27 +87,27 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {isActuallyLoading && (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin text-current" aria-hidden="true" />
+          <Loader2 className="mr-2 h-4 w-4 animate-spin text-current shrink-0" aria-hidden="true" />
         )}
 
         {!isLoading && isSuccess && (
-          <CheckCircle className="mr-2 h-4 w-4 text-current animate-bounce" aria-hidden="true" />
+          <CheckCircle className="mr-2 h-4 w-4 text-current animate-bounce shrink-0" aria-hidden="true" />
         )}
 
         {!isLoading && isError && (
-          <AlertTriangle className="mr-2 h-4 w-4 text-current animate-pulse" aria-hidden="true" />
+          <AlertTriangle className="mr-2 h-4 w-4 text-current animate-pulse shrink-0" aria-hidden="true" />
         )}
 
         {!isLoading && !isSuccess && !isError && effectiveLeftIcon && (
-          <span className="mr-2 inline-flex items-center" aria-hidden="true">{effectiveLeftIcon}</span>
+          <span className="mr-2 inline-flex items-center shrink-0" aria-hidden="true">{effectiveLeftIcon}</span>
         )}
 
-        <span>
+        <span className="inline-flex items-center justify-center">
           {isSuccess && successText ? successText : isError && errorText ? errorText : children}
         </span>
 
         {!isLoading && !isSuccess && !isError && rightIcon && (
-          <span className="ml-2 inline-flex items-center" aria-hidden="true">{rightIcon}</span>
+          <span className="ml-2 inline-flex items-center shrink-0" aria-hidden="true">{rightIcon}</span>
         )}
       </button>
     );

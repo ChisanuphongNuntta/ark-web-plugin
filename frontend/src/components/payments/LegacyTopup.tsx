@@ -408,8 +408,7 @@ export function LegacyTopupPage() {
                 </p>
               </div>
               <Link href="/orders" className="ml-1">
-                <Button variant="secondary" size="sm" className="h-7 text-xs border-white/10 hover:border-white/25 px-2.5">
-                  <Clock className="h-3 w-3 mr-1" />
+                <Button variant="secondary" size="sm" className="h-7 text-xs border-white/10 hover:border-white/25 px-2.5 whitespace-nowrap" leftIcon={<Clock className="h-3 w-3 shrink-0" />}>
                   ประวัติ
                 </Button>
               </Link>
@@ -871,13 +870,13 @@ export function LegacyTopupPage() {
                             type="button"
                             variant="danger"
                             size="sm"
-                            className="h-6 text-[10px] px-2"
+                            className="h-6 text-[10px] px-2 whitespace-nowrap"
                             onClick={() => {
                               setSlipFile(null);
                               setSlipPreviewUrl(null);
                             }}
+                            leftIcon={<Trash2 className="h-3 w-3 shrink-0" />}
                           >
-                            <Trash2 className="h-3 w-3 mr-1" />
                             ลบรูป
                           </Button>
                         </div>
@@ -987,33 +986,33 @@ export function LegacyTopupPage() {
               <Button
                 variant="primary"
                 size="lg"
-                className="w-full font-bold h-11 text-sm bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-[0_0_20px_rgba(75,228,255,0.35)] rounded-xl"
+                className="w-full font-bold h-11 text-sm bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-[0_0_20px_rgba(75,228,255,0.35)] rounded-xl whitespace-nowrap"
                 onClick={handleStripePurchase}
                 isLoading={isCreatingStripe}
+                leftIcon={<CreditCard className="h-4 w-4 shrink-0" />}
               >
-                <CreditCard className="h-4 w-4 mr-2" />
-                ชำระผ่าน Stripe (฿{currentPkg.price.toLocaleString()} THB)
+                <span className="whitespace-nowrap">ชำระผ่าน Stripe (฿{currentPkg.price.toLocaleString()} THB)</span>
               </Button>
             ) : paymentMethod === 'bank_slip' ? (
               <Button
                 variant="primary"
                 size="lg"
-                className="w-full font-bold h-11 text-sm bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 shadow-[0_0_20px_rgba(55,229,210,0.35)] rounded-xl"
+                className="w-full font-bold h-11 text-sm bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 shadow-[0_0_20px_rgba(55,229,210,0.35)] rounded-xl whitespace-nowrap"
                 onClick={handleBankTransferSubmit}
                 isLoading={isSubmittingSlip}
+                leftIcon={<FileCheck className="h-4 w-4 shrink-0" />}
               >
-                <FileCheck className="h-4 w-4 mr-2" />
-                ส่งสลิปเพื่อขออนุมัติ (Submit for Approval)
+                <span className="whitespace-nowrap">ส่งสลิปเพื่อขออนุมัติ (Submit for Approval)</span>
               </Button>
             ) : (
               <Button
                 variant="primary"
                 size="lg"
-                className="w-full font-bold h-11 text-sm bg-amber-400 text-black hover:bg-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.35)] rounded-xl"
+                className="w-full font-bold h-11 text-sm bg-amber-400 text-black hover:bg-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.35)] rounded-xl whitespace-nowrap"
                 onClick={handleSandboxPurchase}
+                leftIcon={<Zap className="h-4 w-4 shrink-0" />}
               >
-                <Zap className="h-4 w-4 mr-2" />
-                ยืนยันการเติมเงินจำลอง (Confirm Sandbox Topup)
+                <span className="whitespace-nowrap">ยืนยันการเติมเงินจำลอง (Confirm Sandbox Topup)</span>
               </Button>
             )}
           </div>
