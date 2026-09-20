@@ -136,7 +136,7 @@ export function Navbar() {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
 
       <nav className="page-shell relative" aria-label="เมนูหลัก">
-        <div className="flex min-h-[4.25rem] items-center gap-3 lg:gap-6 py-2">
+        <div className="flex min-h-[4.25rem] items-center gap-3 xl:gap-5 2xl:gap-6 py-2">
           {/* Brand Logo & Title */}
           <Link
             href="/"
@@ -156,7 +156,7 @@ export function Navbar() {
           </Link>
 
           {/* Center Modern Floating Pill Dock (Magical Theme) */}
-          <div className="hidden items-center gap-1.5 rounded-full p-1.5 magic-nav-dock lg:flex">
+          <div className="hidden items-center gap-1 rounded-full p-1.5 magic-nav-dock shrink-0 xl:flex 2xl:gap-1.5">
             {primaryLinks.map((link) => {
               const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
               return (
@@ -164,7 +164,7 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={triggerMagic}
-                  className={`group relative overflow-hidden flex flex-col items-center justify-center rounded-full px-4 py-1.5 text-xs font-bold transition-all duration-300 ${
+                  className={`group relative overflow-hidden flex flex-col items-center justify-center rounded-full px-3.5 py-1.5 2xl:px-4 text-xs font-bold whitespace-nowrap shrink-0 transition-all duration-300 ${
                     active ? 'text-white font-extrabold' : 'text-slate-300/85 hover:text-white'
                   }`}
                 >
@@ -178,11 +178,11 @@ export function Navbar() {
                   )}
 
                   {/* Sparkle and Label */}
-                  <span className="relative z-10 flex items-center gap-1">
+                  <span className="relative z-10 flex items-center gap-1 whitespace-nowrap">
                     {active && <Sparkles className="h-3 w-3 text-cyan-300 animate-pulse" />}
                     {link.label}
                   </span>
-                  <span className={`relative z-10 text-[0.56rem] font-medium tracking-wider uppercase transition-colors ${
+                  <span className={`relative z-10 text-[0.56rem] font-medium tracking-wider uppercase whitespace-nowrap transition-colors ${
                     active ? 'text-cyan-200' : 'text-slate-400/70 group-hover:text-cyan-300/80'
                   }`}>
                     {link.caption}
@@ -204,20 +204,20 @@ export function Navbar() {
             })}
 
             {/* Explore Dropdown */}
-            <div ref={exploreRef} className="relative">
+            <div ref={exploreRef} className="relative shrink-0">
               <button
                 type="button"
                 onClick={(e) => {
                   triggerMagic(e);
                   setExploreOpen((open) => !open);
                 }}
-                className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition-all duration-300 ${
+                className={`relative flex items-center gap-1.5 rounded-full px-3 py-2 2xl:px-3.5 text-xs font-bold whitespace-nowrap shrink-0 transition-all duration-300 ${
                   exploreOpen ? 'bg-cyan-500/15 text-white' : 'text-slate-300/85 hover:text-white hover:bg-white/[0.05]'
                 }`}
                 aria-expanded={exploreOpen}
                 aria-haspopup="menu"
               >
-                <span>สำรวจ</span>
+                <span className="whitespace-nowrap">สำรวจ</span>
                 <ChevronDown className={`h-3 w-3 text-cyan-300 transition-transform duration-300 ${exploreOpen ? 'rotate-180' : ''}`} />
               </button>
 
@@ -265,11 +265,11 @@ export function Navbar() {
           </div>
 
           {/* Right Action Cluster */}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2 shrink-0">
             {/* Search Capsule */}
             <form
               onSubmit={handleSearch}
-              className={`${searchOpen ? 'flex' : 'hidden'} absolute inset-x-4 top-[calc(100%+.6rem)] z-[100] isolate rounded-full border border-cyan-400/30 bg-[#071322]/95 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.9)] ring-1 ring-white/10 lg:static lg:flex lg:w-60 lg:border-cyan-500/20 lg:bg-black/30 lg:p-0 lg:shadow-none transition-all duration-300`}
+              className={`${searchOpen ? 'flex' : 'hidden'} absolute inset-x-4 top-[calc(100%+.6rem)] z-[100] isolate rounded-full border border-cyan-400/30 bg-[#071322]/95 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.9)] ring-1 ring-white/10 xl:static xl:flex xl:w-44 2xl:w-60 xl:border-cyan-500/20 xl:bg-black/30 xl:p-0 xl:shadow-none transition-all duration-300`}
               role="search"
             >
               <label htmlFor="global-search" className="sr-only">ค้นหาสินค้าและข้อมูลใน IRIS</label>
@@ -289,7 +289,7 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setSearchOpen((open) => !open)}
-              className="grid h-10 w-10 place-items-center rounded-full text-white/70 transition hover:bg-white/[0.06] hover:text-white lg:hidden"
+              className="grid h-10 w-10 place-items-center rounded-full text-white/70 transition hover:bg-white/[0.06] hover:text-white xl:hidden"
               aria-label="เปิดการค้นหา"
               aria-expanded={searchOpen}
             >
@@ -453,7 +453,7 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setMobileOpen((open) => !open)}
-              className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.03] text-white/75 transition hover:bg-white/[0.08] hover:text-white lg:hidden"
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.03] text-white/75 transition hover:bg-white/[0.08] hover:text-white xl:hidden"
               aria-label={mobileOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
               aria-expanded={mobileOpen}
             >
@@ -470,7 +470,7 @@ export function Navbar() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="relative z-[100] border-t border-cyan-500/20 bg-[#071322]/95 px-4 py-4 shadow-2xl backdrop-blur-2xl lg:hidden overflow-hidden"
+              className="relative z-[100] border-t border-cyan-500/20 bg-[#071322]/95 px-4 py-4 shadow-2xl backdrop-blur-2xl xl:hidden overflow-hidden"
             >
               {user ? (
                 <Link
@@ -478,10 +478,10 @@ export function Navbar() {
                   onClick={() => setMobileOpen(false)}
                   className="mb-3 flex items-center justify-between rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-amber-300 transition hover:bg-amber-400/15"
                 >
-                  <span className="flex items-center gap-2 text-sm font-bold">
+                  <span className="flex items-center gap-2 text-sm font-bold whitespace-nowrap">
                     <Coins className="h-5 w-5 text-amber-400" /> เติมเงิน Iris Coin
                   </span>
-                  <span className="text-xs font-black">{user.pointsBalance.toLocaleString()} IC</span>
+                  <span className="text-xs font-black whitespace-nowrap">{user.pointsBalance.toLocaleString()} IC</span>
                 </Link>
               ) : (
                 <Link
@@ -506,8 +506,8 @@ export function Navbar() {
                           : 'text-slate-200 hover:bg-white/10 hover:text-white'
                       }`}
                     >
-                      <span className="block text-sm font-extrabold">{link.label}</span>
-                      <span className="text-[0.65rem] text-slate-400">{link.caption}</span>
+                      <span className="block text-sm font-extrabold whitespace-nowrap">{link.label}</span>
+                      <span className="text-[0.65rem] text-slate-400 whitespace-nowrap">{link.caption}</span>
                     </Link>
                   );
                 })}
