@@ -888,7 +888,7 @@ export default function RankingPage() {
 
       {/* SEASON REWARDS MODAL */}
       {showRewardsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-[9999] m-0 w-screen h-screen flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md">
           <div className="relative w-full max-w-2xl rounded-3xl border border-cyan-500/40 bg-[#081726] p-6 space-y-5 shadow-[0_0_50px_rgba(6,182,212,0.3)]">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">

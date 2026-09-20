@@ -135,9 +135,10 @@ export default function PacksPage() {
   });
 
   return (
-    <div className="page-shell pb-20 space-y-12">
-      {/* 1. Cinematic Hero Banner */}
-      <section className="relative overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-[#061726] via-[#0b2135] to-[#040d16] p-8 sm:p-12 shadow-[0_0_50px_rgba(6,182,212,0.15)]">
+    <>
+      <div className="page-shell pb-20 space-y-12">
+        {/* 1. Cinematic Hero Banner */}
+        <section className="relative overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-[#061726] via-[#0b2135] to-[#040d16] p-8 sm:p-12 shadow-[0_0_50px_rgba(6,182,212,0.15)]">
         {/* Background glow effects */}
         <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-cyan-500/15 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-indigo-500/15 blur-3xl" />
@@ -393,13 +394,13 @@ export default function PacksPage() {
         </div>
       </section>
 
-      {/* 5. Product Buy Modal */}
+      </div>
       <ProductBuyModal
         product={buyingProduct}
         isOpen={!!buyingProduct}
         onClose={() => setBuyingProduct(null)}
       />
-    </div>
+    </>
   );
 }
 

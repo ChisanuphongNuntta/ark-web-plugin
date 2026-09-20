@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -45,9 +46,14 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
 
+  const [mounted, setMounted] = React.useState(false);
   const [quantity, setQuantity] = React.useState(1);
   const [selectedServerId, setSelectedServerId] = React.useState<number | null>(null);
   const [feedback, setFeedback] = React.useState<'idle' | 'added'>('idle');
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const serversQuery = useQuery({
     queryKey: ['contract', 'servers'],
@@ -88,7 +94,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen || !product) return null;
+  if (!mounted || !isOpen || !product) return null;
 
   const serverUnavailable = serversQuery.isError || (!serversQuery.isLoading && servers.length === 0);
   const canAdd = selectedServerId !== null && !serversQuery.isLoading && !serverUnavailable;
@@ -108,9 +114,9 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
     router.push('/cart');
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] m-0 w-screen h-screen flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-label={`สั่งซื้อ ${product.name}`}
@@ -286,4 +292,6 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
