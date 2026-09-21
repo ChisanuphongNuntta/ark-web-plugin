@@ -97,12 +97,39 @@ body { background: radial-gradient(ellipse at 90% 0%, #17374a 0, transparent 45r
 .frozen-category-list button:hover { background:#ffffff08; }
 .frozen-intro { padding:32px 0; border-bottom:1px solid #b6def021; margin-bottom:28px; }
 .frozen-intro h1 { font-family:var(--font-iris-display); font-size:clamp(28px,3.1vw,42px); margin:8px 0; }
-.frozen-intro p { color:#a2b7c7; max-width:680px; font-size:14px; }
-.frozen-toolbar { display:flex; flex-wrap:wrap; gap:12px; padding:18px; background:#102637; border:1px solid #b6def021; border-radius:14px; margin-bottom:24px; }
-.frozen-toolbar label { display:flex; flex-direction:column; gap:6px; color:#abc6d7; font-size:12px; }
-.frozen-toolbar input { background:#091c2b; border:1px solid #b6def02e; padding:10px 12px; min-width:0; color:#f0f8fc; }
-.frozen-toolbar .search-field { flex:1; min-width:180px; }
-.frozen-editorial-card { padding:28px; border:1px solid #b6def02e; border-radius:18px; background:linear-gradient(145deg,#17364b,#0c2030); }
+.frozen-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(8, 22, 36, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(160, 224, 244, 0.22);
+  border-radius: 18px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(160, 224, 244, 0.08);
+}
+.frozen-toolbar:hover {
+  border-color: rgba(160, 224, 244, 0.35);
+}
+.frozen-toolbar label { display: flex; flex-direction: column; gap: 6px; color: #abc6d7; font-size: 12px; font-weight: 600; }
+.frozen-toolbar input {
+  background: rgba(4, 13, 22, 0.75);
+  border: 1px solid rgba(182, 222, 240, 0.2);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 0;
+  color: #f0f8fc;
+  transition: all 0.2s ease;
+}
+.frozen-toolbar input:focus {
+  border-color: rgba(75, 228, 255, 0.5);
+  box-shadow: 0 0 12px rgba(75, 228, 255, 0.25);
+  outline: none;
+}
+.frozen-toolbar .search-field { flex: 1; min-width: 200px; }
 .frozen-page-privacy > .page-shell,.frozen-page-terms > .page-shell { max-width:900px; }
 @media(max-width:767px) {
  .frozen-wayfinding { padding-top:16px; font-size:11px; }
