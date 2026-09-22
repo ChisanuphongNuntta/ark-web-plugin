@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, useCartStore } from '@/lib/store';
@@ -72,6 +73,11 @@ export default function ProductDetailPopup({
   const { user } = useAuthStore();
   const addItem = useCartStore((state) => state.addItem);
   const queryClient = useQueryClient();
+
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const [quantity, setQuantity] = React.useState(1);
   const [selectedServer, setSelectedServer] = React.useState<number | null>(null);
@@ -194,7 +200,9 @@ export default function ProductDetailPopup({
     }, 2000);
   };
 
-  return (
+  if (!isOpen || !mounted) return null;
+
+  const modalContent = (
     <div
       className="fixed inset-0 z-[9999] m-0 w-screen h-screen flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
       onClick={(e) => e.target === e.currentTarget && onClose()}
@@ -461,4 +469,6 @@ export default function ProductDetailPopup({
       </GlassCard>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

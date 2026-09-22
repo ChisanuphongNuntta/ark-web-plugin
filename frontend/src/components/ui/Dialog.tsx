@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { Button } from './Button';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,12 @@ export const Dialog: React.FC<DialogProps> = ({
   singleButton = false,
   className,
 }) => {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const isVisible = open !== undefined ? open : (isOpen ?? false);
   const handleClose = () => {
     onClose?.();
@@ -60,7 +67,7 @@ export const Dialog: React.FC<DialogProps> = ({
     };
   }, [isVisible, loading]);
 
-  if (!isVisible) return null;
+  if (!isVisible || !mounted) return null;
 
   const headerIcons = {
     default: <Info className="h-5 w-5 text-iris-cyan" />,
@@ -69,22 +76,22 @@ export const Dialog: React.FC<DialogProps> = ({
     danger: <AlertTriangle className="h-5 w-5 text-rose-400" />,
   };
 
-  return (
+  const dialogContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[9999] m-0 flex h-screen w-screen items-center justify-center p-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="dialog-title"
     >
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
         onClick={loading ? undefined : handleClose}
       />
 
       <div
         ref={dialogRef}
         className={cn(
-          'relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-iris-river/95 p-6 shadow-2xl backdrop-blur-xl transition-all max-h-[90vh] overflow-y-auto',
+          'relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-iris-river/95 p-6 shadow-2xl backdrop-blur-xl transition-all max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200',
           className
         )}
       >
@@ -140,6 +147,8 @@ export const Dialog: React.FC<DialogProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(dialogContent, document.body);
 };
 
 export const DialogContent: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
