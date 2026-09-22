@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { paymentApi } from '@/lib/contracts/client';
@@ -322,6 +322,52 @@ export function LegacyTopupPage() {
     }
   };
 
+  // Reconcile and verify return from Stripe Checkout
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    const checkoutState = params.get('checkout');
+
+    if (sessionId || checkoutState === 'returned') {
+      if (sessionId) {
+        paymentApi
+          .verifyStripeSession(sessionId)
+          .then((res: any) => {
+            queryClient.invalidateQueries({ queryKey: ['wallet'] });
+            setDialogConfig({
+              open: true,
+              title: 'ชำระเงินผ่าน Stripe สำเร็จ!',
+              type: 'success',
+              content: (
+                <div className="space-y-4 pt-2 text-sm text-iris-muted">
+                  <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-5 text-center shadow-lg">
+                    <CheckCircle className="mx-auto mb-2 h-10 w-10 text-cyan-400" />
+                    <p className="font-bold text-iris-pearl text-base">การชำระเงินผ่านบัตร Stripe สำเร็จเรียบร้อย</p>
+                    <p className="mt-1 text-xs text-iris-muted">
+                      ระบบได้ทำการเติมเหรียญ Iris Coin เข้าสู่กระเป๋าของคุณเรียบร้อยแล้ว
+                    </p>
+                    {res?.points && (
+                      <p className="mt-2 text-sm font-bold text-emerald-300">
+                        +{Number(res.points).toLocaleString()} IC
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ),
+            });
+            window.history.replaceState({}, '', '/topup');
+          })
+          .catch((err) => {
+            console.error('Failed to verify Stripe session:', err);
+          });
+      } else if (checkoutState === 'returned') {
+        queryClient.invalidateQueries({ queryKey: ['wallet'] });
+        window.history.replaceState({}, '', '/topup');
+      }
+    }
+  }, [queryClient]);
+
   const handleSandboxPurchase = async () => {
     if (!user) {
       setDialogConfig({
@@ -337,6 +383,7 @@ export function LegacyTopupPage() {
       const res = await paymentApi.createIntent({
         packageId: String(currentPkg.id),
         provider: 'sandbox',
+        autoCredit: true,
       });
 
       queryClient.invalidateQueries({ queryKey: ['wallet'] });

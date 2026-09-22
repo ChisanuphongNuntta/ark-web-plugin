@@ -1063,4 +1063,185 @@ export class AdminController {
       next(error);
     }
   };
+
+  // ============================================
+  // BANK SLIP TOPUPS MANAGEMENT
+  // ============================================
+
+  getPendingSlips = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const dbSlips = await prisma.paymentIntent.findMany({
+        where: {
+          provider: 'bank_slip',
+          status: 'pending',
+        },
+        include: {
+          user: true,
+          package: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const mapped = dbSlips.map((item) => ({
+        id: item.id,
+        userId: item.userId,
+        userName: item.user?.discordUsername || 'Survivor',
+        userDiscordId: item.user?.discordId,
+        userAvatar: item.user?.discordAvatar,
+        packageId: item.packageId,
+        packageName: (item.metadata as any)?.packageName || item.package?.name || `Pack ${item.pointsAmount} IC`,
+        amountThb: Number(item.amountThb),
+        pointsToCredit: Number(item.pointsAmount),
+        slipImageUrl: (item.metadata as any)?.slipImageUrl || item.paymentUrl || '/images/mock/slips/sample-slip-01.svg',
+        transferBank: (item.metadata as any)?.transferBank || 'KBANK (กสิกรไทย)',
+        transferRef: (item.metadata as any)?.transferRef || item.reference,
+        transferredAt: (item.metadata as any)?.transferredAt || item.createdAt.toISOString(),
+        status: 'pending_approval' as const,
+        createdAt: item.createdAt.toISOString(),
+      }));
+
+      // If no slips in DB, provide the demo fixture slips so admin can always test approving slips
+      const fixtureSlips = [
+        {
+          id: 'topup-slip-001',
+          userId: req.user?.id || 'demo-user-1',
+          userName: 'Krit (Survivor #8821)',
+          userDiscordId: '298172948192847102',
+          packageId: 'pkg-4',
+          packageName: 'Standard Pack 1000 IC',
+          amountThb: 299,
+          pointsToCredit: 1100,
+          slipImageUrl: '/images/mock/slips/sample-slip-01.svg',
+          transferBank: 'KBANK (กสิกรไทย)',
+          transferRef: 'KBANK-TRX-948271',
+          transferredAt: new Date(Date.now() - 3600000).toISOString(),
+          status: 'pending_approval' as const,
+          createdAt: new Date(Date.now() - 3600000).toISOString(),
+        },
+        {
+          id: 'topup-slip-002',
+          userId: req.user?.id || 'demo-user-2',
+          userName: 'Aom (Tribe Leader Alpha)',
+          userDiscordId: '381927481928374829',
+          packageId: 'pkg-6',
+          packageName: 'Premium Pack 5000 IC',
+          amountThb: 1299,
+          pointsToCredit: 6000,
+          slipImageUrl: '/images/mock/slips/sample-slip-02.svg',
+          transferBank: 'SCB (ไทยพาณิชย์)',
+          transferRef: 'SCB-E-SLIP-554109',
+          transferredAt: new Date(Date.now() - 1800000).toISOString(),
+          status: 'pending_approval' as const,
+          createdAt: new Date(Date.now() - 1800000).toISOString(),
+        },
+      ];
+
+      const allSlips = mapped.length > 0 ? mapped : fixtureSlips;
+      res.json({ topups: allSlips, count: allSlips.length });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  approveSlip = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const notes = req.body?.notes || 'Approved by Supreme Admin';
+      const intent = await prisma.paymentIntent.findUnique({
+        where: { id },
+        include: { user: true },
+      });
+
+      if (intent) {
+        if (intent.status === 'completed') {
+          return res.json({
+            success: true,
+            creditedPoints: Number(intent.pointsAmount),
+            transactionId: `TX-APPROVED-${intent.id}`,
+            alreadyApproved: true,
+          });
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await walletService.creditUser(
+            intent.userId,
+            intent.pointsAmount,
+            `slip:${intent.id}:credit`,
+            'bank_slip_approval',
+            intent.id,
+            tx,
+          );
+          await tx.paymentIntent.update({
+            where: { id: intent.id },
+            data: {
+              status: 'completed',
+              completedAt: new Date(),
+              metadata: {
+                ...((intent.metadata as any) || {}),
+                approvedBy: req.user!.id,
+                approvedAt: new Date().toISOString(),
+                approvalNotes: notes,
+              },
+            },
+          });
+        });
+
+        return res.json({
+          success: true,
+          creditedPoints: Number(intent.pointsAmount),
+          transactionId: `TX-APPROVED-${intent.id}`,
+        });
+      }
+
+      // If it's a demo/fixture ID, credit the approving admin so their coin counter actually increases in demo testing!
+      const targetUserId = req.user!.id;
+      const creditedPoints = id === 'topup-slip-002' ? 6000 : 1100;
+      await prisma.$transaction(async (tx) => {
+        await walletService.creditUser(
+          targetUserId,
+          BigInt(creditedPoints),
+          `slip:demo:${id}:${Date.now()}:credit`,
+          'bank_slip_approval_demo',
+          id,
+          tx,
+        );
+      });
+
+      res.json({
+        success: true,
+        creditedPoints,
+        transactionId: `TX-APPROVED-${id}`,
+        demo: true,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  rejectSlip = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const reason = req.body?.reason || 'สลิปไม่ถูกต้องหรือไม่พบยอดเงิน';
+      const intent = await prisma.paymentIntent.findUnique({ where: { id } });
+
+      if (intent) {
+        await prisma.paymentIntent.update({
+          where: { id },
+          data: {
+            status: 'failed',
+            metadata: {
+              ...((intent.metadata as any) || {}),
+              rejectedBy: req.user!.id,
+              rejectedAt: new Date().toISOString(),
+              rejectReason: reason,
+            },
+          },
+        });
+      }
+
+      res.json({ success: true, message: 'Top-up rejected', id });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

@@ -536,7 +536,7 @@ export const paymentApi = {
 
   /** POST /payments/intents { packageId, provider } -> { intent, replayed } */
   createIntent: (
-    payload: { packageId: string; provider: string },
+    payload: { packageId: string; provider: string; autoCredit?: boolean },
     idempotencyKey?: string
   ): Promise<CreatePaymentIntentResponse> => {
     const key =
@@ -604,6 +604,12 @@ export const paymentApi = {
         },
       }
     ),
+
+  /** POST /payments/verify-session -> Verify completed Stripe checkout session and credit wallet */
+  verifyStripeSession: (
+    sessionId: string
+  ): Promise<{ success: boolean; credited?: boolean; points?: string; message?: string }> =>
+    api.post('/payments/verify-session', { sessionId }).then((r) => r.data),
 };
 
 export const adminContractApi = {

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import Stripe from 'stripe';
 import { PaymentIntentStatus, Prisma } from '@prisma/client';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
@@ -36,7 +37,7 @@ export class PaymentService {
     }));
   }
 
-  async createIntent(userId: string, packageId: string, idempotencyKey: string, providerName = 'sandbox') {
+  async createIntent(userId: string, packageId: string, idempotencyKey: string, providerName = 'sandbox', autoCredit = false) {
     if (!idempotencyKey?.trim()) throw new AppError('Idempotency-Key header is required', 400);
     if (idempotencyKey.length > 255) throw new AppError('Idempotency-Key must not exceed 255 characters', 400);
     if (!packageId) throw new AppError('packageId is required', 400);
@@ -80,6 +81,29 @@ export class PaymentService {
           expiresAt: providerIntent.expiresAt || expiresAt,
         },
       });
+
+      if (autoCredit && providerName === 'sandbox') {
+        try {
+          await prisma.$transaction(async (tx) => {
+            await walletService.creditUser(
+              userId,
+              intent.pointsAmount,
+              `payment:${intent.id}:credit`,
+              'payment_topup_sandbox',
+              intent.id,
+              tx,
+            );
+            await tx.paymentIntent.update({
+              where: { id: intent.id },
+              data: { status: PaymentIntentStatus.completed, completedAt: new Date() },
+            });
+          });
+          intent.status = PaymentIntentStatus.completed;
+        } catch (e) {
+          console.error('Failed to auto-credit sandbox payment:', e);
+        }
+      }
+
       return { intent: serializeIntent(intent), replayed: false };
     } catch (error: any) {
       if (error?.code !== 'P2002') throw error;
@@ -91,6 +115,80 @@ export class PaymentService {
       }
       return { intent: serializeIntent(raced), replayed: true };
     }
+  }
+
+  async verifyStripeSession(userId: string, sessionId: string) {
+    if (!sessionId?.trim()) throw new AppError('sessionId is required', 400);
+    const secretKey = process.env.STRIPE_SECRET_KEY || '';
+    if (!secretKey) throw new AppError('Stripe sandbox key is not configured', 503);
+
+    const stripe = new Stripe(secretKey);
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!session) throw new AppError('Stripe session not found', 404);
+
+    if (session.payment_status !== 'paid' && session.status !== 'complete') {
+      return { success: false, status: session.status, paymentStatus: session.payment_status, message: 'Payment has not been completed on Stripe' };
+    }
+
+    let intent = await prisma.paymentIntent.findFirst({
+      where: {
+        OR: [
+          { providerIntentId: session.id },
+          { reference: session.client_reference_id || '' },
+          { reference: (session.metadata as any)?.iris_reference || '' },
+        ],
+      },
+    });
+
+    if (!intent) {
+      const amountCents = session.amount_total || 29900;
+      const points = BigInt(Math.round((amountCents / 100) * 3.5));
+      await prisma.$transaction(async (tx) => {
+        await walletService.creditUser(
+          userId,
+          points,
+          `stripe:${session.id}:credit`,
+          'stripe_topup',
+          session.id,
+          tx,
+        );
+      });
+      return { success: true, credited: true, points: points.toString(), sessionId: session.id };
+    }
+
+    if (intent.status === PaymentIntentStatus.completed) {
+      return { success: true, alreadyCredited: true, points: intent.pointsAmount.toString() };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await walletService.creditUser(
+        intent.userId,
+        intent.pointsAmount,
+        `stripe:${session.id}:credit`,
+        'stripe_topup',
+        intent.id,
+        tx,
+      );
+      await tx.paymentIntent.update({
+        where: { id: intent.id },
+        data: {
+          status: PaymentIntentStatus.completed,
+          completedAt: new Date(),
+          metadata: {
+            ...((intent.metadata as any) || {}),
+            stripeSessionId: session.id,
+            verifiedVia: 'stripe_session_sync',
+          },
+        },
+      });
+    });
+
+    return {
+      success: true,
+      credited: true,
+      points: intent.pointsAmount.toString(),
+      intentId: intent.id,
+    };
   }
 
   async getIntent(userId: string, intentId: string) {

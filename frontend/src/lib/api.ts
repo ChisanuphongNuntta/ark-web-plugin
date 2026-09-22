@@ -312,7 +312,7 @@ export const pdpaApi = {
 // Payment API
 export const paymentApi = {
   getPackages: () => api.get('/payments/packages').then((r) => r.data),
-  createIntent: (payload: { packageId: string; provider: string }, idempotencyKey?: string) => {
+  createIntent: (payload: { packageId: string; provider: string; autoCredit?: boolean }, idempotencyKey?: string) => {
     const key =
       idempotencyKey ||
       (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -324,6 +324,8 @@ export const paymentApi = {
       })
       .then((r) => r.data);
   },
+  submitSlip: (payload: any) => api.post('/payments/slips', payload).then((r) => r.data),
+  verifyStripeSession: (sessionId: string) => api.post('/payments/verify-session', { sessionId }).then((r) => r.data),
 };
 
 export default api;

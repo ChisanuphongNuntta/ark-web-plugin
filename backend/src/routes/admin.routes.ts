@@ -39,6 +39,11 @@ router.delete('/categories/:id', requireWebsiteAdmin as any, adminController.del
 router.get('/orders', requireWebsiteAdmin as any, adminController.getAllOrders as any);
 router.post('/orders/:id/refund', requireWebsiteAdmin as any, adminController.refundOrder as any);
 
+// Bank slip topups management
+router.get('/payments/pending-slips', requireAdmin as any, adminController.getPendingSlips as any);
+router.post('/payments/approve/:id', requireAdmin as any, adminController.approveSlip as any);
+router.post('/payments/reject/:id', requireAdmin as any, adminController.rejectSlip as any);
+
 // ============================================
 // SERVER ADMIN ROUTES (server_admin, root)
 // Users and API Keys management

@@ -34,7 +34,7 @@ export class StripePaymentProvider implements PaymentProvider {
       client_reference_id: request.reference,
       metadata: { iris_reference: request.reference },
       line_items: [{ quantity: 1, price_data: { currency: 'thb', unit_amount: Number(cents), product_data: { name: 'IRIS Coin — sandbox top-up' } } }],
-      success_url: `${origin.origin}/topup?checkout=returned`,
+      success_url: `${origin.origin}/topup?checkout=returned&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin.origin}/topup?checkout=cancelled`,
       // Stripe defaults to 24 hours; a stable request also makes retries deterministic.
     }, { idempotencyKey: crypto.createHash('sha256').update(request.idempotencyKey).digest('hex') });
