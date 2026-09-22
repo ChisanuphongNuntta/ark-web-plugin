@@ -38,12 +38,7 @@ const footerGroups = [
 ];
 
 export function Footer() {
-  const pathname = usePathname();
 
-  // On the dedicated single-screen top-up page, suppress marketing footer to ensure zero scrolling
-  if (pathname === '/topup') {
-    return null;
-  }
 
   return (
     <footer className="relative mt-20 overflow-hidden border-t border-cyan-500/20 bg-gradient-to-b from-[#081523] via-[#050e18] to-[#02070c] text-slate-300">

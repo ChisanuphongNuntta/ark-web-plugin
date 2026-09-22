@@ -371,7 +371,7 @@ export function LegacyTopupPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-3 sm:px-5 lg:px-6 py-2 sm:py-3 space-y-3 animate-slide-up">
+    <div className="mx-auto w-full max-w-7xl px-3 sm:px-5 lg:px-6 py-2 sm:py-3 pb-12 sm:pb-16 space-y-4 animate-slide-up">
       {/* Sleek Compact Header & User HUD Bar */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-700/40 bg-[#102637]/90 px-4 py-3 sm:px-6 sm:py-3.5 shadow-lg">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
