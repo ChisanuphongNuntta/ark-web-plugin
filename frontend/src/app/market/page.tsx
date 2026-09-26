@@ -287,6 +287,32 @@ function MarketplaceContent() {
             ))}
           </div>
         </div>
+
+        {/* Quick Breeder Tags */}
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-iris-muted mr-1">แท็กแนะนำ:</span>
+          {[
+            { label: '🌟 ทั้งหมด', value: '' },
+            { label: '🦖 Apex Rex', value: 'Rex' },
+            { label: '⚡ Shadowmane', value: 'Shadowmane' },
+            { label: '🦅 Wyvern', value: 'Wyvern' },
+            { label: '🛡️ Golem / Stego', value: 'Golem' },
+            { label: '🦤 Gigantoraptor', value: 'Giganto' },
+          ].map((tag) => (
+            <button
+              key={tag.label}
+              type="button"
+              onClick={() => handleSearchChange(tag.value)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
+                search === tag.value
+                  ? 'bg-iris-cyan/20 text-iris-cyan border border-iris-cyan/40'
+                  : 'bg-white/5 text-iris-muted hover:text-white hover:bg-white/10 border border-white/5'
+              }`}
+            >
+              {tag.label}
+            </button>
+          ))}
+        </div>
       </GlassCard>
 
       {/* Listings Grid */}

@@ -39,6 +39,32 @@ export default function PrivacyPolicyPage() {
         </p>
       </div>
 
+      {/* TL;DR Summary Card */}
+      <div className="rounded-3xl border border-iris-cyan/30 bg-gradient-to-r from-iris-cyan/10 via-black/40 to-iris-cyan/5 p-5 sm:p-6 backdrop-blur-md space-y-3">
+        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-iris-cyan">
+          <Shield className="h-4 w-4" />
+          <span>สรุปใจความสำคัญใน 30 วินาที (TL;DR Summary)</span>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3 text-xs text-slate-300">
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-cyan font-bold">1.</span>
+            <span>เก็บเฉพาะ Discord & Steam ID เพื่อยืนยันตัวตนและส่งของขวัญในเกม</span>
+          </div>
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-cyan font-bold">2.</span>
+            <span>ไม่มีการจำหน่าย หรือเปิดเผยข้อมูลผู้เล่นแก่บุคคลภายนอก 100%</span>
+          </div>
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-cyan font-bold">3.</span>
+            <span>ธุรกรรมเหรียญ IC บันทึกผ่าน Double-Entry Ledger มี Audit Trail ย้อนหลัง</span>
+          </div>
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-cyan font-bold">4.</span>
+            <span>ขอดาวน์โหลดสำเนาหรือขอลบข้อมูลถาวรได้ตลอด 24 ชม. ผ่าน Data Portal</span>
+          </div>
+        </div>
+      </div>
+
       <GlassCard variant="default" className="p-6 sm:p-10 space-y-6">
         <div className="flex items-center gap-3 border-b border-white/5 pb-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-iris-cyan/10 border border-iris-cyan/30 text-iris-cyan">

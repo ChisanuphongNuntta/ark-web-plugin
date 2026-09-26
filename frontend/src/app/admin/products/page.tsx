@@ -15,6 +15,7 @@ import {
   Plus,
   Edit2,
   Trash2,
+  Copy,
   X,
   Search,
   Filter,
@@ -151,6 +152,25 @@ export default function AdminProductsPage() {
         sortOrder: 0,
       });
     }
+    setShowModal(true);
+  };
+
+  const handleDuplicate = (product: Product) => {
+    setEditingProduct(null);
+    setFormData({
+      name: `${product.name} (คัดลอก)`,
+      description: product.description || '',
+      price: product.price,
+      itemBlueprint: product.itemBlueprint,
+      quantity: product.quantity,
+      quality: product.quality,
+      isBlueprint: product.isBlueprint,
+      isActive: false,
+      isFeatured: false,
+      categoryId: product.categoryId?.toString() || '',
+      imageUrl: product.imageUrl || '',
+      sortOrder: (product.sortOrder || 0) + 1,
+    });
     setShowModal(true);
   };
 
@@ -344,8 +364,17 @@ export default function AdminProductsPage() {
 
                 <div className="absolute top-2 right-2 flex gap-1 opacity-100 transition-opacity">
                   <button
+                    onClick={() => handleDuplicate(product)}
+                    aria-label={`คัดลอก ${product.name}`}
+                    title="คัดลอกเป็นแบบร่างใหม่ (Duplicate Product)"
+                    className="p-2 bg-black/60 rounded-lg hover:bg-iris-cyan text-white transition-colors"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                  <button
                     onClick={() => openModal(product)}
                     aria-label={`แก้ไข ${product.name}`}
+                    title="แก้ไขสินค้า"
                     className="p-2 bg-black/60 rounded-lg hover:bg-emerald-500 text-white transition-colors"
                   >
                     <Edit2 className="h-4 w-4" />
@@ -353,6 +382,7 @@ export default function AdminProductsPage() {
                   <button
                     onClick={() => handleDelete(product)}
                     aria-label={`ลบ ${product.name}`}
+                    title="ลบสินค้า"
                     className="p-2 bg-black/60 rounded-lg hover:bg-red-500 text-white transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />

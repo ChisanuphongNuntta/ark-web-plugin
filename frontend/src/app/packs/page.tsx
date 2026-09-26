@@ -108,6 +108,31 @@ const PACK_VISUAL_MAP: Record<
 export default function PacksPage() {
   const [buyingProduct, setBuyingProduct] = useState<Product | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'starter' | 'combat' | 'mythic'>('all');
+  const [timeLeft, setTimeLeft] = useState<{ hours: string; minutes: string; seconds: string }>({
+    hours: '14',
+    minutes: '28',
+    seconds: '45',
+  });
+
+  React.useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const endOfDay = new Date(now);
+      endOfDay.setHours(23, 59, 59, 999);
+      const diff = Math.max(0, endOfDay.getTime() - now.getTime());
+      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diff / (1000 * 60)) % 60);
+      const s = Math.floor((diff / 1000) % 60);
+      setTimeLeft({
+        hours: String(h).padStart(2, '0'),
+        minutes: String(m).padStart(2, '0'),
+        seconds: String(s).padStart(2, '0'),
+      });
+    };
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['catalog-kits'],
@@ -179,6 +204,44 @@ export default function PacksPage() {
           </div>
         </div>
       </section>
+
+      {/* 24-Hour Flash Deal Countdown Banner */}
+      <div className="rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-cyan-500/10 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-5 backdrop-blur-md shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0 animate-pulse shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+            <Flame className="h-6 w-6 text-amber-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full">
+                LIMITED 24H FLASH SALE
+              </span>
+              <span className="text-xs font-bold text-white">แพ็กเกจลดกระหน่ำประจำวัน</span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1">
+              รับโบนัสส่วนลดสูงสุด 40% และเหรียญแถมพิเศษเมื่อซื้อแพ็กเกจสำรวจใดก็ได้ก่อนหมดเวลา
+            </p>
+          </div>
+        </div>
+
+        {/* Ticking Timer */}
+        <div className="flex items-center gap-2 font-mono text-center shrink-0">
+          <div className="bg-black/60 border border-amber-500/30 rounded-2xl px-3.5 py-2 min-w-[56px]">
+            <span className="text-lg font-black text-amber-300">{timeLeft.hours}</span>
+            <span className="text-[9px] text-slate-400 block uppercase">ชั่วโมง</span>
+          </div>
+          <span className="text-amber-400 font-bold text-xl">:</span>
+          <div className="bg-black/60 border border-amber-500/30 rounded-2xl px-3.5 py-2 min-w-[56px]">
+            <span className="text-lg font-black text-amber-300">{timeLeft.minutes}</span>
+            <span className="text-[9px] text-slate-400 block uppercase">นาที</span>
+          </div>
+          <span className="text-amber-400 font-bold text-xl">:</span>
+          <div className="bg-black/60 border border-amber-500/30 rounded-2xl px-3.5 py-2 min-w-[56px]">
+            <span className="text-lg font-black text-amber-300">{timeLeft.seconds}</span>
+            <span className="text-[9px] text-slate-400 block uppercase">วินาที</span>
+          </div>
+        </div>
+      </div>
 
       {/* 2. Filter Pills & Category Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-5">

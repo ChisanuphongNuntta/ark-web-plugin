@@ -16,6 +16,8 @@ import {
   Server,
   ShieldCheck,
   Truck,
+  ShoppingCart,
+  HelpCircle,
 } from 'lucide-react';
 import { orderContractApi, toContractError } from '@/lib/contracts/client';
 import type { DeliverySummary, TimelineEvent } from '@/lib/contracts/types';
@@ -261,6 +263,24 @@ export default function OrderDetailPage() {
                   ? 'ส่งคำขอคืนเงิน'
                   : 'ยังคืนเงินไม่ได้ในสถานะนี้'}
             </Button>
+            {order.productId && (
+              <Link
+                href={`/shop?buy=${order.productId}`}
+                className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-iris-cyan/30 bg-iris-cyan/15 px-6 py-2.5 text-sm font-bold tracking-wide text-iris-cyan transition hover:bg-iris-cyan/25 hover:border-iris-cyan/50"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                สั่งซื้อสินค้านี้ซ้ำอีกครั้ง (Re-order)
+              </Link>
+            )}
+
+            <Link
+              href={`/support?orderId=${order.id}&subject=${encodeURIComponent(`ปัญหาคำสั่งซื้อ #${shortId(order.id)}`)}`}
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-6 py-2.5 text-sm font-semibold tracking-wide text-amber-300 transition hover:bg-amber-500/20 hover:border-amber-500/40"
+            >
+              <HelpCircle className="h-4 w-4" />
+              แจ้งปัญหาเกี่ยวกับคำสั่งซื้อนี้
+            </Link>
+
             <Link
               href="/orders"
               className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-6 py-2.5 text-sm font-bold tracking-wide text-iris-pearl transition hover:border-iris-cyan/40 hover:bg-iris-cyan/10"

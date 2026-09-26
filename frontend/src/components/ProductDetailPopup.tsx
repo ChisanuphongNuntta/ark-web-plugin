@@ -18,7 +18,9 @@ import {
   Server,
   Sparkles,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
@@ -87,6 +89,7 @@ export default function ProductDetailPopup({
   const [isBuyError, setIsBuyError] = React.useState(false);
   const [isCartSuccess, setIsCartSuccess] = React.useState(false);
   const [buyErrorText, setBuyErrorText] = React.useState('');
+  const [copiedSpawn, setCopiedSpawn] = React.useState(false);
 
   // Fetch servers list
   const { data: serversData, isError: isServersError } = useQuery({
@@ -464,6 +467,37 @@ export default function ProductDetailPopup({
                 </div>
               </div>
             </div>
+
+            {/* Spawn Code Copy for Singleplayer / Testing */}
+            {product.itemBlueprint && (
+              <div className="space-y-2 rounded-2xl border border-iris-cyan/20 bg-iris-cyan/5 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-iris-cyan flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    คำสั่ง Console Spawn (ทดสอบเดี่ยว)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cmd = `admincheat GiveItem "${product.itemBlueprint}" ${product.quantity || 1} ${product.quality || 0} 0`;
+                      navigator.clipboard.writeText(cmd);
+                      setCopiedSpawn(true);
+                      setTimeout(() => setCopiedSpawn(false), 2000);
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-bold text-iris-cyan hover:text-white transition bg-iris-cyan/15 hover:bg-iris-cyan/30 border border-iris-cyan/30 px-2.5 py-1 rounded-lg"
+                  >
+                    {copiedSpawn ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                    {copiedSpawn ? 'คัดลอกคำสั่งแล้ว!' : 'คัดลอกคำสั่ง'}
+                  </button>
+                </div>
+                <div className="rounded-lg bg-black/60 p-2 font-mono text-[10px] text-iris-muted break-all select-all border border-white/5">
+                  admincheat GiveItem &quot;{product.itemBlueprint}&quot; {product.quantity || 1} {product.quality || 0} 0
+                </div>
+                <p className="text-[10px] text-iris-muted">
+                  สามารถคัดลอกคำสั่งนี้ไปกด Tab ใน Singleplayer เพื่อทดสอบสกินหรือคุณสมบัติไอเท็มก่อนสั่งซื้อจริงได้
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </GlassCard>

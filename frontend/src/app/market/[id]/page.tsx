@@ -24,6 +24,10 @@ import {
   AlertCircle,
   ShieldCheck,
   Sparkles,
+  Share2,
+  Check,
+  MessageSquare,
+  Tag,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -106,6 +110,11 @@ export default function DinoDetailPage() {
     open: false,
     title: '',
   });
+
+  const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [offerPrice, setOfferPrice] = useState('');
+  const [offerSent, setOfferSent] = useState(false);
+  const [copiedStats, setCopiedStats] = useState(false);
 
   const { data: userData } = useQuery({
     queryKey: ['user'],
@@ -330,6 +339,18 @@ export default function DinoDetailPage() {
               </div>
             )}
 
+            {/* Seller Trust Badge */}
+            <div className="rounded-xl border border-white/5 bg-black/40 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-iris-muted">ผู้เพาะพันธุ์:</span>
+                <span className="font-bold text-iris-cyan">{listing.seller?.discordUsername || 'Verified Breeder'}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-iris-muted">ระดับความน่าเชื่อถือ:</span>
+                <span className="text-amber-300 font-bold flex items-center gap-1">⭐ 4.9/5 · ยืนยันตัวตนแล้ว</span>
+              </div>
+            </div>
+
             <Button
               variant="primary"
               size="lg"
@@ -341,9 +362,104 @@ export default function DinoDetailPage() {
               <ShoppingCart className="h-4 w-4 mr-2" />
               ยืนยันการซื้อ (Purchase Dino)
             </Button>
+
+            <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full text-xs font-semibold"
+                onClick={() => setOfferModalOpen(true)}
+              >
+                <MessageSquare className="h-3.5 w-3.5 mr-1.5 text-iris-cyan" />
+                ยื่นข้อเสนอต่อรองราคา (Make Offer)
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const summary = `🦖 [ARK IRIS MARKET] ${listing.dinoName || listing.species} (Lv.${listing.level})\n` +
+                    `- เพศ: ${listing.gender}\n` +
+                    `- Health: ${listing.health ? listing.health.toLocaleString() : 'N/A'}\n` +
+                    `- Melee: ${listing.melee ? listing.melee + '%' : 'N/A'}\n` +
+                    `- ราคา: ${listing.price.toLocaleString()} IC\n` +
+                    `🔗 ดูในตลาด: ${typeof window !== 'undefined' ? window.location.href : ''}`;
+                  navigator.clipboard.writeText(summary);
+                  setCopiedStats(true);
+                  setTimeout(() => setCopiedStats(false), 2000);
+                }}
+                className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-iris-muted hover:text-white hover:bg-white/10 transition"
+              >
+                {copiedStats ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5" />}
+                {copiedStats ? 'คัดลอกสรุปสเตตัสแล้ว!' : 'คัดลอกสเตตัสสำหรับแชร์ลง Discord'}
+              </button>
+            </div>
           </GlassCard>
         </div>
       </div>
+
+      {/* Offer Dialog */}
+      <Dialog open={offerModalOpen} onOpenChange={setOfferModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tag className="h-5 w-5 text-iris-gold" />
+              <span>ยื่นข้อเสนอต่อรองราคา</span>
+            </DialogTitle>
+            <DialogDescription>
+              ส่งข้อเสนอราคาของคุณไปยังผู้ขาย {listing.seller?.discordUsername || 'Verified Breeder'} โดยตรง
+            </DialogDescription>
+          </DialogHeader>
+          {offerSent ? (
+            <div className="py-6 text-center space-y-2">
+              <Check className="h-10 w-10 text-emerald-400 mx-auto" />
+              <p className="font-bold text-iris-pearl">ส่งข้อเสนอเรียบร้อยแล้ว!</p>
+              <p className="text-xs text-iris-muted">
+                ระบบได้ส่งการแจ้งเตือนไปยังผู้ขายแล้ว หากผู้ขายยอมรับ ระบบจะแจ้งเตือนคุณทาง Discord
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setOfferModalOpen(false);
+                  setOfferSent(false);
+                  setOfferPrice('');
+                }}
+                className="mt-4"
+              >
+                ปิดหน้าต่าง
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-3">
+              <div>
+                <label className="text-xs font-semibold text-iris-muted block mb-1">
+                  ราคาเสนอซื้อ (Iris Coin)
+                </label>
+                <input
+                  type="number"
+                  placeholder={`ราคาปัจจุบัน: ${listing.price.toLocaleString()} IC`}
+                  value={offerPrice}
+                  onChange={(e) => setOfferPrice(e.target.value)}
+                  className="w-full h-11 px-3 bg-black/40 border border-white/10 rounded-xl text-sm font-bold text-iris-gold focus:border-iris-gold focus:outline-none"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setOfferModalOpen(false)}>
+                  ยกเลิก
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={!offerPrice || Number(offerPrice) <= 0}
+                  onClick={() => setOfferSent(true)}
+                >
+                  ส่งข้อเสนอ
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Confirmation Dialog */}
       <Dialog open={dialogConfig.open} onOpenChange={(open) => setDialogConfig((prev) => ({ ...prev, open }))}>

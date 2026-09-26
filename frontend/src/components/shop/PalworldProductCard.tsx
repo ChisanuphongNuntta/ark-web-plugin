@@ -33,13 +33,26 @@ export function PalworldProductCard({
       aria-label={`ดูรายละเอียดและซื้อ ${product.name}`}
     >
       <div className="flex-1">
-        <div className="frozen-product-art">
+        <div className="frozen-product-art relative">
           <ProductArtwork
             product={product}
             alt=""
             fit="contain"
             className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
           />
+          {product.isFeatured ? (
+            <span className="absolute top-2 right-2 rounded-md bg-gradient-to-r from-amber-500 to-rose-500 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-lg">
+              HOT 🔥
+            </span>
+          ) : product.isBlueprint ? (
+            <span className="absolute top-2 right-2 rounded-md bg-iris-cyan/20 border border-iris-cyan/40 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-iris-cyan backdrop-blur-md">
+              BP 📜
+            </span>
+          ) : product.price >= 800 ? (
+            <span className="absolute top-2 right-2 rounded-md bg-amber-400/20 border border-amber-400/40 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-300 backdrop-blur-md">
+              ELITE 👑
+            </span>
+          ) : null}
         </div>
         <div className="px-4 pt-4 pb-2">
           <p className="text-[10px] tracking-wider text-iris-muted mb-1.5">

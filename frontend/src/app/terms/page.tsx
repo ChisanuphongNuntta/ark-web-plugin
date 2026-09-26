@@ -39,6 +39,32 @@ export default function TermsPage() {
         </p>
       </div>
 
+      {/* TL;DR Summary Card */}
+      <div className="rounded-3xl border border-iris-gold/30 bg-gradient-to-r from-iris-gold/10 via-black/40 to-iris-gold/5 p-5 sm:p-6 backdrop-blur-md space-y-3">
+        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-iris-gold">
+          <FileText className="h-4 w-4" />
+          <span>สรุปข้อตกลงสำคัญใน 30 วินาที (Terms TL;DR)</span>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3 text-xs text-slate-300">
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-gold font-bold">1.</span>
+            <span>การเข้าสู่ระบบและเล่นในคลัสเตอร์ ถือเป็นการยอมรับกฎข้อตกลงนี้ทั้งหมด</span>
+          </div>
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-gold font-bold">2.</span>
+            <span>เหรียญ Iris Coin เป็นแต้มดิจิทัลสำหรับแลกเปลี่ยนสินค้าเสมือนในเกม</span>
+          </div>
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-gold font-bold">3.</span>
+            <span>ห้ามใช้โปรแกรมโกง ห้าม Exploits หรือฟอกไอเท็ม ฝ่าฝืนระงับสิทธิ์ถาวร</span>
+          </div>
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-gold font-bold">4.</span>
+            <span>พบปัญหาของไม่เข้าเซิร์ฟเวอร์ สามารถติดต่อเคลมได้ที่ศูนย์ Support ตลอด 24 ชม.</span>
+          </div>
+        </div>
+      </div>
+
       <GlassCard variant="default" className="p-6 sm:p-10 space-y-6">
         <div className="flex items-center gap-3 border-b border-white/5 pb-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-iris-cyan/10 border border-iris-cyan/30 text-iris-cyan">

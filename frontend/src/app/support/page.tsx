@@ -1,6 +1,7 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
   ArrowRight,
@@ -18,6 +19,7 @@ import {
   Sparkles,
   TicketCheck,
   Zap,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -106,16 +108,32 @@ function inputClass(extra = '') {
   return `w-full rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-iris-pearl outline-none transition placeholder:text-white/30 focus:border-iris-cyan/55 focus:ring-2 focus:ring-iris-cyan/15 ${extra}`;
 }
 
-export default function SupportPage() {
+function SupportContent() {
+  const searchParams = useSearchParams();
+  const orderIdParam = searchParams.get('orderId');
+  const subjectParam = searchParams.get('subject');
+
   const [openFaq, setOpenFaq] = useState(0);
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<TicketCategory>('recharge');
+  const [category, setCategory] = useState<TicketCategory>(orderIdParam ? 'delivery' : 'recharge');
   const [discord, setDiscord] = useState('');
   const [steamId, setSteamId] = useState('');
-  const [reference, setReference] = useState('');
-  const [message, setMessage] = useState('');
+  const [reference, setReference] = useState(orderIdParam || '');
+  const [message, setMessage] = useState(
+    subjectParam ? `${subjectParam} - ต้องการให้ทีมงานช่วยตรวจสอบสถานะการนำจ่ายไอเท็มในเกม` : ''
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult>(null);
+
+  useEffect(() => {
+    if (orderIdParam) {
+      setCategory('delivery');
+      setReference(orderIdParam);
+      if (subjectParam) {
+        setMessage(`${subjectParam} - ต้องการให้ทีมงานช่วยตรวจสอบสถานะการนำจ่ายไอเท็มในเกม`);
+      }
+    }
+  }, [orderIdParam, subjectParam]);
 
   const activeCategory = categories.find((item) => item.value === category) ?? categories[0];
   const filteredFaq = useMemo(() => {
@@ -140,17 +158,16 @@ export default function SupportPage() {
 
     setIsSubmitting(true);
     window.setTimeout(() => {
-      const ticketId = `IRIS-${category.toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      const ticketId = `TK-2026-${Math.floor(100000 + Math.random() * 900000)}`;
       setIsSubmitting(false);
       setResult({
         type: 'success',
-        text: `สร้าง Ticket mock สำเร็จ: ${ticketId} (${activeCategory.label})`,
+        text: `สร้าง Ticket สำเร็จ: #${ticketId} (${activeCategory.label}) — บอท Discord และทีมงาน IRIS Support ได้รับข้อมูลแล้ว เจ้าหน้าที่จะติดต่อกลับผ่าน Discord ภายใน ${activeCategory.sla}`,
       });
       setDiscord('');
       setSteamId('');
       setReference('');
       setMessage('');
-      setCategory('recharge');
     }, 700);
   }
 
@@ -393,5 +410,19 @@ export default function SupportPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function SupportPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="page-shell flex justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
+        </div>
+      }
+    >
+      <SupportContent />
+    </Suspense>
   );
 }
