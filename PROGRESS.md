@@ -1,5 +1,15 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## UI redesign + server directory deployed — 2026-10-17
+
+- Commits `3f51fca` (backend), `9ac4099` (frontend), `4e133ad` (seed fix). Deployed to Docker prod (backend + 2 frontends healthy). Pre-deploy DB backup: `backups/postgres/heartshop-pre-redesign-20261017-181451.dump`.
+- Migration `20261017010000_server_directory_site_settings` applied (19/19). `GameMode` enum per Server (PVE/PVE_MOD/PVPVE), Cluster metadata, `SiteSetting`.
+- Seasonal theming: `html[data-season]` (default/winter/christmas/easter), `GET /api/site/settings`, admin override at `/admin/settings`; `auto` resolves by Asia/Bangkok date (2026-10-17 → winter). Design rules: `frontend/DESIGN.md` (no glow/sparkle/glass/gradient text).
+- Server directory seeded: 4 clusters × 13 maps = 52 listed servers (`npm run seed:servers`, idempotent, all new rows `drainMode=true`, no credentials). Public page `/servers`; legacy `/Listserver-*` URLs 308-redirect. Existing plugin servers 1–2 stay in cluster `PrivateEIEI022` (gameMode unset — assign in admin). Fixed `servers_id_seq` (was `is_called=false`).
+- Open data anomalies (admin must confirm): PvPvE vs PvE-Mod Genesis Part 2 both list port 28013; Pre-Aqua Scorched Earth/Aquatica have no address.
+- Admin console behind `AdminGuard` (admin|server_admin|root; root-only items hidden). Fixed: slip approval on unknown id used to credit the approving admin.
+- NEXT: full catalog — 1,440 ark.wiki.gg reference drafts (`frozen-reference:*`, 1,122 items + 318 dinos) are inactive pending price/deliverability review; 1,706 products lack images.
+
 ## Verified cutover — 2026-07-11
 
 - Production PostgreSQL is at 18/18 migrations; fresh bootstrap, legacy baseline, clone restore/migrate, schema diff, and rollback backups were verified.
@@ -40,9 +50,9 @@ Rollback evidence: `backups/postgres/heartshop-pre-baseline-20260711-193020.dump
 | 1 | Baseline build | ✅ done (build path = Docker; native F: build impossible) |
 | 2 | IRIS ID & Wallet | ✅ done (ledger projection, account linking/sessions) |
 | 2.5 | Backend hardening | ✅ done (HMAC keyId→secret, plugin companion routes, linked-identities) |
-| 3 | Cart/Checkout & Delivery | 🔄 **IN PROGRESS** (workflow `w292tri9y` running) |
-| 4 | Auto Top-up | ⬜ not started |
-| 5 | P2P Escrow | ⬜ not started |
+| 3 | Cart/Checkout & Delivery | ✅ done (see cutover 2026-07-11) |
+| 4 | Auto Top-up | ✅ done (Stripe + bank slip, Sep 2026) |
+| 5 | P2P Escrow | ✅ done (asset locks + native dino snapshot) |
 | 6 | Unified notifications | ⬜ not started |
 | 7 | Production verification | ⬜ not started |
 
