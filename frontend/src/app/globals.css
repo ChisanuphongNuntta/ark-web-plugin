@@ -2,163 +2,194 @@
 @tailwind components;
 @tailwind utilities;
 
-/* =====================================================================
-   IRIS Design Tokens — "Iconic Siam Ultra View"
-   Canonical brand palette (see ENTERPRISE_REDESIGN_PLAN_TH.md §4).
-   Space-separated RGB triplets so Tailwind can apply <alpha-value>.
-   ---------------------------------------------------------------------
-   Brand name     | Hex      | RGB triplet   | token
-   Obsidian Navy  | #05070D  | 5 7 13        | --iris-ink
-   Deep River     | #071A24  | 7 26 36       | --iris-river
-   Iris Cyan      | #37E5D2  | 55 229 210    | --iris-cyan
-   Royal Orchid   | #A77BFF  | 167 123 255   | --iris-orchid
-   Champagne Gold | #DDBB72  | 221 187 114   | --iris-gold
-   ===================================================================== */
+/* =========================================================================
+   IRIS Private — design tokens
+   -------------------------------------------------------------------------
+   Colours are space-separated RGB triplets so Tailwind can apply alpha
+   (`bg-accent/10`). Components use ONLY the semantic Tailwind names
+   (canvas, surface, surface-2, line, fg, fg-muted, accent, on-accent,
+   seasonal, success, warning, danger, info). Seasons swap the values on
+   <html data-season="...">; the UI stays dark in every season.
+   See frontend/DESIGN.md.
+   ========================================================================= */
 :root {
   color-scheme: dark;
 
-  /* --- Base surfaces --- */
-  --iris-ink: 5 7 13;        /* Obsidian Navy  #05070D */
-  --iris-midnight: 8 13 23;  /* derived deep field      */
-  --iris-river: 7 26 36;     /* Deep River     #071A24 */
-  --iris-violet: 13 9 26;    /* Frozen Midnight Violet #0D091A */
-  --iris-slate: 21 18 38;    /* Iris Slate     #151226 */
+  /* Surfaces */
+  --canvas: 11 12 14;          /* #0B0C0E */
+  --surface: 18 19 22;         /* #121316 */
+  --surface-2: 24 25 29;       /* #18191D */
+  --surface-3: 31 32 37;       /* #1F2025 – hover/pressed fills */
 
-  /* --- Brand light --- */
-  --iris-cyan: 55 229 210;   /* Iris Cyan      #37E5D2 */
-  --iris-orchid: 167 123 255;/* Royal Orchid   #A77BFF */
-  --iris-magenta: 232 61 132;/* Glowing Magenta #E83D84 */
+  /* Hairlines: white at low opacity (Tailwind `line`, `line-strong`) */
+  --line: 255 255 255;
+  --line-a: 0.08;
+  --line-strong-a: 0.16;
 
-  /* --- Luxury accent --- */
-  --iris-gold: 221 187 114;  /* Champagne Gold #DDBB72 */
+  /* Foreground */
+  --fg: 236 232 225;           /* #ECE8E1 */
+  --fg-muted: 152 148 140;     /* #98948C */
+  --fg-subtle: 136 132 124;    /* #88847C – meta text, AA on all surfaces */
 
-  /* --- Neutral foreground --- */
-  --iris-pearl: 245 241 232;
-  --iris-muted: 150 159 170;
+  /* Accent (champagne) */
+  --accent: 200 169 106;       /* #C8A96A */
+  --accent-hover: 214 187 130; /* #D6BB82 */
+  --on-accent: 20 17 10;       /* #14110A */
 
-  /* --- Canonical hex aliases (for non-Tailwind / inline use) --- */
-  --color-obsidian-navy: #05070D;
-  --color-deep-river: #071A24;
-  --color-iris-cyan: #37E5D2;
-  --color-royal-orchid: #A77BFF;
-  --color-champagne-gold: #DDBB72;
-  --color-frozen-violet: #0D091A;
-  --color-iris-slate: #151226;
-  --color-glowing-magenta: #E83D84;
+  /* Seasonal marks (ribbon, ornament, small badges only) */
+  --seasonal: 200 169 106;
+  --seasonal-2: 200 169 106;
 
-  /* --- Semantic surface / line / focus tokens --- */
-  --surface-1: rgba(12, 22, 31, 0.72);
-  --surface-2: rgba(16, 31, 41, 0.88);
-  --line: rgba(242, 231, 207, 0.12);
-  --focus: #79f5e3;
+  /* Status – muted, never neon */
+  --success: 127 176 138;      /* #7FB08A */
+  --warning: 210 168 90;       /* #D2A85A */
+  --danger: 217 119 111;       /* #D9776F */
+  --info: 143 179 209;         /* #8FB3D1 */
+
+  /* Overlay scrim */
+  --scrim: 5 6 7;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 160ms;
+
+  /* Layout */
+  --header-h: 64px;
+  --content-max: 1240px;
 }
 
+/* Winter — ice accent, champagne as the secondary seasonal mark. */
+html[data-season='winter'] {
+  --canvas: 10 14 18;          /* #0A0E12 */
+  --surface: 16 22 28;         /* #10161C */
+  --surface-2: 22 30 38;       /* #161E26 */
+  --surface-3: 29 39 49;
+  --fg: 231 237 241;           /* #E7EDF1 */
+  --fg-muted: 142 155 166;     /* #8E9BA6 */
+  --fg-subtle: 128 141 152;
+  --accent: 169 211 227;       /* #A9D3E3 */
+  --accent-hover: 191 224 236;
+  --on-accent: 10 20 24;
+  --seasonal: 200 169 106;     /* champagne */
+  --seasonal-2: 169 211 227;   /* ice */
+}
+
+/* Christmas — gold accent; crimson + pine only for small seasonal marks. */
+html[data-season='christmas'] {
+  --canvas: 12 14 12;          /* #0C0E0C */
+  --surface: 19 22 19;         /* #131613 */
+  --surface-2: 26 30 26;       /* #1A1E1A */
+  --surface-3: 33 38 33;
+  --fg: 238 233 223;           /* #EEE9DF */
+  --fg-muted: 153 149 139;
+  --fg-subtle: 137 133 124;
+  --accent: 201 169 106;       /* #C9A96A */
+  --accent-hover: 215 187 130;
+  --on-accent: 20 17 10;
+  --seasonal: 158 43 43;       /* deep crimson #9E2B2B */
+  --seasonal-2: 46 79 62;      /* pine #2E4F3E */
+}
+
+/* Easter — lilac accent, sage as the seasonal mark. */
+html[data-season='easter'] {
+  --canvas: 14 13 16;          /* #0E0D10 */
+  --surface: 21 20 25;         /* #151419 */
+  --surface-2: 28 26 33;       /* #1C1A21 */
+  --surface-3: 36 34 42;
+  --fg: 238 234 240;           /* #EEEAF0 */
+  --fg-muted: 153 148 160;
+  --fg-subtle: 137 132 145;
+  --accent: 198 182 230;       /* #C6B6E6 */
+  --accent-hover: 213 201 238;
+  --on-accent: 21 17 29;
+  --seasonal: 169 191 160;     /* sage #A9BFA0 */
+  --seasonal-2: 198 182 230;
+}
+
+/* =========================================================================
+   Base
+   ========================================================================= */
 * { box-sizing: border-box; }
 
 html {
-  scroll-behavior: smooth;
-  background: rgb(var(--iris-ink));
+  background: rgb(var(--canvas));
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 16% -8%, rgba(55, 229, 210, 0.12), transparent 34rem),
-    radial-gradient(circle at 88% 16%, rgba(167, 123, 255, 0.1), transparent 30rem),
-    linear-gradient(180deg, #0d091a 0%, #07121a 48%, #05070d 100%);
-  font-family: var(--font-iris-sans), sans-serif;
+  background: rgb(var(--canvas));
+  color: rgb(var(--fg));
+  font-family: var(--font-plex-thai), 'IBM Plex Sans Thai', system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
 }
 
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+h1, h2, h3, h4, h5, h6 {
+  color: rgb(var(--fg));
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
 
-a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
-button, input, select, textarea { font: inherit; }
+p { text-wrap: pretty; }
 
+/* Numbers, prices, IPs and IDs are always tabular. */
+.font-mono, code, kbd, samp, output { font-variant-numeric: tabular-nums; }
+code, kbd, samp { font-family: var(--font-plex-mono), 'IBM Plex Mono', ui-monospace, monospace; }
+
+a { color: inherit; text-decoration: none; }
+a, button, input, select, textarea, [role='button'] { -webkit-tap-highlight-color: transparent; }
+button, input, select, textarea { font: inherit; color: inherit; }
+img, svg, video { max-width: 100%; }
+
+/* One focus ring for the whole product: 2px accent, 2px offset. */
 :focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 3px;
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
 }
+:focus:not(:focus-visible) { outline: none; }
+
+::selection { background: rgb(var(--accent) / 0.28); color: rgb(var(--fg)); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--line) / 0.12);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--line) / 0.2); }
+* { scrollbar-color: rgb(var(--line) / 0.14) transparent; scrollbar-width: thin; }
+
+select option { background: rgb(var(--surface-2)); color: rgb(var(--fg)); }
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type='number'] { -moz-appearance: textfield; }
 
 .skip-link {
   position: fixed;
   left: 1rem;
   top: -5rem;
   z-index: 100;
-  border-radius: 999px;
-  background: rgb(var(--iris-pearl));
-  color: rgb(var(--iris-ink));
-  padding: 0.7rem 1rem;
-  font-weight: 700;
-  transition: top 160ms ease;
+  border-radius: 6px;
+  background: rgb(var(--accent));
+  color: rgb(var(--on-accent));
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  transition: top var(--dur) var(--ease-out);
 }
 .skip-link:focus { top: 1rem; }
-
-@layer components {
-  .page-shell { @apply mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10; }
-  .eyebrow { @apply text-[0.68rem] font-bold uppercase tracking-[0.24em] text-iris-cyan; }
-  .display-title { @apply font-display font-semibold leading-[1.02] tracking-[-0.035em] text-iris-pearl; }
-  .glass-card {
-    background: linear-gradient(145deg, rgba(17, 34, 44, 0.82), rgba(7, 16, 24, 0.7));
-    border: 1px solid var(--line);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28), inset 0 1px rgba(255,255,255,0.035);
-    @apply relative overflow-hidden rounded-[1.65rem] backdrop-blur-xl;
-  }
-  .glass-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(120deg, rgba(255,255,255,0.04), transparent 28%);
-  }
-  .prism-border {
-    border: 1px solid transparent;
-    background: linear-gradient(rgb(var(--iris-midnight)), rgb(var(--iris-midnight))) padding-box,
-      linear-gradient(120deg, rgba(55,229,210,.65), rgba(221,187,114,.24), rgba(167,123,255,.6)) border-box;
-  }
-  .btn-primary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-iris-pearl px-5 py-2.5 text-sm font-bold text-iris-ink transition hover:-translate-y-0.5 hover:bg-white disabled:pointer-events-none disabled:opacity-50; }
-  .btn-secondary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.035] px-5 py-2.5 text-sm font-bold text-iris-pearl transition hover:-translate-y-0.5 hover:border-iris-cyan/50 hover:bg-iris-cyan/10 disabled:pointer-events-none disabled:opacity-50; }
-  .status-pill { @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md; }
-  .input { @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:border-iris-cyan/60 focus:outline-none focus:ring-2 focus:ring-iris-cyan/20; }
-  .glass-input { @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:border-iris-cyan/60 focus:outline-none focus:ring-2 focus:ring-iris-cyan/20; }
-  .text-gradient-primary { @apply bg-gradient-to-r from-iris-cyan via-iris-pearl to-iris-orchid bg-clip-text text-transparent; }
-  .text-gradient-gold { @apply bg-gradient-to-r from-iris-gold to-amber-200 bg-clip-text text-transparent; }
-}
-
-.badge-hot {
-  background: linear-gradient(90deg, #d44848, #e88843);
-  color: white;
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-}
-
-.iris-grid {
-  background-image:
-    linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: linear-gradient(to bottom, black, transparent 78%);
-}
-
-.thai-lattice {
-  background-image: linear-gradient(45deg, transparent 47%, rgba(221,187,114,.08) 48%, rgba(221,187,114,.08) 52%, transparent 53%);
-  background-size: 24px 24px;
-}
-
-.content-auto { content-visibility: auto; contain-intrinsic-size: 700px; }
-
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #05070d; }
-::-webkit-scrollbar-thumb { background: rgba(221,187,114,.28); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(55,229,210,.45); }
-::selection { background: rgba(55,229,210,.3); color: white; }
-
-select option { background: #07121a; color: white; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -168,4 +199,23 @@ select option { background: #07121a; color: white; }
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* =========================================================================
+   Components (system)
+   ========================================================================= */
+@layer components {
+  /* Canonical page container: 1240px max, 16/24/32px gutters. */
+  .page-shell { @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8; }
+
+  /* Small label above a title. */
+  .eyebrow { @apply text-xs font-medium tracking-[0.08em] text-accent; }
+
+  /* Hairline divider. */
+  .hairline { @apply border-line; }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .content-auto { content-visibility: auto; contain-intrinsic-size: 700px; }
 }

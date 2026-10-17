@@ -1,52 +1,57 @@
 import * as React from 'react';
-import { Package2 } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
 
-export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
-  description?: string;
-  actionText?: string;
-  onAction?: () => void;
+export interface EmptyStateProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
+  title: React.ReactNode;
+  description?: React.ReactNode;
   icon?: React.ReactNode;
+  /** Action node (Button / Link styled with buttonVariants). */
+  action?: React.ReactNode;
+  /** @deprecated use `action`. */
+  actionText?: string;
+  /** @deprecated use `action`. */
+  onAction?: () => void;
+  /** Drop the frame when placed inside a Card/Panel. */
+  bare?: boolean;
 }
 
+/** Calm "nothing here yet" block: icon, title, one line of guidance, optional action. */
 export function EmptyState({
   className,
   title,
   description,
+  icon,
+  action,
   actionText,
   onAction,
-  icon,
+  bare = false,
   ...props
 }: EmptyStateProps) {
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center text-center p-8 rounded-[1.65rem] border border-white/5 bg-black/20 backdrop-blur-md',
+        'flex flex-col items-center justify-center px-6 py-12 text-center',
+        !bare && 'rounded-card border border-dashed border-line-strong',
         className
       )}
       {...props}
     >
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/[0.02] border border-white/10 text-iris-muted mb-4 animate-float-gentle">
-        {icon || <Package2 className="h-8 w-8" />}
+      <div className="mb-4 text-fg-subtle [&>svg]:h-6 [&>svg]:w-6" aria-hidden="true">
+        {icon ?? <Inbox strokeWidth={1.5} />}
       </div>
-      
-      <h3 className="font-display text-lg font-bold text-iris-pearl mb-1.5 uppercase tracking-wide">
-        {title}
-      </h3>
-      
-      {description && (
-        <p className="text-sm text-iris-muted max-w-sm mb-6 leading-relaxed">
-          {description}
-        </p>
-      )}
-
-      {actionText && onAction && (
-        <Button variant="secondary" onClick={onAction}>
+      <h3 className="text-base font-semibold text-fg">{title}</h3>
+      {description ? <p className="mt-1.5 max-w-md text-sm text-fg-muted">{description}</p> : null}
+      {action ? (
+        <div className="mt-5">{action}</div>
+      ) : actionText && onAction ? (
+        <Button variant="secondary" className="mt-5" onClick={onAction}>
           {actionText}
         </Button>
-      )}
+      ) : null}
     </div>
   );
 }
+
+export default EmptyState;

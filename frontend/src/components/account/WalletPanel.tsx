@@ -3,291 +3,181 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Coins,
-  Wallet,
-  Clock,
-  ChevronDown,
-  ChevronUp,
-  HelpCircle,
-  PlusCircle,
-  ArrowRight,
-} from 'lucide-react';
+import { ChevronDown, RefreshCw } from 'lucide-react';
 import { walletContractApi } from '@/lib/contracts/client';
 import type { LedgerTransaction } from '@/lib/contracts/types';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import {
+  Amount,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorMessage,
+  Pagination,
+  Skeleton,
+  buttonVariants,
+} from '@/components/ui';
+import { cn } from '@/lib/utils';
 
 /**
- * Display metadata per known sub-account. Unknown keys still render with a
- * neutral style so additive contract sub-accounts are surfaced automatically.
- * NOTE: every balance is a backend decimal STRING and is rendered verbatim —
- * the panel performs NO arithmetic on money (TEAM_OWNERSHIP.md §2).
+ * Sub-account labels. Unknown keys still render so additive contract
+ * sub-accounts appear automatically. Every balance is a backend decimal
+ * STRING rendered verbatim — no arithmetic on money (TEAM_OWNERSHIP.md §2).
  */
-const ACCOUNT_META: Record<string, { label: string; accent: string; hint: string }> = {
-  available: {
-    label: 'Available',
-    accent: 'border-l-iris-cyan text-iris-cyan',
-    hint: 'ยอดที่พร้อมใช้ซื้อของได้ทันที',
-  },
-  held: {
-    label: 'Held / Escrow',
-    accent: 'border-l-amber-400 text-amber-400',
-    hint: 'เงินที่ถูกกันไว้ระหว่างทำรายการ P2P หรือรอรับสินค้า',
-  },
-  promotional: {
-    label: 'Promotional',
-    accent: 'border-l-iris-orchid text-iris-orchid',
-    hint: 'เครดิตโบนัสจากกิจกรรม ใช้ได้ตามเงื่อนไข',
-  },
-  refundable: {
-    label: 'Refundable',
-    accent: 'border-l-rose-400 text-rose-400',
-    hint: 'ยอดที่ขอคืนได้ตามเงื่อนไข',
-  },
-  pending: {
-    label: 'Pending',
-    accent: 'border-l-blue-400 text-blue-400',
-    hint: 'รายการที่ยังไม่ชำระเสร็จสมบูรณ์',
-  },
+const ACCOUNT_META: Record<string, { label: string; hint: string }> = {
+  available: { label: 'ใช้ได้', hint: 'ใช้ซื้อของได้ทันที' },
+  held: { label: 'กันไว้', hint: 'กันไว้ระหว่างซื้อขายในตลาดผู้เล่นหรือรอส่งของ' },
+  promotional: { label: 'โบนัส', hint: 'เครดิตจากกิจกรรม ใช้ได้ตามเงื่อนไข' },
+  refundable: { label: 'เงินคืน', hint: 'ยอดที่ได้คืนจากคำสั่งซื้อที่ส่งไม่สำเร็จ' },
+  pending: { label: 'รอยืนยัน', hint: 'รายการที่ยังชำระไม่เสร็จ' },
 };
 
 const SUB_ACCOUNT_ORDER = ['available', 'held', 'promotional', 'refundable', 'pending'];
+const PAGE_SIZE = 10;
 
-// UI-only top-up presets (NOT a price calculation — fixed package definitions).
-const TOPUP_PRESETS = [100, 300, 500, 1000];
+function formatDate(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+}
 
 export function WalletPanel() {
   const [page, setPage] = React.useState(1);
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
-  const [topupPreset, setTopupPreset] = React.useState<number | null>(null);
 
-  const {
-    data: balance,
-    isLoading: isBalanceLoading,
-    isError: isBalanceError,
-    refetch: refetchBalance,
-  } = useQuery({
+  const balance = useQuery({
     queryKey: ['wallet', 'balance'],
     queryFn: () => walletContractApi.getBalance(),
   });
 
-  const {
-    data: history,
-    isLoading: isHistoryLoading,
-    isError: isHistoryError,
-    refetch: refetchHistory,
-  } = useQuery({
+  const history = useQuery({
     queryKey: ['wallet', 'transactions', page],
-    queryFn: () => walletContractApi.getTransactions(page, 10),
+    queryFn: () => walletContractApi.getTransactions(page, PAGE_SIZE),
   });
 
   const accountKeys = React.useMemo(() => {
-    if (!balance) return [];
-    const keys = Object.keys(balance.accounts);
-    return [
-      ...SUB_ACCOUNT_ORDER.filter((k) => keys.includes(k)),
-      ...keys.filter((k) => !SUB_ACCOUNT_ORDER.includes(k)),
-    ];
-  }, [balance]);
+    if (!balance.data) return [];
+    const keys = Object.keys(balance.data.accounts);
+    return [...SUB_ACCOUNT_ORDER.filter((k) => keys.includes(k)), ...keys.filter((k) => !SUB_ACCOUNT_ORDER.includes(k))];
+  }, [balance.data]);
+
+  const currency = balance.data?.currency ?? 'IC';
 
   return (
-    <div className="space-y-8">
-      {/* -------------------- Balance cards -------------------- */}
-      <section className="space-y-4">
-        <div>
-          <span className="eyebrow">IRIS Wallet — Sub-accounts</span>
-          <h3 className="text-sm font-bold text-iris-pearl mt-0.5 uppercase tracking-wide">ยอดบัญชีแยกประเภท</h3>
+    <div className="space-y-10">
+      <section aria-labelledby="wallet-balances" className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="wallet-balances" className="text-lg font-semibold tracking-[-0.015em] text-fg">
+              ยอดในกระเป๋า
+            </h2>
+            <p className="mt-1 text-sm text-fg-muted">ยอดทุกบัญชีย่อยมาจากระบบบัญชีหลังบ้านโดยตรง</p>
+          </div>
+          <Link href="/topup" className={buttonVariants()}>
+            เติมเงิน
+          </Link>
         </div>
 
-        {isBalanceLoading && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[0, 1, 2, 3].map((i) => (
-              <GlassCard key={i} className="p-5">
-                <Skeleton className="h-3 w-16 mb-2" />
-                <Skeleton className="h-6 w-24" />
-              </GlassCard>
-            ))}
-          </div>
-        )}
-
-        {isBalanceError && (
+        {balance.isError ? (
           <ErrorMessage
-            title="ไม่สามารถโหลดยอดกระเป๋าเงินได้"
-            message="การดึงสถานะ Ledger ผิดพลาด หรือเซสชันหมดอายุ กรุณาลองใหม่อีกครั้ง"
-            onRetry={refetchBalance}
+            title="โหลดยอดกระเป๋าไม่สำเร็จ"
+            message="เซสชันอาจหมดอายุ หรือการเชื่อมต่อขัดข้อง ลองอีกครั้ง"
+            onRetry={() => void balance.refetch()}
           />
-        )}
-
-        {balance && !isBalanceLoading && (
-          <>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {accountKeys.map((key) => {
-                const meta = ACCOUNT_META[key] ?? {
-                  label: key,
-                  accent: 'border-l-white/20 text-iris-pearl',
-                  hint: 'ยอดบัญชีย่อย',
-                };
-                // Rendered verbatim — decimal string, no Number()/math.
-                const value = balance.accounts[key];
-                return (
-                  <GlassCard key={key} className={`p-5 border-l-2 ${meta.accent.split(' ')[0]}`}>
-                    <p className="text-[10px] text-iris-muted font-bold uppercase tracking-wider flex items-center gap-1.5">
-                      {meta.label}
-                      <span className="cursor-help" title={meta.hint}>
-                        <HelpCircle className="h-3 w-3 text-iris-muted hover:text-white" />
-                      </span>
-                    </p>
-                    <p className={`font-mono font-bold text-2xl mt-1.5 ${meta.accent.split(' ')[1]}`}>
-                      {value}
-                      <span className="text-xs ml-1 text-iris-muted">{balance.currency}</span>
-                    </p>
-                    <p className="text-[9px] text-iris-muted mt-2">{meta.hint}</p>
-                  </GlassCard>
-                );
-              })}
-            </div>
-
-            <GlassCard variant="gold" className="p-5 flex justify-between items-center">
-              <div>
-                <h4 className="text-xs font-bold text-iris-gold uppercase tracking-wider">ยอดรวมทั้งหมด (Total)</h4>
-                <p className="text-xs text-iris-muted mt-0.5">ผลรวมที่คำนวณโดยระบบหลังบ้าน</p>
+        ) : (
+          <Card padding="none" aria-busy={balance.isLoading || undefined}>
+            <dl className="grid grid-cols-2 divide-line lg:grid-cols-5 [&>div]:border-line">
+              {balance.isLoading
+                ? Array.from({ length: 4 }, (_, i) => (
+                    <div key={i} className="border-b p-5 lg:border-b-0 lg:border-r">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="mt-3 h-6 w-24" />
+                    </div>
+                  ))
+                : accountKeys.map((key) => {
+                    const meta = ACCOUNT_META[key] ?? { label: key, hint: 'บัญชีย่อย' };
+                    return (
+                      <div key={key} className="border-b p-5 lg:border-b-0 lg:border-r last:border-r-0">
+                        <dt className="text-xs text-fg-muted">{meta.label}</dt>
+                        <dd className="mt-2">
+                          <Amount value={balance.data?.accounts[key]} unit={currency} size="lg" />
+                          <p className="mt-1 text-xs text-fg-subtle">{meta.hint}</p>
+                        </dd>
+                      </div>
+                    );
+                  })}
+            </dl>
+            {balance.data && (
+              <div className="flex items-center justify-between gap-4 border-t border-line bg-surface-2 px-5 py-4">
+                <p className="text-sm text-fg-muted">ยอดรวมทุกบัญชี</p>
+                <Amount value={balance.data.total} unit={currency} size="lg" tone="accent" />
               </div>
-              {/* total is a backend decimal string — shown as-is. */}
-              <p className="font-mono font-black text-2xl text-gradient-gold">
-                {balance.total} <span className="text-xs text-iris-gold">{balance.currency}</span>
-              </p>
-            </GlassCard>
-          </>
+            )}
+          </Card>
         )}
       </section>
 
-      {/* -------------------- Top-up start (UI only) -------------------- */}
-      <section>
-        <GlassCard variant="prism" className="p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-iris-cyan" />
-            <h3 className="font-display text-sm font-bold text-iris-pearl uppercase tracking-wider">เติมเงินเข้ากระเป๋า (Top-up)</h3>
-          </div>
-          <p className="text-xs text-iris-muted leading-relaxed">
-            เลือกจำนวนเหรียญที่ต้องการเติม แล้วไปยังหน้าชำระเงินเพื่อดำเนินการต่อ
-            (ส่วนนี้เป็นจุดเริ่มต้น UI — การชำระเงินจริงจะดำเนินการที่หน้าเติมเงิน)
-          </p>
-
-          <div className="flex flex-wrap gap-2">
-            {TOPUP_PRESETS.map((amount) => (
-              <button
-                type="button"
-                key={amount}
-                onClick={() => setTopupPreset(amount)}
-                aria-pressed={topupPreset === amount}
-                className={`px-4 py-2 rounded-full text-xs font-bold font-mono border transition ${
-                  topupPreset === amount
-                    ? 'bg-iris-cyan/15 border-iris-cyan/40 text-iris-cyan'
-                    : 'bg-black/30 border-white/10 text-iris-muted hover:border-white/20'
-                }`}
-              >
-                +{amount.toLocaleString()} IC
-              </button>
-            ))}
-          </div>
-
-          <Link href="/topup" className="inline-block">
-            <Button variant="cyan" leftIcon={<PlusCircle className="h-4 w-4" />} rightIcon={<ArrowRight className="h-4 w-4" />}>
-              {topupPreset ? `ดำเนินการเติม ${topupPreset.toLocaleString()} IC ที่หน้าเติมเงิน` : 'ไปหน้าเติมเงิน'}
-            </Button>
-          </Link>
-          {topupPreset && (
-            <p className="text-[10px] text-iris-muted">
-              เลือกแพ็กเกจ +{topupPreset.toLocaleString()} IC ไว้แล้ว — ระบบชำระเงินจริงจะดำเนินการที่หน้าเติมเงิน
-            </p>
-          )}
-        </GlassCard>
-      </section>
-
-      {/* -------------------- Transaction timeline -------------------- */}
-      <section className="space-y-4">
-        <div className="flex justify-between items-center">
+      <section aria-labelledby="wallet-history" className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <span className="eyebrow">Immutable Ledger</span>
-            <h3 className="text-sm font-bold text-iris-pearl mt-0.5 uppercase tracking-wide">ไทม์ไลน์ธุรกรรม</h3>
+            <h2 id="wallet-history" className="text-lg font-semibold tracking-[-0.015em] text-fg">
+              ประวัติธุรกรรม
+            </h2>
+            <p className="mt-1 text-sm text-fg-muted">ทุกรายการบันทึกแบบบัญชีคู่ แก้ไขย้อนหลังไม่ได้</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => refetchHistory()} leftIcon={<Clock className="h-3.5 w-3.5" />}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void history.refetch()}
+            loading={history.isFetching && !history.isLoading}
+            leftIcon={<RefreshCw className="h-4 w-4" strokeWidth={1.5} aria-hidden />}
+          >
             รีเฟรช
           </Button>
         </div>
 
-        {isHistoryLoading && (
-          <div className="space-y-3">
-            {[0, 1, 2].map((i) => (
-              <GlassCard key={i} className="p-6">
-                <div className="flex justify-between items-center mb-3">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                </div>
-                <Skeleton className="h-3 w-2/3" />
-              </GlassCard>
-            ))}
-          </div>
-        )}
-
-        {isHistoryError && (
+        {history.isError ? (
           <ErrorMessage
-            title="ดึงประวัติธุรกรรมไม่สำเร็จ"
-            message="ไม่สามารถเชื่อมต่อกับบัญชีแยกประเภทได้ในขณะนี้"
-            onRetry={refetchHistory}
+            title="โหลดประวัติธุรกรรมไม่สำเร็จ"
+            message="ลองอีกครั้งในอีกสักครู่"
+            onRetry={() => void history.refetch()}
           />
-        )}
-
-        {history && !isHistoryLoading && (
+        ) : history.isLoading ? (
+          <Card padding="none" aria-busy>
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} className="border-b border-line p-5 last:border-b-0">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="mt-2 h-3 w-24" />
+              </div>
+            ))}
+          </Card>
+        ) : !history.data?.transactions.length ? (
+          <EmptyState
+            title="ยังไม่มีธุรกรรม"
+            description="เมื่อเติมเงิน ซื้อของ หรือได้รับเงินคืน รายการจะแสดงที่นี่"
+          />
+        ) : (
           <>
-            {history.transactions.length === 0 ? (
-              <EmptyState
-                title="ยังไม่มีรายการธุรกรรม"
-                description="บัญชีนี้ยังไม่มีประวัติเงินเข้าหรือออกในระบบ"
-              />
-            ) : (
-              <ul className="space-y-3">
-                {history.transactions.map((tx) => (
-                  <li key={tx.id}>
+            <Card as="section" padding="none">
+              <ul>
+                {history.data.transactions.map((tx) => (
+                  <li key={tx.id} className="border-b border-line last:border-b-0">
                     <TransactionRow
                       tx={tx}
-                      currency={balance?.currency ?? 'IC'}
-                      isExpanded={!!expanded[tx.id]}
+                      isExpanded={Boolean(expanded[tx.id])}
                       onToggle={() => setExpanded((p) => ({ ...p, [tx.id]: !p[tx.id] }))}
                     />
                   </li>
                 ))}
               </ul>
-            )}
-
-            {history.pagination.totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 pt-4">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  ก่อนหน้า
-                </Button>
-                <span className="text-xs text-iris-muted font-bold font-mono">
-                  หน้า {history.pagination.page} จาก {history.pagination.totalPages}
-                </span>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={page >= history.pagination.totalPages}
-                  onClick={() => setPage((p) => Math.min(history.pagination.totalPages, p + 1))}
-                >
-                  ถัดไป
-                </Button>
-              </div>
-            )}
+            </Card>
+            <Pagination
+              page={history.data.pagination.page}
+              pageSize={history.data.pagination.limit || PAGE_SIZE}
+              total={history.data.pagination.total}
+              onPageChange={setPage}
+            />
           </>
         )}
       </section>
@@ -297,82 +187,79 @@ export function WalletPanel() {
 
 function TransactionRow({
   tx,
-  currency,
   isExpanded,
   onToggle,
 }: {
   tx: LedgerTransaction;
-  currency: string;
   isExpanded: boolean;
   onToggle: () => void;
 }) {
   const isCredit = tx.type.includes('credit') || tx.type.includes('recharge') || tx.type.includes('topup');
   const isHold = tx.type.includes('hold');
+  const panelId = `tx-${tx.id}`;
 
   return (
-    <GlassCard className={`border transition-all ${isExpanded ? 'border-iris-cyan/30' : 'border-white/5 hover:border-white/10'}`}>
-      <div className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="space-y-1 min-w-0">
+    <div>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-controls={panelId}
+        className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition-colors duration-fast hover:bg-surface-2"
+      >
+        <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={isCredit ? 'success' : isHold ? 'warning' : 'default'}>{tx.type}</Badge>
-            <span className="font-mono text-[10px] text-iris-muted bg-black/40 px-2 py-0.5 rounded">
-              ID: {tx.id.substring(0, 8)}…
-            </span>
+            <Badge tone={isCredit ? 'success' : isHold ? 'warning' : 'neutral'} mono>
+              {tx.type}
+            </Badge>
+            <span className="font-mono text-xs text-fg-subtle">{tx.id.slice(0, 8)}</span>
           </div>
-          <p className="text-sm font-bold text-iris-pearl mt-1">{tx.description || 'Ledger entry'}</p>
-          <p className="text-[10px] text-iris-muted flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {new Date(tx.createdAt).toLocaleString('th-TH')}
-          </p>
+          <p className="text-sm text-fg">{tx.description || 'รายการบัญชี'}</p>
+          <p className="text-xs text-fg-subtle">{formatDate(tx.createdAt)}</p>
         </div>
-
-        <button
-          type="button"
-          onClick={onToggle}
-          className="h-8 w-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition shrink-0"
-          aria-label="แสดงรายละเอียดบัญชีสองด้าน"
-          aria-expanded={isExpanded}
-        >
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </button>
-      </div>
+        <ChevronDown
+          aria-hidden
+          strokeWidth={1.5}
+          className={cn('mt-1 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-fast', isExpanded && 'rotate-180')}
+        />
+        <span className="sr-only">{isExpanded ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}</span>
+      </button>
 
       {isExpanded && (
-        <div className="bg-black/50 border-t border-white/5 px-5 py-4 space-y-3">
-          <div className="flex justify-between items-center">
-            <h4 className="text-[10px] font-bold text-iris-cyan uppercase tracking-wider">รายการบัญชีสองด้าน (Entries)</h4>
-            <span className="font-mono text-[9px] text-iris-muted truncate max-w-[50%]" title={tx.idempotencyKey}>
-              Idempotency: {tx.idempotencyKey}
-            </span>
-          </div>
+        <div id={panelId} className="space-y-3 border-t border-line bg-surface-2 px-5 py-4">
+          <p className="truncate font-mono text-xs text-fg-subtle" title={tx.idempotencyKey}>
+            Idempotency: {tx.idempotencyKey}
+          </p>
           <div className="overflow-x-auto">
-            <table className="w-full text-left font-mono text-xs border-collapse">
+            <table className="w-full min-w-[420px] border-collapse text-left text-xs">
               <thead>
-                <tr className="border-b border-white/10 text-iris-muted text-[10px]">
-                  <th className="pb-2">Account / Type</th>
-                  <th className="pb-2 text-right">Amount</th>
-                  <th className="pb-2 text-right">Balance After</th>
+                <tr className="border-b border-line text-fg-muted">
+                  <th scope="col" className="pb-2 font-medium">บัญชี</th>
+                  <th scope="col" className="pb-2 text-right font-medium">จำนวน</th>
+                  <th scope="col" className="pb-2 text-right font-medium">คงเหลือหลังรายการ</th>
                 </tr>
               </thead>
               <tbody>
                 {tx.entries.map((entry) => {
-                  // amount/balanceAfter are decimal strings — display verbatim,
-                  // sign read from the leading '-' only (no numeric coercion).
+                  // Decimal strings shown verbatim; sign read from the leading '-' only.
                   const isNegative = entry.amount.trim().startsWith('-');
                   return (
-                    <tr key={entry.id} className="border-b border-white/5">
-                      <td className="py-2.5">
-                        <p className="text-iris-pearl text-[11px] truncate max-w-xs md:max-w-md" title={entry.account.key}>
+                    <tr key={entry.id} className="border-b border-line last:border-b-0">
+                      <td className="py-2.5 pr-4">
+                        <p className="max-w-xs truncate font-mono text-fg" title={entry.account.key}>
                           {entry.account.key}
                         </p>
-                        <span className="text-[9px] bg-white/5 text-iris-muted px-1.5 py-0.5 rounded uppercase">
-                          {entry.account.type}
-                        </span>
+                        <p className="text-fg-subtle">{entry.account.type}</p>
                       </td>
-                      <td className={`py-2.5 text-right font-bold ${isNegative ? 'text-rose-400' : 'text-emerald-400'}`}>
+                      <td
+                        className={cn(
+                          'py-2.5 text-right font-mono tabular-nums',
+                          isNegative ? 'text-danger' : 'text-success'
+                        )}
+                      >
                         {entry.amount} {entry.account.currency}
                       </td>
-                      <td className="py-2.5 text-right text-iris-muted">
+                      <td className="py-2.5 text-right font-mono tabular-nums text-fg-muted">
                         {entry.balanceAfter} {entry.account.currency}
                       </td>
                     </tr>
@@ -383,6 +270,6 @@ function TransactionRow({
           </div>
         </div>
       )}
-    </GlassCard>
+    </div>
   );
 }

@@ -1,118 +1,136 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { dinoMarketApi } from '@/lib/api';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import { useAuthStore } from '@/lib/store';
 import {
-  Loader2,
-  ArrowLeft,
-  ShoppingBag,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Package,
-} from 'lucide-react';
+  Amount,
+  Card,
+  EmptyState,
+  ErrorMessage,
+  PageHeader,
+  Skeleton,
+  Spinner,
+  buttonVariants,
+} from '@/components/ui';
+import {
+  DeliveryStatusBadge,
+  DinoImage,
+  ListingStats,
+  formatDate,
+  genderLabel,
+  listingTitle,
+  type MarketListing,
+} from '../marketUi';
 
 export default function MyPurchasesPage() {
-  const { data: purchasesData, isLoading } = useQuery({
+  const { user, isLoading: authLoading } = useAuthStore();
+
+  const purchases = useQuery({
     queryKey: ['myDinoPurchases'],
-    queryFn: () => dinoMarketApi.getMyPurchases().then((res) => res.data),
+    queryFn: () => dinoMarketApi.getMyPurchases().then((res) => res.data as { purchases?: MarketListing[] }),
+    enabled: Boolean(user),
+    refetchInterval: (q) =>
+      (q.state.data?.purchases ?? []).some((p) => p.deliveryStatus !== 'delivered' && p.deliveryStatus !== 'failed')
+        ? 20_000
+        : false,
   });
 
-  return (
-    <div className="page-shell max-w-7xl mx-auto py-8 sm:py-10 space-y-8 animate-slide-up">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/market">
-          <Button variant="secondary" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            กลับตลาด
-          </Button>
-        </Link>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-iris-cyan animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-widest text-iris-cyan">
-              MY EXPEDITION PURCHASES
-            </span>
-          </div>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-black text-iris-pearl">
-            สัตว์ที่ฉันสั่งซื้อ
-          </h1>
-        </div>
+  const header = (
+    <PageHeader
+      eyebrow="ตลาดผู้เล่น"
+      title="รายการซื้อของฉัน"
+      description="สัตว์ที่คุณซื้อจากผู้เล่นคนอื่น และสถานะการส่งเข้าเซิร์ฟเวอร์"
+    />
+  );
+
+  if (!user) {
+    return (
+      <div className="page-shell pb-16">
+        {header}
+        {authLoading ? (
+          <Spinner label="กำลังตรวจสอบการเข้าสู่ระบบ" />
+        ) : (
+          <EmptyState
+            title="เข้าสู่ระบบเพื่อดูรายการซื้อ"
+            description="ประวัติการซื้อในตลาดผูกกับ IRIS ID ของคุณ"
+            action={
+              <Link href="/login" className={buttonVariants()}>
+                เข้าสู่ระบบ
+              </Link>
+            }
+          />
+        )}
       </div>
+    );
+  }
 
-      {/* Purchases */}
-      {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
-        </div>
-      ) : purchasesData?.purchases?.length === 0 ? (
-        <GlassCard className="p-16 text-center">
-          <Package className="mx-auto h-12 w-12 text-iris-muted/40 mb-3" />
-          <p className="text-lg font-bold text-iris-pearl">คุณยังไม่มีประวัติการซื้อสัตว์</p>
-          <div className="mt-4">
-            <Link href="/market">
-              <Button variant="primary">สำรวจตลาดสัตว์เลี้ยง</Button>
-            </Link>
-          </div>
-        </GlassCard>
-      ) : (
-        <div className="space-y-4">
-          {purchasesData?.purchases?.map((purchase: any) => (
-            <GlassCard key={purchase.id} hoverEffect="lift" className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              {/* Dino Info */}
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <Link
-                    href={`/market/${purchase.id}`}
-                    className="font-bold text-base text-iris-pearl hover:text-iris-cyan transition"
-                  >
-                    {purchase.dinoName || purchase.species}
-                  </Link>
-                  <Badge variant={purchase.deliveryStatus === 'delivered' ? 'cyan' : 'gold'}>
-                    {purchase.deliveryStatus === 'delivered' ? 'ส่งมอบแล้ว' : 'รอรับของในเกม'}
-                  </Badge>
-                </div>
-                <p className="text-xs text-iris-muted mt-1">
-                  {purchase.species} • Lv.{purchase.level} • {purchase.gender === 'Male' ? '♂ ผู้' : '♀ เมีย'}
-                </p>
+  const items = purchases.data?.purchases ?? [];
+
+  return (
+    <div className="page-shell pb-16">
+      {header}
+
+      {purchases.isError ? (
+        <ErrorMessage
+          title="โหลดรายการซื้อไม่สำเร็จ"
+          message="ลองอีกครั้งในอีกสักครู่"
+          onRetry={() => void purchases.refetch()}
+        />
+      ) : purchases.isLoading ? (
+        <Card padding="none" aria-busy>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex gap-4 border-b border-line p-5 last:border-b-0">
+              <Skeleton className="h-16 w-24 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-32" />
               </div>
-
-              {/* Stats */}
-              <div className="flex gap-6 text-xs border-y md:border-y-0 md:border-x border-white/5 py-2 md:py-0 md:px-6">
-                <div>
-                  <p className="text-[10px] text-iris-muted uppercase">Health</p>
-                  <p className="font-bold text-rose-400">{purchase.baseHealth}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-iris-muted uppercase">Damage</p>
-                  <p className="font-bold text-emerald-400">{purchase.baseDamage}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-iris-muted uppercase">Imprint</p>
-                  <p className="font-bold text-iris-cyan">
-                    {Math.round(purchase.imprintQuality * 100)}%
+            </div>
+          ))}
+        </Card>
+      ) : items.length === 0 ? (
+        <EmptyState
+          title="ยังไม่มีรายการซื้อ"
+          description="เมื่อคุณซื้อสัตว์จากตลาด สถานะการส่งเข้าเซิร์ฟเวอร์จะแสดงที่นี่"
+          action={
+            <Link href="/market" className={buttonVariants()}>
+              ดูตลาด
+            </Link>
+          }
+        />
+      ) : (
+        <Card padding="none">
+          <ul>
+            {items.map((purchase) => (
+              <li
+                key={purchase.id}
+                className="flex flex-col gap-4 border-b border-line p-5 last:border-b-0 md:flex-row md:items-center"
+              >
+                <DinoImage listing={purchase} className="hidden h-16 w-24 shrink-0 rounded-control border border-line sm:block" />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link href={`/market/${purchase.id}`} className="truncate text-base font-semibold text-fg hover:text-accent">
+                      {listingTitle(purchase)}
+                    </Link>
+                    <DeliveryStatusBadge status={purchase.deliveryStatus} />
+                  </div>
+                  <p className="text-xs text-fg-muted">
+                    {purchase.species} · {genderLabel(purchase.gender)}
                   </p>
                 </div>
-              </div>
-
-              {/* Price & Delivery Details */}
-              <div className="text-right">
-                <p className="text-xl font-black text-iris-gold">
-                  {purchase.price.toLocaleString()}{' '}
-                  <span className="text-xs font-bold text-iris-gold/70">IC</span>
-                </p>
-                <p className="text-[11px] text-iris-muted mt-0.5">
-                  ซื้อเมื่อ {new Date(purchase.soldAt || purchase.createdAt).toLocaleDateString('th-TH')}
-                </p>
-              </div>
-            </GlassCard>
-          ))}
-        </div>
+                <div className="md:w-80">
+                  <ListingStats listing={purchase} />
+                </div>
+                <div className="flex items-end justify-between gap-4 md:w-40 md:flex-col md:items-end">
+                  <Amount value={purchase.price} unit="IC" />
+                  <span className="text-xs text-fg-subtle">ซื้อเมื่อ {formatDate(purchase.soldAt || purchase.createdAt)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
     </div>
   );

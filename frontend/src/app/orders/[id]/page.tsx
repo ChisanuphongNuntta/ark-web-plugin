@@ -1,57 +1,52 @@
 'use client';
 
+import { ClaimCommand } from '@/components/ClaimCommand';
 import * as React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Coins,
-  Copy,
-  FileText,
-  Package,
-  ReceiptText,
-  RotateCcw,
-  Server,
-  ShieldCheck,
-  Truck,
-  ShoppingCart,
-  HelpCircle,
-} from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { orderContractApi, toContractError } from '@/lib/contracts/client';
-import type { DeliverySummary, TimelineEvent } from '@/lib/contracts/types';
-import { isOrderActive, isRefundable, statusOf, timelineStepOf } from '@/lib/orderStatus';
+import type { DeliverySummary } from '@/lib/contracts/types';
+import { isOrderActive, isRefundable } from '@/lib/orderStatus';
 import { useAuthStore } from '@/lib/store';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/Button';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import {
+  Amount,
+  Button,
+  Card,
+  CardHeader,
+  CopyField,
+  Dialog,
+  EmptyState,
+  ErrorMessage,
+  PageHeader,
+  Skeleton,
+  Spinner,
+  buttonVariants,
+  useToast,
+} from '@/components/ui';
+import { ProductArtwork } from '@/components/ProductArtwork';
+import { DeliveryTimeline, Fact, OrderStatusBadge, formatDate, shortId } from '../orderUi';
 
 function paramToOrderId(value: string | string[] | undefined): string | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
 }
 
-function formatDate(value?: string | null): string {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-}
-
-function shortId(id: string): string {
-  return id.length <= 18 ? id : `${id.slice(0, 8)}…${id.slice(-6)}`;
-}
+const DELIVERY_LABEL: Record<DeliverySummary['status'], string> = {
+  queued: 'รอในคิว',
+  claimed: 'เซิร์ฟเวอร์รับงานแล้ว',
+  delivered: 'ส่งสำเร็จ',
+  failed: 'ส่งไม่สำเร็จ',
+};
 
 export default function OrderDetailPage() {
   const params = useParams();
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const toast = useToast();
+  const { user, isLoading: authLoading } = useAuthStore();
   const orderId = paramToOrderId(params?.id);
-  const [copied, setCopied] = React.useState(false);
-  const [refundMessage, setRefundMessage] = React.useState<string | null>(null);
+  const [confirmRefund, setConfirmRefund] = React.useState(false);
   const [refundError, setRefundError] = React.useState<string | null>(null);
 
   const query = useQuery({
@@ -68,47 +63,33 @@ export default function OrderDetailPage() {
     mutationFn: () => orderContractApi.refund(orderId as string, 'customer_requested_from_order_detail'),
     onSuccess: (result) => {
       setRefundError(null);
-      setRefundMessage(
-        result.alreadyRefunded
-          ? `รายการนี้ถูกคืนเงินแล้ว ยอดคืนเงิน ${result.refundedAmount} IC`
-          : `ส่งคำขอคืนเงินสำเร็จ ยอดคืนเงินจากระบบ ${result.refundedAmount} IC`
+      setConfirmRefund(false);
+      toast.success(
+        result.alreadyRefunded ? 'คำสั่งซื้อนี้คืนเงินไปแล้ว' : 'คืนเงินเรียบร้อย',
+        `${result.refundedAmount} IC เข้ากระเป๋าส่วนเงินคืน`
       );
-      queryClient.invalidateQueries({ queryKey: ['order-detail', orderId] });
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      void queryClient.invalidateQueries({ queryKey: ['order-detail', orderId] });
+      void queryClient.invalidateQueries({ queryKey: ['orders'] });
     },
     onError: (err) => {
-      const error = toContractError(err, 'ไม่สามารถคืนเงินคำสั่งซื้อนี้ได้');
-      setRefundMessage(null);
-      setRefundError(
-        error.status === 409
-          ? `ระบบหลังบ้านยังไม่อนุญาตให้คืนเงินรายการนี้: ${error.message}`
-          : error.message
-      );
+      const error = toContractError(err, 'คืนเงินคำสั่งซื้อนี้ไม่สำเร็จ');
+      setConfirmRefund(false);
+      setRefundError(error.status === 409 ? `ยังคืนเงินรายการนี้ไม่ได้: ${error.message}` : error.message);
     },
   });
 
-  const copyOrderId = async () => {
-    if (!orderId) return;
-    try {
-      await navigator.clipboard.writeText(orderId);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    } catch {
-      setCopied(false);
-    }
-  };
-
   if (!orderId) {
     return (
-      <div className="page-shell py-20">
+      <div className="page-shell pb-16">
+        <PageHeader eyebrow="คำสั่งซื้อ" title="ไม่พบคำสั่งซื้อ" />
         <EmptyState
           title="ลิงก์คำสั่งซื้อไม่ถูกต้อง"
-          description="ไม่พบรหัสคำสั่งซื้อใน URL โปรดกลับไปหน้า Orders แล้วเปิดรายการอีกครั้ง"
-          actionText="กลับไปคำสั่งซื้อของฉัน"
-          onAction={() => {
-            window.location.href = '/orders';
-          }}
-          icon={<ReceiptText className="h-8 w-8" />}
+          description="เปิดรายการจากหน้าคำสั่งซื้ออีกครั้ง"
+          action={
+            <Link href="/orders" className={buttonVariants({ variant: 'secondary' })}>
+              ไปที่คำสั่งซื้อ
+            </Link>
+          }
         />
       </div>
     );
@@ -116,16 +97,21 @@ export default function OrderDetailPage() {
 
   if (!user) {
     return (
-      <div className="page-shell py-20">
-        <EmptyState
-          title="กรุณาเข้าสู่ระบบ"
-          description="ต้องเข้าสู่ระบบด้วย IRIS ID เพื่อดูรายละเอียดคำสั่งซื้อและไทม์ไลน์การจัดส่ง"
-          actionText="เข้าสู่ระบบ"
-          onAction={() => {
-            window.location.href = '/login';
-          }}
-          icon={<ShieldCheck className="h-8 w-8" />}
-        />
+      <div className="page-shell pb-16">
+        <PageHeader eyebrow="คำสั่งซื้อ" title="รายละเอียดคำสั่งซื้อ" />
+        {authLoading ? (
+          <Spinner label="กำลังตรวจสอบการเข้าสู่ระบบ" />
+        ) : (
+          <EmptyState
+            title="เข้าสู่ระบบเพื่อดูคำสั่งซื้อนี้"
+            description="รายละเอียดและสถานะการส่งของผูกกับ IRIS ID ของคุณ"
+            action={
+              <Link href="/login" className={buttonVariants()}>
+                เข้าสู่ระบบ
+              </Link>
+            }
+          />
+        )}
       </div>
     );
   }
@@ -134,338 +120,222 @@ export default function OrderDetailPage() {
 
   if (query.isError || !query.data) {
     return (
-      <div className="page-shell py-12 space-y-6">
-        <BackLink />
+      <div className="page-shell pb-16">
+        <PageHeader eyebrow="คำสั่งซื้อ" title="รายละเอียดคำสั่งซื้อ" />
         <ErrorMessage
-          title="โหลดรายละเอียดคำสั่งซื้อไม่สำเร็จ"
-          message="ไม่สามารถดึงข้อมูลจาก order detail contract endpoint ได้ โปรดลองใหม่อีกครั้ง"
-          onRetry={() => query.refetch()}
+          title="โหลดคำสั่งซื้อไม่สำเร็จ"
+          message="คำสั่งซื้ออาจไม่มีอยู่ หรือการเชื่อมต่อขัดข้อง ลองอีกครั้ง"
+          onRetry={() => void query.refetch()}
         />
       </div>
     );
   }
 
   const { order, delivery, timeline } = query.data;
-  const status = statusOf(order.status);
   const productName = order.product?.name ?? `สินค้า #${order.productId}`;
   const serverName = order.server?.name ?? `เซิร์ฟเวอร์ #${order.serverId}`;
-  const canRequestRefund = isRefundable(order.status);
+  const canRequestRefund = isRefundable(order.status) && order.status !== 'refunded';
+  const supportHref = `/support?orderId=${encodeURIComponent(order.id)}&subject=${encodeURIComponent(`ปัญหาคำสั่งซื้อ #${shortId(order.id)}`)}`;
 
   return (
-    <div className="page-shell py-10 space-y-8 animate-slide-up">
-      <BackLink />
+    <div className="page-shell pb-16">
+      <PageHeader
+        eyebrow={
+          <span>
+            คำสั่งซื้อ <span className="font-mono">#{shortId(order.id)}</span>
+          </span>
+        }
+        title={productName}
+        actions={
+          <div className="flex items-center gap-3" aria-live="polite">
+            {query.isFetching ? <Spinner label="กำลังอัปเดตสถานะ" /> : null}
+            <OrderStatusBadge status={order.status} />
+          </div>
+        }
+      />
 
-      <section className="grid grid-cols-1 xl:grid-cols-[1.45fr_0.9fr] gap-8">
-        <GlassCard variant="prism" hasLattice className="p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row gap-6 lg:items-start lg:justify-between">
-            <div className="min-w-0 space-y-4">
-              <div className="space-y-2">
-                <span className="eyebrow text-iris-cyan">Order Detail / Delivery Timeline</span>
-                <h1 className="font-display text-3xl sm:text-5xl font-extrabold uppercase tracking-tight text-iris-pearl">
-                  {productName}
-                </h1>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-iris-muted">
-                  <span className="font-mono">#{shortId(order.id)}</span>
-                  <button
-                    type="button"
-                    onClick={copyOrderId}
-                    className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2 py-1 font-bold text-iris-cyan transition hover:border-iris-cyan/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris-cyan"
-                    aria-label="คัดลอกรหัสคำสั่งซื้อ"
-                  >
-                    <Copy className="h-3 w-3" />
-                    {copied ? 'คัดลอกแล้ว' : 'คัดลอก'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3" aria-live="polite">
-                <span className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold ${status.chip} ${status.border}`}>
-                  {status.icon}
-                  {status.label}
-                </span>
-                {query.isFetching && (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-iris-cyan/20 bg-iris-cyan/5 px-4 py-2 text-xs font-bold text-iris-cyan">
-                    กำลังอัปเดตสถานะ
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        {/* Timeline */}
+        <div className="space-y-6">
+          <Card padding="none">
+            <CardHeader
+              divided
+              title="สถานะการส่งของ"
+              description={
+                isOrderActive(order.status)
+                  ? 'อัปเดตเองทุก 10 วินาทีจนกว่าจะส่งเสร็จ'
+                  : 'ลำดับเหตุการณ์จากระบบส่งของ'
+              }
+            />
+            <div className="p-5 sm:p-6">
+              <DeliveryTimeline orderStatus={order.status} events={timeline} />
+            </div>
+            {order.lastError ? (
+              <div className="border-t border-line px-5 py-4 sm:px-6">
+                <p className="flex items-start gap-2 text-sm text-danger" role="alert">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+                  <span>
+                    <span className="font-medium">ข้อความจากระบบส่งของ</span>
+                    <span className="mt-0.5 block text-fg-muted">{order.lastError}</span>
                   </span>
-                )}
+                </p>
+              </div>
+            ) : null}
+          </Card>
+
+          <Card padding="md">
+            <h2 className="text-base font-semibold text-fg">ของยังไม่เข้า?</h2>
+            <ol className="mt-3 space-y-2 text-sm text-fg-muted">
+              <li>
+                1. เข้าเซิร์ฟเวอร์ <span className="text-fg">{serverName}</span> ด้วยตัวละครที่ผูกกับ Steam ของคุณ
+              </li>
+              <li>
+                2. พิมพ์{' '}
+                <ClaimCommand />{' '}
+                ในแชทของเกม
+              </li>
+              <li>3. ถ้ายังไม่ได้รับภายใน 15 นาที แจ้งทีมงานพร้อมหมายเลขคำสั่งซื้อ</li>
+            </ol>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href={supportHref} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
+                แจ้งปัญหาคำสั่งซื้อนี้
+              </Link>
+              <Link href="/servers" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+                ดูสถานะเซิร์ฟเวอร์
+              </Link>
+            </div>
+          </Card>
+        </div>
+
+        {/* Summary */}
+        <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+          <Card padding="none">
+            <div className="flex gap-4 border-b border-line p-5">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-control border border-line bg-surface-2">
+                <ProductArtwork product={order.product} alt="" className="h-full w-full object-contain p-1" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-fg">{productName}</p>
+                <p className="mt-0.5 text-xs text-fg-muted">
+                  จำนวน <span className="font-mono text-fg">{order.quantity}</span>
+                </p>
               </div>
             </div>
-
-            <div className="rounded-[2rem] border border-iris-gold/20 bg-iris-gold/[0.06] p-5 lg:min-w-[230px]">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-iris-gold">Backend charged amount</p>
-              <div className="mt-3 flex items-center gap-2 font-mono text-3xl font-black text-iris-gold">
-                <Coins className="h-7 w-7" />
-                {order.totalPrice.toLocaleString()} IC
-              </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-iris-muted">
-                ยอดนี้เป็นค่าที่ Backend ส่งกลับมา หน้าเว็บไม่คำนวณราคาสุดท้ายเอง
-              </p>
+            <dl className="divide-y divide-line px-5">
+              <Fact label="ยอดที่ชำระ">
+                <Amount value={order.totalPrice} />
+              </Fact>
+              <Fact label="ส่งไปที่">
+                <span className="block truncate">{serverName}</span>
+                {order.server?.map ? <span className="block font-mono text-xs text-fg-subtle">{order.server.map}</span> : null}
+              </Fact>
+              <Fact label="สั่งเมื่อ">
+                <span className="font-mono text-xs tabular-nums">{formatDate(order.createdAt)}</span>
+              </Fact>
+              {order.deliveredAt ? (
+                <Fact label="ส่งถึงเมื่อ">
+                  <span className="font-mono text-xs tabular-nums">{formatDate(order.deliveredAt)}</span>
+                </Fact>
+              ) : null}
+            </dl>
+            <div className="border-t border-line p-5">
+              <CopyField label="หมายเลขคำสั่งซื้อ" value={order.id} size="sm" />
             </div>
-          </div>
-
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-3">
-            <FactCard icon={<Package className="h-4 w-4" />} label="จำนวน" value={`x${order.quantity}`} />
-            <FactCard icon={<Server className="h-4 w-4" />} label="ปลายทาง" value={serverName} hint={order.server?.map ?? undefined} />
-            <FactCard icon={<FileText className="h-4 w-4" />} label="สร้างรายการ" value={formatDate(order.createdAt)} />
-          </div>
-
-          {order.lastError && (
-            <div className="mt-6 rounded-2xl border border-rose-500/25 bg-rose-500/10 p-4 text-sm text-rose-200">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 shrink-0 text-rose-300" />
-                <div>
-                  <p className="font-bold">ระบบจัดส่งแจ้งข้อผิดพลาด</p>
-                  <p className="mt-1 text-xs text-rose-100/80">{order.lastError}</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard className="p-6 space-y-5" variant="gold">
-          <div>
-            <span className="eyebrow text-iris-gold">Fulfillment Control</span>
-            <h2 className="font-display text-2xl font-bold uppercase text-iris-pearl">
-              สถานะการส่งของเข้าเกม
-            </h2>
-          </div>
+          </Card>
 
           <DeliveryPanel delivery={delivery} />
 
-          <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-xs leading-relaxed text-iris-muted">
-            Backend เป็นผู้ตัดสิน transition, wallet ledger, refund และ retry delivery ทั้งหมด
-            หน้าเว็บนี้แสดงผลและส่งคำขอตาม contract เท่านั้น
-          </div>
-
-          {refundMessage && (
-            <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-3 text-xs text-emerald-200" role="status">
-              {refundMessage}
-            </div>
-          )}
-
-          {refundError && (
-            <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 p-3 text-xs text-rose-200" role="alert">
-              {refundError}
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3">
+          <Card padding="md" className="space-y-3">
+            <h2 className="text-base font-semibold text-fg">การดำเนินการ</h2>
+            {refundError ? <ErrorMessage variant="inline" message={refundError} /> : null}
             <Button
-              variant="gold"
-              disabled={!canRequestRefund || refundMutation.isPending || order.status === 'refunded'}
-              isLoading={refundMutation.isPending}
-              onClick={() => refundMutation.mutate()}
-              leftIcon={<RotateCcw className="h-4 w-4" />}
+              variant="secondary"
+              fullWidth
+              disabled={!canRequestRefund || refundMutation.isPending}
+              onClick={() => setConfirmRefund(true)}
             >
-              {order.status === 'refunded'
-                ? 'คืนเงินแล้ว'
-                : canRequestRefund
-                  ? 'ส่งคำขอคืนเงิน'
-                  : 'ยังคืนเงินไม่ได้ในสถานะนี้'}
+              {order.status === 'refunded' ? 'คืนเงินแล้ว' : 'ขอคืนเงิน'}
             </Button>
-            {order.productId && (
-              <Link
-                href={`/shop?buy=${order.productId}`}
-                className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-iris-cyan/30 bg-iris-cyan/15 px-6 py-2.5 text-sm font-bold tracking-wide text-iris-cyan transition hover:bg-iris-cyan/25 hover:border-iris-cyan/50"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                สั่งซื้อสินค้านี้ซ้ำอีกครั้ง (Re-order)
+            {!canRequestRefund && order.status !== 'refunded' ? (
+              <p className="text-xs text-fg-subtle">ขอคืนเงินได้เมื่อส่งของเสร็จหรือส่งไม่สำเร็จ</p>
+            ) : null}
+            {order.productId ? (
+              <Link href={`/shop?buy=${order.productId}`} className={buttonVariants({ variant: 'ghost', fullWidth: true })}>
+                ซื้อสินค้านี้อีกครั้ง
               </Link>
-            )}
-
-            <Link
-              href={`/support?orderId=${order.id}&subject=${encodeURIComponent(`ปัญหาคำสั่งซื้อ #${shortId(order.id)}`)}`}
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-6 py-2.5 text-sm font-semibold tracking-wide text-amber-300 transition hover:bg-amber-500/20 hover:border-amber-500/40"
-            >
-              <HelpCircle className="h-4 w-4" />
-              แจ้งปัญหาเกี่ยวกับคำสั่งซื้อนี้
-            </Link>
-
-            <Link
-              href="/orders"
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-6 py-2.5 text-sm font-bold tracking-wide text-iris-pearl transition hover:border-iris-cyan/40 hover:bg-iris-cyan/10"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              กลับไปประวัติคำสั่งซื้อ
-            </Link>
-          </div>
-        </GlassCard>
-      </section>
-
-      <GlassCard className="p-6 sm:p-8">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <span className="eyebrow text-iris-cyan">Live Delivery Timeline</span>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold uppercase text-iris-pearl">
-              ไทม์ไลน์คำสั่งซื้อ
-            </h2>
-          </div>
-          <p className="max-w-md text-xs text-iris-muted">
-            ลำดับเหตุการณ์มาจาก Backend timeline endpoint โดยตรง ใช้ตรวจสอบ audit trail ระหว่างเว็บกับเกม
-          </p>
-        </div>
-
-        <Timeline events={timeline} />
-      </GlassCard>
-    </div>
-  );
-}
-
-function BackLink() {
-  return (
-    <Link
-      href="/orders"
-      className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-iris-cyan transition hover:text-iris-pearl"
-    >
-      <ArrowLeft className="h-4 w-4" />
-      กลับไปคำสั่งซื้อของฉัน
-    </Link>
-  );
-}
-
-function OrderDetailSkeleton() {
-  return (
-    <div className="page-shell py-10 space-y-8">
-      <Skeleton className="h-5 w-48" />
-      <div className="grid grid-cols-1 xl:grid-cols-[1.45fr_0.9fr] gap-8">
-        <GlassCard className="p-8 space-y-6">
-          <Skeleton className="h-4 w-44" />
-          <Skeleton className="h-12 w-2/3" />
-          <Skeleton className="h-8 w-44 rounded-full" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Skeleton className="h-24 rounded-2xl" />
-            <Skeleton className="h-24 rounded-2xl" />
-            <Skeleton className="h-24 rounded-2xl" />
-          </div>
-        </GlassCard>
-        <GlassCard className="p-6 space-y-4">
-          <Skeleton className="h-8 w-2/3" />
-          <Skeleton className="h-28 rounded-2xl" />
-          <Skeleton className="h-11 rounded-full" />
-        </GlassCard>
+            ) : null}
+          </Card>
+        </aside>
       </div>
-      <GlassCard className="p-8 space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-40 rounded-2xl" />
-      </GlassCard>
-    </div>
-  );
-}
 
-function FactCard({
-  icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-iris-muted">
-        <span className="text-iris-cyan">{icon}</span>
-        {label}
-      </div>
-      <p className="mt-2 truncate font-display text-lg font-bold text-iris-pearl">{value}</p>
-      {hint && <p className="mt-1 text-xs text-iris-muted">{hint}</p>}
+      <Dialog
+        open={confirmRefund}
+        onOpenChange={setConfirmRefund}
+        title="ขอคืนเงินคำสั่งซื้อนี้?"
+        description="ระบบจะตรวจสิทธิ์และคืนยอดเข้ากระเป๋าส่วนเงินคืนของคุณ ยอดที่คืนกำหนดโดยระบบหลังบ้าน"
+        variant="warning"
+        confirmText="ยืนยันขอคืนเงิน"
+        cancelText="ยกเลิก"
+        loading={refundMutation.isPending}
+        onConfirm={() => refundMutation.mutate()}
+      />
     </div>
   );
 }
 
 function DeliveryPanel({ delivery }: { delivery: DeliverySummary | null }) {
-  if (!delivery) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm leading-relaxed text-iris-muted">
-        ยังไม่มี fulfillment record สำหรับรายการนี้ อาจเป็นคำสั่งซื้อเก่าหรือยังไม่ถูก claim โดยเซิร์ฟเวอร์
-      </div>
-    );
-  }
-
-  const deliveryTone =
-    delivery.status === 'delivered'
-      ? 'text-emerald-300 border-emerald-500/25 bg-emerald-500/10'
-      : delivery.status === 'failed'
-        ? 'text-rose-300 border-rose-500/25 bg-rose-500/10'
-        : 'text-iris-cyan border-iris-cyan/20 bg-iris-cyan/10';
-
   return (
-    <div className={`rounded-2xl border p-4 ${deliveryTone}`}>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.28em] opacity-80">Delivery status</p>
-          <p className="mt-1 inline-flex items-center gap-2 font-display text-xl font-bold uppercase">
-            <Truck className="h-5 w-5" />
-            {delivery.status}
-          </p>
-        </div>
-        <div className="text-right text-xs">
-          <p className="opacity-70">Attempts</p>
-          <p className="font-mono text-lg font-bold">{delivery.attempts ?? 0}</p>
-        </div>
-      </div>
-
-      <dl className="mt-4 space-y-2 text-xs">
-        <div className="flex justify-between gap-3">
-          <dt className="opacity-70">Receipt</dt>
-          <dd className="font-mono">{delivery.receiptId ?? '—'}</dd>
-        </div>
-        {delivery.lastError && (
-          <div className="rounded-xl bg-black/20 p-3">
-            <dt className="font-bold">Last error</dt>
-            <dd className="mt-1 opacity-90">{delivery.lastError}</dd>
-          </div>
-        )}
-      </dl>
-    </div>
+    <Card padding="none">
+      <CardHeader divided title="งานส่งของ" />
+      {!delivery ? (
+        <p className="p-5 text-sm text-fg-muted">ยังไม่มีงานส่งของสำหรับคำสั่งซื้อนี้ จะปรากฏเมื่อเซิร์ฟเวอร์รับงาน</p>
+      ) : (
+        <dl className="divide-y divide-line px-5">
+          <Fact label="สถานะ">
+            <span className={delivery.status === 'failed' ? 'text-danger' : delivery.status === 'delivered' ? 'text-success' : 'text-fg'}>
+              {DELIVERY_LABEL[delivery.status] ?? delivery.status}
+            </span>
+          </Fact>
+          <Fact label="จำนวนครั้งที่ลอง">
+            <span className="font-mono tabular-nums">{delivery.attempts ?? 0}</span>
+          </Fact>
+          <Fact label="เลขที่รับของ">
+            <span className="break-all font-mono text-xs">{delivery.receiptId ?? '—'}</span>
+          </Fact>
+          {delivery.lastError ? (
+            <div className="py-2.5">
+              <dt className="text-sm text-fg-muted">ข้อผิดพลาดล่าสุด</dt>
+              <dd className="mt-1 text-sm text-danger">{delivery.lastError}</dd>
+            </div>
+          ) : null}
+        </dl>
+      )}
+    </Card>
   );
 }
 
-function Timeline({ events }: { events: TimelineEvent[] }) {
-  if (events.length === 0) {
-    return (
-      <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.035] p-6 text-sm text-iris-muted">
-        Backend ยังไม่ส่ง timeline event สำหรับรายการนี้
-      </div>
-    );
-  }
-
+function OrderDetailSkeleton() {
   return (
-    <ol className="mt-8 space-y-0" aria-label="ไทม์ไลน์การจัดส่ง">
-      {events.map((event, index) => {
-        const meta = timelineStepOf(event.status);
-        const isLast = index === events.length - 1;
-        const tone =
-          meta.tone === 'good'
-            ? 'border-emerald-400/40 bg-emerald-400/15 text-emerald-200'
-            : meta.tone === 'bad'
-              ? 'border-rose-400/40 bg-rose-400/15 text-rose-200'
-              : 'border-iris-cyan/30 bg-iris-cyan/10 text-iris-cyan';
-
-        return (
-          <li key={`${event.status}-${event.at}-${index}`} className="relative pl-12">
-            {!isLast && <div className="absolute left-[15px] top-8 h-full w-px bg-gradient-to-b from-iris-cyan/40 to-white/5" />}
-            <div className={`absolute left-0 top-1 flex h-8 w-8 items-center justify-center rounded-full border ${tone}`}>
-              {meta.icon}
+    <div className="page-shell pb-16" aria-busy="true">
+      <div className="space-y-3 pb-6 pt-10">
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-8 w-72" />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-4 rounded-card border border-line p-6">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="flex gap-4">
+              <Skeleton variant="circle" className="h-6 w-6" />
+              <Skeleton className="h-4 w-48" />
             </div>
-            <div className="pb-7">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div>
-                    <p className="font-bold text-iris-pearl">{meta.label}</p>
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-iris-muted">{meta.hint}</p>
-                  </div>
-                  <time dateTime={event.at} className="font-mono text-xs text-iris-gold">
-                    {formatDate(event.at)}
-                  </time>
-                </div>
-              </div>
-            </div>
-          </li>
-        );
-      })}
-    </ol>
+          ))}
+        </div>
+        <div className="space-y-3 rounded-card border border-line p-5">
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+      </div>
+    </div>
   );
 }

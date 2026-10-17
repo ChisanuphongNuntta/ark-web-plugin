@@ -1,487 +1,343 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useRouter } from 'next/navigation';
-import { dinoMarketApi, authApi } from '@/lib/api';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
-import {
-  Loader2,
-  ArrowLeft,
-  Heart,
-  Zap,
-  Droplets,
-  Utensils,
-  Weight,
-  Sword,
-  Gauge,
-  Dna,
-  User,
-  Calendar,
-  ShoppingCart,
-  AlertCircle,
-  ShieldCheck,
-  Sparkles,
-  Share2,
-  Check,
-  MessageSquare,
-  Tag,
-} from 'lucide-react';
+import * as React from 'react';
 import Link from 'next/link';
-import { useState } from 'react';
-import { getProductImageUrl } from '@/lib/productVisuals';
+import { useParams, useRouter } from 'next/navigation';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Copy } from 'lucide-react';
+import { dinoMarketApi } from '@/lib/api';
+import { walletContractApi } from '@/lib/contracts/client';
+import type { ServerSummary } from '@/lib/contracts/types';
+import { useAuthStore } from '@/lib/store';
+import {
+  Amount,
+  Button,
+  Card,
+  Dialog,
+  EmptyState,
+  ErrorMessage,
+  PageHeader,
+  Skeleton,
+  buttonVariants,
+  useToast,
+} from '@/components/ui';
+import { ServerPicker, useServers } from '@/components/servers';
+import {
+  DinoImage,
+  ListingStatusBadge,
+  formatNumber,
+  formatPercent,
+  genderLabel,
+  listingTitle,
+  type MarketListing,
+} from '../marketUi';
 
-// Stat display component
-function StatBar({
-  label,
-  icon: Icon,
-  baseValue,
-  addedValue,
-  color,
-}: {
-  label: string;
-  icon: any;
-  baseValue: number;
-  addedValue: number;
-  color: string;
-}) {
-  const maxStat = 50;
+const STATS: Array<{ label: string; base: keyof MarketListing; added: keyof MarketListing }> = [
+  { label: 'พลังชีวิต', base: 'baseHealth', added: 'addedHealth' },
+  { label: 'ความอึด', base: 'baseStamina', added: 'addedStamina' },
+  { label: 'ออกซิเจน', base: 'baseOxygen', added: 'addedOxygen' },
+  { label: 'อาหาร', base: 'baseFood', added: 'addedFood' },
+  { label: 'น้ำหนัก', base: 'baseWeight', added: 'addedWeight' },
+  { label: 'พลังโจมตี', base: 'baseDamage', added: 'addedDamage' },
+];
 
-  return (
-    <div className="space-y-1.5 rounded-xl border border-white/5 bg-black/40 p-3 text-xs">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon className={`h-4 w-4 ${color}`} />
-          <span className="font-semibold text-iris-pearl">{label}</span>
-        </div>
-        <div className="flex items-center gap-1.5 font-mono">
-          <span className={`font-bold ${color}`}>{baseValue}</span>
-          {addedValue > 0 && (
-            <span className="text-emerald-400 font-bold">+{addedValue}</span>
-          )}
-        </div>
-      </div>
-      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-iris-cyan rounded-full"
-          style={{ width: `${Math.min(100, (baseValue / maxStat) * 100)}%` }}
-        />
-      </div>
-    </div>
-  );
+function dinoDisabledReason(s: ServerSummary): string | null {
+  return s.supportsDinoDelivery === false ? 'เซิร์ฟเวอร์นี้ยังไม่รองรับการส่งสัตว์' : null;
 }
 
-// Color swatch component
-function ColorSwatch({ colorIndex, region }: { colorIndex: number; region: number }) {
-  const colors = [
-    '#ff0000', '#ff4400', '#ff8800', '#ffcc00', '#ffff00',
-    '#ccff00', '#88ff00', '#44ff00', '#00ff00', '#00ff44',
-    '#00ff88', '#00ffcc', '#00ffff', '#00ccff', '#0088ff',
-    '#0044ff', '#0000ff', '#4400ff', '#8800ff', '#cc00ff',
-  ];
-  const bg = colorIndex >= 0 ? (colors[colorIndex % colors.length] || '#666666') : '#333333';
-
-  return (
-    <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-3 py-1.5">
-      <div
-        className="h-4 w-4 rounded-full border border-white/20"
-        style={{ backgroundColor: bg }}
-      />
-      <span className="text-[11px] font-mono text-iris-muted">Region {region}: <strong className="text-iris-pearl">ID {colorIndex}</strong></span>
-    </div>
-  );
+function errorText(error: unknown): string {
+  const e = error as { response?: { data?: { error?: string; message?: string } }; message?: string };
+  return e?.response?.data?.error || e?.response?.data?.message || e?.message || 'ลองอีกครั้งในอีกสักครู่';
 }
 
 export default function DinoDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const router = useRouter();
   const queryClient = useQueryClient();
+  const toast = useToast();
+  const { user } = useAuthStore();
 
-  const [selectedServerId, setSelectedServerId] = useState<string>('');
-  const [dialogConfig, setDialogConfig] = useState<{
-    open: boolean;
-    title: string;
-    description?: string;
-    variant?: 'primary' | 'danger';
-    onConfirm?: () => void;
-  }>({
-    open: false,
-    title: '',
+  const [serverId, setServerId] = React.useState<number | null>(null);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+
+  const listingQuery = useQuery({
+    queryKey: ['dinoListing', id],
+    queryFn: () => dinoMarketApi.getListingById(id as string).then((res) => res.data as { listing?: MarketListing }),
+    enabled: Boolean(id),
   });
 
-  const [offerModalOpen, setOfferModalOpen] = useState(false);
-  const [offerPrice, setOfferPrice] = useState('');
-  const [offerSent, setOfferSent] = useState(false);
-  const [copiedStats, setCopiedStats] = useState(false);
-
-  const { data: userData } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => authApi.getMe().then((res) => res.data),
+  const servers = useServers();
+  const balance = useQuery({
+    queryKey: ['wallet', 'balance'],
+    queryFn: () => walletContractApi.getBalance(),
+    enabled: Boolean(user),
   });
 
-  const { data: listingData, isLoading } = useQuery({
-    queryKey: ['dinoListing', params.id],
-    queryFn: () => dinoMarketApi.getListingById(params.id as string).then((res) => res.data),
-    enabled: !!params.id,
-  });
-
-  const { data: serverData } = useQuery({
-    queryKey: ['dinoDeliveryServers'],
-    queryFn: () => dinoMarketApi.getDeliveryServers().then((res) => res.data),
-  });
-  const deliveryServers = (serverData?.servers ?? []).filter(
-    (server: any) => server.isOnline && !server.drainMode && server.supportsDinoDelivery,
-  );
-
-  const buyMutation = useMutation({
+  const buy = useMutation({
     mutationFn: () => {
-      if (!selectedServerId) throw new Error('กรุณาเลือกเซิร์ฟเวอร์ปลายทางสำหรับรับสัตว์');
-      return dinoMarketApi.buyDino(params.id as string, Number(selectedServerId));
+      if (!serverId) throw new Error('เลือกเซิร์ฟเวอร์ที่จะรับสัตว์ก่อน');
+      return dinoMarketApi.buyDino(id as string, serverId);
     },
     onSuccess: (res) => {
-      setDialogConfig({
-        open: true,
-        title: 'สั่งซื้อสำเร็จ',
-        description: res.data?.message || 'ส่งคำสั่งจัดส่งสัตว์เข้าสู่เซิร์ฟเวอร์เรียบร้อยแล้ว',
-        onConfirm: () => router.push('/market/my-purchases'),
-      });
-      queryClient.invalidateQueries({ queryKey: ['dinoListing'] });
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+      setConfirmOpen(false);
+      toast.success('ซื้อสำเร็จ', res.data?.message || 'ระบบกำลังส่งสัตว์เข้าเซิร์ฟเวอร์ที่คุณเลือก');
+      void queryClient.invalidateQueries({ queryKey: ['dinoListing'] });
+      void queryClient.invalidateQueries({ queryKey: ['dinoListings'] });
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['myDinoPurchases'] });
+      router.push('/market/my-purchases');
     },
-    onError: (error: any) => {
-      setDialogConfig({
-        open: true,
-        title: 'ไม่สามารถสั่งซื้อได้',
-        description: error.response?.data?.error || 'เกิดข้อผิดพลาดในการสั่งซื้อ',
-      });
+    onError: (error) => {
+      setConfirmOpen(false);
+      toast.error('ซื้อไม่สำเร็จ', errorText(error));
     },
   });
 
-  if (isLoading) {
+  if (listingQuery.isLoading) {
     return (
-      <div className="page-shell flex justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
+      <div className="page-shell pb-16" aria-busy>
+        <Skeleton className="mb-3 h-4 w-32" />
+        <Skeleton className="mb-10 h-8 w-64" />
+        <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+          <Skeleton className="aspect-[16/9]" />
+          <Skeleton className="h-80" />
+        </div>
       </div>
     );
   }
 
-  const listing = listingData?.listing;
+  if (listingQuery.isError) {
+    return (
+      <div className="page-shell pb-16">
+        <PageHeader eyebrow="ตลาดผู้เล่น" title="รายละเอียดสัตว์" />
+        <ErrorMessage
+          title="โหลดรายการนี้ไม่สำเร็จ"
+          message="ลองอีกครั้งในอีกสักครู่"
+          onRetry={() => void listingQuery.refetch()}
+        />
+      </div>
+    );
+  }
+
+  const listing = listingQuery.data?.listing;
 
   if (!listing) {
     return (
-      <div className="page-shell max-w-4xl mx-auto py-16 text-center space-y-4">
-        <GlassCard className="p-12 text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-rose-400 mb-3" />
-          <h2 className="text-xl font-bold text-iris-pearl">ไม่พบข้อมูลสัตว์ตัวนี้ในตลาด</h2>
-          <p className="text-xs text-iris-muted mt-1">รายการอาจถูกซื้อไปแล้วหรือถูกยกเลิกการวางขาย</p>
-          <div className="mt-6">
-            <Link href="/market">
-              <Button variant="primary">กลับไปตลาดสัตว์เลี้ยง</Button>
+      <div className="page-shell pb-16">
+        <PageHeader eyebrow="ตลาดผู้เล่น" title="ไม่พบรายการนี้" />
+        <EmptyState
+          title="รายการนี้ไม่อยู่ในตลาดแล้ว"
+          description="อาจถูกซื้อไปแล้วหรือผู้ขายยกเลิกการขาย"
+          action={
+            <Link href="/market" className={buttonVariants()}>
+              กลับไปตลาด
             </Link>
-          </div>
-        </GlassCard>
+          }
+        />
       </div>
     );
   }
 
-  return (
-    <div className="page-shell max-w-7xl mx-auto py-8 sm:py-10 space-y-8 animate-slide-up">
-      {/* Back Button */}
-      <div className="flex items-center justify-between">
-        <Link href="/market">
-          <Button variant="secondary" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            กลับไปตลาดผู้เล่น
-          </Button>
-        </Link>
-        <Badge variant={listing.status === 'listed' ? 'cyan' : 'gold'}>
-          {listing.status === 'listed' ? 'พร้อมส่งมอบทันที' : listing.status}
-        </Badge>
-      </div>
+  const isListed = listing.status === 'listed';
+  const selectedServer = servers.data?.find((s) => s.id === serverId) ?? null;
+  const colorEntries = listing.colorRegions ? Object.entries(listing.colorRegions) : [];
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Main Info (2 Cols) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Header Card */}
-          <div className="p-6 md:p-8 space-y-6 overflow-hidden rounded-2xl border border-slate-700/40 bg-[#102637]">
-            {/* Cinematic Creature Artwork Preview */}
-            <div className="relative h-64 sm:h-72 w-full overflow-hidden rounded-2xl bg-[radial-gradient(ellipse_at_50%_40%,#28495a,#102637_75%)] border border-slate-700/40 shadow-xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={getProductImageUrl({ name: listing.species || listing.dinoName, imageUrl: listing.imageUrl })}
-                alt={listing.species}
-                className="h-full w-full object-cover object-center"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#06111d] via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-cyan-300">
-                    ARK SPECIMEN DOSSIER
-                  </span>
-                  <h1 className="font-serif text-2xl sm:text-3xl font-normal text-iris-pearl mt-1">
-                    {listing.dinoName || listing.species}
-                  </h1>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="rounded-xl border border-cyan-400/30 bg-black/60 backdrop-blur-md px-3 py-1.5 text-center">
-                    <span className="text-[9px] uppercase font-bold text-iris-muted block">LEVEL</span>
-                    <span className="text-lg font-bold text-iris-pearl font-mono tabular-nums">{listing.level}</span>
-                  </div>
-                  <div className="rounded-xl border border-white/20 bg-black/60 backdrop-blur-md px-3 py-1.5 text-center">
-                    <span className="text-[9px] uppercase font-bold text-iris-muted block">GENDER</span>
-                    <span className={`text-lg font-bold ${listing.gender === 'Male' ? 'text-sky-300' : 'text-rose-300'}`}>
-                      {listing.gender === 'Male' ? '♂ ผู้' : '♀ เมีย'}
-                    </span>
-                  </div>
-                </div>
+  const copySummary = () => {
+    const lines = [
+      `${listingTitle(listing)} (${listing.species}) Lv.${listing.level}`,
+      `เพศ: ${genderLabel(listing.gender)}`,
+      `พลังชีวิต: ${formatNumber(listing.health ?? listing.baseHealth)}`,
+      `ราคา: ${formatNumber(listing.price)} IC`,
+      typeof window !== 'undefined' ? window.location.href : '',
+    ].filter(Boolean);
+    void navigator.clipboard
+      ?.writeText(lines.join('\n'))
+      .then(() => toast.success('คัดลอกสรุปแล้ว', 'วางในแชต Discord ได้เลย'))
+      .catch(() => toast.error('คัดลอกไม่สำเร็จ'));
+  };
+
+  return (
+    <div className="page-shell pb-16">
+      <PageHeader
+        eyebrow={listing.species}
+        title={listingTitle(listing)}
+        description={
+          <>
+            {genderLabel(listing.gender)} · เลเวล <span className="font-mono">{formatNumber(listing.level)}</span> · ผู้ขาย{' '}
+            {listing.seller?.discordUsername || 'ไม่ระบุ'}
+          </>
+        }
+        actions={<ListingStatusBadge status={listing.status} />}
+      />
+
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
+          <DinoImage listing={listing} className="aspect-[16/9] rounded-card border border-line" />
+
+          <Card padding="none">
+            <div className="border-b border-line px-6 py-4">
+              <h2 className="text-base font-semibold text-fg">ค่าสถานะ</h2>
+              <p className="mt-0.5 text-xs text-fg-subtle">ค่าพื้นฐาน และแต้มที่อัปเพิ่มหลังเชื่อง</p>
+            </div>
+            <table className="w-full text-sm">
+              <thead className="sr-only">
+                <tr>
+                  <th scope="col">ค่าสถานะ</th>
+                  <th scope="col">พื้นฐาน</th>
+                  <th scope="col">อัปเพิ่ม</th>
+                </tr>
+              </thead>
+              <tbody>
+                {STATS.map((stat) => {
+                  const added = Number(listing[stat.added] ?? 0);
+                  return (
+                    <tr key={stat.label} className="border-b border-line last:border-b-0">
+                      <th scope="row" className="px-6 py-3 text-left font-normal text-fg-muted">
+                        {stat.label}
+                      </th>
+                      <td className="px-6 py-3 text-right font-mono tabular-nums text-fg">
+                        {formatNumber(listing[stat.base] as number | null | undefined)}
+                      </td>
+                      <td className="w-20 px-6 py-3 text-right font-mono tabular-nums text-success">
+                        {added > 0 ? `+${added}` : <span className="text-fg-subtle">—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </Card>
+
+          <Card padding="lg">
+            <h2 className="text-base font-semibold text-fg">สายเลือด</h2>
+            <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div>
+                <dt className="text-xs text-fg-subtle">Imprint</dt>
+                <dd className="mt-1 font-mono text-base tabular-nums text-fg">{formatPercent(listing.imprintQuality)}</dd>
               </div>
+              <div>
+                <dt className="text-xs text-fg-subtle">กลายพันธุ์ฝั่งแม่</dt>
+                <dd className="mt-1 font-mono text-base tabular-nums text-fg">{listing.mutationsMatrilineal ?? 0} / 20</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-fg-subtle">กลายพันธุ์ฝั่งพ่อ</dt>
+                <dd className="mt-1 font-mono text-base tabular-nums text-fg">{listing.mutationsPatrilineal ?? 0} / 20</dd>
+              </div>
+            </dl>
+            {colorEntries.length > 0 && (
+              <div className="mt-6 border-t border-line pt-5">
+                <h3 className="text-sm font-medium text-fg">รหัสสี</h3>
+                <dl className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-6">
+                  {colorEntries.map(([region, color]) => (
+                    <div key={region} className="rounded-control border border-line bg-surface-2 px-3 py-2">
+                      <dt className="text-xs text-fg-subtle">ส่วน {region}</dt>
+                      <dd className="font-mono text-sm tabular-nums text-fg">{String(color)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        <aside className="space-y-4 lg:sticky lg:top-24">
+          <Card padding="lg" className="space-y-5">
+            <div>
+              <p className="text-xs text-fg-subtle">ราคา</p>
+              <Amount value={listing.price} unit="IC" size="xl" className="mt-1" />
+              {user && (
+                <p className="mt-2 text-xs text-fg-muted">
+                  ยอดที่ใช้ได้{' '}
+                  {balance.isLoading ? (
+                    '—'
+                  ) : (
+                    <Amount value={balance.data?.accounts?.available ?? null} unit="IC" size="sm" />
+                  )}
+                </p>
+              )}
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/5 pb-4">
-              <div>
-                <p className="text-base font-semibold text-iris-cyan">{listing.species}</p>
-                <p className="text-xs text-iris-muted mt-0.5">
-                  ลงทะเบียนวางขายโดย: <span className="font-bold text-iris-pearl">{listing.seller?.discordUsername || 'UNKNOWN'}</span>
+            {!isListed ? (
+              <p className="rounded-control border border-line bg-surface-2 px-3 py-2 text-sm text-fg-muted">
+                รายการนี้ไม่ได้เปิดขายแล้ว
+              </p>
+            ) : !user ? (
+              <div className="space-y-3 border-t border-line pt-5">
+                <p className="text-sm text-fg-muted">เข้าสู่ระบบเพื่อซื้อและเลือกเซิร์ฟเวอร์ที่จะรับสัตว์</p>
+                <Link href="/login" className={buttonVariants({ fullWidth: true })}>
+                  เข้าสู่ระบบ
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4 border-t border-line pt-5">
+                <ServerPicker
+                  label="ส่งไปที่เซิร์ฟเวอร์"
+                  servers={servers.data ?? []}
+                  value={serverId}
+                  onChange={(next) => setServerId(next)}
+                  loading={servers.isLoading}
+                  error={servers.isError ? 'โหลดรายชื่อเซิร์ฟเวอร์ไม่สำเร็จ' : null}
+                  onRetry={() => void servers.refetch()}
+                  disabledReason={dinoDisabledReason}
+                  maxHeight={280}
+                />
+                <Button size="lg" fullWidth disabled={!serverId} onClick={() => setConfirmOpen(true)}>
+                  ตรวจสอบและซื้อ
+                </Button>
+                <p className="text-xs text-fg-subtle">
+                  เงินถูกกันไว้ในระบบกลางจนกว่าสัตว์จะส่งถึงเซิร์ฟเวอร์ ถ้าส่งไม่สำเร็จจะคืนเข้ากระเป๋า
                 </p>
               </div>
-            </div>
-
-            {/* Base Stats Matrix */}
-            <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-iris-muted">
-                สถิติค่าพลังพื้นฐาน (Base & Mutation Stats)
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <StatBar label="Health (เลือด)" icon={Heart} baseValue={listing.baseHealth} addedValue={listing.addedHealth} color="text-rose-400" />
-                <StatBar label="Stamina (ความเหนื่อย)" icon={Zap} baseValue={listing.baseStamina} addedValue={listing.addedStamina} color="text-amber-400" />
-                <StatBar label="Oxygen (ออกซิเจน)" icon={Droplets} baseValue={listing.baseOxygen} addedValue={listing.addedOxygen} color="text-cyan-400" />
-                <StatBar label="Food (อาหาร)" icon={Utensils} baseValue={listing.baseFood} addedValue={listing.addedFood} color="text-orange-400" />
-                <StatBar label="Weight (น้ำหนัก)" icon={Weight} baseValue={listing.baseWeight} addedValue={listing.addedWeight} color="text-purple-400" />
-                <StatBar label="Melee Damage (พลังโจมตี)" icon={Sword} baseValue={listing.baseDamage} addedValue={listing.addedDamage} color="text-emerald-400" />
-              </div>
-            </div>
-
-            {/* Lineage & Mutations */}
-            <div className="space-y-3 pt-2 border-t border-white/5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-iris-muted">
-                ข้อมูลสายพันธุ์ & การกลายพันธุ์ (Lineage)
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="rounded-xl border border-white/5 bg-black/40 p-3 text-xs">
-                  <span className="text-[10px] text-iris-muted uppercase block">Imprint Quality</span>
-                  <span className="font-bold text-iris-cyan text-sm">{Math.round(listing.imprintQuality * 100)}%</span>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-black/40 p-3 text-xs">
-                  <span className="text-[10px] text-iris-muted uppercase block">Matrilineal Mutations</span>
-                  <span className="font-bold text-iris-pearl text-sm">{listing.mutationsMatrilineal || 0} / 20</span>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-black/40 p-3 text-xs">
-                  <span className="text-[10px] text-iris-muted uppercase block">Patrilineal Mutations</span>
-                  <span className="font-bold text-iris-pearl text-sm">{listing.mutationsPatrilineal || 0} / 20</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Color Regions */}
-            {listing.colorRegions && (
-              <div className="space-y-3 pt-2 border-t border-white/5">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-iris-muted">
-                  รหัสสีตามภูมิภาค (Color Regions)
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {Object.entries(listing.colorRegions).map(([region, colorIdx]: [string, any]) => (
-                    <ColorSwatch key={region} region={Number(region)} colorIndex={Number(colorIdx)} />
-                  ))}
-                </div>
-              </div>
             )}
-          </div>
-        </div>
-
-        {/* Purchase Sidebar (1 Col) */}
-        <div className="space-y-6">
-          <GlassCard variant="default" className="p-6 space-y-6">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-iris-muted">ราคาจำหน่าย</span>
-              <p className="text-3xl font-black text-iris-gold mt-1">
-                {listing.price.toLocaleString()} <span className="text-sm font-bold text-iris-gold/70">IC</span>
-              </p>
-            </div>
-
-            {/* Server Selector for Delivery */}
-            <div className="space-y-2 border-t border-white/5 pt-4">
-              <label className="text-xs font-bold uppercase tracking-wider text-iris-muted">
-                เลือกเซิร์ฟเวอร์สำหรับรับส่งมอบ *
-              </label>
-              <select
-                value={selectedServerId}
-                onChange={(e) => setSelectedServerId(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-black/50 p-3 text-xs font-bold text-iris-pearl focus:border-iris-cyan focus:outline-none"
-              >
-                <option value="">-- เลือกเซิร์ฟเวอร์ที่ต้องการรับไดโน --</option>
-                {deliveryServers.map((server: any) => (
-                  <option key={server.id} value={server.id}>
-                    {server.name} ({server.map || 'Cluster'})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* User Points Check */}
-            {userData && (
-              <div className="rounded-xl border border-white/5 bg-black/40 p-3 text-xs flex justify-between items-center">
-                <span className="text-iris-muted">เหรียญของคุณ:</span>
-                <span className="font-bold text-iris-gold">
-                  {userData.user?.pointsBalance?.toLocaleString() || 0} IC
-                </span>
-              </div>
-            )}
-
-            {/* Seller Trust Badge */}
-            <div className="rounded-xl border border-white/5 bg-black/40 p-3 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-iris-muted">ผู้เพาะพันธุ์:</span>
-                <span className="font-bold text-iris-cyan">{listing.seller?.discordUsername || 'Verified Breeder'}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-iris-muted">ระดับความน่าเชื่อถือ:</span>
-                <span className="text-amber-300 font-bold flex items-center gap-1">⭐ 4.9/5 · ยืนยันตัวตนแล้ว</span>
-              </div>
-            </div>
 
             <Button
-              variant="primary"
-              size="lg"
-              className="w-full font-bold"
-              disabled={buyMutation.isPending || !selectedServerId}
-              isLoading={buyMutation.isPending}
-              onClick={() => buyMutation.mutate()}
+              variant="ghost"
+              size="sm"
+              fullWidth
+              onClick={copySummary}
+              leftIcon={<Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden />}
             >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              ยืนยันการซื้อ (Purchase Dino)
+              คัดลอกสรุปไปแชร์
             </Button>
-
-            <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full text-xs font-semibold"
-                onClick={() => setOfferModalOpen(true)}
-              >
-                <MessageSquare className="h-3.5 w-3.5 mr-1.5 text-iris-cyan" />
-                ยื่นข้อเสนอต่อรองราคา (Make Offer)
-              </Button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const summary = `🦖 [ARK IRIS MARKET] ${listing.dinoName || listing.species} (Lv.${listing.level})\n` +
-                    `- เพศ: ${listing.gender}\n` +
-                    `- Health: ${listing.health ? listing.health.toLocaleString() : 'N/A'}\n` +
-                    `- Melee: ${listing.melee ? listing.melee + '%' : 'N/A'}\n` +
-                    `- ราคา: ${listing.price.toLocaleString()} IC\n` +
-                    `🔗 ดูในตลาด: ${typeof window !== 'undefined' ? window.location.href : ''}`;
-                  navigator.clipboard.writeText(summary);
-                  setCopiedStats(true);
-                  setTimeout(() => setCopiedStats(false), 2000);
-                }}
-                className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-iris-muted hover:text-white hover:bg-white/10 transition"
-              >
-                {copiedStats ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5" />}
-                {copiedStats ? 'คัดลอกสรุปสเตตัสแล้ว!' : 'คัดลอกสเตตัสสำหรับแชร์ลง Discord'}
-              </button>
-            </div>
-          </GlassCard>
-        </div>
+          </Card>
+        </aside>
       </div>
 
-      {/* Offer Dialog */}
-      <Dialog open={offerModalOpen} onOpenChange={setOfferModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Tag className="h-5 w-5 text-iris-gold" />
-              <span>ยื่นข้อเสนอต่อรองราคา</span>
-            </DialogTitle>
-            <DialogDescription>
-              ส่งข้อเสนอราคาของคุณไปยังผู้ขาย {listing.seller?.discordUsername || 'Verified Breeder'} โดยตรง
-            </DialogDescription>
-          </DialogHeader>
-          {offerSent ? (
-            <div className="py-6 text-center space-y-2">
-              <Check className="h-10 w-10 text-emerald-400 mx-auto" />
-              <p className="font-bold text-iris-pearl">ส่งข้อเสนอเรียบร้อยแล้ว!</p>
-              <p className="text-xs text-iris-muted">
-                ระบบได้ส่งการแจ้งเตือนไปยังผู้ขายแล้ว หากผู้ขายยอมรับ ระบบจะแจ้งเตือนคุณทาง Discord
-              </p>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setOfferModalOpen(false);
-                  setOfferSent(false);
-                  setOfferPrice('');
-                }}
-                className="mt-4"
-              >
-                ปิดหน้าต่าง
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4 pt-3">
-              <div>
-                <label className="text-xs font-semibold text-iris-muted block mb-1">
-                  ราคาเสนอซื้อ (Iris Coin)
-                </label>
-                <input
-                  type="number"
-                  placeholder={`ราคาปัจจุบัน: ${listing.price.toLocaleString()} IC`}
-                  value={offerPrice}
-                  onChange={(e) => setOfferPrice(e.target.value)}
-                  className="w-full h-11 px-3 bg-black/40 border border-white/10 rounded-xl text-sm font-bold text-iris-gold focus:border-iris-gold focus:outline-none"
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="secondary" size="sm" onClick={() => setOfferModalOpen(false)}>
-                  ยกเลิก
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={!offerPrice || Number(offerPrice) <= 0}
-                  onClick={() => setOfferSent(true)}
-                >
-                  ส่งข้อเสนอ
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={dialogConfig.open} onOpenChange={(open) => setDialogConfig((prev) => ({ ...prev, open }))}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{dialogConfig.title}</DialogTitle>
-            {dialogConfig.description && (
-              <DialogDescription>{dialogConfig.description}</DialogDescription>
-            )}
-          </DialogHeader>
-          <div className="mt-4 flex justify-end">
-            <Button
-              variant="primary"
-              onClick={() => {
-                dialogConfig.onConfirm?.();
-                setDialogConfig((prev) => ({ ...prev, open: false }));
-              }}
-            >
-              รับทราบ
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="ยืนยันการซื้อ"
+        description="ตรวจรายละเอียดก่อนยืนยัน ยอดจะถูกหักจากกระเป๋าทันที"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={buy.isPending}>
+              ยกเลิก
             </Button>
+            <Button loading={buy.isPending} onClick={() => buy.mutate()}>
+              ยืนยันการซื้อ
+            </Button>
+          </>
+        }
+      >
+        <dl className="divide-y divide-line rounded-card border border-line">
+          <div className="flex justify-between gap-4 px-4 py-3">
+            <dt className="text-sm text-fg-muted">สัตว์</dt>
+            <dd className="text-right text-sm text-fg">
+              {listingTitle(listing)} <span className="font-mono text-fg-muted">Lv.{listing.level}</span>
+            </dd>
           </div>
-        </DialogContent>
+          <div className="flex justify-between gap-4 px-4 py-3">
+            <dt className="text-sm text-fg-muted">ส่งไปที่</dt>
+            <dd className="text-right text-sm text-fg">{selectedServer?.displayName ?? '—'}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-4 px-4 py-3">
+            <dt className="text-sm text-fg-muted">ราคา</dt>
+            <dd>
+              <Amount value={listing.price} unit="IC" />
+            </dd>
+          </div>
+        </dl>
       </Dialog>
     </div>
   );

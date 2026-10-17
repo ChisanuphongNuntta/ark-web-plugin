@@ -1,122 +1,87 @@
 import * as React from 'react';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Field, controlClasses, fieldDescribedBy } from './Field';
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  helperText?: string;
-  error?: string;
-  success?: boolean;
-  successText?: string;
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
+  label?: React.ReactNode;
+  hideLabel?: boolean;
+  helperText?: React.ReactNode;
+  error?: React.ReactNode;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg';
+  /** Render the value in IBM Plex Mono (IDs, IPs, amounts). */
+  mono?: boolean;
+  /** Class for the outer field wrapper. */
+  wrapperClassName?: string;
+  /** @deprecated success styling is not part of the system; shows `successText` as helper. */
+  success?: boolean;
+  successText?: string;
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  (
-    {
-      className,
-      type = 'text',
-      label,
-      helperText,
-      error,
-      success,
-      successText,
-      leftIcon,
-      rightIcon,
-      id,
-      disabled,
-      ...props
-    },
-    ref
-  ) => {
-    const generatedId = React.useId();
-    const inputId = id || generatedId;
-    const helperId = `${inputId}-helper`;
-    const errorId = `${inputId}-error`;
+const SIZES = { sm: 'h-8 px-2.5 text-xs', md: 'h-10 px-3', lg: 'h-12 px-3.5' };
 
-    return (
-      <div className="w-full flex flex-col gap-1.5">
-        {label && (
-          <label
-            htmlFor={inputId}
-            className="text-xs font-bold uppercase tracking-wider text-iris-pearl/80"
-          >
-            {label}
-          </label>
-        )}
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
+  {
+    className,
+    wrapperClassName,
+    type = 'text',
+    label,
+    hideLabel,
+    helperText,
+    error,
+    leftIcon,
+    rightIcon,
+    size = 'md',
+    mono = false,
+    success,
+    successText,
+    id,
+    required,
+    ...props
+  },
+  ref
+) {
+  // Hooks are always called unconditionally (fixes the old conditional-id bug).
+  const autoId = React.useId();
+  const inputId = id ?? autoId;
+  const helper = helperText ?? (success ? successText : undefined);
 
-        <div className="relative flex items-center">
-          {leftIcon && (
-            <div className="absolute left-4 text-iris-muted pointer-events-none">
-              {leftIcon}
-            </div>
-          )}
-
-          <input
-            ref={ref}
-            type={type}
-            id={inputId}
-            disabled={disabled}
-            aria-invalid={!!error}
-            aria-describedby={
-              error ? errorId : helperText || successText ? helperId : undefined
-            }
-            className={cn(
-              'w-full rounded-2xl border bg-black/40 px-4 py-3 text-sm text-iris-pearl placeholder:text-white/20 transition-all duration-200 outline-none',
-              'border-white/10 hover:border-white/20',
-              'focus:border-iris-cyan focus:ring-2 focus:ring-iris-cyan/15',
-              disabled && 'opacity-40 cursor-not-allowed bg-black/20',
-              leftIcon && 'pl-11',
-              rightIcon && 'pr-11',
-              error && 'border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/10',
-              success && 'border-emerald-500/80 focus:border-emerald-500 focus:ring-emerald-500/10',
-              className
-            )}
-            {...props}
-          />
-
-          {rightIcon && !error && !success && (
-            <div className="absolute right-4 text-iris-muted pointer-events-none">
-              {rightIcon}
-            </div>
-          )}
-
-          {error && (
-            <div className="absolute right-4 text-rose-400 pointer-events-none">
-              <AlertCircle className="h-4 w-4" />
-            </div>
-          )}
-
-          {success && !error && (
-            <div className="absolute right-4 text-emerald-400 pointer-events-none">
-              <CheckCircle2 className="h-4 w-4" />
-            </div>
-          )}
-        </div>
-
-        {error && (
-          <p id={errorId} className="text-xs font-semibold text-rose-400" role="alert">
-            {error}
-          </p>
-        )}
-
-        {!error && success && successText && (
-          <p id={helperId} className="text-xs font-semibold text-emerald-400">
-            {successText}
-          </p>
-        )}
-
-        {!error && !success && helperText && (
-          <p id={helperId} className="text-xs text-iris-muted">
-            {helperText}
-          </p>
-        )}
+  return (
+    <Field
+      id={inputId}
+      label={label}
+      hideLabel={hideLabel}
+      helperText={helper}
+      error={error}
+      required={required}
+      className={wrapperClassName}
+    >
+      <div className="relative flex items-center">
+        {leftIcon ? (
+          <span className="pointer-events-none absolute left-3 inline-flex text-fg-subtle" aria-hidden="true">
+            {leftIcon}
+          </span>
+        ) : null}
+        <input
+          ref={ref}
+          id={inputId}
+          type={type}
+          required={required}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={fieldDescribedBy(inputId, { error, helperText: helper })}
+          className={controlClasses({
+            invalid: !!error,
+            className: cn(SIZES[size], leftIcon && 'pl-9', rightIcon && 'pr-9', mono && 'font-mono', className),
+          })}
+          {...props}
+        />
+        {rightIcon ? (
+          <span className="absolute right-3 inline-flex text-fg-subtle">{rightIcon}</span>
+        ) : null}
       </div>
-    );
-  }
-);
+    </Field>
+  );
+});
 
-Input.displayName = 'Input';
-
-export { Input };
+export default Input;

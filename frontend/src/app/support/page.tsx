@@ -1,428 +1,306 @@
 'use client';
 
-import { FormEvent, useMemo, useState, useEffect, Suspense } from 'react';
+import { CLAIM_COMMAND, withClaimCommand } from '@/components/ClaimCommand';
+import * as React from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { ArrowUpRight, ChevronDown, Search } from 'lucide-react';
 import {
-  AlertTriangle,
-  ArrowRight,
-  CheckCircle2,
-  ChevronDown,
-  Clock3,
-  CreditCard,
-  FileText,
-  HelpCircle,
-  LockKeyhole,
-  MessageSquare,
-  PackageCheck,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  TicketCheck,
-  Zap,
-  Loader2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { GlassCard } from '@/components/ui/GlassCard';
+  Button,
+  EmptyState,
+  Input,
+  PageHeader,
+  Select,
+  Skeleton,
+  Textarea,
+  buttonVariants,
+  useToast,
+} from '@/components/ui';
+import { useAuthStore } from '@/lib/store';
+import { cn } from '@/lib/utils';
 
-type TicketCategory = 'recharge' | 'delivery' | 'account' | 'server' | 'market' | 'pdpa';
-type SubmitResult = { type: 'success' | 'error'; text: string } | null;
+const DISCORD_URL = 'https://discord.gg/iris-thailand';
 
-const metrics = [
-  { label: 'เวลาตอบกลับเฉลี่ย', value: '< 15 นาที', icon: Clock3 },
-  { label: 'ตรวจสอบรายการอัตโนมัติ', value: '24/7', icon: ShieldCheck },
-  { label: 'ช่องทางช่วยเหลือ', value: 'Web + Discord', icon: MessageSquare },
+type Topic = 'topup' | 'delivery' | 'account' | 'server' | 'market' | 'pdpa';
+
+const TOPICS: Array<{ value: Topic; label: string; evidence: readonly string[] }> = [
+  { value: 'topup', label: 'เติมเงินและยอด IC', evidence: ['เวลาที่โอนและยอดเงิน', 'เลขอ้างอิงในสลิป', 'ชื่อ Discord ที่ใช้เข้าสู่ระบบ'] },
+  { value: 'delivery', label: 'ของไม่เข้าเกม', evidence: ['เลขคำสั่งซื้อ', 'ชื่อเซิร์ฟเวอร์ที่เลือก', 'Steam ID และเวลาที่เข้าเกม'] },
+  { value: 'account', label: 'บัญชีและการเชื่อม Steam', evidence: ['ชื่อ Discord', 'Steam ID', 'ข้อความผิดพลาดที่เห็น (ถ้ามี)'] },
+  { value: 'server', label: 'ปัญหาในเซิร์ฟเวอร์', evidence: ['ชื่อเซิร์ฟเวอร์และแผนที่', 'คำสั่งที่พิมพ์', 'เวลาที่เกิดปัญหา'] },
+  { value: 'market', label: 'ตลาดผู้เล่น', evidence: ['เลขประกาศขาย', 'ชื่อผู้ซื้อหรือผู้ขาย', 'เวลาที่เกิดปัญหา'] },
+  { value: 'pdpa', label: 'ข้อมูลส่วนบุคคล (PDPA)', evidence: ['ชื่อ Discord', 'สิ่งที่ต้องการ: ขอสำเนา แก้ไข หรือลบข้อมูล'] },
 ];
 
-const lanes = [
-  {
-    title: 'Wallet และ Auto Top-up',
-    description: 'ตรวจสลิป PromptPay, ยอด IC ไม่เข้า, ledger ผิดปกติ และรายการเติมเงินที่รอดำเนินการ',
-    icon: CreditCard,
-    tone: 'text-iris-gold',
-  },
-  {
-    title: 'Delivery เข้าเกม',
-    description: 'ติดตามคำสั่งซื้อ, Plugin Queue, claim item, retry delivery และปัญหาตัวละครออฟไลน์',
-    icon: PackageCheck,
-    tone: 'text-iris-cyan',
-  },
-  {
-    title: 'บัญชีและความปลอดภัย',
-    description: 'IRIS ID, Steam Link, Discord, สิทธิ์ Admin/User และคำขอข้อมูลส่วนบุคคล',
-    icon: LockKeyhole,
-    tone: 'text-iris-orchid',
-  },
-];
+const QUICK_LINKS = [
+  { title: 'สถานะคำสั่งซื้อ', body: 'ดูว่าของถึงขั้นไหน ส่งเข้าเกมแล้วหรือยัง', href: '/orders' },
+  { title: 'เติม IC', body: 'ช่องทางเติมเงินและประวัติการเติม', href: '/topup' },
+  { title: 'บัญชีและ Steam', body: 'เชื่อม Steam และจัดการ IRIS ID', href: '/profile' },
+] as const;
 
-const categories: Array<{ value: TicketCategory; label: string; hint: string; sla: string; icon: JSX.Element }> = [
-  { value: 'recharge', label: 'Recharge / Wallet', hint: 'ยอดเติมเงิน, IC, Auto Top-up', sla: '15 นาที', icon: <CreditCard className="h-4 w-4" /> },
-  { value: 'delivery', label: 'Item Delivery', hint: 'ของไม่เข้าเกม, claim, order queue', sla: '20 นาที', icon: <PackageCheck className="h-4 w-4" /> },
-  { value: 'account', label: 'Account & Identity', hint: 'Steam, Discord, IRIS ID, สิทธิ์บัญชี', sla: '30 นาที', icon: <LockKeyhole className="h-4 w-4" /> },
-  { value: 'server', label: 'Server / Plugin Bug', hint: 'คำสั่ง plugin, crash, server issue', sla: '45 นาที', icon: <Zap className="h-4 w-4" /> },
-  { value: 'market', label: 'P2P Marketplace', hint: 'listing, escrow, trade dispute', sla: '30 นาที', icon: <TicketCheck className="h-4 w-4" /> },
-  { value: 'pdpa', label: 'PDPA / Data Request', hint: 'ขอข้อมูล, ลบข้อมูล, privacy', sla: '1 วันทำการ', icon: <FileText className="h-4 w-4" /> },
-];
-
-const evidence: Record<TicketCategory, string[]> = {
-  recharge: ['เลขอ้างอิงสลิป / เวลาโอน', 'ยอดที่เติม', 'บัญชี IRIS ID หรือ Discord'],
-  delivery: ['Order ID', 'ชื่อเซิร์ฟเวอร์', 'Steam ID และเวลาที่กด claim'],
-  account: ['Discord / Steam ID', 'อีเมลที่ใช้สมัคร', 'ภาพ error ถ้ามี'],
-  server: ['ชื่อเซิร์ฟเวอร์', 'คำสั่งที่ใช้', 'เวลาเกิดเหตุและภาพหน้าจอ'],
-  market: ['Listing ID / Trade ID', 'ชื่อคู่ซื้อขาย', 'รายละเอียด dispute'],
-  pdpa: ['IRIS ID', 'ประเภทคำขอข้อมูล', 'ช่องทางติดต่อกลับ'],
-};
-
-const faqs = [
+const FAQS = [
   {
-    question: 'เติมเงินแล้วไม่ได้รับ IRIS Coins ต้องทำอย่างไร?',
-    answer:
-      'ส่ง Ticket หมวด Recharge / Wallet พร้อมเลขอ้างอิงสลิป ยอดเงิน และเวลาทำรายการ ทีมงานจะตรวจสอบกับ backend ledger ก่อนปรับยอดทุกครั้ง',
+    q: 'เติมเงินแล้วยอด IC ยังไม่เข้า ต้องทำอย่างไร',
+    a: 'ตรวจประวัติการเติมที่หน้าเติม IC ก่อน ถ้ารายการยังรอตรวจเกินเวลาที่แจ้ง ให้แจ้งทีมงานพร้อมเวลาที่โอน ยอดเงิน และเลขอ้างอิงในสลิป ทีมงานจะตรวจกับรายการในระบบก่อนปรับยอดทุกครั้ง',
   },
   {
-    question: 'ซื้อสินค้าแล้วของจะเข้าเกมเมื่อไร?',
-    answer:
-      'หลัง Checkout สำเร็จ ระบบจะสร้างคิว delivery เข้า plugin เกม หากตัวละครออฟไลน์ ระบบจะแสดงสถานะรอส่งหรือ retry ในหน้า Orders',
+    q: 'ซื้อแล้ว ของจะเข้าเกมเมื่อไร',
+    a: `หลังชำระเงินสำเร็จ ระบบส่งของเข้าเซิร์ฟเวอร์ที่คุณเลือกโดยอัตโนมัติ ถ้าตัวละครออฟไลน์อยู่ ของจะรอในคิว เข้าเกมแล้วพิมพ์ ${CLAIM_COMMAND} ในแชทเพื่อรับของที่ค้าง`,
   },
   {
-    question: 'ขอคืนเงินได้หรือไม่ถ้าซื้อผิดเซิร์ฟเวอร์?',
-    answer:
-      'ระบบหน้าเว็บไม่ตัดสิน refund เอง ให้เปิด Ticket พร้อม Order ID ทีมงานจะตรวจสอบ policy, payment, delivery state และ backend contract ก่อนดำเนินการ',
+    q: 'เลือกเซิร์ฟเวอร์ผิด ขอย้ายหรือคืนเงินได้ไหม',
+    a: 'แจ้งทีมงานพร้อมเลขคำสั่งซื้อ ทีมงานจะตรวจสถานะการส่งของก่อน ถ้ายังไม่ได้ส่งเข้าเกมจะช่วยดำเนินการตามเงื่อนไขการใช้บริการ',
   },
   {
-    question: 'P2P Marketplace มีปัญหาการซื้อขายต้องแจ้งอะไร?',
-    answer:
-      'แนบ Listing ID หรือ Trade ID, ชื่อคู่ซื้อขาย, เวลาเกิดเหตุ และหลักฐานประกอบ เพื่อให้ทีมงานตรวจสอบ escrow และสถานะรายการได้เร็วขึ้น',
+    q: 'ทำไมบางเซิร์ฟเวอร์เลือกไม่ได้ตอนซื้อ',
+    a: 'ระบบให้เลือกได้เฉพาะเซิร์ฟเวอร์ที่เปิดรับของจากร้านค้าในตอนนั้น เซิร์ฟเวอร์ที่ปิดปรับปรุงหรือยังไม่เปิดรับของจะแสดงเหตุผลไว้ข้างชื่อ',
   },
   {
-    question: 'ข้อมูลที่ส่งใน Ticket ปลอดภัยหรือไม่?',
-    answer:
-      'Ticket mock นี้เป็น frontend state ระหว่างรอ API จริง ห้ามใส่รหัสผ่านหรือ secret ใด ๆ ข้อมูล production ต้องถูกส่งผ่าน backend ticket service เท่านั้น',
+    q: 'ซื้อขายในตลาดผู้เล่นแล้วมีปัญหา',
+    a: 'แจ้งเลขประกาศขาย ชื่อคู่ซื้อขาย และเวลาที่เกิดปัญหา เงินของผู้ซื้อถูกพักไว้ในระบบจนกว่าการส่งมอบจะสำเร็จ ทีมงานตรวจสอบสถานะได้จากเลขประกาศ',
   },
-];
-
-function normalize(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function inputClass(extra = '') {
-  return `w-full rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-iris-pearl outline-none transition placeholder:text-white/30 focus:border-iris-cyan/55 focus:ring-2 focus:ring-iris-cyan/15 ${extra}`;
-}
+  {
+    q: 'ทีมงานจะขอรหัสผ่านหรือรหัส OTP ไหม',
+    a: 'ไม่เคย ทีมงาน IRIS ไม่ขอรหัสผ่าน รหัส OTP หรือข้อมูลบัตรผ่านช่องทางใดทั้งสิ้น ถ้ามีคนขอ ให้แจ้งทีมงานทันที',
+  },
+] as const;
 
 function SupportContent() {
-  const searchParams = useSearchParams();
-  const orderIdParam = searchParams.get('orderId');
-  const subjectParam = searchParams.get('subject');
-
-  const [openFaq, setOpenFaq] = useState(0);
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<TicketCategory>(orderIdParam ? 'delivery' : 'recharge');
-  const [discord, setDiscord] = useState('');
-  const [steamId, setSteamId] = useState('');
-  const [reference, setReference] = useState(orderIdParam || '');
-  const [message, setMessage] = useState(
-    subjectParam ? `${subjectParam} - ต้องการให้ทีมงานช่วยตรวจสอบสถานะการนำจ่ายไอเท็มในเกม` : ''
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [result, setResult] = useState<SubmitResult>(null);
-
-  useEffect(() => {
-    if (orderIdParam) {
-      setCategory('delivery');
-      setReference(orderIdParam);
-      if (subjectParam) {
-        setMessage(`${subjectParam} - ต้องการให้ทีมงานช่วยตรวจสอบสถานะการนำจ่ายไอเท็มในเกม`);
-      }
-    }
-  }, [orderIdParam, subjectParam]);
-
-  const activeCategory = categories.find((item) => item.value === category) ?? categories[0];
-  const filteredFaq = useMemo(() => {
-    const needle = normalize(query);
-    if (!needle) return faqs;
-    return faqs.filter((faq) => normalize(`${faq.question} ${faq.answer}`).includes(needle));
-  }, [query]);
-
-  const canSubmit = discord.trim().length >= 3 && message.trim().length >= 20 && !isSubmitting;
-
-  function submitTicket(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setResult(null);
-
-    if (!canSubmit) {
-      setResult({
-        type: 'error',
-        text: 'กรุณากรอก Discord username และรายละเอียดปัญหาอย่างน้อย 20 ตัวอักษร',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    window.setTimeout(() => {
-      const ticketId = `TK-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-      setIsSubmitting(false);
-      setResult({
-        type: 'success',
-        text: `สร้าง Ticket สำเร็จ: #${ticketId} (${activeCategory.label}) — บอท Discord และทีมงาน IRIS Support ได้รับข้อมูลแล้ว เจ้าหน้าที่จะติดต่อกลับผ่าน Discord ภายใน ${activeCategory.sla}`,
-      });
-      setDiscord('');
-      setSteamId('');
-      setReference('');
-      setMessage('');
-    }, 700);
-  }
+  const params = useSearchParams();
+  const orderId = params.get('orderId');
+  const subject = params.get('subject');
 
   return (
-    <main className="page-shell space-y-10 py-8 lg:py-12">
-      <section className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-iris-river/65 shadow-[0_30px_120px_rgba(0,0,0,.38)]">
-        <img
-          src="/images/generated/support-command-center.svg"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-35"
-          aria-hidden="true"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-iris-ink via-iris-ink/86 to-iris-ink/45" />
-        <div className="absolute inset-0 thai-lattice opacity-25" />
+    <div className="page-shell pb-20">
+      <PageHeader
+        eyebrow="ช่วยเหลือ"
+        title="ศูนย์ช่วยเหลือ"
+        description="ค้นหาคำตอบได้ที่นี่ ถ้ายังแก้ไม่ได้ เตรียมข้อมูลด้านล่างแล้วแจ้งทีมงานทาง Discord"
+        actions={
+          <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: 'secondary' })}>
+            เปิด Discord
+            <ArrowUpRight className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+          </a>
+        }
+      />
 
-        <div className="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:p-10">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-iris-gold/25 bg-iris-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-iris-gold">
-              <Sparkles className="h-4 w-4" />
-              IRIS Support Command Center
-            </div>
-            <h1 className="mt-6 font-display text-4xl font-semibold leading-[1.04] text-iris-pearl sm:text-5xl lg:text-6xl">
-              ศูนย์ช่วยเหลือที่เชื่อมเว็บ
-            </h1>
-            <p className="mt-2 text-lg text-iris-cyan">มีอะไรให้เราช่วยไหม?</p>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-white/68">
-              ออกแบบใหม่ให้เป็น Enterprise Support Hub สำหรับผู้เล่น: ค้นคำตอบ ส่ง Ticket พร้อมหลักฐานครบ
-              และเตรียมต่อ API จริงโดยไม่ให้ frontend ตัดสินราคา wallet refund หรือสิทธิ์ผู้ใช้เอง
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a href="#submit-ticket" className="btn-primary">
-                ส่ง Ticket <ArrowRight className="h-4 w-4" />
-              </a>
-              <a href="#faq" className="btn-secondary">
-                ดูคำถามยอดนิยม
-              </a>
-            </div>
-          </div>
-
-          <div className="grid gap-3 self-end">
-            {metrics.map(({ label, value, icon: Icon }) => (
-              <div key={label} className="rounded-3xl border border-white/10 bg-black/35 p-4 backdrop-blur-xl">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs text-white/45">{label}</p>
-                    <p className="mt-1 font-display text-2xl text-iris-pearl">{value}</p>
-                  </div>
-                  <span className="grid h-11 w-11 place-items-center rounded-2xl bg-iris-cyan/10 text-iris-cyan">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3" aria-label="หมวดช่วยเหลือหลัก">
-        {lanes.map(({ title, description, icon: Icon, tone }) => (
-          <GlassCard key={title} className="p-5" hoverEffect="lift">
-            <div className="flex items-start gap-4">
-              <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/[.035] ${tone}`}>
-                <Icon className="h-5 w-5" />
-              </span>
-              <div>
-                <h2 className="font-display text-xl text-iris-pearl">{title}</h2>
-                <p className="mt-2 text-sm leading-6 text-white/55">{description}</p>
-              </div>
-            </div>
-          </GlassCard>
+      <ul className="grid gap-px overflow-hidden rounded-card border border-line bg-line sm:grid-cols-3">
+        {QUICK_LINKS.map((link) => (
+          <li key={link.href} className="bg-surface">
+            <Link href={link.href} className="group block h-full p-5 transition-colors duration-fast hover:bg-surface-2">
+              <span className="block text-sm font-medium text-fg transition-colors duration-fast group-hover:text-accent">{link.title}</span>
+              <span className="mt-1 block text-sm text-fg-muted">{link.body}</span>
+            </Link>
+          </li>
         ))}
-      </section>
+      </ul>
 
-      <section className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_540px]">
-        <div id="faq" className="space-y-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="eyebrow">Knowledge base</p>
-              <h2 className="mt-2 font-display text-3xl text-iris-pearl">คำถามที่พบบ่อย</h2>
-            </div>
-            <label className="relative block w-full sm:max-w-sm">
-              <span className="sr-only">ค้นหาคำถาม</span>
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                className={inputClass('pl-11')}
-                placeholder="ค้นหา เติมเงิน, order, plugin..."
-              />
-            </label>
-          </div>
+      <div className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)]">
+        <Faq />
+        <ReportComposer
+          key={`${orderId ?? ''}|${subject ?? ''}`}
+          initialTopic={orderId ? 'delivery' : 'topup'}
+          initialReference={orderId ?? ''}
+          initialMessage={subject ? `${subject} — ยังไม่ได้รับของในเกม รบกวนตรวจสอบการส่งของ` : ''}
+        />
+      </div>
+    </div>
+  );
+}
 
-          <div className="space-y-3">
-            {filteredFaq.length ? (
-              filteredFaq.map((faq, index) => {
-                const isOpen = openFaq === index;
-                return (
-                  <GlassCard key={faq.question} className="overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setOpenFaq(isOpen ? -1 : index)}
-                      className="flex w-full items-center justify-between gap-4 p-5 text-left"
-                      aria-expanded={isOpen}
-                    >
-                      <span className="flex min-w-0 items-center gap-3">
-                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-iris-cyan/20 bg-iris-cyan/10 text-iris-cyan">
-                          <HelpCircle className="h-5 w-5" />
-                        </span>
-                        <span className="font-display text-base font-bold text-iris-pearl">{faq.question}</span>
-                      </span>
-                      <ChevronDown className={`h-5 w-5 shrink-0 text-iris-muted transition ${isOpen ? 'rotate-180 text-iris-cyan' : ''}`} />
-                    </button>
-                    {isOpen ? (
-                      <div className="border-t border-white/5 px-5 pb-5 pt-4 text-sm leading-7 text-iris-muted">
-                        {faq.answer}
-                      </div>
-                    ) : null}
-                  </GlassCard>
-                );
-              })
-            ) : (
-              <GlassCard className="p-8 text-center">
-                <HelpCircle className="mx-auto h-8 w-8 text-iris-muted" />
-                <p className="mt-3 font-bold text-iris-pearl">ไม่พบคำถามที่ตรงกับคำค้น</p>
-                <p className="mt-1 text-sm text-iris-muted">ส่ง Ticket พร้อมรายละเอียดปัญหาแทนได้ทันที</p>
-              </GlassCard>
-            )}
-          </div>
+function Faq() {
+  const [query, setQuery] = React.useState('');
+  const [open, setOpen] = React.useState<number | null>(0);
+  const needle = query.trim().toLowerCase();
+  const items = FAQS.map((f, index) => ({ ...f, index })).filter(
+    (f) => !needle || `${f.q} ${f.a}`.toLowerCase().includes(needle)
+  );
+
+  return (
+    <section aria-labelledby="faq-title" className="min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <h2 id="faq-title" className="text-lg font-semibold text-fg">
+          คำถามที่พบบ่อย
+        </h2>
+        <Input
+          label="ค้นหาคำถาม"
+          hideLabel
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="ค้นหา เช่น เติมเงิน, claim"
+          leftIcon={<Search className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />}
+          wrapperClassName="sm:w-64"
+        />
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyState className="mt-5" title="ไม่พบคำถามที่ตรงกับคำค้น" description="ลองใช้คำอื่น หรือแจ้งทีมงานด้วยแบบฟอร์มด้านข้าง" />
+      ) : (
+        <ul className="mt-5 divide-y divide-line border-y border-line">
+          {items.map((f) => {
+            const expanded = open === f.index;
+            const panelId = `faq-panel-${f.index}`;
+            return (
+              <li key={f.q}>
+                <h3>
+                  <button
+                    type="button"
+                    aria-expanded={expanded}
+                    aria-controls={panelId}
+                    onClick={() => setOpen(expanded ? null : f.index)}
+                    className="flex w-full items-center justify-between gap-4 py-4 text-left text-sm font-medium text-fg transition-colors duration-fast hover:text-accent"
+                  >
+                    <span>{f.q}</span>
+                    <ChevronDown
+                      className={cn('h-4 w-4 shrink-0 text-fg-subtle', expanded && 'rotate-180')}
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
+                  </button>
+                </h3>
+                {expanded ? (
+                  <p id={panelId} className="pb-5 pr-8 text-sm text-fg-muted">
+                    {withClaimCommand(f.a)}
+                  </p>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/**
+ * There is no ticket API yet, so this does not pretend to submit anything:
+ * it assembles a complete report the player copies into Discord.
+ */
+function ReportComposer({
+  initialTopic,
+  initialReference,
+  initialMessage,
+}: {
+  initialTopic: Topic;
+  initialReference: string;
+  initialMessage: string;
+}) {
+  const toast = useToast();
+  const user = useAuthStore((s) => s.user);
+  const [topic, setTopic] = React.useState<Topic>(initialTopic);
+  const [steamId, setSteamId] = React.useState('');
+  const [reference, setReference] = React.useState(initialReference);
+  const [message, setMessage] = React.useState(initialMessage);
+  const [touched, setTouched] = React.useState(false);
+
+  const active = TOPICS.find((t) => t.value === topic) ?? TOPICS[0];
+  const effectiveSteam = steamId.trim() || user?.steamId || '';
+  const messageError = touched && message.trim().length < 15 ? 'อธิบายปัญหาอย่างน้อย 15 ตัวอักษร' : undefined;
+
+  const report = [
+    `หัวข้อ: ${active.label}`,
+    user?.discordUsername ? `Discord: ${user.discordUsername}` : null,
+    effectiveSteam ? `Steam ID: ${effectiveSteam}` : null,
+    reference.trim() ? `เลขอ้างอิง: ${reference.trim()}` : null,
+    `รายละเอียด: ${message.trim()}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const copy = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setTouched(true);
+    if (message.trim().length < 15) return;
+    try {
+      await navigator.clipboard.writeText(report);
+      toast.success('คัดลอกข้อความแล้ว', 'วางในช่องแจ้งปัญหาของ Discord ได้เลย');
+    } catch {
+      toast.error('คัดลอกไม่สำเร็จ', 'เลือกข้อความในช่องตัวอย่างแล้วคัดลอกเอง');
+    }
+  };
+
+  return (
+    <section aria-labelledby="report-title" className="h-fit rounded-card border border-line bg-surface">
+      <div className="border-b border-line px-5 py-4 sm:px-6">
+        <h2 id="report-title" className="text-base font-semibold text-fg">
+          แจ้งปัญหากับทีมงาน
+        </h2>
+        <p className="mt-1 text-sm text-fg-muted">กรอกข้อมูล กดคัดลอก แล้ววางในช่องแจ้งปัญหาของ Discord</p>
+      </div>
+
+      <form onSubmit={copy} className="space-y-4 px-5 py-5 sm:px-6" noValidate>
+        <Select
+          label="หัวข้อ"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value as Topic)}
+          options={TOPICS.map((t) => ({ value: t.value, label: t.label }))}
+        />
+
+        <div className="rounded-control border border-line bg-surface-2 px-4 py-3">
+          <p className="text-xs font-medium text-fg-muted">ข้อมูลที่ช่วยให้ตรวจได้เร็ว</p>
+          <ul className="mt-2 space-y-1">
+            {active.evidence.map((item) => (
+              <li key={item} className="flex gap-2 text-xs text-fg-muted">
+                <span className="mt-[0.6em] h-px w-2 shrink-0 bg-accent" aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div id="submit-ticket" className="space-y-5">
-          <div>
-            <p className="eyebrow text-iris-gold">Submit a ticket</p>
-            <h2 className="mt-2 font-display text-3xl text-iris-pearl">ส่งคำร้องให้ Operator</h2>
-          </div>
-
-          <GlassCard variant="prism" hasLattice className="p-5 sm:p-6">
-            <form onSubmit={submitTicket} className="space-y-5">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {categories.map((item) => {
-                  const active = item.value === category;
-                  return (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => setCategory(item.value)}
-                      className={`rounded-2xl border p-4 text-left transition ${
-                        active
-                          ? 'border-iris-cyan/55 bg-iris-cyan/10 text-iris-pearl shadow-[0_0_24px_rgba(55,229,210,.12)]'
-                          : 'border-white/10 bg-black/20 text-iris-muted hover:border-white/20 hover:text-iris-pearl'
-                      }`}
-                      aria-pressed={active}
-                    >
-                      <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]">
-                        <span className={active ? 'text-iris-cyan' : 'text-iris-muted'}>{item.icon}</span>
-                        {item.label}
-                      </span>
-                      <span className="mt-2 block text-[11px] leading-5 opacity-75">{item.hint}</span>
-                      <span className="mt-3 inline-flex rounded-full border border-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em]">
-                        SLA {item.sla}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="rounded-2xl border border-iris-gold/20 bg-iris-gold/[0.06] p-4">
-                <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-iris-gold">
-                  <FileText className="h-4 w-4" />
-                  หลักฐานที่ควรแนบสำหรับ {activeCategory.label}
-                </p>
-                <ul className="mt-3 grid gap-2 text-xs text-iris-muted sm:grid-cols-2">
-                  {evidence[category].map((item) => (
-                    <li key={item} className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-iris-gold" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-1.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-iris-pearl/80">Discord username</span>
-                  <input className={inputClass()} placeholder="Survivor#1234" value={discord} onChange={(event) => setDiscord(event.target.value)} />
-                </label>
-                <label className="space-y-1.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-iris-pearl/80">Steam ID / Epic ID</span>
-                  <input className={inputClass()} placeholder="76561198xxxxxxxx" value={steamId} onChange={(event) => setSteamId(event.target.value)} />
-                </label>
-              </div>
-
-              <label className="block space-y-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-iris-pearl/80">Order / Listing / Payment reference</span>
-                <input className={inputClass()} placeholder="order-iris-0001 หรือ ref promptpay" value={reference} onChange={(event) => setReference(event.target.value)} />
-              </label>
-
-              <label className="block space-y-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-iris-pearl/80">รายละเอียดปัญหา</span>
-                <textarea
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  rows={6}
-                  className={inputClass('min-h-36 resize-y leading-7')}
-                  placeholder="อธิบายปัญหาแบบเป็นลำดับ: เกิดเมื่อไร, ทำอะไรอยู่, เลข order/ref, เซิร์ฟเวอร์, error ที่เห็น..."
-                />
-              </label>
-
-              <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-xs leading-6 text-iris-muted">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-iris-cyan" />
-                <span>
-                  Frontend ใช้ mock state เฉพาะการแสดงผล ระหว่างรอ Ticket API จริง ห้ามคำนวณราคา wallet refund หรือสิทธิ์สุดท้ายในหน้านี้
-                </span>
-              </div>
-
-              {result ? (
-                <div
-                  role={result.type === 'error' ? 'alert' : 'status'}
-                  className={`rounded-2xl border p-4 text-sm ${
-                    result.type === 'error'
-                      ? 'border-rose-500/25 bg-rose-500/10 text-rose-200'
-                      : 'border-emerald-500/25 bg-emerald-500/10 text-emerald-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {result.type === 'error' ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                    {result.text}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Button type="submit" variant="cyan" isLoading={isSubmitting} disabled={!canSubmit} rightIcon={<ArrowRight className="h-4 w-4" />}>
-                  ส่ง Ticket ให้ Operator
-                </Button>
-                <p className="text-xs text-iris-muted">Priority จะจัดตามหมวดและหลักฐานที่แนบ</p>
-              </div>
-            </form>
-          </GlassCard>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input
+            label="Steam ID"
+            mono
+            inputMode="numeric"
+            value={steamId}
+            onChange={(e) => setSteamId(e.target.value)}
+            placeholder={user?.steamId ?? '7656119…'}
+            helperText={user?.steamId && !steamId ? 'ใช้ Steam ID ที่เชื่อมไว้' : undefined}
+          />
+          <Input
+            label="เลขคำสั่งซื้อหรืออ้างอิง"
+            mono
+            value={reference}
+            onChange={(e) => setReference(e.target.value)}
+            placeholder="ถ้ามี"
+          />
         </div>
-      </section>
-    </main>
+
+        <Textarea
+          label="รายละเอียด"
+          rows={5}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onBlur={() => setTouched(true)}
+          error={messageError}
+          placeholder="เกิดอะไรขึ้น เมื่อไร บนเซิร์ฟเวอร์ไหน และเห็นข้อความอะไร"
+        />
+
+        <p className="text-xs text-fg-subtle">ห้ามใส่รหัสผ่านหรือรหัส OTP ทีมงานไม่เคยขอข้อมูลเหล่านี้</p>
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          <Button type="submit">คัดลอกข้อความ</Button>
+          <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: 'secondary' })}>
+            เปิด Discord
+          </a>
+        </div>
+      </form>
+    </section>
   );
 }
 
 export default function SupportPage() {
   return (
-    <Suspense
+    <React.Suspense
       fallback={
-        <div className="page-shell flex justify-center py-24">
-          <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
+        <div className="page-shell pb-20 pt-10" aria-busy="true">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="mt-3 h-8 w-56" />
         </div>
       }
     >
       <SupportContent />
-    </Suspense>
+    </React.Suspense>
   );
 }

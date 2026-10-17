@@ -1,40 +1,46 @@
 'use client';
 
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { Button } from '@/components/ui/Button';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
-
-
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/lib/store';
-import { adminApi, productApi } from '@/lib/api';
+import * as React from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Copy, EyeOff, Pencil, Plus, Search } from 'lucide-react';
 import {
-  Loader2,
-  Plus,
-  Edit2,
-  Trash2,
-  Copy,
-  X,
-  Search,
-  Filter,
-  Package,
-  Image as ImageIcon,
-  Tag,
-  Layers,
-  Save,
-  MoreVertical,
-  CheckCircle2,
-  XCircle,
-  Sparkles,
-  Wand2,
-} from 'lucide-react';
-import Link from 'next/link';
+  Amount,
+  Badge,
+  Button,
+  Checkbox,
+  Dialog,
+  EmptyState,
+  ErrorMessage,
+  IconButton,
+  Input,
+  PageHeader,
+  Pagination,
+  SegmentedControl,
+  Select,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableEmptyRow,
+  TableHead,
+  TableHeaderCell,
+  TableLoadingRows,
+  TableRow,
+  Tabs,
+  TabsList,
+  TabsPanel,
+  TabsTrigger,
+  Textarea,
+  useToast,
+} from '@/components/ui';
 import { ProductArtwork } from '@/components/ProductArtwork';
-import { expandBlueprintPath, COMMON_BLUEPRINT_PRESETS } from '@/lib/blueprintHelper';
+import { adminApi, api, productApi } from '@/lib/api';
+import { useAuthStore } from '@/lib/store';
+import { usePermissions } from '@/hooks/usePermissions';
+import { COMMON_BLUEPRINT_PRESETS, expandBlueprintPath } from '@/lib/blueprintHelper';
 
-interface Product {
+interface AdminProduct {
   id: number;
   name: string;
   description: string | null;
@@ -46,772 +52,695 @@ interface Product {
   isActive: boolean;
   isFeatured: boolean;
   categoryId: number | null;
-  category?: { id: number; name: string };
-  imageUrl?: string | null; // Added
-  sortOrder?: number; // Added
+  category?: { id: number; name: string } | null;
+  imageUrl?: string | null;
+  sortOrder?: number;
 }
 
-interface Category {
+interface CategoryOption {
   id: number;
   name: string;
+  isActive?: boolean;
+}
+
+type StatusFilter = 'all' | 'active' | 'draft' | 'featured' | 'noimage';
+type FormTab = 'basic' | 'display' | 'game';
+
+const PAGE_SIZE = 25;
+
+const QUALITY_OPTIONS = [
+  { value: '0', label: 'Primitive (ค่าเริ่มต้น)' },
+  { value: '1', label: 'Ramshackle' },
+  { value: '2', label: 'Apprentice' },
+  { value: '3', label: 'Journeyman' },
+  { value: '4', label: 'Mastercraft' },
+  { value: '5', label: 'Ascendant' },
+];
+
+function apiErrorText(err: unknown, fallback: string): string {
+  const data = (err as { response?: { data?: { error?: unknown; message?: unknown } } })?.response?.data;
+  if (data && typeof data.error === 'string' && data.error) return data.error;
+  if (data && typeof data.message === 'string' && data.message) return data.message;
+  return fallback;
+}
+
+/** GET /admin/categories (includes inactive); falls back to the public list on older backends. */
+async function fetchCategoryOptions(): Promise<CategoryOption[]> {
+  try {
+    const { data } = await api.get('/admin/categories');
+    return (data?.categories ?? []) as CategoryOption[];
+  } catch (err) {
+    const status = (err as { response?: { status?: number } })?.response?.status;
+    if (status !== 404 && status !== 405) throw err;
+    const { data } = await productApi.getCategories();
+    return (data?.categories ?? []) as CategoryOption[];
+  }
+}
+
+interface FormState {
+  name: string;
+  description: string;
+  price: string;
+  categoryId: string;
+  imageUrl: string;
+  sortOrder: string;
+  isActive: boolean;
+  isFeatured: boolean;
+  itemBlueprint: string;
+  quantity: string;
+  quality: string;
+  isBlueprint: boolean;
+}
+
+type FormErrors = Partial<Record<keyof FormState, string>>;
+
+const EMPTY_FORM: FormState = {
+  name: '',
+  description: '',
+  price: '',
+  categoryId: '',
+  imageUrl: '',
+  sortOrder: '0',
+  isActive: false,
+  isFeatured: false,
+  itemBlueprint: '',
+  quantity: '1',
+  quality: '0',
+  isBlueprint: false,
+};
+
+function formFromProduct(p: AdminProduct, duplicate = false): FormState {
+  return {
+    name: duplicate ? `${p.name} (สำเนา)` : p.name,
+    description: p.description ?? '',
+    price: String(p.price),
+    categoryId: p.categoryId ? String(p.categoryId) : '',
+    imageUrl: p.imageUrl ?? '',
+    sortOrder: String(duplicate ? (p.sortOrder ?? 0) + 1 : p.sortOrder ?? 0),
+    isActive: duplicate ? false : p.isActive,
+    isFeatured: duplicate ? false : p.isFeatured,
+    itemBlueprint: p.itemBlueprint,
+    quantity: String(p.quantity),
+    quality: String(p.quality),
+    isBlueprint: p.isBlueprint,
+  };
+}
+
+const FIELD_TAB: Partial<Record<keyof FormState, FormTab>> = {
+  name: 'basic',
+  price: 'basic',
+  description: 'basic',
+  imageUrl: 'display',
+  sortOrder: 'display',
+  itemBlueprint: 'game',
+  quantity: 'game',
+};
+
+function validate(f: FormState): FormErrors {
+  const e: FormErrors = {};
+  if (!f.name.trim()) e.name = 'กรอกชื่อสินค้า';
+  if (!/^\d+$/.test(f.price.trim())) e.price = 'ราคาต้องเป็นจำนวนเต็มตั้งแต่ 0';
+  if (!f.itemBlueprint.trim()) e.itemBlueprint = 'กรอก Blueprint ของไอเทม';
+  if (!/^\d+$/.test(f.quantity.trim()) || Number(f.quantity) < 1) e.quantity = 'จำนวนต้องอย่างน้อย 1';
+  if (!/^-?\d+$/.test(f.sortOrder.trim())) e.sortOrder = 'ใส่เป็นจำนวนเต็ม';
+  const img = f.imageUrl.trim();
+  if (img && !/^(https?:\/\/|\/)\S+$/.test(img)) e.imageUrl = 'ใช้ลิงก์ http(s):// หรือพาธที่ขึ้นต้นด้วย /';
+  return e;
 }
 
 export default function AdminProductsPage() {
-  const { user, isLoading: authLoading } = useAuthStore();
+  const { isLoading: authLoading } = useAuthStore();
+  const { canManageProducts } = usePermissions();
   const queryClient = useQueryClient();
-  const [showModal, setShowModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [activeTab, setActiveTab] = useState<'basic' | 'visuals' | 'game'>('basic');
-  const [search, setSearch] = useState('');
-  const [draftsOnly, setDraftsOnly] = useState(false);
-  const [page, setPage] = useState(1);
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const toast = useToast();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: 0,
-    itemBlueprint: '',
-    quantity: 1,
-    quality: 0,
-    isBlueprint: false,
-    isActive: false,
-    isFeatured: false,
-    categoryId: '',
-    imageUrl: '',
-    sortOrder: 0,
+  const [search, setSearch] = React.useState('');
+  const [categoryFilter, setCategoryFilter] = React.useState('');
+  const [status, setStatus] = React.useState<StatusFilter>('all');
+  const [page, setPage] = React.useState(1);
+  const [editor, setEditor] = React.useState<{ open: boolean; product: AdminProduct | null; initial: FormState }>({
+    open: false,
+    product: null,
+    initial: EMPTY_FORM,
   });
+  const [deleteTarget, setDeleteTarget] = React.useState<AdminProduct | null>(null);
 
-  const { data: productsData, isLoading, isError, refetch } = useQuery({
+  const productsQuery = useQuery({
     queryKey: ['admin-products'],
-    queryFn: () => adminApi.getProducts().then((res) => res.data),
-    enabled: !!user?.isAdmin,
+    queryFn: () => adminApi.getProducts().then((res) => (res.data?.products ?? []) as AdminProduct[]),
+    enabled: canManageProducts,
   });
 
-  const { data: categoriesData } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => productApi.getCategories().then((res) => res.data),
-    enabled: !!user?.isAdmin,
+  const categoriesQuery = useQuery({
+    queryKey: ['admin-categories'],
+    queryFn: fetchCategoryOptions,
+    enabled: canManageProducts,
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data: any) => adminApi.createProduct(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-      closeModal();
-    },
-  });
+  const products = React.useMemo(() => productsQuery.data ?? [], [productsQuery.data]);
+  const categories = categoriesQuery.data ?? [];
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => adminApi.updateProduct(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-      closeModal();
+  const counts = React.useMemo(
+    () => ({
+      all: products.length,
+      active: products.filter((p) => p.isActive).length,
+      draft: products.filter((p) => !p.isActive).length,
+      featured: products.filter((p) => p.isFeatured).length,
+      noimage: products.filter((p) => !p.imageUrl).length,
+    }),
+    [products]
+  );
+
+  const filtered = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return products.filter((p) => {
+      if (categoryFilter && String(p.categoryId ?? '') !== categoryFilter) return false;
+      if (status === 'active' && !p.isActive) return false;
+      if (status === 'draft' && p.isActive) return false;
+      if (status === 'featured' && !p.isFeatured) return false;
+      if (status === 'noimage' && p.imageUrl) return false;
+      if (!q) return true;
+      return p.name.toLowerCase().includes(q) || p.itemBlueprint.toLowerCase().includes(q) || String(p.id) === q;
+    });
+  }, [products, search, categoryFilter, status]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    void queryClient.invalidateQueries({ queryKey: ['products'] });
+    void queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number | null; data: Record<string, unknown> }) =>
+      id === null ? adminApi.createProduct(data) : adminApi.updateProduct(id, data),
+    onSuccess: (_d, vars) => {
+      toast.success(vars.id === null ? 'เพิ่มสินค้าแล้ว' : 'บันทึกสินค้าแล้ว');
+      setEditor((s) => ({ ...s, open: false }));
+      invalidate();
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => adminApi.deleteProduct(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    mutationFn: (p: AdminProduct) => adminApi.deleteProduct(p.id),
+    onSuccess: (_d, p) => {
+      toast.success('หยุดขายแล้ว', `${p.name} กลับเป็นร่าง`);
+      setDeleteTarget(null);
+      invalidate();
     },
+    onError: (err) => toast.error('หยุดขายไม่สำเร็จ', apiErrorText(err, 'ลองอีกครั้ง')),
   });
 
-  const openModal = (product?: Product) => {
-    setActiveTab('basic');
-    if (product) {
-      setEditingProduct(product);
-      setFormData({
-        name: product.name,
-        description: product.description || '',
-        price: product.price,
-        itemBlueprint: product.itemBlueprint,
-        quantity: product.quantity,
-        quality: product.quality,
-        isBlueprint: product.isBlueprint,
-        isActive: product.isActive,
-        isFeatured: product.isFeatured,
-        categoryId: product.categoryId?.toString() || '',
-        imageUrl: product.imageUrl || '',
-        sortOrder: product.sortOrder || 0,
-      });
-    } else {
-      setEditingProduct(null);
-      setFormData({
-        name: '',
-        description: '',
-        price: 0,
-        itemBlueprint: '',
-        quantity: 1,
-        quality: 0,
-        isBlueprint: false,
-        isActive: false,
-        isFeatured: false,
-        categoryId: '',
-        imageUrl: '',
-        sortOrder: 0,
-      });
-    }
-    setShowModal(true);
+  const openCreate = () => {
+    saveMutation.reset();
+    setEditor({ open: true, product: null, initial: EMPTY_FORM });
   };
-
-  const handleDuplicate = (product: Product) => {
-    setEditingProduct(null);
-    setFormData({
-      name: `${product.name} (คัดลอก)`,
-      description: product.description || '',
-      price: product.price,
-      itemBlueprint: product.itemBlueprint,
-      quantity: product.quantity,
-      quality: product.quality,
-      isBlueprint: product.isBlueprint,
-      isActive: false,
-      isFeatured: false,
-      categoryId: product.categoryId?.toString() || '',
-      imageUrl: product.imageUrl || '',
-      sortOrder: (product.sortOrder || 0) + 1,
-    });
-    setShowModal(true);
+  const openEdit = (p: AdminProduct) => {
+    saveMutation.reset();
+    setEditor({ open: true, product: p, initial: formFromProduct(p) });
   };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setEditingProduct(null);
+  const openDuplicate = (p: AdminProduct) => {
+    saveMutation.reset();
+    setEditor({ open: true, product: null, initial: formFromProduct(p, true) });
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const data = {
-      ...formData,
-      itemBlueprint: expandBlueprintPath(formData.itemBlueprint),
-      price: Number(formData.price),
-      quantity: Number(formData.quantity),
-      quality: Number(formData.quality),
-      categoryId: formData.categoryId ? Number(formData.categoryId) : null,
-      sortOrder: Number(formData.sortOrder),
-    };
-
-    if (editingProduct) {
-      updateMutation.mutate({ id: editingProduct.id, data });
-    } else {
-      createMutation.mutate(data);
-    }
-  };
-
-  // Generic Confirmation Modal State
-  const [modalConfig, setModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    content: React.ReactNode;
-    confirmText?: string;
-    cancelText?: string;
-    variant?: 'default' | 'danger' | 'warning' | 'success';
-    onConfirm?: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    content: null,
-  });
-
-  const closeModalState = () => {
-    setModalConfig((prev) => ({ ...prev, isOpen: false }));
-  };
-
-  const showConfirmModal = ({
-    title,
-    content,
-    onConfirm,
-    variant = 'default',
-    confirmText = 'ยืนยัน',
-    cancelText = 'ยกเลิก',
-  }: {
-    title: string;
-    content: React.ReactNode;
-    onConfirm?: () => void;
-    variant?: 'default' | 'danger' | 'warning' | 'success';
-    confirmText?: string;
-    cancelText?: string;
-  }) => {
-    setModalConfig({
-      isOpen: true,
-      title,
-      content,
-      onConfirm: onConfirm
-        ? () => {
-          onConfirm();
-          closeModalState();
-        }
-        : undefined,
-      variant,
-      confirmText,
-      cancelText,
-    });
-  };
-
-  const handleDelete = (product: Product) => {
-    showConfirmModal({
-      title: 'ลบสินค้า?',
-      content: <p>คุณต้องการลบสินค้า <strong className="text-white">{product.name}</strong> หรือไม่?</p>,
-      onConfirm: () => deleteMutation.mutate(product.id),
-      variant: 'danger',
-      confirmText: 'ลบถาวร',
-    });
-  };
-
-  const filteredProducts = productsData?.products?.filter((p: Product) => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = categoryFilter ? p.categoryId?.toString() === categoryFilter : true;
-    return matchesSearch && matchesCategory && (!draftsOnly || !p.isActive);
-  });
 
   if (authLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
+      <div className="pb-16" aria-busy="true">
+        <PageHeader eyebrow="ร้านค้า" title="สินค้า" />
       </div>
     );
   }
 
-  if (!user?.isAdmin) {
+  if (!canManageProducts) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-400">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
+      <div className="pb-16">
+        <PageHeader eyebrow="ร้านค้า" title="สินค้า" />
+        <EmptyState title="หน้านี้สำหรับ Admin และ Root" description="ติดต่อผู้ดูแลระบบหากต้องการจัดการสินค้า" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <Link href="/admin" className="text-gray-400 hover:text-white text-sm">
-            &larr; กลับ Admin
-          </Link>
-          <h1 className="text-3xl font-bold mt-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-2">
-            <Package className="h-8 w-8 text-emerald-400" />
-            จัดการสินค้า
-          </h1>
-        </div>
-        <Button onClick={() => openModal()} icon={<Plus className="h-5 w-5" />}>
-          เพิ่มสินค้า
-        </Button>
+    <div className="min-w-0 pb-16">
+      <PageHeader
+        eyebrow="ร้านค้า"
+        title="สินค้า"
+        description="สินค้าที่ยังเป็นร่างจะไม่แสดงในร้าน ตรวจราคา รูป และ Blueprint ก่อนเปิดขาย"
+        actions={
+          <Button leftIcon={<Plus className="h-4 w-4" strokeWidth={1.5} />} onClick={openCreate}>
+            เพิ่มสินค้า
+          </Button>
+        }
+      />
+
+      <div className="flex flex-wrap items-end gap-3 pb-4">
+        <Input
+          label="ค้นหาสินค้า"
+          hideLabel
+          placeholder="ชื่อ, Blueprint หรือรหัสสินค้า"
+          leftIcon={<Search className="h-4 w-4" strokeWidth={1.5} />}
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          wrapperClassName="w-full sm:w-80"
+        />
+        <Select
+          label="หมวดหมู่"
+          hideLabel
+          value={categoryFilter}
+          onChange={(e) => {
+            setCategoryFilter(e.target.value);
+            setPage(1);
+          }}
+          wrapperClassName="w-full sm:w-56"
+          options={[{ value: '', label: 'ทุกหมวดหมู่' }, ...categories.map((c) => ({ value: String(c.id), label: c.name }))]}
+        />
+        <SegmentedControl<StatusFilter>
+          aria-label="สถานะสินค้า"
+          value={status}
+          onChange={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
+          options={[
+            { value: 'all', label: 'ทั้งหมด', count: counts.all },
+            { value: 'active', label: 'เปิดขาย', count: counts.active },
+            { value: 'draft', label: 'ร่าง', count: counts.draft },
+            { value: 'featured', label: 'แนะนำ', count: counts.featured },
+            { value: 'noimage', label: 'ไม่มีรูป', count: counts.noimage },
+          ]}
+        />
       </div>
 
-      <div className="frozen-editorial-card flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-lg">ตรวจราคาและข้อมูลก่อนเปิดขาย</h2><p className="text-sm text-iris-muted">รายการร่างยังไม่ปรากฏในร้านค้า ตรวจรูป ราคา และการส่งของก่อนเปิดใช้งาน</p></div><button className="btn-secondary" aria-pressed={draftsOnly} onClick={()=>{setDraftsOnly(!draftsOnly);setPage(1);}}>{draftsOnly?'แสดงทั้งหมด':'ดูรายการรอตรวจ'}</button></div>
-      {/* Filters */}
-      <GlassCard glowOnHover>
-        <div className="p-4 flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="ค้นหาสินค้า..."
-              value={search}
-              onChange={(e) => {setSearch(e.target.value);setPage(1);}}
-              className="input pl-10 w-full"
+      {productsQuery.isError ? (
+        <ErrorMessage
+          title="โหลดรายการสินค้าไม่สำเร็จ"
+          message={apiErrorText(productsQuery.error, 'ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง')}
+          onRetry={() => void productsQuery.refetch()}
+        />
+      ) : (
+        <TableContainer aria-busy={productsQuery.isLoading || undefined}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>สินค้า</TableHeaderCell>
+                <TableHeaderCell>หมวดหมู่</TableHeaderCell>
+                <TableHeaderCell align="right">ราคา</TableHeaderCell>
+                <TableHeaderCell align="right">จำนวน</TableHeaderCell>
+                <TableHeaderCell>คุณภาพ</TableHeaderCell>
+                <TableHeaderCell>สถานะ</TableHeaderCell>
+                <TableHeaderCell align="right">ลำดับ</TableHeaderCell>
+                <TableHeaderCell>
+                  <span className="sr-only">การทำงาน</span>
+                </TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {productsQuery.isLoading ? (
+                <TableLoadingRows columns={8} rows={8} />
+              ) : visible.length === 0 ? (
+                <TableEmptyRow
+                  colSpan={8}
+                  title={products.length ? 'ไม่พบสินค้าที่ตรงกับตัวกรอง' : 'ยังไม่มีสินค้า'}
+                  description={products.length ? 'ลองเปลี่ยนคำค้นหรือสถานะ' : 'เพิ่มสินค้าชิ้นแรกเพื่อเริ่มขาย'}
+                  action={
+                    products.length ? undefined : (
+                      <Button size="sm" onClick={openCreate}>
+                        เพิ่มสินค้า
+                      </Button>
+                    )
+                  }
+                />
+              ) : (
+                visible.map((p) => (
+                  <TableRow key={p.id} interactive onClick={() => openEdit(p)}>
+                    <TableCell className="min-w-[260px]">
+                      <div className="flex items-center gap-3">
+                        <ProductArtwork product={p} alt="" className="h-10 w-10 shrink-0 rounded-control border border-line" />
+                        <div className="min-w-0">
+                          <button
+                            type="button"
+                            className="block max-w-full truncate text-left font-medium text-fg hover:text-accent"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEdit(p);
+                            }}
+                          >
+                            {p.name}
+                          </button>
+                          <p className="flex flex-wrap items-center gap-x-2 text-xs text-fg-subtle">
+                            <span className="font-mono">#{p.id}</span>
+                            {p.isBlueprint ? <span>ใบ Blueprint</span> : null}
+                            {!p.imageUrl ? <span className="text-warning">ไม่มีรูป</span> : null}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell muted className="whitespace-nowrap">
+                      {p.category?.name ?? 'ไม่มีหมวดหมู่'}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Amount value={p.price} size="sm" />
+                    </TableCell>
+                    <TableCell align="right" mono>
+                      {p.quantity}
+                    </TableCell>
+                    <TableCell muted className="whitespace-nowrap">
+                      {QUALITY_OPTIONS[p.quality]?.label.split(' ')[0] ?? p.quality}
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex flex-wrap gap-1">
+                        {p.isActive ? <Badge tone="success">เปิดขาย</Badge> : <Badge>ร่าง</Badge>}
+                        {p.isFeatured ? <Badge tone="accent" outline>แนะนำ</Badge> : null}
+                      </span>
+                    </TableCell>
+                    <TableCell align="right" mono muted>
+                      {p.sortOrder ?? 0}
+                    </TableCell>
+                    <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                      <span className="inline-flex gap-1">
+                        <IconButton aria-label={`ทำสำเนา ${p.name}`} size="sm" onClick={() => openDuplicate(p)}>
+                          <Copy className="h-4 w-4" strokeWidth={1.5} />
+                        </IconButton>
+                        <IconButton aria-label={`แก้ไข ${p.name}`} size="sm" onClick={() => openEdit(p)}>
+                          <Pencil className="h-4 w-4" strokeWidth={1.5} />
+                        </IconButton>
+                        {p.isActive ? (
+                          <IconButton aria-label={`หยุดขาย ${p.name}`} size="sm" onClick={() => setDeleteTarget(p)}>
+                            <EyeOff className="h-4 w-4" strokeWidth={1.5} />
+                          </IconButton>
+                        ) : (
+                          <span className="inline-block h-10 w-10 sm:h-8 sm:w-8" aria-hidden="true" />
+                        )}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      <Pagination className="mt-4" page={currentPage} pageSize={PAGE_SIZE} total={filtered.length} onPageChange={setPage} />
+
+      <ProductEditorDialog
+        open={editor.open}
+        product={editor.product}
+        initial={editor.initial}
+        categories={categories}
+        submitting={saveMutation.isPending}
+        error={saveMutation.isError ? apiErrorText(saveMutation.error, 'บันทึกไม่สำเร็จ ข้อมูลในฟอร์มยังอยู่ ลองอีกครั้ง') : null}
+        onOpenChange={(open) => !open && setEditor((s) => ({ ...s, open: false }))}
+        onSubmit={(data) => saveMutation.mutate({ id: editor.product?.id ?? null, data })}
+      />
+
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="หยุดขายสินค้า"
+        description={
+          deleteTarget
+            ? `${deleteTarget.name} จะกลับเป็นร่างและหายจากร้านทันที ข้อมูลสินค้าและประวัติการสั่งซื้อยังอยู่ เปิดขายใหม่ได้จากหน้าแก้ไข`
+            : undefined
+        }
+        variant="warning"
+        confirmText="หยุดขาย"
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+      />
+    </div>
+  );
+}
+
+const FORM_ID = 'admin-product-form';
+
+function ProductEditorDialog({
+  open,
+  product,
+  initial,
+  categories,
+  submitting,
+  error,
+  onOpenChange,
+  onSubmit,
+}: {
+  open: boolean;
+  product: AdminProduct | null;
+  initial: FormState;
+  categories: CategoryOption[];
+  submitting: boolean;
+  error: string | null;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: Record<string, unknown>) => void;
+}) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={product ? `แก้ไข ${product.name}` : 'เพิ่มสินค้า'}
+      description={product ? `รหัสสินค้า ${product.id}` : 'สินค้าใหม่จะเป็นร่างจนกว่าจะเปิดขาย'}
+      size="xl"
+      loading={submitting}
+      dismissible={false}
+      footer={
+        <>
+          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={submitting}>
+            ยกเลิก
+          </Button>
+          <Button type="submit" form={FORM_ID} loading={submitting}>
+            {product ? 'บันทึก' : 'เพิ่มสินค้า'}
+          </Button>
+        </>
+      }
+    >
+      {open ? (
+        <ProductForm
+          key={`${product?.id ?? 'new'}-${initial.name}`}
+          initial={initial}
+          categories={categories}
+          error={error}
+          onSubmit={onSubmit}
+        />
+      ) : null}
+    </Dialog>
+  );
+}
+
+function ProductForm({
+  initial,
+  categories,
+  error,
+  onSubmit,
+}: {
+  initial: FormState;
+  categories: CategoryOption[];
+  error: string | null;
+  onSubmit: (data: Record<string, unknown>) => void;
+}) {
+  const [form, setForm] = React.useState<FormState>(initial);
+  const [errors, setErrors] = React.useState<FormErrors>({});
+  const [tab, setTab] = React.useState<FormTab>('basic');
+
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
+  };
+
+  const expanded = form.itemBlueprint.trim() ? expandBlueprintPath(form.itemBlueprint) : '';
+  const canExpand = !!expanded && expanded !== form.itemBlueprint.trim();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const found = validate(form);
+    setErrors(found);
+    const firstKey = Object.keys(found)[0] as keyof FormState | undefined;
+    if (firstKey) {
+      setTab(FIELD_TAB[firstKey] ?? 'basic');
+      return;
+    }
+    onSubmit({
+      name: form.name.trim(),
+      description: form.description.trim(),
+      price: Number(form.price),
+      categoryId: form.categoryId ? Number(form.categoryId) : null,
+      imageUrl: form.imageUrl.trim(),
+      sortOrder: Number(form.sortOrder),
+      isActive: form.isActive,
+      isFeatured: form.isFeatured,
+      itemBlueprint: expandBlueprintPath(form.itemBlueprint),
+      quantity: Number(form.quantity),
+      quality: Number(form.quality),
+      isBlueprint: form.isBlueprint,
+    });
+  };
+
+  const tabHasError = (t: FormTab) => Object.entries(errors).some(([k, v]) => v && (FIELD_TAB[k as keyof FormState] ?? 'basic') === t);
+
+  return (
+    <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
+      {error ? <ErrorMessage variant="inline" message={error} className="mb-4" /> : null}
+      <Tabs value={tab} onValueChange={(v) => setTab(v as FormTab)}>
+        <TabsList aria-label="ส่วนของข้อมูลสินค้า">
+          <TabsTrigger value="basic">ข้อมูลทั่วไป{tabHasError('basic') ? <span className="text-danger">*</span> : null}</TabsTrigger>
+          <TabsTrigger value="display">รูปและการแสดงผล{tabHasError('display') ? <span className="text-danger">*</span> : null}</TabsTrigger>
+          <TabsTrigger value="game">ข้อมูลในเกม{tabHasError('game') ? <span className="text-danger">*</span> : null}</TabsTrigger>
+        </TabsList>
+
+        <TabsPanel value="basic" className="space-y-4">
+          <Input label="ชื่อสินค้า" required value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} placeholder="เช่น Rex Saddle (Ascendant)" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="ราคา"
+              required
+              mono
+              inputMode="numeric"
+              rightIcon={<span className="text-xs">IC</span>}
+              value={form.price}
+              onChange={(e) => set('price', e.target.value.replace(/[^\d]/g, ''))}
+              error={errors.price}
+              helperText="ราคาตั้งต้น โปรโมชั่นคำนวณที่ระบบตอนชำระเงิน"
+            />
+            <Select
+              label="หมวดหมู่"
+              value={form.categoryId}
+              onChange={(e) => set('categoryId', e.target.value)}
+              options={[
+                { value: '', label: 'ไม่มีหมวดหมู่' },
+                ...categories.map((c) => ({ value: String(c.id), label: c.isActive === false ? `${c.name} (ปิดใช้งาน)` : c.name })),
+              ]}
             />
           </div>
-          <div className="w-full md:w-64 relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <select
-              value={categoryFilter}
-              onChange={(e) => {setCategoryFilter(e.target.value);setPage(1);}}
-              className="input pl-10 w-full appearance-none"
-            >
-              <option value="">ทุกหมวดหมู่</option>
-              {categoriesData?.categories?.map((cat: Category) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </GlassCard>
+          <Textarea
+            label="รายละเอียด"
+            rows={5}
+            value={form.description}
+            onChange={(e) => set('description', e.target.value)}
+            placeholder="สิ่งที่ผู้เล่นจะได้รับ เงื่อนไข หรือข้อจำกัด"
+          />
+        </TabsPanel>
 
-      {isError && <ErrorMessage title="โหลดรายการสินค้าไม่สำเร็จ" message="กรุณาลองใหม่อีกครั้ง" onRetry={() => refetch()} />}
-      {/* Products Grid */}
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredProducts?.slice((page - 1) * 24, page * 24).map((product: Product) => (
-            <GlassCard key={product.id} className="group relative overflow-hidden flex flex-col h-full hover:border-emerald-500/50 transition-colors">
-              {/* Image / Icon */}
-              <div className="h-40 bg-black/40 relative flex items-center justify-center overflow-hidden">
-                <ProductArtwork
-                  product={product}
-                  alt={product.name}
-                  className="h-full w-full transition-transform group-hover:scale-105"
+        <TabsPanel value="display">
+          <div className="grid gap-6 sm:grid-cols-[180px_1fr]">
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-fg-muted">ตัวอย่างรูป</p>
+              <ProductArtwork
+                product={{ id: 0, name: form.name || 'สินค้า', imageUrl: form.imageUrl.trim() || null, categoryId: form.categoryId ? Number(form.categoryId) : null }}
+                alt="ตัวอย่างรูปสินค้า"
+                className="aspect-square w-full rounded-card border border-line"
+              />
+            </div>
+            <div className="space-y-4">
+              <Input
+                label="ลิงก์รูปภาพ"
+                mono
+                placeholder="https://… หรือ /images/products/…"
+                value={form.imageUrl}
+                onChange={(e) => set('imageUrl', e.target.value)}
+                error={errors.imageUrl}
+                helperText="JPG, PNG หรือ WEBP แนะนำขนาดสี่เหลี่ยมจัตุรัส"
+              />
+              <Input
+                label="ลำดับการแสดง"
+                mono
+                inputMode="numeric"
+                value={form.sortOrder}
+                onChange={(e) => set('sortOrder', e.target.value)}
+                error={errors.sortOrder}
+              />
+              <div className="divide-y divide-line rounded-card border border-line">
+                <Switch
+                  className="px-4 py-3"
+                  checked={form.isActive}
+                  onCheckedChange={(v) => set('isActive', v)}
+                  label="เปิดขาย"
+                  description="แสดงในร้านและให้ผู้เล่นสั่งซื้อได้"
                 />
-
-                {/* Badges */}
-                <div className="absolute top-2 left-2 flex flex-col gap-1">
-                  {product.isFeatured && (
-                    <span className="px-2 py-0.5 rounded bg-iris-gold/20 text-iris-gold text-xs font-bold border border-iris-gold/30 backdrop-blur-sm">
-                      แนะนำ
-                    </span>
-                  )}
-                  {!product.isActive && (
-                    <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 backdrop-blur-sm">
-                      ปิดใช้งาน
-                    </span>
-                  )}
-                </div>
-
-                <div className="absolute top-2 right-2 flex gap-1 opacity-100 transition-opacity">
-                  <button
-                    onClick={() => handleDuplicate(product)}
-                    aria-label={`คัดลอก ${product.name}`}
-                    title="คัดลอกเป็นแบบร่างใหม่ (Duplicate Product)"
-                    className="p-2 bg-black/60 rounded-lg hover:bg-iris-cyan text-white transition-colors"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => openModal(product)}
-                    aria-label={`แก้ไข ${product.name}`}
-                    title="แก้ไขสินค้า"
-                    className="p-2 bg-black/60 rounded-lg hover:bg-emerald-500 text-white transition-colors"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product)}
-                    aria-label={`ลบ ${product.name}`}
-                    title="ลบสินค้า"
-                    className="p-2 bg-black/60 rounded-lg hover:bg-red-500 text-white transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {!product.imageUrl && <p className="px-4 pt-3 text-xs text-amber-200">รอตรวจรูปภาพสินค้า</p>}
-              {/* Content */}
-              <div className="p-4 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-lg leading-tight line-clamp-2">{product.name}</h3>
-                </div>
-
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-xs px-2 py-0.5 rounded bg-gray-700/50 text-gray-300">
-                    {product.category?.name || 'Uncategorized'}
-                  </span>
-                  {product.isBlueprint && (
-                    <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                      BP
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-auto flex items-center justify-between pt-3 border-t border-gray-800">
-                  <div className="text-emerald-400 font-mono font-bold text-lg">
-                    {product.price.toLocaleString()} IC
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    ID: {product.id}
-                  </div>
-                </div>
-              </div>
-            </GlassCard>
-          ))}
-
-          {/* Add New Card (Empty State) */}
-          <button
-            onClick={() => openModal()}
-            className="h-full min-h-[300px] rounded-xl border-2 border-dashed border-gray-700 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all flex flex-col items-center justify-center gap-3 group"
-          >
-            <div className="p-4 rounded-full bg-gray-800 group-hover:bg-emerald-500/20 text-gray-400 group-hover:text-emerald-400 transition-colors">
-              <Plus className="h-8 w-8" />
-            </div>
-            <span className="text-gray-400 group-hover:text-emerald-400 font-medium">เพิ่มสินค้าใหม่</span>
-          </button>
-        </div>
-      )}
-
-      <nav aria-label="หน้ารายการสินค้า" className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-iris-muted">{filteredProducts?.length || 0} รายการ · หน้า {page} / {Math.max(1, Math.ceil((filteredProducts?.length || 0) / 24))}</p>
-        <div className="flex gap-2"><Button variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>ก่อนหน้า</Button><Button variant="secondary" disabled={page * 24 >= (filteredProducts?.length || 0)} onClick={() => setPage(page + 1)}>ถัดไป</Button></div>
-      </nav>
-      {/* Editor Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <GlassCard className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-gray-800 flex items-center justify-between bg-black/20">
-              <h2 className="text-2xl font-bold flex items-center gap-3">
-                {editingProduct ? <Edit2 className="text-emerald-400" /> : <Plus className="text-emerald-400" />}
-                {editingProduct ? 'แก้ไขสินค้า' : 'เพิ่มสินค้าใหม่'}
-              </h2>
-              <button onClick={closeModal} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            {/* Content with Sidebar */}
-            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-              {/* Sidebar Tabs */}
-              <div className="w-full md:w-56 shrink-0 bg-black/20 border-r border-gray-800 p-3 flex md:flex-col gap-2 overflow-auto">
-                <button
-                  onClick={() => setActiveTab('basic')}
-                  className={`flex items-center gap-3 p-3 rounded-lg text-left transition-all ${activeTab === 'basic'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'text-gray-400 hover:bg-white/5'
-                    }`}
-                >
-                  <Tag className="h-5 w-5" />
-                  <div className="font-medium">ข้อมูลทั่วไป</div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('visuals')}
-                  className={`flex items-center gap-3 p-3 rounded-lg text-left transition-all ${activeTab === 'visuals'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'text-gray-400 hover:bg-white/5'
-                    }`}
-                >
-                  <ImageIcon className="h-5 w-5" />
-                  <div className="font-medium">รูปภาพ & การแสดงผล</div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('game')}
-                  className={`flex items-center gap-3 p-3 rounded-lg text-left transition-all ${activeTab === 'game'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'text-gray-400 hover:bg-white/5'
-                    }`}
-                >
-                  <Layers className="h-5 w-5" />
-                  <div className="font-medium">ข้อมูลเกม (Blueprint)</div>
-                </button>
-              </div>
-
-              {/* Form Content */}
-              <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 bg-black/10">
-                <form id="product-form" onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
-                  {(createMutation.isError || updateMutation.isError) && <p role="alert" className="rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-sm text-red-200">บันทึกไม่สำเร็จ ข้อมูลในฟอร์มยังอยู่ กรุณาลองอีกครั้ง</p>}
-                  {editingProduct && !editingProduct.isActive && <p className="rounded-xl border border-sky-200/20 bg-sky-100/5 p-3 text-sm text-sky-100">{editingProduct.description || 'ร่างรอตรวจราคา รูปภาพ และการส่งของก่อนเปิดขาย'}</p>}
-
-                  {/* BASIC INFO TAB */}
-                  {activeTab === 'basic' && (
-                    <div className="space-y-4 animate-fadeIn">
-                      <h3 className="text-lg font-bold border-b border-gray-800 pb-2 mb-4 text-emerald-400">ข้อมูลทั่วไป</h3>
-
-                      <div className="grid grid-cols-1 gap-4">
-                        <div>
-                          <label className="block text-sm text-gray-400 mb-1">ชื่อสินค้า *</label>
-                          <input
-                            type="text"
-                            required
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="input w-full text-lg"
-                            placeholder="เช่น Rex Saddle (Ascendant)"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm text-gray-400 mb-1">ราคา (IC) *</label>
-                          <div className="relative">
-                            <input
-                              type="number"
-                              required
-                              min="0"
-                              value={formData.price}
-                              onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                              className="input w-full pl-8 font-mono text-emerald-400 font-bold"
-                            />
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500">$</span>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm text-gray-400 mb-1">หมวดหมู่</label>
-                          <select
-                            value={formData.categoryId}
-                            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                            className="input w-full"
-                          >
-                            <option value="">-- เลือกหมวดหมู่ --</option>
-                            {categoriesData?.categories?.map((cat: Category) => (
-                              <option key={cat.id} value={cat.id}>
-                                {cat.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm text-gray-400 mb-1">รายละเอียด</label>
-                        <textarea
-                          value={formData.description}
-                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                          className="input w-full h-32 resize-none leading-relaxed"
-                          placeholder="รายละเอียดสินค้า..."
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* VISUALS TAB */}
-                  {activeTab === 'visuals' && (
-                    <div className="space-y-6 animate-fadeIn">
-                      <h3 className="text-lg font-bold border-b border-gray-800 pb-2 mb-4 text-emerald-400">รูปภาพและการแสดงผล</h3>
-
-                      <div className="flex gap-6">
-                        <div className="w-1/3">
-                          <label className="block text-sm text-gray-400 mb-2">ตัวอย่างรูปภาพ</label>
-                          <div className="aspect-square rounded-xl bg-black/40 border-2 border-dashed border-gray-700 flex items-center justify-center overflow-hidden relative">
-                            {formData.imageUrl ? (
-                              <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="text-center p-4">
-                                <ImageIcon className="h-10 w-10 text-gray-600 mx-auto mb-2" />
-                                <span className="text-xs text-gray-500">ใส่ URL เพื่อแสดงรูป</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-1 space-y-4">
-                          <div>
-                            <label className="block text-sm text-gray-400 mb-1">Image URL</label>
-                            <input
-                              type="url"
-                              value={formData.imageUrl}
-                              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                              className="input w-full font-mono text-sm"
-                              placeholder="https://example.com/image.jpg"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">รองรับ JPG, PNG, WEBP</p>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm text-gray-400 mb-1">ลำดับการแสดง (Sort Order)</label>
-                            <input
-                              type="number"
-                              value={formData.sortOrder}
-                              onChange={(e) => setFormData({ ...formData, sortOrder: Number(e.target.value) })}
-                              className="input w-full"
-                              placeholder="0"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">ตัวเลขมากจะแสดงก่อน (หรือตามการตั้งค่า)</p>
-                          </div>
-
-                          <div className="pt-2 space-y-3">
-                            <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-800 bg-black/20 cursor-pointer hover:border-emerald-500/50 transition-colors">
-                              <input
-                                type="checkbox"
-                                checked={formData.isActive}
-                                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                className="w-5 h-5 accent-emerald-500"
-                              />
-                              <div className="flex-1">
-                                <div className="font-medium text-white">เปิดใช้งานสินค้า</div>
-                                <div className="text-xs text-gray-500">แสดงในหน้าร้านค้า</div>
-                              </div>
-                              <div className={`w-3 h-3 rounded-full ${formData.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-                            </label>
-
-                            <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-800 bg-black/20 cursor-pointer hover:border-iris-gold/50 transition-colors">
-                              <input
-                                type="checkbox"
-                                checked={formData.isFeatured}
-                                onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                                className="w-5 h-5 accent-amber-400"
-                              />
-                              <div className="flex-1">
-                                <div className="font-medium text-white">สินค้าแนะนำ</div>
-                                <div className="text-xs text-gray-500">แสดงในส่วน Featured</div>
-                              </div>
-                              {formData.isFeatured && <div className="text-iris-gold">★</div>}
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* GAME DATA TAB */}
-                  {activeTab === 'game' && (
-                    <div className="space-y-4 animate-fadeIn">
-                      <h3 className="text-lg font-bold border-b border-gray-800 pb-2 mb-4 text-emerald-400">ข้อมูลภายในเกม</h3>
-
-                      <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl mb-4">
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <h4 className="flex items-center gap-2 font-bold text-blue-400">
-                            <Layers className="h-4 w-4" />
-                            Blueprint Path (รองรับชื่อสั้น & AI Format)
-                          </h4>
-                          <span className="text-[11px] font-semibold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                            <Sparkles className="h-3 w-3" /> Auto-Expand
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-300 mb-2">
-                          พิมพ์ชื่อไอเทมแบบสั้น, Path ย่อย หรือ Blueprint Path เต็มจาก ARK ได้ทันที <br />
-                          <span className="text-xs text-gray-400">
-                            ตัวอย่างแบบสั้น: <code className="text-cyan-300 bg-black/40 px-1 py-0.5 rounded">PrimalItemResource_Polymer</code> หรือ <code className="text-cyan-300 bg-black/40 px-1 py-0.5 rounded">PopOutCake/PrimalItemStructure_BirthdayCake</code>
-                          </span>
-                        </p>
-                        <input
-                          type="text"
-                          required
-                          value={formData.itemBlueprint}
-                          onChange={(e) => setFormData({ ...formData, itemBlueprint: e.target.value })}
-                          className="input w-full font-mono text-xs p-3 bg-black/50 border-blue-500/20 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
-                          placeholder="เช่น Polymer, Rex_Character_BP, PopOutCake/PrimalItemStructure_BirthdayCake หรือ Blueprint'/'"
-                        />
-
-                        {/* Realtime Blueprint Expansion & Helper */}
-                        {formData.itemBlueprint ? (
-                          <div className="mt-3 rounded-xl border border-cyan-500/30 bg-cyan-950/40 p-3 text-xs space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-semibold text-cyan-300 flex items-center gap-1.5">
-                                <Sparkles className="h-3.5 w-3.5 text-cyan-300" />
-                                {formData.itemBlueprint.trim() !== expandBlueprintPath(formData.itemBlueprint)
-                                  ? 'ระบบแปลงเป็น Path เต็มของ Unreal Engine ให้อัตโนมัติ:'
-                                  : 'Path รูปแบบมาตรฐานของ ARK:'}
-                              </span>
-                              {formData.itemBlueprint.trim() !== expandBlueprintPath(formData.itemBlueprint) && (
-                                <button
-                                  type="button"
-                                  onClick={() => setFormData({ ...formData, itemBlueprint: expandBlueprintPath(formData.itemBlueprint) })}
-                                  className="px-2.5 py-1 rounded-lg bg-cyan-500/25 hover:bg-cyan-500/40 text-cyan-200 font-bold text-[11px] border border-cyan-400/40 transition flex items-center gap-1 cursor-pointer"
-                                >
-                                  <Wand2 className="h-3 w-3" /> ขยายเป็น Path เต็ม
-                                </button>
-                              )}
-                            </div>
-                            <code className="block font-mono text-[11px] text-slate-200 break-all bg-black/60 p-2.5 rounded-lg border border-cyan-500/20 select-all">
-                              {expandBlueprintPath(formData.itemBlueprint)}
-                            </code>
-                          </div>
-                        ) : null}
-
-                        {/* Quick Presets */}
-                        <div className="mt-3 pt-3 border-t border-blue-500/20">
-                          <p className="text-[11px] font-semibold text-gray-400 mb-2">
-                            ⚡ รายการยอดนิยม (คลิกเพื่อใส่ Blueprint ทันที):
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {COMMON_BLUEPRINT_PRESETS.map((preset) => (
-                              <button
-                                key={preset.shortPath}
-                                type="button"
-                                onClick={() =>
-                                  setFormData({
-                                    ...formData,
-                                    itemBlueprint: preset.shortPath,
-                                    name: formData.name || preset.label.split(' (')[0],
-                                  })
-                                }
-                                className="rounded-lg bg-white/5 hover:bg-cyan-500/20 border border-white/10 hover:border-cyan-400/40 px-2.5 py-1 text-[11px] text-slate-300 hover:text-white transition cursor-pointer"
-                              >
-                                {preset.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm text-gray-400 mb-1">จำนวนที่ได้รับ</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={formData.quantity}
-                            onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
-                            className="input w-full"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm text-gray-400 mb-1">ระดับคุณภาพ (Quality)</label>
-                          <select
-                            value={formData.quality}
-                            onChange={(e) => setFormData({ ...formData, quality: Number(e.target.value) })}
-                            className="input w-full"
-                          >
-                            <option value="0">Default / Primitive (ขาว)</option>
-                            <option value="1">Ramshackle (เขียว)</option>
-                            <option value="2">Apprentice (น้ำเงิน)</option>
-                            <option value="3">Journeyman (ม่วง)</option>
-                            <option value="4">Mastercraft (เหลือง)</option>
-                            <option value="5">Ascendant (แดง)</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="pt-2">
-                        <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-800 bg-black/20 cursor-pointer hover:border-blue-500/50 transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={formData.isBlueprint}
-                            onChange={(e) => setFormData({ ...formData, isBlueprint: e.target.checked })}
-                            className="w-5 h-5 accent-blue-500"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-white">ให้เป็นใบ Blueprint</div>
-                            <div className="text-xs text-gray-500">ผู้เล่นจะได้รับเป็นใบ Blueprint แทนไอเทมสำเร็จรูป</div>
-                          </div>
-                          {formData.isBlueprint && <Layers className="h-4 w-4 text-blue-400" />}
-                        </label>
-                      </div>
-                    </div>
-                  )}
-
-                </form>
+                <Switch
+                  className="px-4 py-3"
+                  checked={form.isFeatured}
+                  onCheckedChange={(v) => set('isFeatured', v)}
+                  label="สินค้าแนะนำ"
+                  description="แสดงในส่วนแนะนำของหน้าแรก"
+                />
               </div>
             </div>
-
-            {/* Footer Actions */}
-            <div className="p-6 border-t border-gray-800 bg-black/20 flex justify-end gap-3">
-              <Button variant="secondary" onClick={closeModal} disabled={createMutation.isPending || updateMutation.isPending}>
-                ยกเลิก
-              </Button>
-              <Button
-                variant="primary"
-                onClick={(e) => handleSubmit(e as any)}
-                loading={createMutation.isPending || updateMutation.isPending}
-                icon={<Save className="h-4 w-4" />}
-              >
-                {editingProduct ? 'บันทึกการแก้ไข' : 'เพิ่มสินค้า'}
-              </Button>
-            </div>
-          </GlassCard>
-        </div>
-      )}
-
-      {/* Laser Modal for alerts */}
-      <Dialog open={modalConfig?.isOpen ?? false} onOpenChange={(open) => !open && closeModal?.()}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{modalConfig?.title || 'แจ้งเตือน'}</DialogTitle>
-          </DialogHeader>
-          <div className="py-2 text-sm text-iris-muted">
-            {modalConfig?.content}
           </div>
-          <div className="flex justify-end gap-2 pt-4">
-            {!(modalConfig as any)?.singleButton && (
-              <Button variant="outline" onClick={closeModal}>
-                {modalConfig?.cancelText || 'ยกเลิก'}
-              </Button>
-            )}
-            <Button
-              variant={modalConfig?.variant === 'danger' ? 'danger' : 'primary'}
-              onClick={() => {
-                modalConfig?.onConfirm?.();
-                closeModal?.();
-              }}
-            >
-              {modalConfig?.confirmText || 'ตกลง'}
-            </Button>
+        </TabsPanel>
+
+        <TabsPanel value="game" className="space-y-4">
+          <Input
+            label="Blueprint"
+            required
+            mono
+            spellCheck={false}
+            autoComplete="off"
+            placeholder="PrimalItemResource_Polymer หรือ Blueprint'/Game/…'"
+            value={form.itemBlueprint}
+            onChange={(e) => set('itemBlueprint', e.target.value)}
+            error={errors.itemBlueprint}
+            helperText="พิมพ์ชื่อสั้นหรือ Path เต็มก็ได้ ระบบแปลงเป็น Path เต็มตอนบันทึก"
+          />
+          {expanded ? (
+            <div className="rounded-card border border-line bg-canvas p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-fg-muted">{canExpand ? 'Path เต็มที่จะบันทึก' : 'Path ถูกต้องตามรูปแบบ ARK'}</p>
+                {canExpand ? (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => set('itemBlueprint', expanded)}>
+                    ใช้ Path เต็ม
+                  </Button>
+                ) : null}
+              </div>
+              <code className="mt-1 block select-all break-all font-mono text-xs text-fg">{expanded}</code>
+            </div>
+          ) : null}
+          <div>
+            <p className="mb-2 text-xs font-medium text-fg-muted">รายการที่ใช้บ่อย</p>
+            <div className="flex flex-wrap gap-1.5">
+              {COMMON_BLUEPRINT_PRESETS.map((preset) => (
+                <Button
+                  key={preset.shortPath}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      itemBlueprint: preset.shortPath,
+                      name: f.name || preset.label.split(' (')[0],
+                    }))
+                  }
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="จำนวนที่ได้รับ"
+              mono
+              inputMode="numeric"
+              value={form.quantity}
+              onChange={(e) => set('quantity', e.target.value.replace(/[^\d]/g, ''))}
+              error={errors.quantity}
+            />
+            <Select label="คุณภาพ" value={form.quality} onChange={(e) => set('quality', e.target.value)} options={QUALITY_OPTIONS} />
+          </div>
+          <Checkbox
+            checked={form.isBlueprint}
+            onChange={(e) => set('isBlueprint', e.target.checked)}
+            label="ส่งเป็นใบ Blueprint"
+            description="ผู้เล่นได้รับใบ Blueprint สำหรับคราฟต์ แทนไอเทมสำเร็จรูป"
+          />
+        </TabsPanel>
+      </Tabs>
+    </form>
   );
 }

@@ -1,134 +1,96 @@
-'use client';
-
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ArrowUpRight, ShieldCheck, Sparkles, ShoppingBag, User, HelpCircle } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
-const footerGroups = [
+const COLUMNS: Array<{ title: string; links: Array<{ href: string; label: string; external?: boolean }> }> = [
   {
     title: 'ซื้อขาย',
-    icon: ShoppingBag,
     links: [
-      { href: '/shop', label: 'ร้านค้าทางการ' },
+      { href: '/shop', label: 'ร้านค้า' },
       { href: '/market', label: 'ตลาดผู้เล่น' },
-      { href: '/promotion', label: 'โปรโมชั่น' },
       { href: '/packs', label: 'แพ็กเกจ' },
+      { href: '/promotion', label: 'โปรโมชั่น' },
     ],
   },
   {
     title: 'ผู้เล่น',
-    icon: User,
     links: [
+      { href: '/servers', label: 'รายชื่อและสถานะเซิร์ฟเวอร์' },
       { href: '/profile', label: 'IRIS ID' },
       { href: '/orders', label: 'คำสั่งซื้อ' },
-      { href: '/topup', label: 'กระเป๋าและเติมเงิน' },
+      { href: '/topup', label: 'เติมเหรียญ' },
       { href: '/ranking', label: 'อันดับผู้เล่น' },
     ],
   },
   {
-    title: 'ช่วยเหลือ',
-    icon: HelpCircle,
+    title: 'ช่วยเหลือและนโยบาย',
     links: [
       { href: '/support', label: 'ศูนย์ช่วยเหลือ' },
-      { href: '/privacy', label: 'ความเป็นส่วนตัว' },
       { href: '/terms', label: 'ข้อกำหนดบริการ' },
+      { href: '/privacy', label: 'นโยบายความเป็นส่วนตัว' },
       { href: '/profile/data', label: 'จัดการข้อมูลส่วนบุคคล' },
     ],
   },
 ];
 
+const DISCORD_URL = 'https://discord.gg/iris-thailand';
+
+/** Calm four-column footer: brand + three link groups, legal line. No effects. */
 export function Footer() {
-
-
+  const year = new Date().getFullYear();
   return (
-    <footer className="relative mt-20 overflow-hidden border-t border-cyan-500/20 bg-gradient-to-b from-[#081523] via-[#050e18] to-[#02070c] text-slate-300">
-      {/* Aurora Ambient Frost Glow */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(ellipse_at_top,rgba(56,189,248,0.14),transparent_70%)]" />
-      
-      <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-12 pb-14">
-        <div className="grid gap-10 border-b border-white/10 pb-12 lg:grid-cols-12 items-start">
-          
-          {/* Brand & Mission Column (6 cols) */}
-          <div className="space-y-4 lg:col-span-6 max-w-xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-950/60 px-3 py-1 text-xs font-semibold text-cyan-300 shadow-[0_0_12px_rgba(56,189,248,0.2)]">
-              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              <span>IRIS · Frozen Expedition</span>
+    <footer className="mt-24 border-t border-line bg-canvas">
+      <div className="page-shell py-12 sm:py-16">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div className="max-w-sm">
+            <div className="flex items-baseline gap-2">
+              <span className="text-[17px] font-semibold tracking-[0.24em] text-fg">IRIS</span>
+              <span className="text-2xs font-medium tracking-[0.3em] text-fg-subtle">THAILAND</span>
             </div>
-
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold leading-snug text-white">
-              โลกของผู้เล่น เชื่อมถึงกันโดยไม่สะดุด
-            </h2>
-
-            <p className="text-sm leading-relaxed text-slate-400 max-w-lg">
-              ร้านค้า ตลาดผู้เล่น กระเป๋าเงิน การส่งของเข้าเกม และ Support อยู่ภายใต้ IRIS ID เดียวกัน
-              ดูแลทุกขั้นตอนตั้งแต่เลือกซื้อจนถึงรับของในเกม
+            <p className="mt-4 text-sm text-fg-muted">
+              ร้านค้า ตลาดผู้เล่น และเซิร์ฟเวอร์ ARK ของ IRIS ใช้งานผ่าน IRIS ID บัญชีเดียว ของที่ซื้อส่งเข้าเกมตามเซิร์ฟเวอร์ที่คุณเลือก
             </p>
-
-            <div className="pt-2">
-              <Link
-                href="/support"
-                className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-950/50 hover:bg-cyan-900/60 px-4 py-2.5 text-xs font-bold text-cyan-300 hover:text-cyan-200 transition-all shadow-[0_0_15px_rgba(56,189,248,0.15)]"
-              >
-                <span>ติดต่อศูนย์ช่วยเหลือ</span>
-                <ArrowUpRight className="h-4 w-4" />
+            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+              <Link href="/servers" className="text-fg transition-colors duration-fast hover:text-accent">
+                สถานะเซิร์ฟเวอร์
               </Link>
-            </div>
-          </div>
-
-          {/* Navigation Links Columns (6 cols) */}
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:col-span-6">
-            {footerGroups.map((group) => {
-              const Icon = group.icon;
-              return (
-                <div key={group.title} className="space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-200/90 border-b border-white/5 pb-2 flex items-center gap-1.5">
-                    <Icon className="h-3.5 w-3.5 text-cyan-400" />
-                    <span>{group.title}</span>
-                  </h3>
-                  <ul className="space-y-2">
-                    {group.links.map((link) => (
-                      <li key={link.href}>
-                        <Link
-                          href={link.href}
-                          className="text-xs sm:text-sm text-slate-400 hover:text-cyan-300 transition-colors duration-150 inline-block py-0.5 hover:translate-x-0.5 transform"
-                        >
-                          {link.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Bottom Bar: Copyright & Security SLA */}
-        <div className="flex flex-col gap-4 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-slate-300 font-medium">
-              © {new Date().getFullYear()} IRIS Thailand · HeartShop Ecosystem. All rights reserved.
-            </p>
-            <p className="text-[11px] text-slate-500">
-              ภาพ ARK: Studio Wildcard ·{' '}
               <a
-                className="underline underline-offset-4 hover:text-cyan-300 transition-colors"
-                href="https://ark.wiki.gg/"
+                href={DISCORD_URL}
                 target="_blank"
                 rel="noreferrer"
+                className="inline-flex items-center gap-1 text-fg transition-colors duration-fast hover:text-accent"
               >
-                ARK Official Community Wiki
-              </a>{' '}
-              · คลังภาพ IRIS
-            </p>
+                Discord
+                <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
+                <span className="sr-only">(เปิดในแท็บใหม่)</span>
+              </a>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-1.5 text-[11px] text-emerald-400 font-medium shadow-sm">
-            <ShieldCheck className="h-4 w-4 shrink-0" />
-            <span>ธุรกรรมสำคัญตรวจสอบสิทธิ์และบันทึกประวัติทุกขั้นตอน</span>
-          </div>
+          {COLUMNS.map((column) => (
+            <nav key={column.title} aria-label={column.title}>
+              <h2 className="text-xs font-medium text-fg-subtle">{column.title}</h2>
+              <ul className="mt-4 space-y-2.5">
+                {column.links.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="text-sm text-fg-muted transition-colors duration-fast hover:text-fg">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
+        </div>
+
+        <div className="mt-12 flex flex-col gap-2 border-t border-line pt-6 text-xs text-fg-subtle sm:flex-row sm:items-center sm:justify-between">
+          <p>© {year} IRIS Thailand สงวนลิขสิทธิ์</p>
+          <p>
+            ARK: Survival Evolved เป็นเครื่องหมายการค้าของ Studio Wildcard · IRIS ไม่ได้เป็นส่วนหนึ่งของ Studio Wildcard
+          </p>
         </div>
       </div>
     </footer>
   );
 }
+
+export default Footer;

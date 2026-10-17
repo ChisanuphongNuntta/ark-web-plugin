@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageSquare, X, Send, Globe, Server, User } from 'lucide-react';
+import { MessageSquare, X, Send } from 'lucide-react';
+import { IconButton, SegmentedControl, useIsClient } from '@/components/ui';
 import {
   connectSocket,
   disconnectSocket,
@@ -19,16 +20,10 @@ interface ChatServer {
   map?: string;
 }
 
-const SOURCE_ICONS = {
-  game: '🎮',
-  discord: '💬',
-  web: '🌐',
-};
-
-const SOURCE_COLORS = {
-  game: 'text-green-400',
-  discord: 'text-indigo-400',
-  web: 'text-blue-400',
+const SOURCE_LABEL: Record<ChatMessage['source'], string> = {
+  game: 'ในเกม',
+  discord: 'Discord',
+  web: 'เว็บ',
 };
 
 export default function ChatWidget() {
@@ -38,15 +33,29 @@ export default function ChatWidget() {
   const [selectedServer, setSelectedServer] = useState<number | null>(null);
   const [servers, setServers] = useState<ChatServer[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const isClient = useIsClient();
+  // Read on render (client only) so login/logout in another tab is picked up on the next render.
+  const isLoggedIn = isClient && document.cookie.split(';').some((c) => c.trim().startsWith('token='));
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  // Only return focus to the launcher after the panel was open (not on first mount).
+  const wasOpenRef = useRef(false);
 
-  // Check login status
+  // Non-modal panel: move focus in on open, back to the launcher on close.
   useEffect(() => {
-    const token = document.cookie.split(';').find(c => c.trim().startsWith('token='));
-    setIsLoggedIn(!!token);
-  }, []);
+    if (isOpen) {
+      wasOpenRef.current = true;
+      (inputRef.current ?? closeRef.current)?.focus();
+    } else if (wasOpenRef.current) {
+      wasOpenRef.current = false;
+      launcherRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  const close = useCallback(() => setIsOpen(false), []);
 
   // Fetch servers
   useEffect(() => {
@@ -96,7 +105,7 @@ export default function ChatWidget() {
 
   // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ block: 'end' });
   }, [messages]);
 
   const handleSend = useCallback(() => {
@@ -106,7 +115,7 @@ export default function ChatWidget() {
     setInputValue('');
   }, [inputValue, selectedServer, isLoggedIn]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -120,170 +129,132 @@ export default function ChatWidget() {
     });
   };
 
+  const roomOptions = [
+    { value: 'all', label: 'ทุกเซิร์ฟเวอร์' },
+    ...servers.map((server) => ({ value: String(server.id), label: server.name })),
+  ];
+
   if (!isOpen) {
     return (
-      <button
-        type="button"
+      <IconButton
+        ref={launcherRef}
+        variant="secondary"
+        size="lg"
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 z-50 bg-gradient-to-r from-emerald-600 to-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
-        title="Open Chat"
-        aria-label="เปิดหน้าต่างแชท"
+        aria-label="เปิดแชท"
+        className="fixed bottom-4 right-4 z-overlay bg-surface"
       >
-        <MessageSquare size={24} />
-      </button>
+        <MessageSquare className="h-[18px] w-[18px]" strokeWidth={1.5} aria-hidden="true" />
+      </IconButton>
     );
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-96 h-[500px] bg-gray-900/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-600/20 to-blue-600/20 p-4 border-b border-gray-700/50">
-        <div className="flex items-center justify-between">
+    <section
+      aria-label="แชทรวม"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          close();
+        }
+      }}
+      className="fixed bottom-4 left-4 right-4 z-overlay flex h-[min(480px,calc(100dvh-6rem))] flex-col overflow-hidden rounded-card border border-line-strong bg-surface shadow-overlay sm:left-auto sm:w-96"
+    >
+      <header className="border-b border-line px-4 pt-3">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <MessageSquare size={20} className="text-emerald-400" />
-            <h3 className="font-semibold text-white">Cross-Chat</h3>
-            <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+            <h2 className="text-sm font-semibold text-fg">แชทรวม</h2>
+            <span className="flex items-center gap-1.5 text-xs text-fg-subtle">
+              <span
+                aria-hidden="true"
+                className={`h-1.5 w-1.5 rounded-full ${isConnected ? 'bg-success' : 'bg-fg-subtle'}`}
+              />
+              {isConnected ? 'เชื่อมต่อแล้ว' : 'กำลังเชื่อมต่อ'}
+            </span>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsOpen(false)}
-            className="text-gray-400 hover:text-white transition-colors"
-            aria-label="ปิดหน้าต่างแชท"
-          >
-            <X size={20} />
-          </button>
+          <IconButton ref={closeRef} size="sm" onClick={close} aria-label="ปิดแชท">
+            <X className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+          </IconButton>
         </div>
 
-        {/* Server tabs */}
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => setSelectedServer(null)}
-            className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
-              selectedServer === null
-                ? 'bg-emerald-600 text-white'
-                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-            }`}
-          >
-            <Globe size={12} />
-            Global
-          </button>
-          {servers.map((server) => (
-            <button
-              type="button"
-              key={server.id}
-              onClick={() => setSelectedServer(server.id)}
-              className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
-                selectedServer === server.id
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              <Server size={12} />
-              {server.name}
-            </button>
-          ))}
-        </div>
-      </div>
+        <SegmentedControl
+          aria-label="ห้องแชท"
+          size="sm"
+          value={selectedServer === null ? 'all' : String(selectedServer)}
+          onChange={(v) => setSelectedServer(v === 'all' ? null : Number(v))}
+          options={roomOptions}
+          className="mb-3 mt-2"
+        />
+      </header>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4" aria-live="polite">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
-            <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No messages yet</p>
-            <p className="text-xs">Be the first to say something!</p>
+          <div className="py-10 text-center">
+            <p className="text-sm text-fg-muted">ยังไม่มีข้อความในห้องนี้</p>
+            <p className="mt-1 text-xs text-fg-subtle">ข้อความจากในเกม Discord และเว็บจะแสดงที่นี่</p>
           </div>
         ) : (
           messages.map((msg) => (
-            <div key={msg.id} className="group">
-              <div className="flex items-start gap-2">
-                {/* Avatar or icon */}
-                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
-                  {msg.senderAvatar ? (
-                    <img
-                      src={msg.senderAvatar}
-                      alt={msg.senderName}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  ) : (
-                    <span className="text-lg">{SOURCE_ICONS[msg.source]}</span>
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Server/Source tag */}
-                    {msg.source === 'game' && msg.serverName && (
-                      <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-xs rounded">
-                        {msg.serverName}
-                      </span>
-                    )}
-                    {msg.source === 'discord' && (
-                      <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded">
-                        Discord
-                      </span>
-                    )}
-                    {msg.source === 'web' && (
-                      <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded">
-                        Web
-                      </span>
-                    )}
-                    <span className={`font-medium text-sm ${SOURCE_COLORS[msg.source]}`}>
-                      {msg.senderName}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {formatTime(msg.createdAt)}
-                    </span>
-                  </div>
-                  <p className="text-gray-300 text-sm break-words">{msg.content}</p>
-                </div>
+            <article key={msg.id} className="flex items-start gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-surface-2 text-xs text-fg-muted">
+                {msg.senderAvatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={msg.senderAvatar} alt="" className="h-8 w-8 object-cover" />
+                ) : (
+                  <span aria-hidden="true">{msg.senderName?.slice(0, 1).toUpperCase()}</span>
+                )}
               </div>
-            </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                  <span className="text-sm font-medium text-fg">{msg.senderName}</span>
+                  <span className="text-xs text-fg-subtle">
+                    {msg.source === 'game' && msg.serverName ? msg.serverName : SOURCE_LABEL[msg.source]}
+                  </span>
+                  <time className="font-mono text-xs tabular-nums text-fg-subtle" dateTime={msg.createdAt}>
+                    {formatTime(msg.createdAt)}
+                  </time>
+                </div>
+                <p className="mt-0.5 break-words text-sm text-fg-muted">{msg.content}</p>
+              </div>
+            </article>
           ))
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Error message */}
       {error && (
-        <div className="mx-4 mb-2 px-3 py-2 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+        <p role="alert" className="mx-4 mb-2 rounded-control border border-danger/25 bg-danger/10 px-3 py-2 text-xs text-danger">
           {error}
-        </div>
+        </p>
       )}
 
-      {/* Input */}
-      <div className="p-4 border-t border-gray-700/50">
+      <footer className="border-t border-line p-3">
         {isLoggedIn ? (
           <div className="flex gap-2">
             <input
+              ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type a message..."
+              onKeyDown={handleKeyDown}
+              placeholder="พิมพ์ข้อความ"
+              aria-label="ข้อความ"
               maxLength={500}
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
+              className="h-10 min-w-0 flex-1 rounded-control border border-line-strong bg-canvas px-3 text-sm text-fg placeholder:text-fg-subtle transition-colors duration-fast focus:border-accent"
             />
-            <button
-              type="button"
+            <IconButton
+              variant="primary"
               onClick={handleSend}
               disabled={!inputValue.trim()}
               aria-label="ส่งข้อความ"
-              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
             >
-              <Send size={20} />
-            </button>
+              <Send className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            </IconButton>
           </div>
         ) : (
-          <div className="text-center py-2">
-            <p className="text-gray-400 text-sm">
-              <User size={16} className="inline mr-1" />
-              Login to send messages
-            </p>
-          </div>
+          <p className="py-1 text-center text-xs text-fg-muted">เข้าสู่ระบบเพื่อส่งข้อความ</p>
         )}
-      </div>
-    </div>
+      </footer>
+    </section>
   );
 }

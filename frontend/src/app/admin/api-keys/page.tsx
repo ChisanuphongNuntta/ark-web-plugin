@@ -1,29 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as React from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Download, RotateCcw, Search, Trash2 } from 'lucide-react';
+import {
+  Badge,
+  Button,
+  Dialog,
+  Drawer,
+  ErrorMessage,
+  IconButton,
+  Input,
+  PageHeader,
+  Pagination,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableEmptyRow,
+  TableHead,
+  TableHeaderCell,
+  TableLoadingRows,
+  TableRow,
+  useToast,
+} from '@/components/ui';
+import { AdminNoAccess, AdminToolbar, DetailList, DrawerSection, formatDateTime } from '@/components/admin';
+import { adminApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { usePermissions } from '@/hooks/usePermissions';
-import { adminApi } from '@/lib/api';
-import {
-  Loader2,
-  Search,
-  Key,
-  Wifi,
-  Server,
-  Map,
-  Clock,
-  RefreshCw,
-  Trash2,
-  Activity,
-  AlertCircle,
-  CheckCircle,
-  Download,
-} from 'lucide-react';
-import Link from 'next/link';
-import Surface from '@/components/ui/Surface';
-import { Button } from '@/components/ui/Button';
-import Dialog from '@/components/ui/Dialog';
 
 interface ApiKeyUser {
   id: string;
@@ -42,471 +46,370 @@ interface ApiKeyUser {
   isBanned: boolean;
 }
 
+interface ApiKeysResponse {
+  apiKeys?: ApiKeyUser[];
+  pagination?: { page: number; limit: number; total: number; totalPages: number };
+}
+
+const PAGE_SIZE = 20;
+
+function apiErrorText(err: unknown, fallback: string): string {
+  const data = (err as { response?: { data?: { error?: unknown; message?: unknown } } })?.response?.data;
+  if (data && typeof data.error === 'string' && data.error) return data.error;
+  if (data && typeof data.message === 'string' && data.message) return data.message;
+  return fallback;
+}
+
+/** Blob error bodies (download endpoint) need to be read before they can be shown. */
+async function blobErrorText(err: unknown, fallback: string): Promise<string> {
+  const data = (err as { response?: { data?: unknown } })?.response?.data;
+  if (typeof Blob !== 'undefined' && data instanceof Blob) {
+    try {
+      const parsed = JSON.parse(await data.text()) as { message?: string; error?: string };
+      return parsed.message || parsed.error || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return apiErrorText(err, fallback);
+}
+
+function saveBlob(data: BlobPart, contentDisposition: string | undefined, fallbackName: string) {
+  const url = window.URL.createObjectURL(new Blob([data]));
+  const match = contentDisposition?.match(/filename="?([^";]+)"?/);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', match?.[1] ?? fallbackName);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export default function AdminApiKeysPage() {
   const { user, isLoading: authLoading } = useAuthStore();
-  const { canManageApiKeys, apiKeyServerId } = usePermissions();
+  const { canManageApiKeys, isRoot } = usePermissions();
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [message, setMessage] = useState<{
-    type: 'success' | 'error';
-    text: string;
-  } | null>(null);
+  const toast = useToast();
 
-  const showMessage = (type: 'success' | 'error', text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 5000);
-  };
+  const [searchInput, setSearchInput] = React.useState('');
+  const search = React.useDeferredValue(searchInput.trim());
+  const [page, setPage] = React.useState(1);
+  const [selected, setSelected] = React.useState<ApiKeyUser | null>(null);
+  const [confirm, setConfirm] = React.useState<{ kind: 'reset' | 'revoke'; target: ApiKeyUser } | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const query = useQuery({
     queryKey: ['admin-api-keys', page, search],
-    queryFn: () => adminApi.getApiKeys(page, search).then((res) => res.data),
+    queryFn: () => adminApi.getApiKeys(page, search || undefined).then((res) => res.data as ApiKeysResponse),
     enabled: canManageApiKeys,
+    placeholderData: (prev) => prev,
   });
+
+  const rows = query.data?.apiKeys ?? [];
+  const total = query.data?.pagination?.total ?? 0;
+  const pageSize = query.data?.pagination?.limit ?? PAGE_SIZE;
+
+  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['admin-api-keys'] });
 
   const resetIpMutation = useMutation({
-    mutationFn: (userId: string) => adminApi.resetApiKeyIp(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-api-keys'] });
-      showMessage('success', 'IP Whitelist ถูกรีเซ็ตแล้ว');
+    mutationFn: (target: ApiKeyUser) => adminApi.resetApiKeyIp(target.id),
+    onSuccess: (_d, target) => {
+      toast.success('รีเซ็ต IP แล้ว', `${target.discordUsername ?? 'ผู้ใช้'} — ปลั๊กอินจะลงทะเบียน IP ใหม่เมื่อเชื่อมต่อครั้งถัดไป`);
+      setConfirm(null);
+      setSelected((s) => (s && s.id === target.id ? { ...s, apiKeyIp: null } : s));
+      invalidate();
     },
-    onError: () => {
-      showMessage('error', 'เกิดข้อผิดพลาดในการรีเซ็ต IP');
-    },
+    onError: (err) => toast.error('รีเซ็ต IP ไม่สำเร็จ', apiErrorText(err, 'ลองอีกครั้ง')),
   });
 
-  const revokeKeyMutation = useMutation({
-    mutationFn: (userId: string) => adminApi.revokeApiKey(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-api-keys'] });
-      showMessage('success', 'API Key ถูกยกเลิกแล้ว');
+  const revokeMutation = useMutation({
+    mutationFn: (target: ApiKeyUser) => adminApi.revokeApiKey(target.id),
+    onSuccess: (_d, target) => {
+      toast.success('ยกเลิก API key แล้ว', target.discordUsername ?? undefined);
+      setConfirm(null);
+      setSelected(null);
+      invalidate();
     },
-    onError: () => {
-      showMessage('error', 'เกิดข้อผิดพลาดในการยกเลิก API Key');
-    },
+    onError: (err) => toast.error('ยกเลิก API key ไม่สำเร็จ', apiErrorText(err, 'ลองอีกครั้ง')),
   });
 
   const downloadMutation = useMutation({
-    mutationFn: (userId: string) => adminApi.downloadPlugin(userId),
+    mutationFn: (target: ApiKeyUser) => adminApi.downloadPlugin(target.id),
     onSuccess: (response) => {
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      const contentDisposition = response.headers['content-disposition'];
-      let fileName = 'HeartShop_Plugin.zip';
-      if (contentDisposition) {
-        const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
-        if (fileNameMatch.length === 2) fileName = fileNameMatch[1];
-      }
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      showMessage('success', '📦 Download Started!');
+      saveBlob(response.data as BlobPart, response.headers?.['content-disposition'] as string | undefined, 'HeartShop_Plugin.zip');
+      toast.success('เริ่มดาวน์โหลดแพ็กเกจปลั๊กอินแล้ว');
     },
-    onError: (error: any) => {
-      if (error.response?.data instanceof Blob) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const errorObj = JSON.parse(reader.result as string);
-            showMessage('error', errorObj.message || errorObj.error || 'Download failed');
-          } catch (e) {
-            showMessage('error', 'Download failed'); // Fallback
-          }
-        };
-        reader.readAsText(error.response.data);
-      } else {
-        showMessage('error', 'Download failed');
-      }
-    },
+    onError: async (err) => toast.error('ดาวน์โหลดไม่สำเร็จ', await blobErrorText(err, 'ลองอีกครั้ง')),
   });
 
-  const [modalConfig, setModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    content: React.ReactNode;
-    confirmText?: string;
-    cancelText?: string;
-    variant?: 'default' | 'danger' | 'warning' | 'success';
-    onConfirm?: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    content: null,
-  });
-
-  const closeModal = () => {
-    setModalConfig((prev) => ({ ...prev, isOpen: false }));
-  };
-
-  const showModal = ({
-    title,
-    content,
-    onConfirm,
-    variant = 'default',
-    confirmText = 'ยืนยัน',
-    cancelText = 'ยกเลิก',
-  }: {
-    title: string;
-    content: React.ReactNode;
-    onConfirm?: () => void;
-    variant?: 'default' | 'danger' | 'warning' | 'success';
-    confirmText?: string;
-    cancelText?: string;
-  }) => {
-    setModalConfig({
-      isOpen: true,
-      title,
-      content,
-      onConfirm: onConfirm
-        ? () => {
-          onConfirm();
-          closeModal();
-        }
-        : undefined,
-      variant,
-      confirmText,
-      cancelText,
-    });
-  };
-
-  const handleResetIp = (apiKeyUser: ApiKeyUser) => {
-    showModal({
-      title: 'รีเซ็ต IP Whitelist?',
-      content: (
-        <p>
-          ต้องการรีเซ็ต IP Whitelist ของ <strong className="text-white">{apiKeyUser.discordUsername}</strong> ใช่หรือไม่?
-        </p>
-      ),
-      onConfirm: () => resetIpMutation.mutate(apiKeyUser.id),
-      variant: 'warning',
-      confirmText: 'รีเซ็ต',
-    });
-  };
-
-  const handleRevokeKey = (apiKeyUser: ApiKeyUser) => {
-    showModal({
-      title: 'ยกเลิก API Key?',
-      content: (
-        <div className="space-y-2">
-          <p>
-            คุณต้องการยกเลิก API Key ของ <strong className="text-white">{apiKeyUser.discordUsername}</strong> ใช่หรือไม่?
-          </p>
-          <p className="text-red-400 text-sm bg-red-500/10 p-2 rounded border border-red-500/20">
-            ⚠️ การดำเนินการนี้จะทำให้ ARK Plugin ของผู้ใช้ใช้งานไม่ได้ทันที
-          </p>
-        </div>
-      ),
-      onConfirm: () => revokeKeyMutation.mutate(apiKeyUser.id),
-      variant: 'danger',
-      confirmText: 'ยกเลิก Key',
-    });
-  };
-
-  if (authLoading) {
+  if (authLoading || !user) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="relative">
-          <div className="absolute inset-0 bg-emerald-500/30 rounded-full blur-xl animate-pulse"></div>
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-400 relative" />
-        </div>
+      <div className="pb-16" aria-busy="true">
+        <PageHeader eyebrow="ระบบ" title="คีย์ API" />
       </div>
     );
   }
 
   if (!canManageApiKeys) {
     return (
-      <Surface className="border-red-500/30">
-        <div className="text-center py-12">
-          <p className="text-red-400">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
-          <p className="text-gray-500 text-sm mt-2">เฉพาะ Server Admin และ Root เท่านั้น</p>
-        </div>
-      </Surface>
+      <div className="pb-16">
+        <PageHeader eyebrow="ระบบ" title="คีย์ API" />
+        <AdminNoAccess description="หน้านี้สำหรับผู้ดูแลเซิร์ฟเวอร์และผู้ดูแลสูงสุด" />
+      </div>
     );
   }
 
+  const busyFor = (id: string) =>
+    (resetIpMutation.isPending && resetIpMutation.variables?.id === id) ||
+    (revokeMutation.isPending && revokeMutation.variables?.id === id);
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Link href="/admin" className="text-gray-400 hover:text-white text-sm">
-            &larr; กลับ Admin
-          </Link>
-          <h1 className="text-3xl font-bold mt-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-3">
-            <Key className="h-8 w-8 text-emerald-400" />
-            จัดการ API Keys
-          </h1>
-        </div>
-        <div className="text-right">
-          <p className="text-gray-400 text-sm">API Keys ทั้งหมด</p>
-          <p className="text-2xl font-bold text-white">{data?.pagination?.total || 0}</p>
-        </div>
-      </div>
+    <div className="min-w-0 pb-16">
+      <PageHeader
+        eyebrow="ระบบ"
+        title="คีย์ API"
+        description="คีย์ที่ปลั๊กอินในเซิร์ฟเวอร์ใช้เชื่อมต่อกับระบบ คีย์แสดงแบบย่อเพื่อความปลอดภัย"
+      />
 
-      {/* Message Alert */}
-      {message && (
-        <Surface className={message.type === 'success' ? 'border-green-500/30' : 'border-red-500/30'}>
-          <div className={`p-4 ${message.type === 'success' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-            <div className="flex items-center gap-3">
-              {message.type === 'success' ? (
-                <CheckCircle className="h-5 w-5 text-green-400" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-red-400" />
-              )}
-              <span className={message.type === 'success' ? 'text-green-400' : 'text-red-400'}>
-                {message.text}
-              </span>
-            </div>
-          </div>
-        </Surface>
-      )}
+      <AdminToolbar
+        actions={
+          <span className="text-sm text-fg-muted">
+            ทั้งหมด <span className="font-mono tabular-nums text-fg">{total.toLocaleString('th-TH')}</span> คีย์
+          </span>
+        }
+      >
+        <Input
+          label="ค้นหา"
+          hideLabel
+          size="sm"
+          wrapperClassName="w-full sm:w-80"
+          leftIcon={<Search className="h-4 w-4" strokeWidth={1.5} />}
+          placeholder="ชื่อ Discord, Steam ID หรือชื่อเซิร์ฟเวอร์"
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setPage(1);
+          }}
+        />
+      </AdminToolbar>
 
-      {/* Search */}
-      <Surface glowOnHover>
-        <div className="p-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-emerald-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="ค้นหาด้วย Discord Username, Steam ID, หรือ Server Name..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="input w-full pl-12 bg-black/40 border-emerald-500/30 focus:border-emerald-500/50"
-            />
-          </div>
-        </div>
-      </Surface>
-
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="relative">
-            <div className="absolute inset-0 bg-emerald-500/30 rounded-full blur-xl animate-pulse"></div>
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-400 relative" />
-          </div>
-        </div>
+      {query.isError ? (
+        <ErrorMessage
+          title="โหลดรายการ API key ไม่สำเร็จ"
+          message={apiErrorText(query.error, 'ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง')}
+          onRetry={() => void query.refetch()}
+        />
       ) : (
         <>
-          {/* API Keys Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {data?.apiKeys?.map((apiKeyUser: ApiKeyUser) => (
-              <Surface key={apiKeyUser.id} glowOnHover>
-                <div className="p-5">
-                  {/* User Header */}
-                  <div className="flex items-center gap-4 mb-4">
-                    {apiKeyUser.discordAvatar ? (
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-emerald-500/30 rounded-full blur-md"></div>
-                        <img
-                          src={apiKeyUser.discordAvatar}
-                          alt=""
-                          className="w-12 h-12 rounded-full relative border-2 border-emerald-500/30"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/20 border-2 border-emerald-500/30" />
-                    )}
-                    <div className="flex-1">
-                      <h3 className="font-bold text-white">
-                        {apiKeyUser.discordUsername || 'Unknown'}
-                      </h3>
-                      <p className="text-xs text-gray-500 font-mono">{apiKeyUser.apiKey}</p>
-                    </div>
-                    {apiKeyUser.isBanned && (
-                      <span className="px-2 py-1 rounded-lg text-xs bg-red-500/20 text-red-400 border border-red-500/30">
-                        Banned
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Server Info */}
-                  {apiKeyUser.apiKeyServerName ? (
-                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Server className="h-4 w-4 text-green-400" />
-                        <span className="text-green-400 font-semibold text-sm">เชื่อมต่ออยู่</span>
-                        <div className="ml-auto h-2 w-2 bg-green-400 rounded-full animate-pulse"></div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-gray-500 text-xs">Server Name</p>
-                          <p className="text-white font-medium">{apiKeyUser.apiKeyServerName}</p>
+          <TableContainer aria-busy={query.isFetching || undefined}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeaderCell>ผู้ใช้</TableHeaderCell>
+                  <TableHeaderCell>คีย์</TableHeaderCell>
+                  <TableHeaderCell>เซิร์ฟเวอร์</TableHeaderCell>
+                  <TableHeaderCell>IP ที่ลงทะเบียน</TableHeaderCell>
+                  <TableHeaderCell>ใช้งานล่าสุด</TableHeaderCell>
+                  <TableHeaderCell>
+                    <span className="sr-only">การทำงาน</span>
+                  </TableHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {query.isLoading ? (
+                  <TableLoadingRows columns={6} rows={6} />
+                ) : rows.length === 0 ? (
+                  <TableEmptyRow
+                    colSpan={6}
+                    title={search ? 'ไม่พบคีย์ที่ตรงกับคำค้น' : 'ยังไม่มี API key'}
+                    description={search ? 'ลองค้นด้วยชื่อ Discord หรือ Steam ID' : 'คีย์จะปรากฏเมื่อผู้ดูแลเซิร์ฟเวอร์สร้างคีย์จากบัญชีของตน'}
+                  />
+                ) : (
+                  rows.map((row) => (
+                    <TableRow key={row.id} interactive onClick={() => setSelected(row)}>
+                      <TableCell className="min-w-[200px]">
+                        <div className="flex items-center gap-3">
+                          <Avatar src={row.discordAvatar} />
+                          <div className="min-w-0">
+                            <button
+                              type="button"
+                              className="rounded-[4px] text-left hover:text-accent block max-w-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelected(row);
+                              }}
+                              aria-label={`ดูคีย์ของ ${row.discordUsername || 'ไม่ทราบชื่อ'}`}
+                            >
+                              <span className="block truncate font-medium text-fg">{row.discordUsername || 'ไม่ทราบชื่อ'}</span>
+                            </button>
+                            <p className="truncate font-mono text-xs text-fg-subtle">{row.steamId || '—'}</p>
+                          </div>
+                          {row.isBanned ? <Badge tone="danger">ถูกแบน</Badge> : null}
                         </div>
-                        <div>
-                          <p className="text-gray-500 text-xs">Map</p>
-                          <p className="text-emerald-400 font-medium">{apiKeyUser.apiKeyServerMap || '-'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-500/10 border border-gray-500/20 rounded-xl p-4 mb-4">
-                      <div className="flex items-center gap-2">
-                        <Server className="h-4 w-4 text-gray-500" />
-                        <span className="text-gray-500 text-sm">ยังไม่มีการเชื่อมต่อ</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Info Grid */}
-                  <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-                    {/* IP Address */}
-                    <div className="bg-black/40 rounded-lg p-3 border border-emerald-500/10">
-                      <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
-                        <Wifi className="h-3 w-3" />
-                        Registered IP
-                      </div>
-                      {apiKeyUser.apiKeyIp ? (
-                        <p className="text-green-400 font-mono text-xs">{apiKeyUser.apiKeyIp}</p>
-                      ) : (
-                        <p className="text-gray-500 text-xs">รอการเชื่อมต่อ</p>
-                      )}
-                    </div>
-
-                    {/* Last Used */}
-                    <div className="bg-black/40 rounded-lg p-3 border border-emerald-500/10">
-                      <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
-                        <Activity className="h-3 w-3" />
-                        ใช้งานล่าสุด
-                      </div>
-                      {apiKeyUser.apiKeyLastUsed ? (
-                        <p className="text-teal-400 text-xs">
-                          {new Date(apiKeyUser.apiKeyLastUsed).toLocaleString('th-TH', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          })}
-                        </p>
-                      ) : (
-                        <p className="text-gray-500 text-xs">-</p>
-                      )}
-                    </div>
-
-                    {/* Created At */}
-                    <div className="bg-black/40 rounded-lg p-3 border border-emerald-500/10">
-                      <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
-                        <Clock className="h-3 w-3" />
-                        สร้างเมื่อ
-                      </div>
-                      {apiKeyUser.apiKeyCreatedAt ? (
-                        <p className="text-gray-400 text-xs">
-                          {new Date(apiKeyUser.apiKeyCreatedAt).toLocaleDateString('th-TH')}
-                        </p>
-                      ) : (
-                        <p className="text-gray-500 text-xs">-</p>
-                      )}
-                    </div>
-
-                    {/* Steam ID */}
-                    <div className="bg-black/40 rounded-lg p-3 border border-emerald-500/10">
-                      <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
-                        Steam ID
-                      </div>
-                      <p className="text-gray-400 text-xs font-mono truncate">
-                        {apiKeyUser.steamId || '-'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    {user?.role === 'root' && (
-                      <button
-                        onClick={() => downloadMutation.mutate(apiKeyUser.id)}
-                        disabled={downloadMutation.isPending}
-                        className="px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium flex items-center justify-center gap-2 transition-all"
-                        title="ดาวน์โหลด Plugin Package"
-                      >
-                        {downloadMutation.isPending && downloadMutation.variables === apiKeyUser.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                      </TableCell>
+                      <TableCell mono muted>
+                        {row.apiKey || '—'}
+                      </TableCell>
+                      <TableCell>
+                        {row.apiKeyServerName ? (
+                          <>
+                            <p className="text-fg">{row.apiKeyServerName}</p>
+                            <p className="text-xs text-fg-subtle">{row.apiKeyServerMap || '—'}</p>
+                          </>
                         ) : (
-                          <Download className="h-4 w-4" />
+                          <span className="text-fg-subtle">ยังไม่เชื่อมต่อ</span>
                         )}
-                        Plugin Package
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleResetIp(apiKeyUser)}
-                      disabled={resetIpMutation.isPending}
-                      className="flex-1 px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm font-medium flex items-center justify-center gap-2 transition-all"
-                    >
-                      {resetIpMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
-                      รีเซ็ต IP
-                    </button>
-                    <button
-                      onClick={() => handleRevokeKey(apiKeyUser)}
-                      disabled={revokeKeyMutation.isPending}
-                      className="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-medium flex items-center justify-center gap-2 transition-all"
-                    >
-                      {revokeKeyMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </Surface>
-            ))}
-
-            {(!data?.apiKeys || data.apiKeys.length === 0) && (
-              <div className="col-span-2">
-                <Surface>
-                  <div className="py-12 text-center text-gray-400">
-                    <Key className="h-12 w-12 mx-auto mb-4 text-emerald-400/50" />
-                    <p>ไม่พบ API Keys</p>
-                  </div>
-                </Surface>
-              </div>
-            )}
-          </div>
-
-          {/* Pagination */}
-          {data?.pagination && data.pagination.totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4">
-              <Button
-                variant="secondary"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                ก่อนหน้า
-              </Button>
-              <div className="px-4 py-2 bg-black/40 rounded-xl border border-emerald-500/20">
-                <span className="text-gray-400">หน้า </span>
-                <span className="text-emerald-400 font-bold">{page}</span>
-                <span className="text-gray-400"> / {data.pagination.totalPages}</span>
-              </div>
-              <Button
-                variant="secondary"
-                onClick={() => setPage((p) => Math.min(data.pagination.totalPages, p + 1))}
-                disabled={page === data.pagination.totalPages}
-              >
-                ถัดไป
-              </Button>
-            </div>
-          )}
+                      </TableCell>
+                      <TableCell mono muted>
+                        {row.apiKeyIp || <span className="font-sans text-fg-subtle">รอเชื่อมต่อ</span>}
+                      </TableCell>
+                      <TableCell mono muted>
+                        {formatDateTime(row.apiKeyLastUsed)}
+                      </TableCell>
+                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                        <span className="inline-flex gap-1">
+                          {isRoot ? (
+                            <IconButton
+                              aria-label={`ดาวน์โหลดแพ็กเกจปลั๊กอินของ ${row.discordUsername ?? 'ผู้ใช้'}`}
+                              size="sm"
+                              disabled={downloadMutation.isPending}
+                              onClick={() => downloadMutation.mutate(row)}
+                            >
+                              <Download className="h-4 w-4" strokeWidth={1.5} />
+                            </IconButton>
+                          ) : null}
+                          <IconButton
+                            aria-label={`รีเซ็ต IP ของ ${row.discordUsername ?? 'ผู้ใช้'}`}
+                            size="sm"
+                            disabled={busyFor(row.id)}
+                            onClick={() => setConfirm({ kind: 'reset', target: row })}
+                          >
+                            <RotateCcw className="h-4 w-4" strokeWidth={1.5} />
+                          </IconButton>
+                          <IconButton
+                            aria-label={`ยกเลิก API key ของ ${row.discordUsername ?? 'ผู้ใช้'}`}
+                            size="sm"
+                            disabled={busyFor(row.id)}
+                            onClick={() => setConfirm({ kind: 'revoke', target: row })}
+                          >
+                            <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                          </IconButton>
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          {total > pageSize ? (
+            <Pagination className="mt-4" page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+          ) : null}
         </>
       )}
-      {/* Accessible Dialog */}
-      <Dialog
-        isOpen={modalConfig.isOpen}
-        onClose={closeModal}
-        onConfirm={modalConfig.onConfirm}
-        title={modalConfig.title}
-        variant={modalConfig.variant}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
+
+      <Drawer
+        open={!!selected}
+        onOpenChange={(open) => !open && setSelected(null)}
+        title={selected?.discordUsername || 'API key'}
+        description="รายละเอียดคีย์และการเชื่อมต่อล่าสุด"
+        footer={
+          selected ? (
+            <>
+              {isRoot ? (
+                <Button
+                  variant="secondary"
+                  leftIcon={<Download className="h-4 w-4" strokeWidth={1.5} />}
+                  loading={downloadMutation.isPending}
+                  onClick={() => downloadMutation.mutate(selected)}
+                >
+                  แพ็กเกจปลั๊กอิน
+                </Button>
+              ) : null}
+              <Button variant="secondary" onClick={() => setConfirm({ kind: 'reset', target: selected })}>
+                รีเซ็ต IP
+              </Button>
+              <Button variant="danger" onClick={() => setConfirm({ kind: 'revoke', target: selected })}>
+                ยกเลิกคีย์
+              </Button>
+            </>
+          ) : null
+        }
       >
-        {modalConfig.content}
-      </Dialog>
+        {selected ? (
+          <>
+            <DrawerSection title="บัญชี">
+              <DetailList
+                items={[
+                  { label: 'Discord', value: selected.discordUsername },
+                  { label: 'Discord ID', value: selected.discordId, mono: true },
+                  { label: 'Steam ID', value: selected.steamId, mono: true },
+                  { label: 'สถานะบัญชี', value: selected.isBanned ? <Badge tone="danger">ถูกแบน</Badge> : 'ปกติ' },
+                ]}
+              />
+            </DrawerSection>
+            <DrawerSection title="คีย์">
+              <DetailList
+                items={[
+                  { label: 'คีย์ (ย่อ)', value: selected.apiKey, mono: true },
+                  { label: 'สร้างเมื่อ', value: formatDateTime(selected.apiKeyCreatedAt), mono: true },
+                  { label: 'IP ที่ลงทะเบียน', value: selected.apiKeyIp ?? 'รอการเชื่อมต่อครั้งแรก', mono: !!selected.apiKeyIp },
+                  { label: 'ใช้งานล่าสุด', value: formatDateTime(selected.apiKeyLastUsed), mono: true },
+                ]}
+              />
+            </DrawerSection>
+            <DrawerSection title="เซิร์ฟเวอร์ที่ผูกไว้">
+              <DetailList
+                items={[
+                  { label: 'ชื่อ', value: selected.apiKeyServerName },
+                  { label: 'แผนที่', value: selected.apiKeyServerMap },
+                  { label: 'พอร์ต', value: selected.apiKeyServerPort, mono: true },
+                  { label: 'Server ID', value: selected.apiKeyServerId, mono: true },
+                ]}
+              />
+            </DrawerSection>
+          </>
+        ) : null}
+      </Drawer>
+
+      <Dialog
+        open={confirm?.kind === 'reset'}
+        onOpenChange={(open) => !open && setConfirm(null)}
+        title="รีเซ็ต IP ที่ลงทะเบียน"
+        description={
+          confirm?.kind === 'reset'
+            ? `IP ของ ${confirm.target.discordUsername ?? 'ผู้ใช้'} จะถูกล้าง ปลั๊กอินจะลงทะเบียน IP ใหม่อัตโนมัติเมื่อเชื่อมต่อครั้งถัดไป`
+            : undefined
+        }
+        variant="warning"
+        confirmText="รีเซ็ต IP"
+        loading={resetIpMutation.isPending}
+        onConfirm={() => confirm && resetIpMutation.mutate(confirm.target)}
+      />
+
+      <Dialog
+        open={confirm?.kind === 'revoke'}
+        onOpenChange={(open) => !open && setConfirm(null)}
+        title="ยกเลิก API key"
+        description={
+          confirm?.kind === 'revoke'
+            ? `ปลั๊กอินที่ใช้คีย์ของ ${confirm.target.discordUsername ?? 'ผู้ใช้'} จะเชื่อมต่อไม่ได้ทันที จนกว่าจะสร้างคีย์ใหม่และใส่ใน config ของเซิร์ฟเวอร์`
+            : undefined
+        }
+        variant="danger"
+        confirmText="ยกเลิกคีย์"
+        loading={revokeMutation.isPending}
+        onConfirm={() => confirm && revokeMutation.mutate(confirm.target)}
+      />
     </div>
+  );
+}
+
+function Avatar({ src }: { src: string | null }) {
+  if (!src) return <span className="h-8 w-8 shrink-0 rounded-full border border-line bg-surface-2" aria-hidden="true" />;
+  return (
+    // Discord CDN avatars; next/image would need a remote pattern for every CDN host.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" className="h-8 w-8 shrink-0 rounded-full border border-line object-cover" loading="lazy" />
   );
 }
