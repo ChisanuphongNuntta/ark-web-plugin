@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import { AuthRequest } from '../middlewares/auth.js';
+import { paginateQuery, parsePagination, parseSearch, parseStringFilter } from '../utils/pagination.js';
 
 export class ProtectionController {
   // ==========================================
@@ -399,58 +400,71 @@ export class ProtectionController {
   // ดูรายการ protection ทั้งหมด
   getAllProtections = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { type, isActive, page = '1', limit = '20' } = req.query;
-
-      const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+      const type = parseStringFilter(req.query.type);
+      const isActive = parseStringFilter(req.query.isActive);
+      // page/limit (or pageSize) bounded: size snapped to 10/25/50/100, page clamped after count.
+      const params = parsePagination(req.query as Record<string, unknown>);
       const now = new Date();
 
-      const where: any = {};
+      const search = parseSearch(req.query.search);
+      const and: any[] = [];
 
       if (type) {
-        where.protectionType = type;
+        and.push({ protectionType: type });
       }
 
       if (isActive === 'true') {
-        where.isActive = true;
-        where.protectionEndAt = { gte: now };
+        and.push({ isActive: true, protectionEndAt: { gte: now } });
       } else if (isActive === 'false') {
-        where.OR = [
-          { isActive: false },
-          { protectionEndAt: { lt: now } },
-        ];
+        and.push({
+          OR: [
+            { isActive: false },
+            { protectionEndAt: { lt: now } },
+          ],
+        });
       }
 
-      const [protections, total] = await Promise.all([
-        prisma.playerProtection.findMany({
-          where,
-          include: {
-            tribeProtection: {
-              include: {
-                server: true,
+      // Admin list search box: Steam ID or protected tribe name.
+      if (search) {
+        and.push({
+          OR: [
+            { steamId: { contains: search, mode: 'insensitive' } },
+            { tribeProtection: { is: { tribeName: { contains: search, mode: 'insensitive' } } } },
+          ],
+        });
+      }
+
+      const where: any = and.length > 0 ? { AND: and } : {};
+
+      const { result, pagination } = await paginateQuery(params, (skip, take) =>
+        prisma.$transaction([
+          prisma.playerProtection.count({ where }),
+          prisma.playerProtection.findMany({
+            where,
+            include: {
+              tribeProtection: {
+                include: {
+                  server: true,
+                },
               },
             },
-          },
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: parseInt(limit as string),
-        }),
-        prisma.playerProtection.count({ where }),
-      ]);
+            orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+            skip,
+            take,
+          }),
+        ]) as Promise<[number, any[]]>,
+      );
+      const protections = result[1];
 
       res.json({
-        protections: protections.map(p => ({
+        protections: protections.map((p: any) => ({
           ...p,
           tribeProtection: p.tribeProtection ? {
             ...p.tribeProtection,
             tribeId: p.tribeProtection.tribeId.toString(),
           } : null,
         })),
-        pagination: {
-          page: parseInt(page as string),
-          limit: parseInt(limit as string),
-          total,
-          totalPages: Math.ceil(total / parseInt(limit as string)),
-        },
+        pagination: { ...pagination, limit: pagination.pageSize },
       });
     } catch (error) {
       next(error);
@@ -586,38 +600,42 @@ export class ProtectionController {
   // ดู protection logs
   getProtectionLogs = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { eventType, steamId, serverId, page = '1', limit = '50' } = req.query;
-
-      const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+      const eventType = parseStringFilter(req.query.eventType);
+      const steamId = parseStringFilter(req.query.steamId, 32);
+      const serverId = parseStringFilter(req.query.serverId);
+      const params = parsePagination(req.query as Record<string, unknown>, { defaultPageSize: 50 });
 
       const where: any = {};
 
       if (eventType) where.eventType = eventType;
       if (steamId) where.steamId = steamId;
-      if (serverId) where.serverId = parseInt(serverId as string);
+      if (serverId) {
+        if (!/^\d+$/.test(serverId)) throw new AppError('Invalid serverId', 400);
+        const parsedServerId = Number(serverId);
+        if (!Number.isSafeInteger(parsedServerId)) throw new AppError('Invalid serverId', 400);
+        where.serverId = parsedServerId;
+      }
 
-      const [logs, total] = await Promise.all([
-        prisma.protectionLog.findMany({
-          where,
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: parseInt(limit as string),
-        }),
-        prisma.protectionLog.count({ where }),
-      ]);
+      const { result, pagination } = await paginateQuery(params, (skip, take) =>
+        prisma.$transaction([
+          prisma.protectionLog.count({ where }),
+          prisma.protectionLog.findMany({
+            where,
+            orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+            skip,
+            take,
+          }),
+        ]) as Promise<[number, any[]]>,
+      );
+      const logs = result[1];
 
       res.json({
-        logs: logs.map(log => ({
+        logs: logs.map((log: any) => ({
           ...log,
           tribeId: log.tribeId?.toString(),
           attackerTribeId: log.attackerTribeId?.toString(),
         })),
-        pagination: {
-          page: parseInt(page as string),
-          limit: parseInt(limit as string),
-          total,
-          totalPages: Math.ceil(total / parseInt(limit as string)),
-        },
+        pagination: { ...pagination, limit: pagination.pageSize },
       });
     } catch (error) {
       next(error);

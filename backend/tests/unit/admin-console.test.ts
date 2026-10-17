@@ -188,11 +188,11 @@ describe('admin deliveries routes', () => {
     db.deliveryJob.findMany.mockResolvedValueOnce([{ ...deadJob, server: { name: 'Server2' } }]);
     db.deliveryJob.count.mockResolvedValueOnce(41);
     const res = await request(buildApp())
-      .get('/api/admin/deliveries?status=dead_letter&serverId=2&page=2&pageSize=20')
+      .get('/api/admin/deliveries?status=dead_letter&serverId=2&page=2&pageSize=25')
       .set('x-test-role', 'admin');
     expect(res.status).toBe(200);
-    expect(db.deliveryJob.findMany.mock.calls[0][0]).toMatchObject({ where: { status: 'dead_letter', serverId: 2 }, skip: 20, take: 20 });
-    expect(res.body).toMatchObject({ total: 41, page: 2, pageSize: 20 });
+    expect(db.deliveryJob.findMany.mock.calls[0][0]).toMatchObject({ where: { status: 'dead_letter', serverId: 2 }, skip: 25, take: 25 });
+    expect(res.body).toMatchObject({ total: 41, page: 2, pageSize: 25 });
     expect(res.body.items[0]).toEqual({
       id: 'order-1',
       status: 'dead_letter',
@@ -209,6 +209,18 @@ describe('admin deliveries routes', () => {
       createdAt: '2026-10-01T00:00:00.000Z',
       updatedAt: '2026-10-01T01:00:00.000Z',
     });
+  });
+
+  it('deliveries snap pageSize to the contract set and clamp a past-the-end page', async () => {
+    db.deliveryJob.count.mockResolvedValue(41);
+    db.deliveryJob.findMany.mockResolvedValue([]);
+    const res = await request(buildApp()).get('/api/admin/deliveries?page=99&pageSize=20').set('x-test-role', 'admin');
+    expect(res.status).toBe(200);
+    // 20 snaps to 25; 41 rows / 25 = 2 pages, so page 99 is served as page 2 (skip 25).
+    expect(res.body).toMatchObject({ total: 41, page: 2, pageSize: 25 });
+    expect(db.deliveryJob.findMany.mock.calls.at(-1)[0]).toMatchObject({ skip: 25, take: 25 });
+    db.deliveryJob.count.mockReset();
+    db.deliveryJob.findMany.mockReset();
   });
 
   it('rejects an invalid status filter', async () => {
@@ -282,12 +294,21 @@ describe('admin deliveries routes', () => {
 });
 
 describe('admin console misc', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    db.$transaction.mockImplementation((cb: any) => (typeof cb === 'function' ? cb(db) : Promise.all(cb)));
+  });
 
   it('parsePagination clamps page size and defaults', () => {
     expect(parsePagination({})).toEqual({ page: 1, pageSize: 25 });
     expect(parsePagination({ page: '3', pageSize: '500' })).toEqual({ page: 3, pageSize: 100 });
     expect(parsePagination({ page: '-1', pageSize: 'abc' })).toEqual({ page: 1, pageSize: 25 });
+  });
+
+  it('parsePagination follows the shared contract (strict ints, snapped size, capped page)', () => {
+    expect(parsePagination({ page: '2abc', pageSize: '30' })).toEqual({ page: 1, pageSize: 25 });
+    expect(parsePagination({ pageSize: '7' }).pageSize).toBe(10);
+    expect(parsePagination({ page: '1000000000000000' }).page).toBe(1_000_000);
   });
 
   it('clusters are root-only', async () => {
@@ -331,6 +352,51 @@ describe('admin console misc', () => {
     expect(db.auditLog.findMany).not.toHaveBeenCalled();
     const promos = await request(app).get('/api/admin/promotions?status=a&status=b').set('x-test-role', 'admin');
     expect(promos.status).toBe(400);
+  });
+
+  it('audit-logs clamp a past-the-end page to the last page', async () => {
+    db.auditLog.count.mockResolvedValue(3);
+    db.auditLog.findMany.mockResolvedValue([]);
+    const res = await request(buildApp()).get('/api/admin/audit-logs?page=50&pageSize=10').set('x-test-role', 'admin');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ total: 3, page: 1, pageSize: 10 });
+    expect(db.auditLog.findMany.mock.calls.at(-1)[0]).toMatchObject({ skip: 0, take: 10 });
+    db.auditLog.count.mockReset();
+    db.auditLog.findMany.mockReset();
+  });
+
+  it('server delete / regenerate-key validate the id and write an audit entry without the key', async () => {
+    const app = buildApp();
+    for (const bad of ['abc', '2abc', '0']) {
+      expect((await request(app).post(`/api/admin/servers/${bad}/regenerate-key`).set('x-test-role', 'root')).status).toBe(400);
+      expect((await request(app).delete(`/api/admin/servers/${bad}`).set('x-test-role', 'root')).status).toBe(400);
+    }
+    expect(db.server.update).not.toHaveBeenCalled();
+
+    db.server.findUnique.mockResolvedValueOnce({ id: 7 });
+    db.server.update.mockImplementationOnce(async ({ data }: any) => ({
+      id: 7, name: 'S7', isActive: true, drainMode: false, lastHeartbeat: null, apiKey: data.apiKey,
+      webhookUrl: null, cluster: null, credentials: [{ id: 'c1' }],
+    }));
+    const regen = await request(app).post('/api/admin/servers/7/regenerate-key').set('x-test-role', 'root');
+    expect(regen.status).toBe(200);
+    const newKey: string = regen.body.server.apiKey;
+    expect(typeof newKey).toBe('string');
+    expect(regen.body.server).toMatchObject({ id: 7, activeCredentialCount: 1, online: false });
+    expect(regen.body.server.credentials).toBeUndefined();
+    const regenAudit = (auditService.log as any).mock.calls.find((c: any[]) => c[0].action === 'server_regenerate_key');
+    expect(regenAudit?.[0]).toMatchObject({ resource: 'server', resourceId: '7' });
+    expect(JSON.stringify(regenAudit?.[0])).not.toContain(newKey);
+
+    db.server.findUnique.mockResolvedValueOnce(null);
+    expect((await request(app).delete('/api/admin/servers/8').set('x-test-role', 'root')).status).toBe(404);
+
+    db.server.delete = vi.fn().mockResolvedValueOnce({});
+    db.server.findUnique.mockResolvedValueOnce({ id: 9, name: 'S9', map: 'TheIsland', clusterId: null, apiKey: 'secret-key-9' });
+    expect((await request(app).delete('/api/admin/servers/9').set('x-test-role', 'root')).status).toBe(200);
+    const delAudit = (auditService.log as any).mock.calls.find((c: any[]) => c[0].action === 'server_delete');
+    expect(delAudit?.[0]).toMatchObject({ resourceId: '9', oldValue: { name: 'S9', map: 'TheIsland' } });
+    expect(JSON.stringify(delAudit?.[0])).not.toContain('secret-key-9');
   });
 
   it('market listings never select cryopod bytes', async () => {

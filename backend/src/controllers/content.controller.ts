@@ -4,6 +4,7 @@ import path from 'path';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import { AuthRequest } from '../middlewares/auth.js';
+import { paginateQuery, parsePagination, parseSearch, parseStringFilter } from '../utils/pagination.js';
 
 export class ContentController {
   // ==========================================
@@ -73,9 +74,9 @@ export class ContentController {
   // Get all pages (admin)
   getAllPages = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { pageType, search, page = '1', limit = '20' } = req.query;
-
-      const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+      const pageType = parseStringFilter(req.query.pageType, 32);
+      const search = parseSearch(req.query.search);
+      const params = parsePagination(req.query as Record<string, unknown>);
 
       const where: any = {};
 
@@ -85,37 +86,35 @@ export class ContentController {
 
       if (search) {
         where.OR = [
-          { title: { contains: search as string, mode: 'insensitive' } },
-          { slug: { contains: search as string, mode: 'insensitive' } },
+          { title: { contains: search, mode: 'insensitive' } },
+          { slug: { contains: search, mode: 'insensitive' } },
         ];
       }
 
-      const [pages, total] = await Promise.all([
-        prisma.dynamicPage.findMany({
-          where,
-          orderBy: { updatedAt: 'desc' },
-          skip,
-          take: parseInt(limit as string),
-          include: {
-            _count: {
-              select: { blocks: true },
+      const { result, pagination } = await paginateQuery(params, (skip, take) =>
+        prisma.$transaction([
+          prisma.dynamicPage.count({ where }),
+          prisma.dynamicPage.findMany({
+            where,
+            orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+            skip,
+            take,
+            include: {
+              _count: {
+                select: { blocks: true },
+              },
             },
-          },
-        }),
-        prisma.dynamicPage.count({ where }),
-      ]);
+          }),
+        ]) as Promise<[number, any[]]>,
+      );
+      const pages = result[1];
 
       res.json({
-        pages: pages.map(p => ({
+        pages: pages.map((p: any) => ({
           ...p,
           settings: p.settings ? JSON.parse(p.settings) : null,
         })),
-        pagination: {
-          page: parseInt(page as string),
-          limit: parseInt(limit as string),
-          total,
-          totalPages: Math.ceil(total / parseInt(limit as string)),
-        },
+        pagination: { ...pagination, limit: pagination.pageSize },
       });
     } catch (error) {
       next(error);
@@ -569,9 +568,12 @@ export class ContentController {
   // Get all media files
   getMediaFiles = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { folder, mimeType, search, page = '1', limit = '24' } = req.query;
-
-      const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+      // parseStringFilter: ?folder[a]=b / repeated params never reach Prisma as object/array.
+      const folder = parseStringFilter(req.query.folder);
+      const mimeType = parseStringFilter(req.query.mimeType);
+      const search = parseSearch(req.query.search);
+      // Media grid keeps its 24-per-page default: bounded to [1, 100] but not snapped.
+      const params = parsePagination(req.query as Record<string, unknown>, { defaultPageSize: 24, snap: false });
 
       const where: any = {};
 
@@ -580,35 +582,33 @@ export class ContentController {
       }
 
       if (mimeType) {
-        where.mimeType = { startsWith: mimeType as string };
+        where.mimeType = { startsWith: mimeType };
       }
 
       if (search) {
         where.OR = [
-          { filename: { contains: search as string, mode: 'insensitive' } },
-          { originalName: { contains: search as string, mode: 'insensitive' } },
-          { alt: { contains: search as string, mode: 'insensitive' } },
+          { filename: { contains: search, mode: 'insensitive' } },
+          { originalName: { contains: search, mode: 'insensitive' } },
+          { alt: { contains: search, mode: 'insensitive' } },
         ];
       }
 
-      const [files, total] = await Promise.all([
-        prisma.mediaFile.findMany({
-          where,
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: parseInt(limit as string),
-        }),
-        prisma.mediaFile.count({ where }),
-      ]);
+      const { result, pagination } = await paginateQuery(params, (skip, take) =>
+        prisma.$transaction([
+          prisma.mediaFile.count({ where }),
+          prisma.mediaFile.findMany({
+            where,
+            orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+            skip,
+            take,
+          }),
+        ]) as Promise<[number, any[]]>,
+      );
+      const files = result[1];
 
       res.json({
         files,
-        pagination: {
-          page: parseInt(page as string),
-          limit: parseInt(limit as string),
-          total,
-          totalPages: Math.ceil(total / parseInt(limit as string)),
-        },
+        pagination: { ...pagination, limit: pagination.pageSize },
       });
     } catch (error) {
       next(error);

@@ -8,15 +8,22 @@ import { AuthRequest } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import auditService from '../services/audit.service.js';
 import deliveryAdminService, { isDeliveryJobStatus } from '../services/deliveryAdmin.service.js';
+import {
+  paginateQuery,
+  parsePagination as sharedParsePagination,
+  parseSearch,
+  wantsPagination,
+} from '../utils/pagination.js';
 
-export const MAX_PAGE_SIZE = 100;
-export const DEFAULT_PAGE_SIZE = 25;
+export { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '../utils/pagination.js';
 
+/**
+ * Requested page/pageSize per the shared admin pagination contract: strict int parse
+ * ('2abc' -> default), pageSize snapped to 10/25/50/100, page capped at MAX_REQUEST_PAGE so
+ * skip never overflows. The page actually served is clamped after counting (paginateQuery).
+ */
 export function parsePagination(query: Record<string, unknown> | undefined) {
-  const rawPage = Number.parseInt(String(query?.page ?? ''), 10);
-  const rawSize = Number.parseInt(String(query?.pageSize ?? query?.limit ?? ''), 10);
-  const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
-  const pageSize = Number.isFinite(rawSize) && rawSize > 0 ? Math.min(rawSize, MAX_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
+  const { page, pageSize } = sharedParsePagination(query);
   return { page, pageSize };
 }
 
@@ -199,15 +206,18 @@ export class AdminConsoleController {
       if (actorId) where.userId = actorId;
       if (resource) where.resource = resource;
 
-      const [rows, total] = await Promise.all([
-        prisma.auditLog.findMany({
-          where,
-          orderBy: { createdAt: 'desc' },
-          skip: (page - 1) * pageSize,
-          take: pageSize,
-        }),
-        prisma.auditLog.count({ where }),
-      ]);
+      const { result, pagination } = await paginateQuery({ page, pageSize, skip: 0, take: pageSize }, (skip, take) =>
+        prisma.$transaction([
+          prisma.auditLog.count({ where }),
+          prisma.auditLog.findMany({
+            where,
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            skip,
+            take,
+          }),
+        ]) as Promise<[number, any[]]>,
+      );
+      const [total, rows] = result;
 
       res.json({
         items: rows.map((row: any) => ({
@@ -226,7 +236,7 @@ export class AdminConsoleController {
           createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
         })),
         total,
-        page,
+        page: pagination.page,
         pageSize,
       });
     } catch (error) {
@@ -243,8 +253,10 @@ export class AdminConsoleController {
         throw new AppError(`Invalid status. Valid: ${LISTING_STATUSES.join(', ')}`, 400);
       }
       const where = status ? { status } : {};
-      const [rows, total] = await Promise.all([
-        prisma.dinoListing.findMany({
+      const { result, pagination } = await paginateQuery({ page, pageSize, skip: 0, take: pageSize }, (skip, take) =>
+        prisma.$transaction([
+          prisma.dinoListing.count({ where }),
+          prisma.dinoListing.findMany({
           where,
           // Explicit select: never ship cryopodData (native snapshot bytes) to the console.
           select: {
@@ -267,26 +279,43 @@ export class AdminConsoleController {
             seller: { select: { id: true, discordUsername: true, steamId: true } },
             buyer: { select: { id: true, discordUsername: true, steamId: true } },
           },
-          orderBy: { createdAt: 'desc' },
-          skip: (page - 1) * pageSize,
-          take: pageSize,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          skip,
+          take,
         }),
-        prisma.dinoListing.count({ where }),
-      ]);
-      res.json({ items: rows, total, page, pageSize });
+        ]) as Promise<[number, any[]]>,
+      );
+      const [total, rows] = result;
+      res.json({ items: rows, total, page: pagination.page, pageSize });
     } catch (error) {
       next(error);
     }
   };
 
   // ---------------- Categories incl. inactive (admin|root) ----------------
-  getCategories = async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  // Without `page`: every category (legacy). With `page`: Admin pagination contract
+  // (page/pageSize snapped to 10/25/50/100, page clamped after count, optional search on name).
+  getCategories = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const categories = await prisma.category.findMany({
-        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-        include: { _count: { select: { products: true } } },
-      });
-      res.json({ categories });
+      const query = (req.query ?? {}) as Record<string, unknown>;
+      const orderBy: any[] = [{ sortOrder: 'asc' }, { name: 'asc' }, { id: 'asc' }];
+      const include = { _count: { select: { products: true } } };
+      const search = parseSearch(query.search);
+      const where = search ? { name: { contains: search, mode: 'insensitive' as const } } : {};
+
+      if (!wantsPagination(query)) {
+        const categories = await prisma.category.findMany({ where, orderBy, include });
+        res.json({ categories });
+        return;
+      }
+
+      const { result, pagination } = await paginateQuery(sharedParsePagination(query), (skip, take) =>
+        prisma.$transaction([
+          prisma.category.count({ where }),
+          prisma.category.findMany({ where, orderBy, include, skip, take }),
+        ]) as Promise<[number, any[]]>,
+      );
+      res.json({ categories: result[1], pagination });
     } catch (error) {
       next(error);
     }
@@ -298,16 +327,19 @@ export class AdminConsoleController {
       const { page, pageSize } = parsePagination(req.query as any);
       const status = queryString(req.query, 'status');
       const where = status ? { status } : {};
-      const [rows, total] = await Promise.all([
-        prisma.promotionCampaign.findMany({
-          where,
-          include: { _count: { select: { vouchers: true, redemptions: true } } },
-          orderBy: [{ priority: 'asc' }, { createdAt: 'desc' }],
-          skip: (page - 1) * pageSize,
-          take: pageSize,
-        }),
-        prisma.promotionCampaign.count({ where }),
-      ]);
+      const { result, pagination } = await paginateQuery({ page, pageSize, skip: 0, take: pageSize }, (skip, take) =>
+        prisma.$transaction([
+          prisma.promotionCampaign.count({ where }),
+          prisma.promotionCampaign.findMany({
+            where,
+            include: { _count: { select: { vouchers: true, redemptions: true } } },
+            orderBy: [{ priority: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+            skip,
+            take,
+          }),
+        ]) as Promise<[number, any[]]>,
+      );
+      const [total, rows] = result;
       // BigInt money columns are serialized as decimal strings (contracts/README.md policy).
       const items = rows.map((row: any) => {
         const { _count, ...rest } = row;
@@ -320,7 +352,7 @@ export class AdminConsoleController {
           redemptionCount: _count?.redemptions ?? 0,
         };
       });
-      res.json({ items, total, page, pageSize });
+      res.json({ items, total, page: pagination.page, pageSize });
     } catch (error) {
       next(error);
     }

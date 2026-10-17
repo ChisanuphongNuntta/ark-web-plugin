@@ -1,5 +1,23 @@
 import prisma from '../config/database.js';
 import { UserRole } from '../middlewares/auth.js';
+import { paginateQuery, parsePagination, parseSearch, type PaginationParams } from '../utils/pagination.js';
+
+/**
+ * List options: either already-parsed pagination params (preferred, from parsePagination) or
+ * the raw query values (page / pageSize / limit) which are parsed + snapped here.
+ */
+export interface ListOptions {
+  params?: PaginationParams;
+  page?: unknown;
+  pageSize?: unknown;
+  limit?: unknown;
+  search?: unknown;
+}
+
+function resolveParams(options: ListOptions): PaginationParams {
+  if (options.params) return options.params;
+  return parsePagination({ page: options.page, pageSize: options.pageSize, limit: options.limit });
+}
 
 export class ServerAdminService {
   /**
@@ -36,20 +54,16 @@ export class ServerAdminService {
   static async getAccessibleUsers(
     adminRole: UserRole,
     adminServerId: number | null,
-    options: {
-      page?: number;
-      limit?: number;
-      search?: string;
-    } = {}
+    options: ListOptions = {}
   ) {
-    const { page = 1, limit = 20, search } = options;
-    const skip = (page - 1) * limit;
+    const params = resolveParams(options);
+    const search = parseSearch(options.search);
 
     const where: any = {};
 
-    // Server admin can only see users connected to their server
-    if (adminRole === UserRole.SERVER_ADMIN && adminServerId) {
-      where.apiKeyServerId = adminServerId;
+    // Server admin can only see users connected to their server; one without an assigned server sees nothing.
+    if (adminRole === UserRole.SERVER_ADMIN) {
+      where.apiKeyServerId = adminServerId ?? -1;
     }
     // Root sees all
 
@@ -61,33 +75,36 @@ export class ServerAdminService {
       ];
     }
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          discordId: true,
-          discordUsername: true,
-          discordAvatar: true,
-          steamId: true,
-          epicId: true,
-          pointsBalance: true,
-          totalSpent: true,
-          isBanned: true,
-          isAdmin: true,
-          role: true,
-          apiKeyServerId: true,
-          apiKeyServerName: true,
-          createdAt: true,
-        },
-      }),
-      prisma.user.count({ where }),
-    ]);
+    const { result, pagination } = await paginateQuery(params, (skip, take) =>
+      prisma.$transaction([
+        prisma.user.count({ where }),
+        prisma.user.findMany({
+          where,
+          // id is the unique tiebreaker so equal createdAt values never repeat/skip across pages
+          orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+          skip,
+          take,
+          select: {
+            id: true,
+            discordId: true,
+            discordUsername: true,
+            discordAvatar: true,
+            steamId: true,
+            epicId: true,
+            pointsBalance: true,
+            totalSpent: true,
+            isBanned: true,
+            isAdmin: true,
+            role: true,
+            apiKeyServerId: true,
+            apiKeyServerName: true,
+            createdAt: true,
+          },
+        }),
+      ]) as Promise<[number, any[]]>,
+    );
 
-    return { users, total, page, limit };
+    return { users: result[1], total: pagination.total, page: pagination.page, limit: pagination.pageSize, pagination };
   }
 
   /**
@@ -96,22 +113,18 @@ export class ServerAdminService {
   static async getAccessibleApiKeys(
     adminRole: UserRole,
     adminServerId: number | null,
-    options: {
-      page?: number;
-      limit?: number;
-      search?: string;
-    } = {}
+    options: ListOptions = {}
   ) {
-    const { page = 1, limit = 20, search } = options;
-    const skip = (page - 1) * limit;
+    const params = resolveParams(options);
+    const search = parseSearch(options.search);
 
     const where: any = {
       apiKey: { not: null },
     };
 
-    // Server admin can only see API keys for their server
-    if (adminRole === UserRole.SERVER_ADMIN && adminServerId) {
-      where.apiKeyServerId = adminServerId;
+    // Server admin can only see API keys for their server; one without an assigned server sees nothing.
+    if (adminRole === UserRole.SERVER_ADMIN) {
+      where.apiKeyServerId = adminServerId ?? -1;
     }
     // Root sees all
 
@@ -123,33 +136,36 @@ export class ServerAdminService {
       ];
     }
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          discordId: true,
-          discordUsername: true,
-          discordAvatar: true,
-          steamId: true,
-          apiKey: true,
-          apiKeyIp: true,
-          apiKeyCreatedAt: true,
-          apiKeyServerId: true,
-          apiKeyServerName: true,
-          apiKeyServerMap: true,
-          apiKeyServerPort: true,
-          apiKeyLastUsed: true,
-          isBanned: true,
-        },
-        orderBy: { apiKeyLastUsed: 'desc' },
-        skip,
-        take: limit,
-      }),
-      prisma.user.count({ where }),
-    ]);
+    const { result, pagination } = await paginateQuery(params, (skip, take) =>
+      prisma.$transaction([
+        prisma.user.count({ where }),
+        prisma.user.findMany({
+          where,
+          select: {
+            id: true,
+            discordId: true,
+            discordUsername: true,
+            discordAvatar: true,
+            steamId: true,
+            apiKey: true,
+            apiKeyIp: true,
+            apiKeyCreatedAt: true,
+            apiKeyServerId: true,
+            apiKeyServerName: true,
+            apiKeyServerMap: true,
+            apiKeyServerPort: true,
+            apiKeyLastUsed: true,
+            isBanned: true,
+          },
+          // never-used keys last, id as unique tiebreaker
+          orderBy: [{ apiKeyLastUsed: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }],
+          skip,
+          take,
+        }),
+      ]) as Promise<[number, any[]]>,
+    );
 
-    return { users, total, page, limit };
+    return { users: result[1], total: pagination.total, page: pagination.page, limit: pagination.pageSize, pagination };
   }
 
   /**

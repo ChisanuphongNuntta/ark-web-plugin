@@ -18,6 +18,12 @@ import auditService from '../services/audit.service.js';
 import { HEARTBEAT_ONLINE_WINDOW_MS, isServerOnline } from '../utils/serverStatus.js';
 import { bangkokStartOfDay } from '../services/season.service.js';
 import { isServerDeliverable } from '../services/serverDirectory.service.js';
+import {
+  paginateQuery,
+  parsePagination,
+  parseSearch,
+  wantsPagination,
+} from '../utils/pagination.js';
 
 const execAsync = promisify(exec);
 
@@ -98,10 +104,159 @@ function toAdminServer(server: any, now: Date = new Date()) {
   };
 }
 
+/** Strict :id param for server routes: '12' -> 12; 'abc' / '2abc' / '0' -> 400 (never NaN into Prisma -> 500). */
+function parseServerIdParam(raw: unknown): number {
+  const value = typeof raw === 'string' ? raw.trim() : '';
+  const id = /^\d{1,9}$/.test(value) ? Number(value) : NaN;
+  if (!Number.isInteger(id) || id <= 0) throw new AppError('Invalid server id', 400);
+  return id;
+}
+
 const ADMIN_SERVER_INCLUDE = {
   cluster: { select: { id: true, key: true, name: true } },
   credentials: { where: { status: 'active' }, select: { id: true } },
 } as const;
+
+// ---------------- Admin list filters (Admin pagination contract) ----------------
+
+const SERVER_GAME_MODES = ['PVE', 'PVE_MOD', 'PVPVE'] as const;
+export const ADMIN_SERVER_GAME_MODE_FILTERS = [...SERVER_GAME_MODES, 'NONE'] as const;
+export const ADMIN_SERVER_STATUS_FILTERS = ['active', 'inactive', 'online', 'offline'] as const;
+type ServerGameModeFilter = (typeof ADMIN_SERVER_GAME_MODE_FILTERS)[number];
+
+// Server.gameMode is a non-null enum, so the NONE bucket can never match a row. It is kept so
+// the frontend tab set is stable; Prisma treats `in: []` as "match nothing".
+const NONE_MATCH = { id: { in: [] as number[] } };
+
+// Cluster order first (unassigned servers sort last: Postgres puts NULLs last on ASC), then the
+// server's own order, then id as the unique tiebreaker so pages never repeat/skip rows.
+export const ADMIN_SERVER_ORDER = [
+  { cluster: { sortOrder: 'asc' } },
+  { cluster: { name: 'asc' } },
+  { sortOrder: 'asc' },
+  { id: 'asc' },
+] as any[];
+
+export const PRODUCT_TYPE_FILTERS = ['item', 'dino', 'engram', 'kit', 'bundle', 'command', 'entitlement'] as const;
+
+export const ADMIN_PRODUCT_ORDER = [{ isActive: 'asc' }, { name: 'asc' }, { id: 'asc' }] as any[];
+
+/** '' / 'all' (any case) mean "no filter"; anything else must be in `allowed` or it is a 400. */
+function parseEnumFilter<T extends string>(value: unknown, allowed: readonly T[], name: string, upper = false): T | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'string') throw new AppError(`Invalid ${name}`, 400);
+  const trimmed = raw.trim();
+  if (trimmed === '' || trimmed.toLowerCase() === 'all') return undefined;
+  const normalized = upper ? trimmed.toUpperCase() : trimmed.toLowerCase();
+  if (!(allowed as readonly string[]).includes(normalized)) {
+    throw new AppError(`Invalid ${name}: expected one of ${allowed.join(', ')}`, 400);
+  }
+  return normalized as T;
+}
+
+function parseBooleanFilter(value: unknown, name: string): boolean | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === undefined || raw === null) return undefined;
+  const text = String(raw).trim().toLowerCase();
+  if (text === '' || text === 'all') return undefined;
+  if (text === 'true') return true;
+  if (text === 'false') return false;
+  throw new AppError(`Invalid ${name}: expected true or false`, 400);
+}
+
+function parseIntFilter(value: unknown, name: string): number | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === undefined || raw === null) return undefined;
+  const text = String(raw).trim();
+  if (text === '' || text.toLowerCase() === 'all') return undefined;
+  if (!/^\d+$/.test(text) || !Number.isSafeInteger(Number(text))) throw new AppError(`Invalid ${name}`, 400);
+  return Number(text);
+}
+
+/**
+ * Builds the server WHERE for every filter except gameMode (the per-mode `counts` use this
+ * same base so tab badges reflect the search/cluster/status the admin is looking at).
+ */
+export function buildAdminServerWhere(query: Record<string, unknown>, now: Date = new Date()) {
+  const and: any[] = [];
+
+  const search = parseSearch(query.search);
+  if (search) {
+    and.push({
+      OR: [
+        { name: { contains: search, mode: 'insensitive' } },
+        { map: { contains: search, mode: 'insensitive' } },
+        { displayName: { contains: search, mode: 'insensitive' } },
+        { connectHost: { contains: search, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  const rawCluster = Array.isArray(query.clusterId) ? query.clusterId[0] : query.clusterId;
+  if (typeof rawCluster === 'string' && rawCluster.trim() !== '' && rawCluster.trim().toLowerCase() !== 'all') {
+    const clusterId = rawCluster.trim();
+    if (clusterId.length > 64) throw new AppError('Invalid clusterId', 400);
+    and.push({ clusterId: clusterId.toLowerCase() === 'none' ? null : clusterId });
+  }
+
+  const status = parseEnumFilter(query.status, ADMIN_SERVER_STATUS_FILTERS, 'status');
+  const onlineCutoff = new Date(now.getTime() - HEARTBEAT_ONLINE_WINDOW_MS);
+  if (status === 'active') and.push({ isActive: true });
+  if (status === 'inactive') and.push({ isActive: false });
+  // Same rule as isServerOnline(): online <=> lastHeartbeat within the window.
+  if (status === 'online') and.push({ lastHeartbeat: { gte: onlineCutoff } });
+  if (status === 'offline') and.push({ OR: [{ lastHeartbeat: null }, { lastHeartbeat: { lt: onlineCutoff } }] });
+
+  const gameMode = parseEnumFilter<ServerGameModeFilter>(query.gameMode, ADMIN_SERVER_GAME_MODE_FILTERS, 'gameMode', true);
+
+  return { where: and.length > 0 ? { AND: and } : {}, gameMode };
+}
+
+export function buildAdminProductWhere(query: Record<string, unknown>) {
+  const and: any[] = [];
+  const search = parseSearch(query.search);
+  if (search) {
+    and.push({
+      OR: [
+        { name: { contains: search, mode: 'insensitive' } },
+        { externalKey: { contains: search, mode: 'insensitive' } },
+      ],
+    });
+  }
+  const rawCategory = Array.isArray(query.categoryId) ? query.categoryId[0] : query.categoryId;
+  if (typeof rawCategory === 'string' && rawCategory.trim().toLowerCase() === 'none') {
+    and.push({ categoryId: null });
+  } else {
+    const categoryId = parseIntFilter(query.categoryId, 'categoryId');
+    if (categoryId !== undefined) and.push({ categoryId });
+  }
+  const productType = parseEnumFilter(query.productType, PRODUCT_TYPE_FILTERS, 'productType');
+  if (productType) and.push({ productType });
+  const isActive = parseBooleanFilter(query.isActive, 'isActive');
+  if (isActive !== undefined) and.push({ isActive });
+  return and.length > 0 ? { AND: and } : {};
+}
+
+export function toGameModeCounts(grouped: Array<{ gameMode: string | null; _count?: { _all?: number } | number }> | undefined) {
+  const counts = { all: 0, PVE: 0, PVE_MOD: 0, PVPVE: 0, NONE: 0 };
+  for (const row of grouped ?? []) {
+    const n = typeof row._count === 'number' ? row._count : Number(row._count?._all ?? 0);
+    counts.all += n;
+    if (row.gameMode === 'PVE' || row.gameMode === 'PVE_MOD' || row.gameMode === 'PVPVE') counts[row.gameMode] += n;
+    else counts.NONE += n;
+  }
+  return counts;
+}
+
+/** List-row projection: everything toAdminServer returns except the full legacy apiKey. */
+export function toAdminServerListRow(server: any, now: Date = new Date()) {
+  const { apiKey, ...row } = toAdminServer(server, now);
+  return {
+    ...row,
+    apiKeyLast4: typeof apiKey === 'string' && apiKey.length > 0 ? apiKey.slice(-4) : null,
+  };
+}
 
 export class AdminController {
   // Dashboard stats
@@ -175,14 +330,12 @@ export class AdminController {
   // Users management - scoped by server for server_admin
   getUsers = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
-      const search = req.query.search as string;
-
+      // page/pageSize (limit = legacy alias) snapped to 10/25/50/100, page clamped after count.
+      const params = parsePagination(req.query as Record<string, unknown>);
       const result = await ServerAdminService.getAccessibleUsers(
         req.user!.role,
         req.user!.apiKeyServerId || null,
-        { page, limit, search }
+        { params, search: req.query.search }
       );
 
       res.json({
@@ -192,10 +345,8 @@ export class AdminController {
           totalSpent: Number(u.totalSpent),
         })),
         pagination: {
-          page: result.page,
-          limit: result.limit,
-          total: result.total,
-          totalPages: Math.ceil(result.total / result.limit),
+          ...result.pagination,
+          limit: result.pagination.pageSize, // legacy alias kept for existing clients
         },
       });
     } catch (error) {
@@ -334,10 +485,27 @@ export class AdminController {
   };
 
   // Authenticated catalog includes drafts; the public endpoint remains active-only.
+  // GET /admin/products?page&pageSize&search&categoryId&productType&isActive (Admin pagination
+  // contract). Without `page` it returns every matching product (legacy behaviour).
   getProducts = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const products = await prisma.product.findMany({ include: { category: true }, orderBy: [{ isActive: 'asc' }, { name: 'asc' }] });
-      res.json({ products });
+      const query = req.query as Record<string, unknown>;
+      const where = buildAdminProductWhere(query);
+
+      if (!wantsPagination(query)) {
+        const products = await prisma.product.findMany({ where, include: { category: true }, orderBy: ADMIN_PRODUCT_ORDER });
+        res.json({ products });
+        return;
+      }
+
+      const params = parsePagination(query);
+      const { result, pagination } = await paginateQuery(params, (skip, take) =>
+        prisma.$transaction([
+          prisma.product.count({ where }),
+          prisma.product.findMany({ where, include: { category: true }, orderBy: ADMIN_PRODUCT_ORDER, skip, take }),
+        ]) as Promise<[number, any[]]>,
+      );
+      res.json({ products: result[1], pagination });
     } catch (error) { next(error); }
   };
 
@@ -646,14 +814,12 @@ export class AdminController {
   // API Keys management - scoped by server for server_admin
   getAllApiKeys = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
-      const search = req.query.search as string;
-
+      // page/pageSize (limit = legacy alias) snapped to 10/25/50/100, page clamped after count.
+      const params = parsePagination(req.query as Record<string, unknown>);
       const result = await ServerAdminService.getAccessibleApiKeys(
         req.user!.role,
         req.user!.apiKeyServerId || null,
-        { page, limit, search }
+        { params, search: req.query.search }
       );
 
       // Mask API keys for security (show only first/last 4 chars)
@@ -665,10 +831,8 @@ export class AdminController {
       res.json({
         apiKeys: maskedUsers,
         pagination: {
-          page: result.page,
-          limit: result.limit,
-          total: result.total,
-          totalPages: Math.ceil(result.total / result.limit),
+          ...result.pagination,
+          limit: result.pagination.pageSize, // legacy alias kept for existing clients
         },
       });
     } catch (error) {
@@ -804,15 +968,44 @@ export class AdminController {
   };
 
   // Server Management (root)
+  // GET /admin/servers?page&pageSize&search&gameMode&clusterId&status (Admin pagination contract).
+  // Without `page` it returns every matching server (legacy dropdown consumers). List rows
+  // never carry the full legacy apiKey, only apiKeyLast4.
   getServers = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const now = new Date();
-      const servers = await prisma.server.findMany({
-        include: ADMIN_SERVER_INCLUDE,
-        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-      });
+      const query = req.query as Record<string, unknown>;
+      const { where, gameMode } = buildAdminServerWhere(query, now);
+      const rowWhere = gameMode ? { AND: [where, gameMode === 'NONE' ? NONE_MATCH : { gameMode }] } : where;
+      const countsQuery = () =>
+        prisma.server.groupBy({ by: ['gameMode'], where, _count: { _all: true } } as any) as any;
 
-      res.json({ servers: servers.map((server) => toAdminServer(server, now)) });
+      if (!wantsPagination(query)) {
+        const [servers, grouped] = await prisma.$transaction([
+          prisma.server.findMany({ where: rowWhere, include: ADMIN_SERVER_INCLUDE, orderBy: ADMIN_SERVER_ORDER }),
+          countsQuery(),
+        ] as any[]) as [any[], any[]];
+        res.json({
+          servers: servers.map((server) => toAdminServerListRow(server, now)),
+          counts: toGameModeCounts(grouped),
+        });
+        return;
+      }
+
+      const params = parsePagination(query);
+      const { result, pagination } = await paginateQuery(params, (skip, take) =>
+        prisma.$transaction([
+          prisma.server.count({ where: rowWhere }),
+          prisma.server.findMany({ where: rowWhere, include: ADMIN_SERVER_INCLUDE, orderBy: ADMIN_SERVER_ORDER, skip, take }),
+          countsQuery(),
+        ] as any[]) as Promise<[number, any[], any[]]>,
+      );
+      const [, servers, grouped] = result;
+      res.json({
+        servers: servers.map((server) => toAdminServerListRow(server, now)),
+        pagination,
+        counts: toGameModeCounts(grouped),
+      });
     } catch (error) {
       next(error);
     }
@@ -863,8 +1056,7 @@ export class AdminController {
 
   updateServer = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const id = parseInt(req.params.id);
-      if (!Number.isInteger(id)) throw new AppError('Invalid server id', 400);
+      const id = parseServerIdParam(req.params.id);
       const data = parseServerWrite(req.body);
       // apiKey is rotated only through POST /admin/servers/:id/regenerate-key.
       delete data.apiKey;
@@ -900,11 +1092,20 @@ export class AdminController {
 
   deleteServer = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const id = parseServerIdParam(req.params.id);
+      const existing = await prisma.server.findUnique({ where: { id } });
+      if (!existing) throw new AppError('Server not found', 404);
 
-      await prisma.server.delete({
-        where: { id: parseInt(id) },
-      });
+      await prisma.server.delete({ where: { id } });
+
+      // Identity fields only: never the plugin apiKey or webhook URL.
+      await auditService.log({
+        userId: req.user!.id,
+        action: 'server_delete',
+        resource: 'server',
+        resourceId: String(id),
+        oldValue: { name: existing.name, map: existing.map, clusterId: (existing as any).clusterId ?? null },
+      }, req);
 
       res.json({ success: true });
     } catch (error) {
@@ -914,16 +1115,29 @@ export class AdminController {
 
   regenerateServerApiKey = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const id = parseServerIdParam(req.params.id);
+      const existing = await prisma.server.findUnique({ where: { id }, select: { id: true } });
+      if (!existing) throw new AppError('Server not found', 404);
 
       const newApiKey = crypto.randomBytes(32).toString('base64url');
 
       const server = await prisma.server.update({
-        where: { id: parseInt(id) },
+        where: { id },
         data: { apiKey: newApiKey },
+        include: ADMIN_SERVER_INCLUDE,
       });
 
-      res.json({ server });
+      // The key itself is never written to the audit log.
+      await auditService.log({
+        userId: req.user!.id,
+        action: 'server_regenerate_key',
+        resource: 'server',
+        resourceId: String(id),
+        metadata: { apiKeyLast4: newApiKey.slice(-4) },
+      }, req);
+
+      // Admin projection (same as create/update); the new full key is returned only here.
+      res.json({ server: toAdminServer(server) });
     } catch (error) {
       next(error);
     }
@@ -932,22 +1146,39 @@ export class AdminController {
   // ChatRank Management
   getChatRanks = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const serverId = req.query.serverId ? parseInt(req.query.serverId as string) : undefined;
+      const query = req.query as Record<string, unknown>;
+      const serverId = parseIntFilter(query.serverId, 'serverId');
 
-      const where: any = {};
+      const and: any[] = [];
       if (serverId !== undefined) {
-        where.serverId = serverId === 0 ? null : serverId;
+        and.push({ serverId: serverId === 0 ? null : serverId });
+      }
+      const search = parseSearch(query.search);
+      if (search) {
+        and.push({
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { groupKey: { contains: search, mode: 'insensitive' } },
+          ],
+        });
+      }
+      const where = and.length > 0 ? { AND: and } : {};
+      const include = { server: { select: { id: true, name: true } } };
+      const orderBy: any[] = [{ priority: 'desc' }, { name: 'asc' }, { id: 'asc' }];
+
+      if (!wantsPagination(query)) {
+        const ranks = await prisma.chatRank.findMany({ where, include, orderBy });
+        res.json({ ranks });
+        return;
       }
 
-      const ranks = await prisma.chatRank.findMany({
-        where,
-        include: {
-          server: { select: { id: true, name: true } },
-        },
-        orderBy: [{ priority: 'desc' }, { name: 'asc' }],
-      });
-
-      res.json({ ranks });
+      const { result, pagination } = await paginateQuery(parsePagination(query), (skip, take) =>
+        prisma.$transaction([
+          prisma.chatRank.count({ where }),
+          prisma.chatRank.findMany({ where, include, orderBy, skip, take }),
+        ]) as Promise<[number, any[]]>,
+      );
+      res.json({ ranks: result[1], pagination });
     } catch (error) {
       next(error);
     }

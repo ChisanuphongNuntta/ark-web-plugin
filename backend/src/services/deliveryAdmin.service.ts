@@ -16,6 +16,7 @@ import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import { DEFAULT_MAX_ATTEMPTS } from './delivery.service.js';
 import { canTransition } from './orderState.js';
+import { paginateQuery } from '../utils/pagination.js';
 
 export const DELIVERY_JOB_STATUSES = ['pending', 'leased', 'completed', 'failed', 'dead_letter'] as const;
 export type DeliveryJobStatusValue = (typeof DELIVERY_JOB_STATUSES)[number];
@@ -115,18 +116,24 @@ class DeliveryAdminService {
     if (query.status) where.status = query.status;
     if (query.serverId !== undefined) where.serverId = query.serverId;
 
-    const [jobs, total] = await Promise.all([
-      prisma.deliveryJob.findMany({
-        where,
-        include: { server: { select: { name: true } } },
-        orderBy: { updatedAt: 'desc' },
-        skip: (query.page - 1) * query.pageSize,
-        take: query.pageSize,
-      }),
-      prisma.deliveryJob.count({ where }),
-    ]);
+    // Count + rows from one snapshot; the served page is clamped to [1, totalPages].
+    const { result, pagination } = await paginateQuery(
+      { page: query.page, pageSize: query.pageSize, skip: 0, take: query.pageSize },
+      (skip, take) =>
+        prisma.$transaction([
+          prisma.deliveryJob.count({ where }),
+          prisma.deliveryJob.findMany({
+            where,
+            include: { server: { select: { name: true } } },
+            orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+            skip,
+            take,
+          }),
+        ]) as Promise<[number, any[]]>,
+    );
+    const [total, jobs] = result;
 
-    return { items: jobs.map(toDeliveryItem), total, page: query.page, pageSize: query.pageSize };
+    return { items: jobs.map(toDeliveryItem), total, page: pagination.page, pageSize: query.pageSize };
   }
 
   async retry(jobId: string): Promise<{ item: DeliveryItem; retried: boolean; alreadyQueued: boolean; previousStatus: string }> {

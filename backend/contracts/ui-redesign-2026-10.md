@@ -14,7 +14,7 @@ Fixtures: `contracts/fixtures/server-directory.json`, `contracts/fixtures/site-s
   - **admin (legacy)** — `requireAdmin`: `isAdmin` flag OR role `admin`/`root`. Only used by pre-existing endpoints (`/admin/stats`, slips).
   - **root** — `requireRoot`.
 - Responses keep their existing envelopes (`{ servers }`, `{ server }`, `{ stats, recentOrders }`, …). New paginated admin lists use `{ items, total, page, pageSize }`.
-- Pagination: `page` (default 1), `pageSize` (default 25, max 100; `limit` is accepted as an alias).
+- Pagination: `page` (default 1), `pageSize` (default 25, max 100; `limit` is accepted as an alias). Admin list endpoints follow the stricter **Admin pagination** section (allowed sizes 10/25/50/100, server-side page clamp, `{ <items>, pagination }`).
 - Rate limit: all `/api/*` routes share the existing general limiter.
 
 ## Data model additions
@@ -194,7 +194,7 @@ Body (strict; at least one key):
 
 ### GET /admin/servers (existing, extended)
 
-`{ servers: AdminServer[] }` ordered by `sortOrder, id`. `AdminServer` = every Server column (as before, including `apiKey` — root only) **plus** `cluster: {id,key,name} | null`, `online`, `deliverable`, `activeCredentialCount`. Credential secrets are never included.
+`{ servers: AdminServerRow[], counts, pagination? }` — see **Admin pagination** below for params/order. `AdminServerRow` = every Server column **except `apiKey`** (list rows carry `apiKeyLast4: string | null` instead; changed 2026-10-17) **plus** `cluster: {id,key,name} | null`, `online`, `deliverable`, `activeCredentialCount`. Credential secrets are never included. The full legacy `apiKey` is only returned by the single-server responses (POST/PUT `{ server }`, POST `/admin/servers/:id/regenerate-key`).
 
 ### POST /admin/servers, PUT /admin/servers/:id (existing, extended)
 
@@ -352,11 +352,59 @@ No admin cancel endpoint: there is no escrow-safe cancel **service** (the only c
 - `todayRevenue` (IC): sum of `Order.totalPrice` created since Bangkok midnight with status in `paid, queued, delivering, delivered, failed`.
 - `todayTopupThb`: sum of completed PaymentIntent `amountThb` completed since Bangkok midnight.
 
+## Admin pagination (2026-10-17)
+
+Shared helper: `src/utils/pagination.ts` (`parsePagination`, `buildPagination`, `paginateQuery`). Tests: `tests/unit/admin-pagination.test.ts`.
+
+### Query params
+
+| Param | Rule |
+|---|---|
+| `page` | 1-based int. Missing / `0` / negative / NaN / `1.5` / junk → `1`. Values above 1,000,000 are capped before counting (keeps `skip` a safe int). **Presence of `page` switches an endpoint into paginated mode** (see backward compat). |
+| `pageSize` | Snapped to the nearest allowed size **10, 25, 50, 100** (ties snap down: 75 → 50). `7` → 10, `20` → 25, `>=100` → 100, missing / `0` / negative / junk → **25**. `limit` is accepted as an alias (`pageSize` wins if both are sent). |
+| `search` | Trimmed, cut to 100 chars, empty → no filter. Case-insensitive `contains`. |
+| filters | Per endpoint (below). `''` or `all` = no filter. Any other unknown value → **400** `{ error }`. |
+
+### Response
+
+```json
+{ "<items-key>": [ ... ], "pagination": { "page": 3, "pageSize": 25, "total": 51, "totalPages": 3 } }
+```
+
+- `totalPages = max(1, ceil(total / pageSize))` — an empty list is `{ page: 1, total: 0, totalPages: 1 }`.
+- `page` is **clamped server-side** to `[1, totalPages]` and the clamped value is returned. The client must adopt `pagination.page` (e.g. after deleting the last row of the last page, asking for page 4 of 3 returns page 3's rows with `page: 3`).
+- Count and rows are read in one `prisma.$transaction([count, findMany])`. The requested page is tried first; if the count says it is past the end, the query is re-run for the clamped page (bounded to 3 re-runs).
+- Every ordering ends with a unique `id` tiebreaker, so rows never repeat or skip between pages.
+
+### Backward compatibility
+
+- Endpoints that used to return **everything** (servers, products, chat-ranks, categories) keep doing so when `page` is absent: same items key, no `pagination` object. Filters/search still apply if sent.
+- Endpoints that already paginated with `page`/`limit` (users, api-keys, protection, protection logs, content pages, media) keep their envelope and keep `pagination.limit` (= `pageSize`), adding `pagination.pageSize`. Their `limit` used to be **unbounded** (and `limit=abc` produced NaN → 500); it is now snapped/capped.
+
+### Endpoints
+
+| Endpoint | Role | Items key | Filters | Order |
+|---|---|---|---|---|
+| GET /admin/servers | root | `servers` (+ `counts`) | `search` (name, map, displayName, connectHost), `gameMode` = `PVE\|PVE_MOD\|PVPVE\|NONE` (case-insensitive), `clusterId` (cluster id, or `none` = unassigned), `status` = `active\|inactive\|online\|offline` | cluster.sortOrder, cluster.name (unassigned last), server.sortOrder, id |
+| GET /admin/products | admin\|root | `products` (with `category`) | `search` (name, externalKey), `categoryId` (int, or `none`), `productType` (`item\|dino\|engram\|kit\|bundle\|command\|entitlement`), `isActive` (`true\|false`) | isActive asc (drafts first), name, id |
+| GET /admin/users | server_admin\|root | `users` | `search` (discordUsername, steamId, discordId) | createdAt desc, id |
+| GET /admin/api-keys | server_admin\|root | `apiKeys` (keys masked `abcd...wxyz`) | `search` (discordUsername, steamId, apiKeyServerName) | apiKeyLastUsed desc **nulls last** (was nulls first), id |
+| GET /admin/chat-ranks | root | `ranks` | `serverId` (int, `0` = global; junk → 400), `search` (name, groupKey) | priority desc, name, id |
+| GET /admin/categories | admin\|root | `categories` | `search` (name) | sortOrder, name, id |
+| GET /admin/protection | admin (legacy) | `protections` | `search` (Steam ID / tribe name, contains), `type`, `isActive`; default size 25 (was 20) | createdAt desc, id |
+| GET /admin/protection/logs | admin (legacy) | `logs` | `eventType`, `steamId` (exact), `serverId` (digits only, junk → 400); default size 50 | createdAt desc, id |
+| GET /content/admin/pages | admin (legacy) | `pages` | `pageType`, `search`; default size 25 (was 20) | updatedAt desc, id |
+| GET /content/admin/media | admin (legacy) | `files` | `folder`, `mimeType`, `search`; **not snapped**: default 24, bounded to 1..100 (grid layout) | createdAt desc, id |
+
+Unchanged (already bounded to 100, own envelope `{ items, total, page, pageSize }`, no clamp): `/admin/deliveries`, `/admin/audit-logs`, `/admin/market/listings`, `/admin/promotions`. `/admin/orders` keeps its legacy `page`/`limit` handling.
+
+`counts` on GET /admin/servers: `{ all, PVE, PVE_MOD, PVPVE, NONE }` computed with every filter **except** `gameMode` (so tab badges reflect the current search/cluster/status). `Server.gameMode` is a non-null enum, so `NONE` is always 0 today and `gameMode=NONE` returns no rows; the frontend may hide that tab when its count is 0.
+
 ## Extra endpoints added (admin console gap audit)
 
 | Method | Path | Role | Response |
 |---|---|---|---|
-| GET | /admin/categories | admin\|root | `{ categories: Category & { _count: { products } }[] }` incl. inactive, ordered by sortOrder, name |
+| GET | /admin/categories | admin\|root | `{ categories: Category & { _count: { products } }[] }` incl. inactive, ordered by sortOrder, name, id; optional pagination (see Admin pagination) |
 | GET | /admin/promotions?status=&page=&pageSize= | admin\|root | `{ items, total, page, pageSize }` — PromotionCampaign rows; `discountValue`/`maxDiscount`/`minSubtotal` as decimal strings; `voucherCount`, `redemptionCount` |
 
 ## Behaviour changes to existing endpoints (security hardening)
