@@ -1,5 +1,21 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## Dino catalog — 2026-10-18 (commits db6c868, 7cd07b7)
+
+- 414 active dinos (was 362), every one with an image and every one passing the real delivery builder and the HeartShop.cpp guards. Applied with `scripts/dino-catalog/apply-plan.ts --apply` (one transaction, audited). Backup: `backups/postgres/heartshop-pre-dino-catalog-20261018-031047.dump`.
+- Owner rules:
+  - legacy prices and levels are kept, cheap legacy dinos stay as they are;
+  - Aquatica creatures are sold;
+  - no Reaper King, Rhyniognatha or Reapers;
+  - wiki-untameable creatures (Riftwalker, Takifugu, Vulcanite) are excluded;
+  - Titanosaur is excluded (temporary tame).
+- New prices come from the legacy species price × learned variant multiplier (Aberrant/Abyssal 1.5, X 1.8, R 2, Tek 2), or from a legacy tier median.
+- Images: 342 ark.wiki.gg webp in `frontend/public/images/catalog/ark/dinos` (ATTRIBUTION.md; footer credit).
+- Legacy fixes: Ferox Lv.75/Lv.100, Maewing names Lv.200/Lv.400.
+- Water-only creatures say "ต้องอยู่ในน้ำตอนรับ" (they spawn where the buyer stands).
+- Aquatica creatures need servers that have the Aquatica content.
+- Nothing has been spawn-tested in game yet: test one land, one aquatic and one Aquatica creature when Server1 is up.
+
 ## Admin pagination + Frozen admin theme — 2026-10-17 (commits 1d9dc21, 5582d09)
 
 - Backend `utils/pagination.ts`: page clamped server-side, pageSize snapped to 10/25/50/100 (max 100), count+rows in one transaction, stable `id` tiebreak. Applies to /admin servers, products, users, api-keys, chat-ranks, categories, protection, content. Without `page` the old full-list behaviour is kept.
