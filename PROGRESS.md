@@ -1,5 +1,13 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## Admin pagination + Frozen admin theme — 2026-10-17 (commits 1d9dc21, 5582d09)
+
+- Backend `utils/pagination.ts`: page clamped server-side, pageSize snapped to 10/25/50/100 (max 100), count+rows in one transaction, stable `id` tiebreak. Applies to /admin servers, products, users, api-keys, chat-ranks, categories, protection, content. Without `page` the old full-list behaviour is kept.
+- `/admin/servers` list rows return `apiKeyLast4` only. The full key comes back only on create and regenerate. `counts` per gameMode feed the tabs.
+- Fixed: a server_admin with no assigned server used to see every user and API key.
+- Frontend admin kit is in `frontend/src/components/admin/**` (see `frontend/ADMIN_UI.md`). `usePaginatedQuery` keeps page, size, search and filters in the URL and remembers rows-per-page per table. All 11 admin pages use the Frozen look.
+- Verified against the live DB: filters, clamp, counts, and 400 on bad filters. DB backup: `backups/postgres/heartshop-pre-admin-pagination-20261017-221008.dump`.
+
 ## Plugin gateway split — 2026-10-17 (commit 03ff057)
 
 - Backend runs as two compose services from ONE image: `backend` (`SERVICE_ROLE=web`: site/user/admin API, Socket.IO, Discord bot, runs migrations) and `plugin-gateway` (`SERVICE_ROLE=plugin-gateway`: `/api/plugin/**` only). Same Postgres/Redis.
