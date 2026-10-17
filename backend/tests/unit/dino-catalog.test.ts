@@ -135,7 +135,9 @@ describe('dino catalog: classification', () => {
     ['Gigantoraptor', '/Game/ASA/Dinos/Gigantoraptor/Gigantoraptor_Character_BP', { inGames: 'ARK: Survival Ascended' }, 'asa_path'],
     ['Adasaurus', '/PPR-Adasaurus/Dinos/SPAdasaurus/Adasaurus_Character_BP', {}, 'mod_path'],
     ['Achatina', '/Game/Mods/DarkArk/Dinos/Achatina/DA_Achatina_Character_BP', { inMod: 'The Hunted 2.0' }, 'mod_path'],
-    ['Dakosaurus', '/Game/Abyss/Dinos/Dakosaurus/Dakosaurus_Character_BP', { dlcs: ['Aquatica'] }, 'unverified'],
+    ['Takifugu', '/Game/Abyss/Dinos/Takifugu/Takifugu_Character_BP', { dlcs: ['Aquatica'] }, 'untameable'],
+    ['Abyssal Reaper King', '/Game/Abyss/Dinos/Abyssal/Reaper/Reaper_Character_BP_Male_Abyssal', { dlcs: ['Aquatica'] }, 'owner_excluded'],
+    ['Rhyniognatha', '/Game/PrimalEarth/Dinos/Rhyniognatha/Rhynio_Character_BP', { tameable: true }, 'owner_excluded'],
     ['Chalk Golem', '/Game/Mods/Valguero/Assets/Dinos/RockGolem/ChalkGolem/ChalkGolem_Character_BP', {}, 'unverified'],
     ['Meganeura', '/Game/PrimalEarth/Dinos/Dragonfly/Dragonfly_Character_BP', { tameable: false }, 'untameable'],
     ['Piranha', '/Game/PrimalEarth/Dinos/Piranha/Piranha_Character_BP', { tameable: true }, 'untameable'],
@@ -160,9 +162,15 @@ describe('dino catalog: classification', () => {
     expect(sellable('Mystery', '/Game/PrimalEarth/Dinos/Mystery/Mystery_Character_BP', { inGames: '' }).code).toBe('unverified');
   });
 
-  it('sells the tamed Reaper King class only', () => {
-    expect(sellable('Reaper King', '/Game/Aberration/Dinos/Nameless/Xenomorph_Character_BP_Male_Tamed', { tameable: false }).status).toBe('SELLABLE');
+  it('sells no Reaper creatures (owner decision 2026-10-18)', () => {
+    expect(sellable('Reaper King', '/Game/Aberration/Dinos/Nameless/Xenomorph_Character_BP_Male_Tamed', { tameable: false }).code).toBe('owner_excluded');
     expect(sellable('Reaper', '/Game/Aberration/Dinos/Nameless/Xenomorph_Character_BP_Male', { tameable: false, dlcs: ['Aberration', 'Aquatica'] }).code).toBe('untameable');
+  });
+
+  it('sells Aquatica creatures the owner opted in to, flagging water-only ones', () => {
+    const dako = sellable('Dakosaurus', '/Game/Abyss/Dinos/Dakosaurus/Dakosaurus_Character_BP', { dlcs: ['Aquatica'] });
+    expect(dako.status).toBe('SELLABLE_AQUATIC');
+    expect(sellable('Homarus', '/Game/Abyss/Dinos/Homarus/Homarus_Character_BP', { dlcs: ['Aquatica'] }).status).toBe('SELLABLE');
   });
 
   it('legacy rows on proven official-map paths stay sellable without wiki data', () => {

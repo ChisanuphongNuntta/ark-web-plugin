@@ -308,7 +308,9 @@ export function buildPlan(input: {
       const useDraft = Boolean(args.product) && index === 0;
       const externalKey = useDraft ? args.product!.externalKey! : createdExternalKey(args.blueprint, offer.displayLevel);
       sellableSlots.set(slot(args.blueprint, offer.displayLevel), externalKey);
-      const categoryName = GROUP_CATEGORY[group];
+      // Abyssal variants are priced like Aberrant ones but are not Aberrant creatures.
+      const abyssal = group === 'aberrant' && /^Abyssal\s/i.test(args.displayName);
+      const categoryName = abyssal ? GROUP_CATEGORY.base : GROUP_CATEGORY[group];
       newRows.push({
         productId: useDraft ? args.product!.id : null,
         externalKey,

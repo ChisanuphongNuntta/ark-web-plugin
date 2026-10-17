@@ -110,6 +110,8 @@ export function stripLevelSuffix(name: string): string {
 
 const VARIANT_PREFIXES: Array<[RegExp, MultipliedGroup]> = [
   [/^Aberrant\s+/i, 'aberrant'],
+  // Aquatica's Abyssal biome variants are priced like Aberrant ones (owner opt-in 2026-10-18).
+  [/^Abyssal\s+/i, 'aberrant'],
   [/^X-/i, 'x'],
   [/^R-/i, 'r'],
   [/^Tek\s+/i, 'tek'],
@@ -258,6 +260,27 @@ const OWNABLE_WITHOUT_TAMING = new Set<string>([
   'xenomorph_character_bp_male_tamed', // Reaper King (the tamed-from-birth class players own)
 ]);
 
+/** Creatures the owner chose not to sell (2026-10-18). */
+const OWNER_EXCLUDED: Record<string, string> = {
+  xenomorph_character_bp_male_tamed: 'owner: Reaper King is not sold',
+  rhynio_character_bp: 'owner: Rhyniognatha is not sold',
+};
+
+/** Aquatica creatures ark.wiki.gg marks untameable: a forced tame would fail delivery. */
+const AQUATICA_UNTAMEABLE: Record<string, string> = {
+  riftwalker_bp: 'Riftwalker is untameable per ark.wiki.gg',
+  takifugu_character_bp: 'Takifugu is untameable per ark.wiki.gg',
+  vulcanite_character_bp: 'Vulcanite is untameable per ark.wiki.gg',
+};
+
+/** Aquatica creatures ark.wiki.gg lists as aquatic: they spawn where the buyer stands. */
+const AQUATICA_WATER_ONLY = new Set<string>([
+  'chrysaora_character_bp', 'dakosaurus_character_bp', 'istiophorus_character_bp', 'kathreptis_character_bp',
+  'malleocephalus_character_bp', 'mantisshrimp_character_bp', 'monodon_character_bp', 'onchopristis_character_bp',
+  'qarmoutus_character_bp', 'seahorse_character_bp', 'stereolepis_character_bp', 'thunnus_character_bp',
+  'tridacna_character_bp', 'wyvern_character_bp_water',
+]);
+
 /** Classes whose spawn is not a normal ownable creature. */
 const NON_CREATURE: Record<string, string> = {
   megamek_character_bp: 'Mega Mek is a temporary fusion of four Meks, not a standalone tame',
@@ -354,10 +377,17 @@ export function classifyCreature(input: ClassifyInput): Classification {
   if (officialMapRoot && !input.legacyProven) {
     return no('unverified', `unverified: official-map asset under ${officialMapRoot.replace(/\/$/, '')} not yet proven to spawn on IRIS servers`);
   }
-  // Aquatica is judged by asset path only: the wiki lists "Aquatica" on base creatures
-  // (e.g. Reaper) that merely have an Abyssal variant there.
+  if (OWNER_EXCLUDED[asset]) return no('owner_excluded', OWNER_EXCLUDED[asset]);
+  // Aquatica (/Game/Abyss): the owner opted in to selling it (2026-10-18). It is judged by
+  // asset path only, because the wiki lists "Aquatica" on base creatures (e.g. Reaper)
+  // that merely have an Abyssal variant there.
   if (pkg.startsWith('/game/abyss/') && !input.legacyProven) {
-    return no('unverified', 'unverified: ARK Aquatica paid-DLC asset (/Game/Abyss) not confirmed installed on every IRIS server');
+    if (/(^|_)reaper_|xenomorph/.test(asset)) return no('owner_excluded', 'owner: no Reaper creatures in the shop');
+    if (AQUATICA_UNTAMEABLE[asset]) return no('untameable', AQUATICA_UNTAMEABLE[asset]);
+    const reason = 'owner opt-in: ARK Aquatica DLC creature (server must have Aquatica content)';
+    return AQUATICA_WATER_ONLY.has(asset)
+      ? { status: 'SELLABLE_AQUATIC', code: 'sellable_aquatic', reason: `${reason}; water-only: buyer must stand in water when claiming` }
+      : { status: 'SELLABLE', code: 'sellable', reason };
   }
 
   if (!input.legacyProven) {
@@ -422,6 +452,26 @@ export const NEW_SPECIES_TIER: Record<string, { tier: Tier; why: string; priceAs
   stryder: { tier: 'large', why: 'Genesis 2 utility harvester/turret mount' },
   // No plain Stryder exists, so no Tek multiplier: priced as the 'large' tier directly.
   tekstryder: { tier: 'large', why: 'Genesis 2 utility harvester/turret mount (no base species, so no Tek multiplier)' },
+  // ARK Aquatica species (owner opt-in 2026-10-18), tiered by role.
+  chrysaora: { tier: 'small', why: 'Aquatica jellyfish' },
+  seahorse: { tier: 'small', why: 'Aquatica small mount' },
+  mudpuppy: { tier: 'small', why: 'Aquatica small amphibian' },
+  tiktaalik: { tier: 'small', why: 'Aquatica small amphibian' },
+  homarus: { tier: 'utility', why: 'Aquatica lobster utility tame' },
+  mantisshrimp: { tier: 'utility', why: 'Aquatica utility tame' },
+  riftcrawler: { tier: 'utility', why: 'Aquatica utility tame' },
+  tridacna: { tier: 'utility', why: 'Aquatica giant clam utility tame' },
+  istiophorus: { tier: 'mid', why: 'Aquatica fast water mount' },
+  kathreptis: { tier: 'mid', why: 'Aquatica water mount' },
+  onchopristis: { tier: 'mid', why: 'Aquatica sawfish combat mount' },
+  qarmoutus: { tier: 'mid', why: 'Aquatica water mount' },
+  stereolepis: { tier: 'mid', why: 'Aquatica water mount' },
+  thunnus: { tier: 'mid', why: 'Aquatica fast water mount' },
+  dakosaurus: { tier: 'large', why: 'Aquatica marine predator' },
+  malleocephalus: { tier: 'large', why: 'Aquatica large shark' },
+  monodon: { tier: 'large', why: 'Aquatica narwhal combat mount' },
+  ocepechelon: { tier: 'large', why: 'Aquatica giant sea turtle' },
+  waterwyvern: { tier: 'apex', why: 'Aquatica wyvern', priceAs: 'firewyvern' },
 };
 
 export type LegacySpecies = {
