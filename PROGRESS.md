@@ -1,5 +1,13 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## Plugin gateway split — 2026-10-17 (commit 03ff057)
+
+- Backend runs as two compose services from ONE image: `backend` (`SERVICE_ROLE=web`: site/user/admin API, Socket.IO, Discord bot, runs migrations) and `plugin-gateway` (`SERVICE_ROLE=plugin-gateway`: `/api/plugin/**` only). Same Postgres/Redis.
+- nginx: `/api/plugin/` returns 404 on public 80/443. Plugins use `https://localhost:8443/api/plugin`, published only on `127.0.0.1:8443`. Docker Desktop NATs every client to 172.18.0.1, so isolation is by loopback port binding, not an IP allowlist. Remote game servers must come in over a VPN.
+- Server1/Server2 `ArkApi/Plugins/HeartShop/config.json` ApiUrl now points to :8443 (backups `config.json.bak-20261017-191325`). Game servers are still offline + drained.
+- osv1 promoted admin → root (audited). Frontend reverted to the Frozen design (3734951) per owner; only nav click effects removed.
+- Stack sheet: https://claude.ai/artifact/Eyb5Vmunx2iCco38s9YJYm
+
 ## UI redesign + server directory deployed — 2026-10-17
 
 - Commits `3f51fca` (backend), `9ac4099` (frontend), `4e133ad` (seed fix). Deployed to Docker prod (backend + 2 frontends healthy). Pre-deploy DB backup: `backups/postgres/heartshop-pre-redesign-20261017-181451.dump`.
