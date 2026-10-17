@@ -151,23 +151,6 @@ export const adminApi = {
   getApiKeys: (page = 1, search?: string) =>
     api.get('/admin/api-keys', { params: { page, search } }),
   getApiKeyByUser: (userId: string) => api.get(`/admin/api-keys/${userId}`),
-
-  /* ---- UI redesign 2026-10 (raw axios). Prefer the TYPED clients in
-   * '@/lib/contracts/console' (adminConsoleApi), which normalize envelopes. ---- */
-  updateSiteSettings: (data: { season?: string; announcement?: { text: string; href?: string } | null }) =>
-    api.put('/admin/site/settings', data),
-  getClusters: () => api.get('/admin/clusters'),
-  createCluster: (data: { key: string; name: string; gameMode?: string | null; description?: string | null; sortOrder?: number }) =>
-    api.post('/admin/clusters', data),
-  updateCluster: (id: string, data: { key?: string; name?: string; gameMode?: string | null; description?: string | null; sortOrder?: number }) =>
-    api.put(`/admin/clusters/${encodeURIComponent(id)}`, data),
-  getDeliveries: (params?: { status?: string; serverId?: number; page?: number; pageSize?: number }) =>
-    api.get('/admin/deliveries', { params }),
-  retryDelivery: (id: string) => api.post(`/admin/deliveries/${encodeURIComponent(id)}/retry`),
-  getAdminAuditLogs: (params?: { action?: string; actorId?: string; resource?: string; page?: number; pageSize?: number }) =>
-    api.get('/admin/audit-logs', { params }),
-  getMarketListings: (params?: { status?: string; page?: number; pageSize?: number }) =>
-    api.get('/admin/market/listings', { params }),
   resetApiKeyIp: (userId: string) => api.post(`/admin/api-keys/${userId}/reset-ip`),
   revokeApiKey: (userId: string) => api.delete(`/admin/api-keys/${userId}`),
   downloadPlugin: (userId: string, serverId?: number) => {
@@ -324,14 +307,6 @@ export const pdpaApi = {
   exportData: () => api.get('/pdpa/export'),
   deleteData: (confirmation: string) =>
     api.post('/pdpa/delete', { confirmation }),
-};
-
-// Public site + server directory (raw axios). Prefer the typed clients
-// `siteApi` / `serverDirectoryApi` in '@/lib/contracts/console'.
-export const siteRawApi = {
-  getSettings: () => api.get('/site/settings'),
-  getServers: (params?: { deliverable?: boolean }) => api.get('/servers', { params }),
-  getServerDirectory: () => api.get('/servers/directory'),
 };
 
 // Payment API

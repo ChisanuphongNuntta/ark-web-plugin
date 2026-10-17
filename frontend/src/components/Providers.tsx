@@ -1,36 +1,30 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { authApi } from '@/lib/api';
-import { ToastProvider } from '@/components/ui/Toast';
 
-/**
- * App-wide client providers: React Query, session bootstrap and toasts.
- * <SeasonProvider> is mounted inside this tree by app/layout.tsx.
- */
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000,
-            gcTime: 30 * 60 * 1000,
+            staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh longer
+            gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache longer
             refetchOnWindowFocus: false,
-            refetchOnMount: false,
-            retry: 1,
+            refetchOnMount: false, // Don't refetch if data is fresh
+            retry: 1, // Reduce retry attempts
           },
         },
       })
   );
 
-  const setUser = useAuthStore((s) => s.setUser);
-  const setLoading = useAuthStore((s) => s.setLoading);
+  const { setUser, setLoading } = useAuthStore();
   const hasCheckedAuth = useRef(false);
 
-  // Resolve the session once on mount. A 401 simply means "signed out".
+  // Check auth on mount - only once
   useEffect(() => {
     if (hasCheckedAuth.current) return;
     hasCheckedAuth.current = true;
@@ -39,23 +33,27 @@ export function Providers({ children }: { children: React.ReactNode }) {
       try {
         const { data } = await authApi.getMe();
         if (data.user) {
-          setUser({ ...data.user, pointsBalance: Number(data.user.pointsBalance) });
+          setUser({
+            ...data.user,
+            pointsBalance: Number(data.user.pointsBalance),
+          });
         } else {
           setUser(null);
         }
-      } catch {
+      } catch (error) {
+        // 401 is expected when not logged in
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
-    void checkAuth();
-  }, [setUser, setLoading]);
+    checkAuth();
+  }, []); // Empty dependency - run once on mount
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>{children}</ToastProvider>
+      {children}
     </QueryClientProvider>
   );
 }

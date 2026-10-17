@@ -12,10 +12,6 @@
  * backend is authoritative for totals, discounts, stock and limits.
  */
 
-import type { GameMode, ServerClusterRef, ServerConnect } from './console-types';
-
-export * from './console-types';
-
 export interface Pagination {
   page: number;
   limit: number;
@@ -104,25 +100,12 @@ export interface ServerStatus {
   chatTag?: string | null;
   chatColor?: string | null;
   chatIcon?: string | null;
-  drainMode?: boolean;
-  supportsDinoDelivery?: boolean;
-  /**
-   * UI redesign 2026-10 additive fields (ServerSummary). Optional here so the
-   * legacy shape keeps type-checking; new code should use `ServerSummary` via
-   * `serverDirectoryApi.listServers()` which normalizes both shapes.
-   */
-  displayName?: string;
-  gameMode?: GameMode;
-  cluster?: ServerClusterRef | null;
-  connect?: ServerConnect | null;
-  rates?: string | null;
-  isModded?: boolean;
-  available?: boolean;
-  online?: boolean;
-  playerCount?: number;
-  deliverable?: boolean;
-  sortOrder?: number;
+  displayName?: string | null;
+  gameMode?: GameMode | null;
+  cluster?: { id: string; key: string; name: string } | null;
 }
+
+export type GameMode = 'PVE' | 'PVE_MOD' | 'PVPVE';
 
 export interface ServersResponse {
   servers: ServerStatus[];

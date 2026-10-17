@@ -1,43 +1,5 @@
 import type { Config } from 'tailwindcss';
 
-/**
- * IRIS Private — Tailwind theme.
- *
- * Every colour resolves to a CSS variable declared in src/app/globals.css.
- * Variables hold space-separated RGB triplets so Tailwind's `/<alpha>`
- * modifier works (`bg-accent/10`). Seasons re-theme by swapping the variable
- * values under `html[data-season="..."]` — components never branch on season.
- *
- * Components must use ONLY the semantic names in `SEMANTIC` below.
- * See frontend/DESIGN.md for the full brief.
- */
-
-const tok = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
-
-/** Hairlines are white at a low, token-controlled opacity. */
-const hairline = (alphaVar: string) => `rgb(var(--line) / calc(var(--${alphaVar}) * <alpha-value>))`;
-
-const SEMANTIC = {
-  canvas: tok('canvas'),
-  surface: tok('surface'),
-  'surface-2': tok('surface-2'),
-  'surface-3': tok('surface-3'),
-  line: hairline('line-a'),
-  'line-strong': hairline('line-strong-a'),
-  fg: tok('fg'),
-  'fg-muted': tok('fg-muted'),
-  'fg-subtle': tok('fg-subtle'),
-  accent: tok('accent'),
-  'accent-hover': tok('accent-hover'),
-  'on-accent': tok('on-accent'),
-  seasonal: tok('seasonal'),
-  'seasonal-2': tok('seasonal-2'),
-  success: tok('success'),
-  warning: tok('warning'),
-  danger: tok('danger'),
-  info: tok('info'),
-};
-
 const config: Config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -46,49 +8,131 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: SEMANTIC,
+      colors: {
+        // IRIS brand palette — "Iconic Siam Ultra View"
+        // tokens defined in src/app/globals.css :root
+        iris: {
+          ink: 'rgb(var(--iris-ink) / <alpha-value>)',        // Obsidian Navy  #05070D
+          midnight: 'rgb(var(--iris-midnight) / <alpha-value>)',
+          river: 'rgb(var(--iris-river) / <alpha-value>)',     // Deep River     #071A24
+          cyan: 'rgb(var(--iris-cyan) / <alpha-value>)',       // Iris Cyan      #37E5D2
+          orchid: 'rgb(var(--iris-orchid) / <alpha-value>)',   // Royal Orchid   #A77BFF
+          gold: 'rgb(var(--iris-gold) / <alpha-value>)',       // Champagne Gold #DDBB72
+          pearl: 'rgb(var(--iris-pearl) / <alpha-value>)',
+          muted: 'rgb(var(--iris-muted) / <alpha-value>)',
+          slate: 'rgb(var(--iris-slate) / <alpha-value>)',                                   // Iris Slate     #151226
+          violet: 'rgb(var(--iris-violet) / <alpha-value>)',                                  // Frozen Midnight Violet #0D091A
+          magenta: 'rgb(var(--iris-magenta) / <alpha-value>)',                                 // Glowing Magenta #E83D84
+          // Canonical brand-name aliases (same tokens, descriptive names)
+          obsidian: 'rgb(var(--iris-ink) / <alpha-value>)',
+          'deep-river': 'rgb(var(--iris-river) / <alpha-value>)',
+          champagne: 'rgb(var(--iris-gold) / <alpha-value>)',
+        },
+        'iris-slate': 'rgb(var(--iris-slate) / <alpha-value>)',
+        primary: {
+          50: '#ecfdf5',
+          100: '#d1fae5',
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065f46',
+          900: '#064e3b',
+          950: '#022c22',
+        },
+        background: "#040816",
+        foreground: "#FAFAFA",
+        ark: {
+          darker: '#02040b',
+          dark: '#040816',
+          panel: '#07111F',
+          surface: 'rgba(7, 17, 31, 0.6)',
+          card: 'rgba(7, 17, 31, 0.4)',
+          border: 'rgba(255, 255, 255, 0.05)',
+          primary: '#00E5A8',
+          primaryGlow: 'rgba(0, 229, 168, 0.4)',
+          accent: '#00F3FF',
+          gold: '#F6C453',
+          goldGlow: 'rgba(246, 196, 83, 0.4)'
+        }
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        'glass-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%)',
+      },
       fontFamily: {
-        sans: ['var(--font-plex-thai)', 'IBM Plex Sans Thai', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-plex-mono)', 'IBM Plex Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        sans: ['var(--font-iris-sans)', 'sans-serif'],
+        display: ['var(--font-iris-display)', 'serif'],
       },
-      fontSize: {
-        // Thai-friendly scale; body copy uses a generous 1.7 line-height.
-        '2xs': ['0.6875rem', { lineHeight: '1.5' }],
-        xs: ['0.75rem', { lineHeight: '1.6' }],
-        sm: ['0.875rem', { lineHeight: '1.7' }],
-        base: ['1rem', { lineHeight: '1.7' }],
-        lg: ['1.125rem', { lineHeight: '1.6' }],
-        xl: ['1.25rem', { lineHeight: '1.45' }],
-        '2xl': ['1.5rem', { lineHeight: '1.35' }],
-        '3xl': ['1.875rem', { lineHeight: '1.3' }],
-        '4xl': ['2.25rem', { lineHeight: '1.25' }],
-        '5xl': ['3rem', { lineHeight: '1.2' }],
+      animation: {
+        'gradient-x': 'gradient-x 15s ease infinite',
+        'float': 'float 6s ease-in-out infinite',
+        'float-gentle': 'float-gentle 4s ease-in-out infinite',
+        'pulse-glow': 'pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'slide-up': 'slide-up 0.5s ease-out forwards',
+        'spin-slow': 'spin 8s linear infinite',
+        'shimmer': 'shimmer 2.5s linear infinite',
+        'neon-pulse': 'neon-pulse 2s ease-in-out infinite',
+        'scan-line': 'scan-line 4s linear infinite',
+        'border-glow': 'border-glow 3s ease-in-out infinite',
+        'prism-drift': 'prism-drift 14s ease-in-out infinite alternate',
+        'river-shine': 'river-shine 8s linear infinite',
       },
-      borderRadius: {
-        control: '6px',
-        card: '10px',
-        dialog: '14px',
+      keyframes: {
+        'gradient-x': {
+          '0%, 100%': {
+            'background-size': '200% 200%',
+            'background-position': 'left center'
+          },
+          '50%': {
+            'background-size': '200% 200%',
+            'background-position': 'right center'
+          },
+        },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        'float-gentle': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-4px)' },
+        },
+        'pulse-glow': {
+          '0%, 100%': { opacity: '1', boxShadow: '0 0 20px rgba(16, 185, 129, 0.2)' },
+          '50%': { opacity: '.5', boxShadow: '0 0 40px rgba(16, 185, 129, 0.5)' },
+        },
+        'slide-up': {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'shimmer': {
+          '0%': { 'background-position': '-200% center' },
+          '100%': { 'background-position': '200% center' },
+        },
+        'neon-pulse': {
+          '0%, 100%': { opacity: '1', filter: 'brightness(1)' },
+          '50%': { opacity: '0.8', filter: 'brightness(1.4)' },
+        },
+        'scan-line': {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100vh)' },
+        },
+        'border-glow': {
+          '0%, 100%': { 'border-color': 'rgba(0, 229, 168, 0.2)' },
+          '50%': { 'border-color': 'rgba(0, 229, 168, 0.6)' },
+        },
+        'prism-drift': {
+          '0%': { transform: 'translate3d(-3%, -2%, 0) rotate(-2deg)', opacity: '0.45' },
+          '100%': { transform: 'translate3d(4%, 3%, 0) rotate(3deg)', opacity: '0.8' },
+        },
+        'river-shine': {
+          '0%': { backgroundPosition: '0% 50%' },
+          '100%': { backgroundPosition: '200% 50%' },
+        },
       },
-      maxWidth: {
-        content: '1240px',
-        prose: '68ch',
-      },
-      boxShadow: {
-        // The only shadow in the system — for floating overlays (menus, dialogs, toasts).
-        overlay: '0 16px 48px -12px rgb(0 0 0 / 0.55)',
-      },
-      transitionDuration: {
-        fast: '120ms',
-        DEFAULT: '160ms',
-        slow: '180ms',
-      },
-      zIndex: {
-        header: '40',
-        overlay: '60',
-        toast: '70',
-      },
-      // Decorative keyframes (float, shimmer, pulse-glow, scan-line, prism-drift,
-      // river-shine, neon-pulse, border-glow, gradient-x) are intentionally removed.
     },
   },
   plugins: [],

@@ -1,59 +1,70 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Cookie, X, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { Button, Dialog, Switch, useIsClient } from '@/components/ui';
 
 const COOKIE_CONSENT_KEY = 'cookie-consent';
 
 interface CookiePreferences {
-  necessary: boolean; // always true
+  necessary: boolean; // Always true
   analytics: boolean;
   marketing: boolean;
 }
 
-const NECESSARY_ONLY: CookiePreferences = { necessary: true, analytics: false, marketing: false };
-const ALL_ACCEPTED: CookiePreferences = { necessary: true, analytics: true, marketing: true };
-
-function readStoredConsent(): CookiePreferences | null {
-  try {
-    const raw = window.localStorage.getItem(COOKIE_CONSENT_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<CookiePreferences>;
-    return {
-      necessary: true,
-      analytics: Boolean(parsed.analytics),
-      marketing: Boolean(parsed.marketing),
-    };
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Small, calm consent notice. Sits bottom-left and leaves room for the chat button on mobile.
- * Storage key and the `cookie-consent-changed` event are unchanged so existing listeners keep working.
- */
 export function CookieConsent() {
-  const isClient = useIsClient();
-  // Read once on the client; the server render and first client render both show nothing.
-  const stored = useMemo(() => (isClient ? readStoredConsent() : null), [isClient]);
-  const [decided, setDecided] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [draft, setDraft] = useState<CookiePreferences | null>(null);
-  const preferences = draft ?? stored ?? NECESSARY_ONLY;
-  const setPreferences = (update: (p: CookiePreferences) => CookiePreferences) => setDraft(update(preferences));
-  const showBanner = isClient && !stored && !decided;
+  const [preferences, setPreferences] = useState<CookiePreferences>({
+    necessary: true,
+    analytics: false,
+    marketing: false,
+  });
+
+  useEffect(() => {
+    // Check if consent has been given
+    const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
+    if (!consent) {
+      setShowBanner(true);
+    } else {
+      try {
+        const saved = JSON.parse(consent);
+        setPreferences(saved);
+      } catch {
+        setShowBanner(true);
+      }
+    }
+  }, []);
+
+  const handleAcceptAll = () => {
+    const allAccepted: CookiePreferences = {
+      necessary: true,
+      analytics: true,
+      marketing: true,
+    };
+    savePreferences(allAccepted);
+  };
+
+  const handleAcceptNecessary = () => {
+    const necessaryOnly: CookiePreferences = {
+      necessary: true,
+      analytics: false,
+      marketing: false,
+    };
+    savePreferences(necessaryOnly);
+  };
+
+  const handleSavePreferences = () => {
+    savePreferences(preferences);
+  };
 
   const savePreferences = (prefs: CookiePreferences) => {
-    try {
-      window.localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(prefs));
-    } catch {
-      // storage blocked: keep the choice for this visit only
-    }
-    setDraft(prefs);
-    setDecided(true);
+    localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(prefs));
+    setPreferences(prefs);
+    setShowBanner(false);
     setShowSettings(false);
+
+    // Dispatch event for other components to react to consent changes
     window.dispatchEvent(new CustomEvent('cookie-consent-changed', { detail: prefs }));
   };
 
@@ -61,89 +72,161 @@ export function CookieConsent() {
 
   return (
     <>
+      {/* Main Banner */}
       {!showSettings && (
-        <section
-          role="region"
-          aria-label="การใช้คุกกี้"
-          className="fixed bottom-4 left-4 right-20 z-overlay max-w-sm rounded-card border border-line-strong bg-surface p-4 shadow-overlay sm:right-auto"
-        >
-          <h2 className="text-sm font-semibold text-fg">เว็บไซต์นี้ใช้คุกกี้</h2>
-          <p className="mt-1 text-xs leading-relaxed text-fg-muted">
-            คุกกี้ที่จำเป็นใช้สำหรับการเข้าสู่ระบบและความปลอดภัย ส่วนคุกกี้อื่นเลือกเปิดได้เอง{' '}
-            <Link
-              href="/privacy"
-              className="text-accent underline underline-offset-2 transition-colors duration-fast hover:text-accent-hover"
-            >
-              นโยบายความเป็นส่วนตัว
-            </Link>
-          </p>
-          <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setShowSettings(true)}>
-              ตั้งค่า
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => savePreferences(NECESSARY_ONLY)}>
-              เฉพาะที่จำเป็น
-            </Button>
-            <Button size="sm" onClick={() => savePreferences(ALL_ACCEPTED)}>
-              ยอมรับทั้งหมด
-            </Button>
-          </div>
-        </section>
-      )}
-
-      <Dialog
-        open={showSettings}
-        onOpenChange={setShowSettings}
-        title="ตั้งค่าคุกกี้"
-        description="เลือกประเภทคุกกี้ที่อนุญาต เปลี่ยนได้ทุกเมื่อจากหน้านโยบายความเป็นส่วนตัว"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => savePreferences(NECESSARY_ONLY)}>
-              เฉพาะที่จำเป็น
-            </Button>
-            <Button onClick={() => savePreferences(preferences)}>บันทึกการตั้งค่า</Button>
-          </>
-        }
-      >
-        <div className="divide-y divide-line">
-          <div className="flex items-start justify-between gap-4 pb-4">
-            <div>
-              <p className="text-sm font-medium text-fg">คุกกี้ที่จำเป็น</p>
-              <p className="mt-1 text-xs leading-relaxed text-fg-muted">
-                ใช้สำหรับการเข้าสู่ระบบ ตะกร้า และความปลอดภัย ปิดไม่ได้
-              </p>
+        <div className="fixed bottom-4 left-4 z-40 max-w-md p-3.5 sm:p-4 bg-[#081523]/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.85)] text-slate-200 animate-slide-up">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-amber-400/30 bg-amber-400/10 text-amber-300">
+                <Cookie className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-bold text-white mb-0.5">การใช้งานคุกกี้ (Cookie Policy)</h3>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  เว็บไซต์นี้ใช้คุกกี้เพื่อปรับปรุงประสบการณ์การใช้งานของคุณ{' '}
+                  <Link href="/privacy" className="text-cyan-300 underline underline-offset-2 hover:text-white">
+                    อ่านเพิ่มเติม
+                  </Link>
+                </p>
+              </div>
             </div>
-            <span className="shrink-0 text-xs text-fg-subtle">เปิดเสมอ</span>
-          </div>
-          <div className="py-4">
-            <Switch
-              checked={preferences.analytics}
-              onCheckedChange={(checked) => setPreferences((p) => ({ ...p, analytics: checked }))}
-              label="คุกกี้วิเคราะห์"
-              description="ช่วยให้เรารู้ว่าหน้าไหนใช้งานยาก เพื่อปรับปรุงเว็บไซต์"
-            />
-          </div>
-          <div className="pt-4">
-            <Switch
-              checked={preferences.marketing}
-              onCheckedChange={(checked) => setPreferences((p) => ({ ...p, marketing: checked }))}
-              label="คุกกี้การตลาด"
-              description="ใช้แสดงโปรโมชันที่เกี่ยวกับคุณ"
-            />
+
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-1 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setShowSettings(true)}
+                className="h-8 px-3 text-xs font-semibold rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 flex items-center gap-1.5 transition"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                ตั้งค่า
+              </button>
+              <button
+                type="button"
+                onClick={handleAcceptNecessary}
+                className="h-8 px-3 text-xs font-semibold rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 transition"
+              >
+                เฉพาะที่จำเป็น
+              </button>
+              <button
+                type="button"
+                onClick={handleAcceptAll}
+                className="h-8 px-3 text-xs font-bold rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black shadow-[0_0_12px_rgba(55,229,210,0.4)] transition"
+              >
+                ยอมรับทั้งหมด
+              </button>
+            </div>
           </div>
         </div>
-        <p className="mt-4 text-xs text-fg-subtle">
-          <Link href="/privacy" className="underline-offset-2 hover:text-fg hover:underline">
-            นโยบายความเป็นส่วนตัว
-          </Link>
-          <span aria-hidden="true"> · </span>
-          <Link href="/terms" className="underline-offset-2 hover:text-fg hover:underline">
-            ข้อกำหนดการใช้บริการ
-          </Link>
-        </p>
-      </Dialog>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Cookie className="h-6 w-6 text-iris-gold" />
+                  ตั้งค่าคุกกี้
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(false)}
+                  className="p-2 hover:bg-gray-700 rounded"
+                  aria-label="ปิดหน้าต่างตั้งค่า"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Necessary Cookies */}
+                <div className="p-4 bg-black/40 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">คุกกี้ที่จำเป็น</h3>
+                    <span className="text-xs text-green-400 bg-green-500/20 px-2 py-1 rounded">
+                      เปิดใช้งานเสมอ
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    คุกกี้เหล่านี้จำเป็นสำหรับการทำงานของเว็บไซต์ เช่น การเข้าสู่ระบบ และการรักษาความปลอดภัย
+                    ไม่สามารถปิดการใช้งานได้
+                  </p>
+                </div>
+
+                {/* Analytics Cookies */}
+                <div className="p-4 bg-black/40 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">คุกกี้วิเคราะห์</h3>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={preferences.analytics}
+                        onChange={(e) =>
+                          setPreferences({ ...preferences, analytics: e.target.checked })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-iris-cyan"></div>
+                    </label>
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    ช่วยให้เราเข้าใจว่าผู้เยี่ยมชมใช้งานเว็บไซต์อย่างไร เพื่อปรับปรุงประสบการณ์การใช้งาน
+                  </p>
+                </div>
+
+                {/* Marketing Cookies */}
+                <div className="p-4 bg-black/40 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">คุกกี้การตลาด</h3>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={preferences.marketing}
+                        onChange={(e) =>
+                          setPreferences({ ...preferences, marketing: e.target.checked })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-iris-cyan"></div>
+                    </label>
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    ใช้เพื่อแสดงโฆษณาและโปรโมชันที่เกี่ยวข้องกับคุณ
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={handleSavePreferences}
+                  className="btn btn-primary flex-1"
+                >
+                  บันทึกการตั้งค่า
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAcceptAll}
+                  className="btn btn-secondary"
+                >
+                  ยอมรับทั้งหมด
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-500 mt-4 text-center">
+                <Link href="/privacy" className="hover:underline">
+                  นโยบายความเป็นส่วนตัว
+                </Link>
+                {' | '}
+                <Link href="/terms" className="hover:underline">
+                  ข้อกำหนดการใช้บริการ
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
-
-export default CookieConsent;

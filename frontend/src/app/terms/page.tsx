@@ -1,53 +1,131 @@
 'use client';
 
-import { LegalDocument, type LegalSection } from './LegalDocument';
-
-const SUMMARY = [
-  'การใช้ร้านค้าหรือเข้าเล่นเซิร์ฟเวอร์ IRIS ถือว่ายอมรับข้อกำหนดนี้',
-  'Iris Coin (IC) ใช้แลกสินค้าในเกมเท่านั้น ไม่ใช่เงินตรา',
-  'ห้ามโกง ห้ามใช้บั๊ก ฝ่าฝืนอาจถูกระงับบัญชี',
-  'ของไม่เข้าเกม แจ้งทีมงานพร้อมเลขคำสั่งซื้อ',
-] as const;
-
-const SECTIONS: readonly LegalSection[] = [
-  {
-    title: 'การยอมรับข้อกำหนด',
-    body: 'การเข้าใช้ร้านค้า IRIS หรือเซิร์ฟเวอร์ ARK ของ IRIS Thailand ถือว่าคุณยอมรับข้อกำหนดและเงื่อนไขนี้ทั้งหมด หากไม่ยอมรับ กรุณาหยุดใช้บริการ',
-  },
-  {
-    title: 'คำจำกัดความ',
-    items: [
-      '“บริการ” หมายถึง เว็บไซต์ร้านค้า ระบบส่งของ และเซิร์ฟเวอร์เกม ARK ของ IRIS Thailand',
-      '“Iris Coin (IC)” หมายถึง หน่วยแต้มในระบบ ใช้แลกสัตว์และไอเทมในเกม',
-      '“สินค้าเสมือน” หมายถึง สัตว์ ไอเทม พิมพ์เขียว และของดิจิทัลในเกม ARK',
-      '“ผู้ใช้” หมายถึง ผู้ที่เข้าสู่ระบบและใช้บริการ',
-    ],
-  },
-  {
-    title: 'บัญชีผู้ใช้',
-    items: [
-      'ผู้ใช้เข้าสู่ระบบด้วย Discord และเชื่อม Steam เพื่อรับของในเกม',
-      'ผู้ใช้รับผิดชอบความปลอดภัยของบัญชีตนเอง และไม่ให้ผู้อื่นใช้บัญชีแทน',
-      'การใช้โปรแกรมโกงหรือการเอาเปรียบช่องโหว่ของระบบ อาจทำให้บัญชีถูกระงับถาวร',
-    ],
-  },
-  {
-    title: 'การเติมเงินและการคืนเงิน',
-    items: [
-      'รายการเติม Iris Coin จะได้รับการตรวจสอบก่อนเข้าบัญชี',
-      'Iris Coin และสินค้าที่ส่งเข้าเกมสำเร็จแล้วไม่สามารถแลกคืนเป็นเงิน เว้นแต่เกิดข้อผิดพลาดของระบบที่ตรวจสอบได้',
-    ],
-  },
-];
+import { useQuery } from '@tanstack/react-query';
+import { pdpaApi } from '@/lib/api';
+import { Loader2, FileText, CheckCircle2 } from 'lucide-react';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Badge } from '@/components/ui/Badge';
+import Link from 'next/link';
 
 export default function TermsPage() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['terms-of-service'],
+    queryFn: () => pdpaApi.getPolicy('terms_of_service').then((res) => res.data),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="page-shell flex justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
+      </div>
+    );
+  }
+
   return (
-    <LegalDocument
-      type="terms_of_service"
-      title="ข้อกำหนดการใช้บริการ"
-      description="เงื่อนไขการใช้ร้านค้า ระบบส่งของ และเซิร์ฟเวอร์ของ IRIS Thailand"
-      summary={SUMMARY}
-      fallback={SECTIONS}
-    />
+    <div className="page-shell max-w-4xl mx-auto py-8 sm:py-12 space-y-8 animate-slide-up">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-iris-cyan animate-pulse" />
+          <span className="text-xs font-bold uppercase tracking-widest text-iris-cyan">
+            LEGAL TERMS & GOVERNANCE
+          </span>
+        </div>
+        <h1 className="mt-2 text-3xl font-black text-iris-pearl sm:text-4xl">
+          ข้อกำหนดการใช้บริการ (Terms of Service)
+        </h1>
+        <p className="mt-2 text-sm text-iris-muted">
+          กฎระเบียบ ข้อตกลง และเงื่อนไขการใช้งานบริการเครือข่ายเซิร์ฟเวอร์ IRIS ARK Expedition
+        </p>
+      </div>
+
+      {/* TL;DR Summary Card */}
+      <div className="rounded-3xl border border-iris-gold/30 bg-gradient-to-r from-iris-gold/10 via-black/40 to-iris-gold/5 p-5 sm:p-6 backdrop-blur-md space-y-3">
+        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-iris-gold">
+          <FileText className="h-4 w-4" />
+          <span>สรุปข้อตกลงสำคัญใน 30 วินาที (Terms TL;DR)</span>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3 text-xs text-slate-300">
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-gold font-bold">1.</span>
+            <span>การเข้าสู่ระบบและเล่นในคลัสเตอร์ ถือเป็นการยอมรับกฎข้อตกลงนี้ทั้งหมด</span>
+          </div>
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-gold font-bold">2.</span>
+            <span>เหรียญ Iris Coin เป็นแต้มดิจิทัลสำหรับแลกเปลี่ยนสินค้าเสมือนในเกม</span>
+          </div>
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-gold font-bold">3.</span>
+            <span>ห้ามใช้โปรแกรมโกง ห้าม Exploits หรือฟอกไอเท็ม ฝ่าฝืนระงับสิทธิ์ถาวร</span>
+          </div>
+          <div className="flex items-start gap-2 bg-black/30 p-2.5 rounded-xl border border-white/5">
+            <span className="text-iris-gold font-bold">4.</span>
+            <span>พบปัญหาของไม่เข้าเซิร์ฟเวอร์ สามารถติดต่อเคลมได้ที่ศูนย์ Support ตลอด 24 ชม.</span>
+          </div>
+        </div>
+      </div>
+
+      <GlassCard variant="default" className="p-6 sm:p-10 space-y-6">
+        <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-iris-cyan/10 border border-iris-cyan/30 text-iris-cyan">
+            <FileText className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-iris-pearl">ข้อกำหนดและเงื่อนไขการใช้บริการ</h2>
+            <p className="text-xs text-iris-muted">
+              ปรับปรุงล่าสุด: {new Date().toLocaleDateString('th-TH')}
+            </p>
+          </div>
+        </div>
+
+        {error || !data?.policy ? (
+          <div className="prose prose-invert max-w-none text-sm text-iris-muted space-y-6 leading-relaxed">
+            <div>
+              <h3 className="text-base font-bold text-iris-pearl mb-2">1. การยอมรับข้อกำหนด</h3>
+              <p>
+                การเข้าถึงหรือใช้บริการระบบร้านค้า Heart Shop และเครือข่ายเซิร์ฟเวอร์ IRIS ถือว่าท่านยอมรับข้อกำหนดและเงื่อนไขนี้ทั้งหมด หากท่านไม่ยอมรับข้อกำหนดเหล่านี้ กรุณาระงับการใช้งานระบบ
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-iris-pearl mb-2">2. คำจำกัดความ</h3>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li><strong className="text-iris-pearl">&quot;บริการ&quot;</strong> หมายถึง ระบบเว็บช็อป Heart Shop และเซิร์ฟเวอร์เกม ARK ของ IRIS</li>
+                <li><strong className="text-iris-pearl">&quot;Iris Coin (IC)&quot;</strong> หมายถึง คะแนนหน่วยเงินเสมือนภายในระบบ ใช้สำหรับแลกรับสัตว์และไอเทมในเกม</li>
+                <li><strong className="text-iris-pearl">&quot;สินค้าเสมือน&quot;</strong> หมายถึง สัตว์เลี้ยง ไดโนเสาร์ พิมพ์เขียว และไอเทมดิจิทัลภายในเกม ARK</li>
+                <li><strong className="text-iris-pearl">&quot;ผู้ใช้&quot;</strong> หมายถึง บุคคลที่ลงทะเบียนและใช้งานระบบ</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-iris-pearl mb-2">3. บัญชีผู้ใช้และความรับผิดชอบ</h3>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>ผู้ใช้ต้องเชื่อมต่อบัญชี Discord เพื่อยืนยันตัวตน และเชื่อมต่อบัญชี Steam เพื่อรับสินค้าในเซิร์ฟเวอร์เกม</li>
+                <li>ผู้ใช้ต้องรับผิดชอบต่อความปลอดภัยของบัญชีตนเอง ห้ามแบ่งปันบัญชีให้ผู้อื่น</li>
+                <li>การตรวจพบการใช้งานโปรแกรมโกง หรือการเอาเปรียบระบบ (Exploits) จะส่งผลให้บัญชีถูกระงับสิทธิ์ถาวร</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-iris-pearl mb-2">4. การเติมเงินและนโยบายการคืนเงิน</h3>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>การเติมเหรียญ Iris Coin ผ่านการโอนเงินจะได้รับการตรวจสอบและอนุมัติโดยเจ้าหน้าที่</li>
+                <li>เหรียญ Iris Coin และสินค้าเสมือนที่จัดส่งสำเร็จในเกมแล้ว ไม่สามารถขอคืนเป็นเงินสดได้ เว้นแต่กรณีเกิดข้อผิดพลาดทางเทคนิคจากระบบที่พิสูจน์ได้</li>
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <div className="prose prose-invert max-w-none text-sm text-iris-muted">
+            <div className="mb-4">
+              <Badge variant="cyan">Version {data.policy.version}</Badge>
+            </div>
+            <div
+              className="mt-4 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: data.policy.content }}
+            />
+          </div>
+        )}
+      </GlassCard>
+    </div>
   );
 }

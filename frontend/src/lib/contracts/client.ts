@@ -252,6 +252,7 @@ export const cartApi = {
         if (e.status !== null || mode === 'never') throw e;
         // Transport failure in auto mode — fall back so the demo flow continues.
         if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
           console.warn('[contracts] /cart/sync unavailable, using fixture cart', err);
         }
         return cartFixture;
@@ -371,6 +372,7 @@ export const orderContractApi = {
         const e = toContractError(err, 'ไม่สามารถคืนเงินคำสั่งซื้อนี้ได้');
         if (e.status !== null || mode === 'never') throw e;
         if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
           console.warn('[contracts] /orders/refund unavailable, using simulated refund', err);
         }
         return simulated();

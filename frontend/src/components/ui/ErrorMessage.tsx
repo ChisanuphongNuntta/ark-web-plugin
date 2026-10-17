@@ -3,60 +3,64 @@ import { AlertCircle, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
 
-export interface ErrorMessageProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
-  title?: React.ReactNode;
-  message: React.ReactNode;
-  /** Short machine code shown in mono (e.g. HTTP status or backend code). */
+export interface ErrorMessageProps extends React.HTMLAttributes<HTMLDivElement> {
+  title?: string;
+  message: string;
   errorCode?: string;
   onRetry?: () => void;
   retryText?: string;
-  /** `inline` = single compact line for forms and table cells. */
-  variant?: 'block' | 'inline';
 }
 
-/** Error block: what failed, what to do next, optional retry. */
 export function ErrorMessage({
   className,
-  title = 'โหลดข้อมูลไม่สำเร็จ',
+  title = 'เกิดข้อผิดพลาดในการโหลดข้อมูล',
   message,
   errorCode,
   onRetry,
-  retryText = 'ลองอีกครั้ง',
-  variant = 'block',
+  retryText = 'ลองใหม่อีกครั้ง',
   ...props
 }: ErrorMessageProps) {
-  if (variant === 'inline') {
-    return (
-      <div role="alert" className={cn('flex items-start gap-2 text-sm text-danger', className)} {...props}>
-        <AlertCircle className="mt-[3px] h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-        <span>{message}</span>
-      </div>
-    );
-  }
   return (
     <div
-      role="alert"
       className={cn(
-        'flex flex-col items-start justify-between gap-4 rounded-card border border-danger/30 bg-danger/[0.06] p-4 sm:flex-row sm:items-center sm:p-5',
+        'rounded-[1.65rem] border border-rose-500/20 bg-rose-950/15 p-6 backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4',
         className
       )}
+      role="alert"
+      aria-live="assertive"
       {...props}
     >
-      <div className="flex min-w-0 items-start gap-3">
-        <AlertCircle className="mt-0.5 h-[18px] w-[18px] shrink-0 text-danger" strokeWidth={1.5} aria-hidden="true" />
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-fg">{title}</p>
-          <p className="mt-0.5 text-sm text-fg-muted">{message}</p>
-          {errorCode ? <p className="mt-1.5 font-mono text-xs text-fg-subtle">รหัส {errorCode}</p> : null}
+      <div className="flex items-start gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 animate-pulse">
+          <AlertCircle className="h-5 w-5" />
+        </div>
+        
+        <div className="flex-1">
+          <h4 className="font-display font-bold text-rose-200 text-sm md:text-base uppercase tracking-wide">
+            {title}
+          </h4>
+          <p className="text-xs md:text-sm text-rose-300/80 mt-1 leading-relaxed">
+            {message}
+          </p>
+          {errorCode && (
+            <span className="inline-block mt-2 font-mono text-[10px] font-bold tracking-widest text-rose-400/50 bg-rose-950/40 px-2 py-0.5 rounded">
+              CODE: {errorCode}
+            </span>
+          )}
         </div>
       </div>
-      {onRetry ? (
-        <Button variant="secondary" size="sm" onClick={onRetry} leftIcon={<RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />}>
+
+      {onRetry && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRetry}
+          className="border border-rose-500/20 text-rose-300 hover:bg-rose-500/10 hover:text-white shrink-0"
+        >
+          <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
           {retryText}
         </Button>
-      ) : null}
+      )}
     </div>
   );
 }
-
-export default ErrorMessage;

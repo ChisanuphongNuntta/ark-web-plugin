@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
-import { TopupFlow } from '@/components/payments/TopupFlow';
+import { LegacyTopupPage } from '@/components/payments/LegacyTopup';
 
 export const metadata: Metadata = {
-  title: 'เติม Iris Coin',
-  description: 'เติม Iris Coin ด้วยการโอนเงินและแนบสลิป หรือชำระด้วยบัตรผ่าน Stripe',
+  title: 'เติมเหรียญ IRIS Coin | HeartShop ARK Ecosystem',
+  description: 'เติมเงิน IRIS Coin สะดวก รวดเร็ว ผ่านบัตรเครดิต/เดบิต (Stripe), สแกนพร้อมเพย์/โอนธนาคาร หรือโหมดทดสอบ Sandbox',
 };
 
 export default function TopupPage() {
-  return <TopupFlow />;
+  return <LegacyTopupPage />;
 }
+

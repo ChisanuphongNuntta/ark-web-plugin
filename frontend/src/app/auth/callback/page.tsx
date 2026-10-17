@@ -4,18 +4,7 @@ import { Suspense, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { authApi } from '@/lib/api';
-import { Spinner } from '@/components/ui';
-
-function CallbackStatus({ text }: { text: string }) {
-  return (
-    <div className="page-shell flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center" aria-busy="true">
-      <Spinner label={text} />
-      <p className="text-sm text-fg-muted" aria-hidden="true">
-        {text}
-      </p>
-    </div>
-  );
-}
+import { Loader2 } from 'lucide-react';
 
 function AuthCallbackContent() {
   const searchParams = useSearchParams();
@@ -23,38 +12,61 @@ function AuthCallbackContent() {
   const hasProcessed = useRef(false);
 
   useEffect(() => {
-    // Run once even under StrictMode double-invocation.
+    // Prevent multiple executions
     if (hasProcessed.current) return;
     hasProcessed.current = true;
 
     const handleCallback = async () => {
-      if (searchParams.get('success') !== 'true') {
-        window.location.href = '/login?error=auth_failed';
-        return;
-      }
-      try {
-        const { data } = await authApi.getMe();
-        if (!data.user) {
+      const success = searchParams.get('success');
+
+      if (success === 'true') {
+        try {
+          const { data } = await authApi.getMe();
+          if (data.user) {
+            setUser({
+              ...data.user,
+              pointsBalance: Number(data.user.pointsBalance),
+            });
+
+            // Check if Steam is linked
+            if (!data.user.steamId) {
+              window.location.href = '/profile?linkSteam=true';
+            } else {
+              window.location.href = '/';
+            }
+          } else {
+            window.location.href = '/login?error=auth_failed';
+          }
+        } catch (error) {
+          console.error('Auth callback error:', error);
           window.location.href = '/login?error=auth_failed';
-          return;
         }
-        setUser({ ...data.user, pointsBalance: Number(data.user.pointsBalance) });
-        window.location.href = data.user.steamId ? '/' : '/profile?linkSteam=true';
-      } catch (error) {
-        console.error('Auth callback error:', error);
+      } else {
         window.location.href = '/login?error=auth_failed';
       }
     };
 
-    void handleCallback();
+    handleCallback();
   }, [searchParams, setUser]);
 
-  return <CallbackStatus text="กำลังเข้าสู่ระบบ" />;
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <Loader2 className="h-12 w-12 animate-spin text-iris-cyan mb-4" />
+      <p className="text-gray-400">กำลังเข้าสู่ระบบ...</p>
+    </div>
+  );
 }
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={<CallbackStatus text="กำลังโหลด" />}>
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-12 w-12 animate-spin text-iris-cyan mb-4" />
+          <p className="text-gray-400">กำลังโหลด...</p>
+        </div>
+      }
+    >
       <AuthCallbackContent />
     </Suspense>
   );

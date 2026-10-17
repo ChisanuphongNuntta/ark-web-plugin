@@ -4,268 +4,234 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { ChevronRight } from 'lucide-react';
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Coins,
+  Package,
+  Server,
+  ShieldCheck,
+  Loader2,
+} from 'lucide-react';
 import { orderContractApi } from '@/lib/contracts/client';
 import type { Order, OrderStatus } from '@/lib/contracts/types';
-import { isOrderActive } from '@/lib/orderStatus';
+import { isOrderActive, statusOf } from '@/lib/orderStatus';
 import { useAuthStore } from '@/lib/store';
-import {
-  Amount,
-  Card,
-  EmptyState,
-  ErrorMessage,
-  PageHeader,
-  Pagination,
-  SegmentedControl,
-  Skeleton,
-  Spinner,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableHeaderCell,
-  TableLoadingRows,
-  TableRow,
-  buttonVariants,
-} from '@/components/ui';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ProductArtwork } from '@/components/ProductArtwork';
-import { OrderStatusBadge, formatDate, shortId } from './orderUi';
 
 const PAGE_SIZE = 20;
 
-type Filter = OrderStatus | 'all';
-
-const FILTERS: { value: Filter; label: string }[] = [
+const FILTERS: { value: OrderStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'ทั้งหมด' },
-  { value: 'queued', label: 'รอส่ง' },
-  { value: 'delivering', label: 'กำลังส่ง' },
-  { value: 'delivered', label: 'ส่งแล้ว' },
-  { value: 'failed', label: 'ไม่สำเร็จ' },
+  { value: 'queued', label: 'เตรียมจัดส่ง' },
+  { value: 'delivering', label: 'กำลังจัดส่ง' },
+  { value: 'delivered', label: 'จัดส่งแล้ว' },
+  { value: 'failed', label: 'ล้มเหลว' },
   { value: 'refunded', label: 'คืนเงิน' },
 ];
 
+function formatDate(value?: string | null): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
 function OrdersContent() {
-  const { user, isLoading: authLoading } = useAuthStore();
+  const { user } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const rawStatus = searchParams.get('status') ?? 'all';
-  const status: Filter = FILTERS.some((f) => f.value === rawStatus) ? (rawStatus as Filter) : 'all';
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const statusParam = (searchParams.get('status') ?? 'all') as OrderStatus | 'all';
+  const pageParam = Math.max(1, Number(searchParams.get('page')) || 1);
 
-  const updateUrl = (updates: Record<string, string | null>) => {
-    const next = new URLSearchParams(searchParams.toString());
-    Object.entries(updates).forEach(([key, value]) => (value ? next.set(key, value) : next.delete(key)));
-    const qs = next.toString();
-    router.push(qs ? `/orders?${qs}` : '/orders', { scroll: false });
-  };
+  const [status, setStatus] = React.useState<OrderStatus | 'all'>(statusParam);
+  const [page, setPage] = React.useState(pageParam);
+
+  React.useEffect(() => {
+    setStatus(statusParam);
+    setPage(pageParam);
+  }, [statusParam, pageParam]);
+
+  const updateUrl = React.useCallback(
+    (updates: Record<string, string | null>) => {
+      const next = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value) next.set(key, value);
+        else next.delete(key);
+      });
+      const query = next.toString();
+      router.push(query ? `/orders?${query}` : '/orders');
+    },
+    [router, searchParams]
+  );
 
   const query = useQuery({
     queryKey: ['orders', { status, page }],
-    queryFn: () => orderContractApi.list({ page, limit: PAGE_SIZE, status: status === 'all' ? undefined : status }),
+    queryFn: () =>
+      orderContractApi.list({
+        page,
+        limit: PAGE_SIZE,
+        status: status === 'all' ? undefined : status,
+      }),
     enabled: Boolean(user),
     placeholderData: keepPreviousData,
-    refetchInterval: (q) => ((q.state.data?.orders ?? []).some((o) => isOrderActive(o.status)) ? 15_000 : false),
+    refetchInterval: (q) => {
+      const orders = q.state.data?.orders ?? [];
+      return orders.some((order) => isOrderActive(order.status)) ? 15_000 : false;
+    },
   });
 
   const orders = query.data?.orders ?? [];
   const pagination = query.data?.pagination;
 
-  const setFilter = (next: Filter) => updateUrl({ status: next === 'all' ? null : next, page: null });
-  const setPage = (next: number) => updateUrl({ page: next <= 1 ? null : String(next) });
+  const handleFilter = (next: OrderStatus | 'all') => {
+    setStatus(next);
+    setPage(1);
+    updateUrl({ status: next === 'all' ? null : next, page: null });
+  };
+
+  const handlePage = (nextPage: number) => {
+    setPage(nextPage);
+    updateUrl({ page: nextPage <= 1 ? null : String(nextPage) });
+  };
 
   if (!user) {
     return (
-      <div className="page-shell pb-16">
-        <PageHeader eyebrow="บัญชีของฉัน" title="คำสั่งซื้อ" />
-        {authLoading ? (
-          <Spinner label="กำลังตรวจสอบการเข้าสู่ระบบ" />
-        ) : (
-          <EmptyState
-            title="เข้าสู่ระบบเพื่อดูคำสั่งซื้อ"
-            description="ประวัติการซื้อและสถานะการส่งของเข้าเกมผูกกับ IRIS ID ของคุณ"
-            action={
-              <Link href="/login" className={buttonVariants()}>
-                เข้าสู่ระบบ
-              </Link>
-            }
-          />
-        )}
+      <div className="page-shell py-20">
+        <EmptyState
+          title="กรุณาเข้าสู่ระบบ"
+          description="ต้องเข้าสู่ระบบด้วย IRIS ID เพื่อดูประวัติคำสั่งซื้อและสถานะการจัดส่งเข้าเกม"
+          actionText="เข้าสู่ระบบ"
+          onAction={() => {
+            router.push('/login');
+          }}
+          icon={<Package className="h-8 w-8" />}
+        />
       </div>
     );
   }
 
-  const refreshing = query.isFetching && !query.isLoading;
-
   return (
-    <div className="page-shell pb-16">
-      <PageHeader
-        eyebrow="บัญชีของฉัน"
-        title="คำสั่งซื้อ"
-        description="ติดตามสถานะการส่งของเข้าเกมของทุกคำสั่งซื้อ รายการที่ยังไม่เสร็จจะอัปเดตเองทุก 15 วินาที"
-      >
-        <SegmentedControl aria-label="กรองตามสถานะ" value={status} onChange={setFilter} options={FILTERS} />
-      </PageHeader>
+    <div className="page-shell py-10 space-y-8 animate-slide-up">
+      <div className="border-b border-white/5 pb-6 space-y-2">
+        <span className="eyebrow text-iris-cyan">YOUR ORDERS</span>
+        <h1 className="font-display text-4xl font-extrabold text-iris-pearl uppercase tracking-tight flex items-center gap-3">
+          <Package className="h-9 w-9 text-iris-cyan" />
+          ประวัติคำสั่งซื้อ
+        </h1>
+        <p className="max-w-2xl text-xs sm:text-sm text-iris-muted">
+          ติดตามสถานะการจัดส่งเข้าเกมแบบเรียลไทม์ ยอดเงินและสถานะทั้งหมดอ้างอิงจากระบบหลังบ้านเท่านั้น
+        </p>
+      </div>
 
-      {query.isError ? (
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="กรองตามสถานะคำสั่งซื้อ">
+        {FILTERS.map((filter) => {
+          const active = status === filter.value;
+          return (
+            <button
+              key={filter.value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => handleFilter(filter.value)}
+              className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide outline-none transition focus-visible:ring-2 focus-visible:ring-iris-cyan ${
+                active
+                  ? 'border-iris-cyan bg-iris-cyan text-iris-ink'
+                  : 'border-white/10 text-iris-muted hover:border-white/20 hover:text-iris-pearl'
+              }`}
+            >
+              {filter.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {query.isError && (
         <ErrorMessage
           title="โหลดคำสั่งซื้อไม่สำเร็จ"
-          message="ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง"
-          onRetry={() => void query.refetch()}
+          message="ระบบดึงรายการคำสั่งซื้อของคุณไม่สำเร็จ โปรดลองใหม่อีกครั้ง"
+          onRetry={() => query.refetch()}
         />
-      ) : !query.isLoading && orders.length === 0 ? (
+      )}
+
+      {query.isLoading && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <GlassCard key={index} className="p-5 space-y-4">
+              <div className="flex gap-4">
+                <Skeleton className="h-16 w-16 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              </div>
+            </GlassCard>
+          ))}
+        </div>
+      )}
+
+      {!query.isLoading && !query.isError && orders.length === 0 && (
         <EmptyState
           title={status === 'all' ? 'ยังไม่มีคำสั่งซื้อ' : 'ไม่มีคำสั่งซื้อในสถานะนี้'}
           description={
             status === 'all'
-              ? 'เมื่อชำระเงินแล้ว คำสั่งซื้อและสถานะการส่งของจะแสดงที่นี่'
-              : 'ลองเลือกสถานะอื่น หรือดูคำสั่งซื้อทั้งหมด'
+              ? 'เมื่อชำระเงินสำเร็จ คำสั่งซื้อและสถานะการจัดส่งจะปรากฏที่นี่'
+              : 'ลองเปลี่ยนตัวกรองสถานะ หรือกลับไปดูคำสั่งซื้อทั้งหมด'
           }
-          action={
-            status === 'all' ? (
-              <Link href="/shop" className={buttonVariants()}>
-                ไปที่ร้านค้า
-              </Link>
-            ) : (
-              <button type="button" onClick={() => setFilter('all')} className={buttonVariants({ variant: 'secondary' })}>
-                ดูทั้งหมด
-              </button>
-            )
-          }
+          actionText={status === 'all' ? 'สำรวจร้านค้า IRIS Store' : 'ดูทั้งหมด'}
+          onAction={() => (status === 'all' ? router.push('/shop') : handleFilter('all'))}
         />
-      ) : (
-        <div aria-busy={query.isFetching || undefined} className={refreshing ? 'opacity-70 transition-opacity duration-fast' : undefined}>
-          {/* Mobile: cards */}
-          <ul className="space-y-3 md:hidden">
-            {query.isLoading
-              ? Array.from({ length: 4 }, (_, i) => (
-                  <li key={i}>
-                    <Card padding="sm" className="flex gap-3">
-                      <Skeleton className="h-12 w-12 shrink-0" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-2/3" />
-                        <Skeleton className="h-3 w-1/3" />
-                      </div>
-                    </Card>
-                  </li>
-                ))
-              : orders.map((order) => (
-                  <li key={order.id}>
-                    <OrderCard order={order} />
-                  </li>
-                ))}
-          </ul>
+      )}
 
-          {/* Desktop: table */}
-          <TableContainer className="hidden md:block">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>สินค้า</TableHeaderCell>
-                  <TableHeaderCell>เซิร์ฟเวอร์</TableHeaderCell>
-                  <TableHeaderCell align="right">จำนวน</TableHeaderCell>
-                  <TableHeaderCell align="right">ยอด</TableHeaderCell>
-                  <TableHeaderCell>สถานะ</TableHeaderCell>
-                  <TableHeaderCell>สั่งเมื่อ</TableHeaderCell>
-                  <TableHeaderCell>
-                    <span className="sr-only">รายละเอียด</span>
-                  </TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {query.isLoading ? (
-                  <TableLoadingRows columns={7} />
-                ) : (
-                  orders.map((order) => (
-                    <TableRow key={order.id} interactive onClick={() => router.push(`/orders/${order.id}`)}>
-                      <TableCell>
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-control border border-line bg-surface-2">
-                            <ProductArtwork product={order.product} alt="" className="h-full w-full object-contain p-0.5" />
-                          </div>
-                          <div className="min-w-0">
-                            <Link
-                              href={`/orders/${order.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="block max-w-[260px] truncate font-medium text-fg hover:text-accent"
-                            >
-                              {order.product?.name ?? `สินค้า #${order.productId}`}
-                            </Link>
-                            <p className="font-mono text-xs text-fg-subtle">#{shortId(order.id)}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell muted>
-                        <span className="block max-w-[180px] truncate">
-                          {order.server?.name ?? `เซิร์ฟเวอร์ #${order.serverId}`}
-                        </span>
-                      </TableCell>
-                      <TableCell align="right" mono>
-                        {order.quantity}
-                      </TableCell>
-                      <TableCell align="right">
-                        <Amount value={order.totalPrice} size="sm" />
-                      </TableCell>
-                      <TableCell>
-                        <OrderStatusBadge status={order.status} />
-                      </TableCell>
-                      <TableCell muted className="whitespace-nowrap">
-                        {formatDate(order.createdAt)}
-                      </TableCell>
-                      <TableCell align="right">
-                        <ChevronRight className="ml-auto h-4 w-4 text-fg-subtle" strokeWidth={1.5} aria-hidden="true" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+      {orders.length > 0 && (
+        <div
+          className={`grid grid-cols-1 lg:grid-cols-2 gap-4 transition-opacity ${
+            query.isFetching && !query.isLoading ? 'opacity-60' : 'opacity-100'
+          }`}
+          aria-busy={query.isFetching}
+        >
+          {orders.map((order) => (
+            <OrderListCard key={order.id} order={order} />
+          ))}
+        </div>
+      )}
 
-          {pagination ? (
-            <Pagination
-              className="mt-4"
-              page={pagination.page}
-              pageSize={pagination.limit || PAGE_SIZE}
-              total={pagination.total}
-              onPageChange={setPage}
-            />
-          ) : null}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={page <= 1 || query.isFetching}
+            onClick={() => handlePage(Math.max(1, page - 1))}
+            leftIcon={<ChevronLeft className="h-4 w-4" />}
+            aria-label="หน้าก่อนหน้า"
+          >
+            ก่อนหน้า
+          </Button>
+          <span className="font-mono text-xs text-iris-muted">
+            หน้า {pagination.page} / {pagination.totalPages}
+          </span>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={page >= pagination.totalPages || query.isFetching}
+            onClick={() => handlePage(page + 1)}
+            rightIcon={<ChevronRight className="h-4 w-4" />}
+            aria-label="หน้าถัดไป"
+          >
+            ถัดไป
+          </Button>
         </div>
       )}
     </div>
-  );
-}
-
-function OrderCard({ order }: { order: Order }) {
-  return (
-    <Link
-      href={`/orders/${order.id}`}
-      className="block rounded-card border border-line bg-surface p-4 transition-colors duration-fast hover:border-line-strong"
-    >
-      <div className="flex gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-control border border-line bg-surface-2">
-          <ProductArtwork product={order.product} alt="" className="h-full w-full object-contain p-1" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className="truncate text-sm font-medium text-fg">{order.product?.name ?? `สินค้า #${order.productId}`}</p>
-            <OrderStatusBadge status={order.status} className="shrink-0" />
-          </div>
-          <p className="mt-0.5 truncate text-xs text-fg-muted">
-            {order.server?.name ?? `เซิร์ฟเวอร์ #${order.serverId}`} · <span className="font-mono">×{order.quantity}</span>
-          </p>
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <span className="font-mono text-xs text-fg-subtle">{formatDate(order.createdAt)}</span>
-            <Amount value={order.totalPrice} size="sm" />
-          </div>
-        </div>
-      </div>
-      {order.status === 'failed' && order.lastError ? (
-        <p className="mt-3 rounded-control border border-danger/25 bg-danger/10 px-3 py-2 text-xs text-danger">{order.lastError}</p>
-      ) : null}
-    </Link>
   );
 }
 
@@ -273,12 +239,85 @@ export default function OrdersPage() {
   return (
     <React.Suspense
       fallback={
-        <div className="page-shell flex justify-center py-24" aria-busy="true">
-          <Spinner label="กำลังโหลด" />
+        <div className="flex justify-center py-24">
+          <Loader2 className="h-10 w-10 animate-spin text-iris-cyan" />
         </div>
       }
     >
       <OrdersContent />
     </React.Suspense>
+  );
+}
+
+function OrderListCard({ order }: { order: Order }) {
+  const status = statusOf(order.status);
+  const active = isOrderActive(order.status);
+
+  return (
+    <Link
+      href={`/orders/${order.id}`}
+      className="block rounded-[1.65rem] outline-none transition focus-visible:ring-2 focus-visible:ring-iris-cyan"
+    >
+      <GlassCard className={`h-full p-5 transition hover:border-iris-cyan/30 ${status.border}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 gap-4">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/40">
+              <ProductArtwork product={order.product} alt={order.product?.name ?? 'สินค้า'} className="h-full w-full" />
+            </div>
+
+            <div className="min-w-0">
+              <h3 className="truncate font-display text-base font-bold uppercase text-iris-pearl">
+                {order.product?.name ?? `สินค้า #${order.productId}`}
+              </h3>
+              <div className="mt-1.5 space-y-1 text-[11px] text-iris-muted">
+                <p className="flex items-center gap-1.5">
+                  <Server className="h-3 w-3 text-iris-cyan" />
+                  {order.server?.name ?? `เซิร์ฟเวอร์ #${order.serverId}`}
+                  {order.server?.map ? ` (${order.server.map})` : ''}
+                </p>
+                <p>จำนวน x{order.quantity}</p>
+                <p className="font-mono">{formatDate(order.createdAt)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="shrink-0 space-y-3 text-right">
+            <div className="relative inline-block">
+              <div className={`absolute inset-0 rounded-full blur-md ${status.glow}`} />
+              <span
+                className={`relative inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${status.chip} ${status.border} ${
+                  active ? 'animate-pulse' : ''
+                }`}
+              >
+                {status.icon}
+                {status.label}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end gap-1.5 font-mono font-bold text-iris-gold">
+              <Coins className="h-4 w-4" />
+              <span>{order.totalPrice.toLocaleString()} IC</span>
+            </div>
+          </div>
+        </div>
+
+        {order.status === 'failed' && order.lastError && (
+          <div className="mt-3 rounded-xl border border-rose-500/25 bg-rose-500/10 p-2.5 text-[11px] text-rose-300">
+            {order.lastError}
+          </div>
+        )}
+
+        <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-[11px] text-iris-muted">
+          <span className="inline-flex items-center gap-1">
+            <ShieldCheck className="h-3.5 w-3.5 text-iris-cyan" />
+            สถานะจากระบบหลังบ้าน
+          </span>
+          <span className="inline-flex items-center gap-1 font-bold text-iris-cyan transition-all">
+            ดูไทม์ไลน์การจัดส่ง
+            <ArrowRight className="h-3.5 w-3.5" />
+          </span>
+        </div>
+      </GlassCard>
+    </Link>
   );
 }

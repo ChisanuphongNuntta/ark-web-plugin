@@ -1,85 +1,72 @@
-import type { Metadata, Viewport } from 'next';
-import { IBM_Plex_Mono, IBM_Plex_Sans_Thai } from 'next/font/google';
+import type { Metadata } from 'next';
+import { Noto_Sans_Thai, Noto_Serif_Thai } from 'next/font/google';
 import './globals.css';
+import './frozen.css';
+import { FrozenPageFrame } from '@/components/FrozenPageFrame';
 import { Providers } from '@/components/Providers';
-import { SeasonProvider } from '@/components/season/SeasonProvider';
-import { SeasonRibbon } from '@/components/season/SeasonRibbon';
-import { SEASON_BOOTSTRAP_SCRIPT } from '@/components/season/seasons';
-import { PageFrame } from '@/components/ui/PageFrame';
 import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
 import { CookieConsent } from '@/components/CookieConsent';
+import { Footer } from '@/components/Footer';
 import ChatWidget from '@/components/ChatWidget';
 import { CartDrawer } from '@/components/CartDrawer';
+import { SnowParticles } from '@/components/SnowParticles';
 
-const plexThai = IBM_Plex_Sans_Thai({
+const irisSans = Noto_Sans_Thai({
   subsets: ['thai', 'latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-plex-thai',
+  variable: '--font-iris-sans',
   display: 'swap',
 });
 
-const plexMono = IBM_Plex_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-plex-mono',
+const irisDisplay = Noto_Serif_Thai({
+  subsets: ['thai', 'latin'],
+  variable: '--font-iris-display',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.iris-th.cloud'),
   title: {
-    default: 'IRIS Thailand — ร้านค้าและชุมชน ARK',
+    default: 'IRIS Thailand | HeartShop ARK Ecosystem',
     template: '%s | IRIS Thailand',
   },
-  description: 'IRIS Thailand ร้านค้า ARK ตลาดผู้เล่น กระเป๋า IRIS Coin รายชื่อเซิร์ฟเวอร์ และการส่งของเข้าเกม',
+  description: 'ศูนย์กลาง IRIS Thailand สำหรับร้านค้า ARK ตลาดผู้เล่น กระเป๋า IRIS Coin และการส่งสินค้าเข้าเกม',
   applicationName: 'IRIS Thailand',
-  keywords: ['ARK Thailand', 'IRIS Thailand', 'ARK Server', 'ARK PvE', 'ARK PvPvE', 'ARK Marketplace'],
+  keywords: ['ARK Thailand', 'IRIS Thailand', 'ARK Server', 'ARK Marketplace', 'HeartShop'],
   openGraph: {
     type: 'website',
     locale: 'th_TH',
     siteName: 'IRIS Thailand',
-    title: 'IRIS Thailand — ร้านค้าและชุมชน ARK',
-    description: 'ร้านค้า ตลาดผู้เล่น และเซิร์ฟเวอร์ ARK ของ IRIS ในบัญชีเดียว',
-    images: [{ url: '/images/hero_background.png', width: 1024, height: 1024, alt: 'IRIS Thailand' }],
+    title: 'IRIS Thailand | HeartShop ARK Ecosystem',
+    description: 'เว็บ เกม ร้านค้า และชุมชน IRIS ในระบบเดียว',
+    images: [{ url: '/images/hero_background.png', width: 1024, height: 1024, alt: 'โลก ARK ของ IRIS Thailand' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'IRIS Thailand — ร้านค้าและชุมชน ARK',
-    description: 'ร้านค้า ตลาดผู้เล่น และเซิร์ฟเวอร์ ARK ของ IRIS ในบัญชีเดียว',
+    title: 'IRIS Thailand | HeartShop ARK Ecosystem',
+    description: 'เว็บ เกม ร้านค้า และชุมชน IRIS ในระบบเดียว',
     images: ['/images/hero_background.png'],
   },
 };
 
-export const viewport: Viewport = {
-  // Default canvas; the season bootstrap script and SeasonProvider re-point it per season.
-  themeColor: '#0B0C0E',
-  colorScheme: 'dark',
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="th" suppressHydrationWarning className={`${plexThai.variable} ${plexMono.variable}`}>
-      <head>
-        {/* Applies data-season before first paint (cached setting or date rule). */}
-        <script dangerouslySetInnerHTML={{ __html: SEASON_BOOTSTRAP_SCRIPT }} />
-      </head>
-      <body className="min-h-screen bg-canvas font-sans text-fg antialiased">
+    <html lang="th" suppressHydrationWarning>
+      <body className={`${irisSans.variable} ${irisDisplay.variable} min-h-screen bg-iris-ink text-iris-pearl antialiased`}>
         <Providers>
-          <SeasonProvider>
-            <a className="skip-link" href="#main-content">
-              ข้ามไปยังเนื้อหาหลัก
-            </a>
-            <SeasonRibbon />
-            <Navbar />
-            <main id="main-content" className="min-h-[70vh] focus:outline-none" tabIndex={-1}>
-              <PageFrame>{children}</PageFrame>
-            </main>
-            <Footer />
-            <CookieConsent />
-            <ChatWidget />
-            <CartDrawer />
-          </SeasonProvider>
+          <SnowParticles count={18} />
+          <a className="skip-link" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
+          <Navbar />
+          <main id="main-content" className="min-h-[70vh] flex-1" tabIndex={-1}>
+            <FrozenPageFrame>{children}</FrozenPageFrame>
+          </main>
+          <Footer />
+          <CookieConsent />
+          <ChatWidget />
+          <CartDrawer />
         </Providers>
       </body>
     </html>

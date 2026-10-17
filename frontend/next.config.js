@@ -9,19 +9,6 @@ const nextConfig = {
       ? [{ source: '/api/:path*', destination: `${process.env.IRIS_LOCAL_API_ORIGIN || 'http://127.0.0.1:3201'}/api/:path*` }]
       : [];
   },
-  // Legacy iris-th.cloud server-list URLs → the new /servers directory.
-  async redirects() {
-    return [
-      { source: '/Listserver-PVE', destination: '/servers?mode=pve', permanent: true },
-      { source: '/list-server-pve-mod', destination: '/servers?mode=pve-mod', permanent: true },
-      { source: '/Listserver-PVPVE', destination: '/servers?mode=pvpve', permanent: true },
-      { source: '/list-server-pvpve-pre-aqua', destination: '/servers?mode=pre-aqua', permanent: true },
-      { source: '/status-server', destination: '/servers', permanent: true },
-      // Lower-case variants people type by hand.
-      { source: '/listserver-pve', destination: '/servers?mode=pve', permanent: true },
-      { source: '/listserver-pvpve', destination: '/servers?mode=pvpve', permanent: true },
-    ];
-  },
   images: {
     remotePatterns: [
       {

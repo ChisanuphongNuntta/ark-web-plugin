@@ -2,164 +2,220 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowRight, Coins, Loader2, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
 import { useQueries } from '@tanstack/react-query';
-import { Amount, Drawer, IconButton, Skeleton, buttonVariants, formatAmount } from '@/components/ui';
-import { useServers } from '@/components/servers';
+import { Button } from '@/components/ui/Button';
 import { ProductArtwork } from '@/components/ProductArtwork';
 import { shopApi } from '@/lib/contracts/client';
 import type { Product } from '@/lib/contracts/types';
 import { cartLineKey, useCartStore } from '@/lib/store';
 
-const MAX_QTY = 99;
-
-/**
- * Quick cart opened from the header / after "เพิ่มในตะกร้า".
- * The estimate is display-only; /cart fetches the authoritative backend total.
- */
 export function CartDrawer() {
   const { items, isDrawerOpen, setDrawerOpen, removeItem, setQuantity } = useCartStore();
-  const servers = useServers({ enabled: isDrawerOpen && items.length > 0 });
 
   const productQueries = useQueries({
     queries: items.map((item) => ({
-      queryKey: ['cart-product', item.productId],
+      queryKey: ['product-drawer-contract', item.productId, item.serverId],
       queryFn: () => shopApi.getProduct(item.productId).then((response) => response.product),
       staleTime: 5 * 60 * 1000,
-      enabled: isDrawerOpen,
     })),
   });
 
-  const estimateSubtotal = React.useMemo(
-    () =>
-      items.reduce((sum, item, index) => {
-        const product = productQueries[index]?.data as Product | undefined;
-        return product ? sum + product.price * item.quantity : sum;
-      }, 0),
-    [items, productQueries]
-  );
-  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-  const serverLabel = (id: number) => servers.data?.find((s) => s.id === id)?.displayName ?? `เซิร์ฟเวอร์ #${id}`;
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isDrawerOpen) setDrawerOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDrawerOpen, setDrawerOpen]);
 
-  const close = () => setDrawerOpen(false);
+  // Display-only estimate from catalog unit prices. Checkout page fetches the
+  // authoritative Backend Total before payment.
+  const estimateSubtotal = React.useMemo(() => {
+    return items.reduce((sum, item, index) => {
+      const product = productQueries[index]?.data as Product | undefined;
+      return product ? sum + product.price * item.quantity : sum;
+    }, 0);
+  }, [items, productQueries]);
+
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <Drawer
-      open={isDrawerOpen}
-      onOpenChange={setDrawerOpen}
-      side="right"
-      size="md"
-      title="ตะกร้า"
-      description={items.length ? `${totalQuantity} ชิ้น` : undefined}
-      footer={
-        items.length > 0 ? (
-          <div className="w-full space-y-3">
-            <div className="flex items-baseline justify-between gap-4">
-              <div>
-                <p className="text-sm text-fg">ยอดโดยประมาณ</p>
-                <p className="text-xs text-fg-subtle">ยอดสุทธิจะแสดงในหน้าตะกร้าก่อนชำระ</p>
+    <AnimatePresence>
+      {isDrawerOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setDrawerOpen(false)}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+          />
+
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-md flex-col border-l border-white/10 bg-iris-ink shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="ตะกร้าสินค้าของคุณ"
+          >
+            <div className="flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-iris-river/20 to-transparent p-5">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-iris-cyan" />
+                <h3 className="font-display text-base font-bold uppercase tracking-wide text-iris-pearl">
+                  ตะกร้าสินค้า
+                </h3>
+                <span className="rounded-full bg-iris-cyan/10 px-2 py-0.5 font-mono text-xs text-iris-cyan">
+                  {totalQuantity} ชิ้น
+                </span>
               </div>
-              <span className="font-mono text-lg tabular-nums text-fg">{formatAmount(estimateSubtotal)} IC</span>
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/5 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris-cyan"
+                aria-label="ปิดตะกร้า"
+              >
+                <X className="h-4 w-4 text-iris-pearl" />
+              </button>
             </div>
-            <Link href="/cart" onClick={close} className={buttonVariants({ fullWidth: true })}>
-              ไปที่ตะกร้าและชำระ
-            </Link>
-          </div>
-        ) : undefined
-      }
-    >
-      {items.length === 0 ? (
-        <div className="flex h-full flex-col items-center justify-center py-16 text-center">
-          <p className="text-base font-semibold text-fg">ตะกร้ายังว่าง</p>
-          <p className="mt-1 max-w-[240px] text-sm text-fg-muted">เลือกสินค้าและเซิร์ฟเวอร์ที่จะรับของ แล้วรายการจะมาอยู่ที่นี่</p>
-          <Link href="/shop" onClick={close} className={buttonVariants({ variant: 'secondary', size: 'sm', className: 'mt-6' })}>
-            ไปที่ร้านค้า
-          </Link>
-        </div>
-      ) : (
-        <ul className="divide-y divide-line">
-          {items.map((item, index) => {
-            const query = productQueries[index];
-            const product = query?.data as Product | undefined;
-            const lineKey = cartLineKey(item.productId, item.serverId);
 
-            if (query?.isLoading) {
-              return (
-                <li key={lineKey} className="flex items-center gap-3 py-4" aria-busy="true">
-                  <Skeleton className="h-14 w-14 shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/3" />
-                  </div>
-                </li>
-              );
-            }
-
-            if (!product) {
-              return (
-                <li key={lineKey} className="flex items-center justify-between gap-3 py-4 text-sm">
-                  <span className="text-fg-muted">
-                    โหลดสินค้า <span className="font-mono">#{item.productId}</span> ไม่สำเร็จ
-                  </span>
-                  <button
-                    type="button"
-                    className="text-xs text-danger underline-offset-4 hover:underline"
-                    onClick={() => removeItem(item.productId, item.serverId)}
-                  >
-                    นำออก
-                  </button>
-                </li>
-              );
-            }
-
-            const maxQty = product.productType === 'dino' ? 1 : MAX_QTY;
-
-            return (
-              <li key={lineKey} className="flex gap-3 py-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-control border border-line bg-surface-2">
-                  <ProductArtwork product={product} alt={product.name} className="h-full w-full object-contain p-1" />
+            <div className="flex-1 space-y-4 overflow-y-auto p-5">
+              {items.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center py-12 text-center text-xs text-iris-muted">
+                  <ShoppingBag className="mb-4 h-12 w-12 text-white/10 animate-float-gentle" />
+                  <p className="font-bold uppercase tracking-wide text-iris-pearl">ตะกร้าของคุณยังว่าง</p>
+                  <p className="mt-1 max-w-[220px]">
+                    เลือกสินค้าและเซิร์ฟเวอร์ปลายทางก่อนเข้าสู่ checkout
+                  </p>
+                  <Button variant="cyan" size="sm" className="mt-5" onClick={() => setDrawerOpen(false)}>
+                    เลือกสินค้าเข้าร้าน
+                  </Button>
                 </div>
+              ) : (
+                items.map((item, index) => {
+                  const query = productQueries[index];
+                  const product = query?.data as Product | undefined;
+                  const lineKey = cartLineKey(item.productId, item.serverId);
 
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-fg">{product.name}</p>
-                  <p className="mt-0.5 truncate text-xs text-fg-subtle">ส่งไปที่ {serverLabel(item.serverId)}</p>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <Amount value={product.price} size="sm" />
-                    <div className="flex items-center gap-1">
-                      <div className="inline-flex h-8 items-center rounded-control border border-line-strong" role="group" aria-label={`จำนวน ${product.name}`}>
+                  if (query?.isLoading) {
+                    return (
+                      <div key={lineKey} className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] p-3">
+                        <Loader2 className="h-4 w-4 animate-spin text-iris-cyan" />
+                        <span className="text-xs text-iris-muted">กำลังดึงข้อมูลสินค้า...</span>
+                      </div>
+                    );
+                  }
+
+                  if (!product) {
+                    return (
+                      <div key={lineKey} className="flex items-center justify-between gap-3 rounded-2xl border border-rose-500/15 bg-rose-500/5 p-3 text-xs text-rose-200">
+                        <span>โหลดสินค้า #{item.productId} ไม่สำเร็จ</span>
                         <button
                           type="button"
-                          onClick={() => setQuantity(item.productId, item.serverId, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                          className="flex h-full w-8 items-center justify-center text-fg-muted transition-colors duration-fast hover:text-fg disabled:opacity-40"
-                          aria-label="ลดจำนวน"
+                          className="font-bold text-rose-300 hover:underline"
+                          onClick={() => removeItem(item.productId, item.serverId)}
                         >
-                          <Minus className="h-3 w-3" strokeWidth={1.5} />
-                        </button>
-                        <span className="min-w-7 text-center font-mono text-xs tabular-nums text-fg">{item.quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(item.productId, item.serverId, item.quantity + 1)}
-                          disabled={item.quantity >= maxQty}
-                          className="flex h-full w-8 items-center justify-center text-fg-muted transition-colors duration-fast hover:text-fg disabled:opacity-40"
-                          aria-label="เพิ่มจำนวน"
-                        >
-                          <Plus className="h-3 w-3" strokeWidth={1.5} />
+                          นำออก
                         </button>
                       </div>
-                      <IconButton aria-label={`นำ ${product.name} ออก`} size="sm" onClick={() => removeItem(item.productId, item.serverId)}>
-                        <Trash2 className="h-4 w-4" strokeWidth={1.5} />
-                      </IconButton>
-                    </div>
+                    );
+                  }
+
+                  return (
+                    <article
+                      key={lineKey}
+                      className="group relative flex items-center gap-3.5 overflow-hidden rounded-2xl border border-white/5 bg-black/30 p-3.5 transition hover:border-white/10"
+                    >
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                        <ProductArtwork product={product} alt={product.name} className="h-full w-full" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[9px] font-bold uppercase text-iris-cyan">
+                          {product.category?.name || 'IRIS Store'}
+                        </p>
+                        <h4 className="truncate text-xs font-bold uppercase text-iris-pearl">{product.name}</h4>
+                        <div className="mt-1 flex items-center gap-1 text-xs font-bold text-iris-gold">
+                          <Coins className="h-3.5 w-3.5" />
+                          <span>{product.price.toLocaleString()} IC / หน่วย</span>
+                        </div>
+                        <p className="mt-1 font-mono text-[9px] text-iris-muted">
+                          เซิร์ฟเวอร์ #{item.serverId}
+                        </p>
+                      </div>
+
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.productId, item.serverId)}
+                          className="rounded-full p-1 text-iris-muted transition hover:text-rose-400"
+                          aria-label="ลบออกจากตะกร้า"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+
+                        <div className="flex h-7 items-center rounded-full border border-white/10 bg-black/40">
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(item.productId, item.serverId, item.quantity - 1)}
+                            className="flex h-full w-7 items-center justify-center text-iris-muted hover:text-white"
+                            aria-label="ลดจำนวน"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="min-w-6 text-center font-mono text-[11px] font-bold text-iris-pearl">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(item.productId, item.serverId, item.quantity + 1)}
+                            className="flex h-full w-7 items-center justify-center text-iris-muted hover:text-white"
+                            aria-label="เพิ่มจำนวน"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })
+              )}
+            </div>
+
+            {items.length > 0 && (
+              <div className="space-y-4 border-t border-white/5 bg-black/40 p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-iris-pearl">ประมาณการจาก catalog</h4>
+                    <p className="text-[10px] text-iris-muted">
+                      ยอดนี้ไม่ใช่ราคาสุดท้าย Backend Total จะแสดงในหน้า checkout
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-mono text-lg font-bold text-gradient-gold">
+                    <Coins className="h-5 w-5 text-iris-gold" />
+                    <span>~{estimateSubtotal.toLocaleString()} IC</span>
                   </div>
                 </div>
-              </li>
-            );
-          })}
-        </ul>
+
+                <Link href="/cart" className="block w-full">
+                  <Button
+                    variant="cyan"
+                    className="w-full justify-between"
+                    onClick={() => setDrawerOpen(false)}
+                    rightIcon={<ArrowRight className="h-4 w-4" />}
+                  >
+                    <span>ไปที่ตะกร้าและชำระเงิน</span>
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </motion.div>
+        </>
       )}
-    </Drawer>
+    </AnimatePresence>
   );
 }
-
-export default CartDrawer;

@@ -1,77 +1,57 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-export type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'seasonal';
-/** @deprecated legacy names, mapped to tones. */
-export type LegacyBadgeVariant = 'default' | 'muted' | 'cyan' | 'orchid' | 'gold' | 'hot' | 'error';
-
-const TONE_MAP: Record<BadgeTone | LegacyBadgeVariant, BadgeTone> = {
-  neutral: 'neutral',
-  accent: 'accent',
-  success: 'success',
-  warning: 'warning',
-  danger: 'danger',
-  info: 'info',
-  seasonal: 'seasonal',
-  default: 'neutral',
-  muted: 'neutral',
-  cyan: 'accent',
-  orchid: 'accent',
-  gold: 'accent',
-  hot: 'danger',
-  error: 'danger',
-};
-
-const SOFT: Record<BadgeTone, string> = {
-  neutral: 'border-line bg-surface-2 text-fg-muted',
-  accent: 'border-accent/25 bg-accent/10 text-accent',
-  success: 'border-success/25 bg-success/10 text-success',
-  warning: 'border-warning/25 bg-warning/10 text-warning',
-  danger: 'border-danger/25 bg-danger/10 text-danger',
-  info: 'border-info/25 bg-info/10 text-info',
-  seasonal: 'border-seasonal/40 bg-seasonal/15 text-fg',
-};
-
-const OUTLINE: Record<BadgeTone, string> = {
-  neutral: 'border-line-strong text-fg-muted',
-  accent: 'border-accent/40 text-accent',
-  success: 'border-success/40 text-success',
-  warning: 'border-warning/40 text-warning',
-  danger: 'border-danger/40 text-danger',
-  info: 'border-info/40 text-info',
-  seasonal: 'border-seasonal/60 text-fg',
-};
-
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  tone?: BadgeTone;
-  /** @deprecated use `tone`. */
-  variant?: BadgeTone | LegacyBadgeVariant;
+  variant?: 'default' | 'cyan' | 'orchid' | 'gold' | 'hot' | 'success' | 'error' | 'warning' | 'info' | 'muted';
   outline?: boolean;
-  /** Render the content in mono (codes, counts). */
-  mono?: boolean;
-  icon?: React.ReactNode;
 }
 
-/** Small status/label chip. 6px radius, hairline border, no glow. */
-export function Badge({ className, tone, variant, outline = false, mono = false, icon, children, ...props }: BadgeProps) {
-  const t = TONE_MAP[tone ?? variant ?? 'neutral'] ?? 'neutral';
+export function Badge({
+  className,
+  variant = 'default',
+  outline = false,
+  ...props
+}: BadgeProps) {
+  const baseStyles = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase transition-colors';
+
+  const variants = {
+    default: outline
+      ? 'border border-white/20 text-iris-pearl bg-transparent'
+      : 'bg-white/10 text-iris-pearl border border-transparent',
+    muted: outline
+      ? 'border border-white/10 text-iris-muted bg-transparent'
+      : 'bg-white/5 text-iris-muted border border-white/10',
+    cyan: outline
+      ? 'border border-iris-cyan/30 text-iris-cyan bg-transparent hover:bg-iris-cyan/5'
+      : 'bg-iris-cyan/15 text-iris-cyan border border-iris-cyan/20 hover:bg-iris-cyan/20',
+    orchid: outline
+      ? 'border border-iris-orchid/30 text-iris-orchid bg-transparent hover:bg-iris-orchid/5'
+      : 'bg-iris-orchid/15 text-iris-orchid border border-iris-orchid/20 hover:bg-iris-orchid/20',
+    gold: outline
+      ? 'border border-iris-gold/30 text-iris-gold bg-transparent hover:bg-iris-gold/5'
+      : 'bg-iris-gold/15 text-iris-gold border border-iris-gold/20 hover:bg-iris-gold/20',
+    hot: outline
+      ? 'border border-rose-500/40 text-rose-400 bg-transparent'
+      : 'bg-gradient-to-r from-rose-500 to-amber-500 text-white border border-transparent shadow-[0_2px_10px_rgba(244,63,94,0.3)]',
+    success: outline
+      ? 'border border-emerald-500/30 text-emerald-400 bg-transparent'
+      : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    error: outline
+      ? 'border border-rose-500/30 text-rose-400 bg-transparent'
+      : 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
+    warning: outline
+      ? 'border border-amber-500/30 text-amber-400 bg-transparent'
+      : 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+    info: outline
+      ? 'border border-blue-500/30 text-blue-400 bg-transparent'
+      : 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+  };
+
   return (
     <span
-      className={cn(
-        'inline-flex h-6 max-w-full items-center gap-1 whitespace-nowrap rounded-control border px-2 text-xs font-medium leading-none',
-        outline ? cn('bg-transparent', OUTLINE[t]) : SOFT[t],
-        mono && 'font-mono',
-        className
-      )}
+      className={cn(baseStyles, variants[variant], className)}
       {...props}
-    >
-      {icon ? (
-        <span className="inline-flex shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5" aria-hidden="true">
-          {icon}
-        </span>
-      ) : null}
-      <span className="truncate">{children}</span>
-    </span>
+    />
   );
 }
 

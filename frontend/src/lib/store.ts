@@ -168,12 +168,7 @@ export const useCartStore = create<CartState>()(
             };
             return { items: rest };
           }
-          // Keep the line in place so the cart does not reorder under the user.
-          return {
-            items: state.items.map((item) =>
-              sameLine(item, productId, fromServerId) ? { ...item, serverId: toServerId } : item
-            ),
-          };
+          return { items: [...rest, { ...moving, serverId: toServerId }] };
         }),
       setDrawerOpen: (isDrawerOpen) => set({ isDrawerOpen }),
       clear: () => set({ items: [] }),
