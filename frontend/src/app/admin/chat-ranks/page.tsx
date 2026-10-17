@@ -1,480 +1,515 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuthStore } from '@/lib/store';
-import { adminApi } from '@/lib/api';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Dialog from '@/components/ui/Dialog';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Pencil, Plus, Power, Trash2 } from 'lucide-react';
+import {
+  AdminButton,
+  AdminDialog,
+  AdminField,
+  AdminFilterSelect,
+  AdminIconButton,
+  AdminNotice,
+  AdminPage,
+  AdminPageHeader,
+  AdminPanel,
+  AdminSuspense,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+  AdminToolbar,
+  AdminTr,
+  ConfirmDialog,
+  Pagination,
+  StatusBadge,
+  adminInputClass,
+} from '@/components/admin';
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
+import { useAuthStore } from '@/lib/store';
+import { adminApi, type AdminChatRankRow } from '@/lib/api';
 
-interface Server {
+const COLS = 7;
+const DEFAULT_COLOR = '#FFD700';
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
+interface ServerOption {
   id: number;
   name: string;
+  displayName?: string | null;
 }
 
-interface ChatRank {
-  id: number;
+interface RankForm {
   name: string;
   groupKey: string;
   color: string;
-  icon: string | null;
-  priority: number;
-  serverId: number | null;
+  icon: string;
+  priority: string;
+  serverId: string;
   isActive: boolean;
-  server: { id: number; name: string } | null;
 }
 
-export default function ChatRanksPage() {
-  const { user, isLoading: authLoading } = useAuthStore();
+const EMPTY_FORM: RankForm = {
+  name: '',
+  groupKey: '',
+  color: DEFAULT_COLOR,
+  icon: '',
+  priority: '0',
+  serverId: '',
+  isActive: true,
+};
+
+function formFromRank(r: AdminChatRankRow): RankForm {
+  return {
+    name: r.name,
+    groupKey: r.groupKey,
+    color: r.color || DEFAULT_COLOR,
+    icon: r.icon ?? '',
+    priority: String(r.priority ?? 0),
+    serverId: r.serverId ? String(r.serverId) : '',
+    isActive: r.isActive,
+  };
+}
+
+type FormErrors = Partial<Record<keyof RankForm, string>>;
+
+function validateForm(f: RankForm): FormErrors {
+  const errors: FormErrors = {};
+  if (!f.name.trim()) errors.name = 'กรุณากรอกชื่อที่แสดง';
+  if (!f.groupKey.trim()) errors.groupKey = 'กรุณากรอก Group key';
+  if (!f.color.trim()) errors.color = 'กรุณาเลือกสี';
+  if (f.priority.trim() && !/^-?\d+$/.test(f.priority.trim())) errors.priority = 'ต้องเป็นจำนวนเต็ม';
+  return errors;
+}
+
+function formToPayload(f: RankForm) {
+  return {
+    name: f.name.trim(),
+    groupKey: f.groupKey.trim(),
+    color: f.color.trim(),
+    icon: f.icon.trim(),
+    priority: Number.parseInt(f.priority, 10) || 0,
+    serverId: f.serverId ? Number.parseInt(f.serverId, 10) : null,
+    isActive: f.isActive,
+  };
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  const e = error as { response?: { data?: { message?: string; error?: string } } } | null;
+  return e?.response?.data?.message || e?.response?.data?.error || fallback;
+}
+
+function RankPreview({ color, icon, name, player }: { color: string; icon: string | null; name: string; player: string }) {
+  return (
+    <span className="whitespace-nowrap">
+      <span style={{ color }}>
+        {icon ? `${icon} ` : ''}[{name || 'RANK'}]
+      </span>
+      <span className="text-iris-pearl"> {player}</span>
+    </span>
+  );
+}
+
+function ChatRanksAdmin() {
   const router = useRouter();
-  const [ranks, setRanks] = useState<ChatRank[]>([]);
-  const [servers, setServers] = useState<Server[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingRank, setEditingRank] = useState<ChatRank | null>(null);
-  const [filterServerId, setFilterServerId] = useState<string>('all');
-  const [formData, setFormData] = useState({
-    name: '',
-    groupKey: '',
-    color: '#FFD700',
-    icon: '',
-    priority: 0,
-    serverId: '',
-    isActive: true,
-  });
+  const { user, isLoading: authLoading } = useAuthStore();
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    } else if (!authLoading && user && !user.isAdmin) {
-      router.push('/');
-    } else if (user && user.isAdmin) {
-      fetchData();
-    }
+    if (authLoading) return;
+    if (!user) router.push('/login');
+    else if (!user.isAdmin) router.push('/');
   }, [user, authLoading, router]);
 
-  const fetchData = async () => {
-    try {
-      const [ranksRes, serversRes] = await Promise.all([
-        adminApi.getChatRanks(),
-        adminApi.getServers(),
-      ]);
-      setRanks(ranksRes.data.ranks || ranksRes.data || []);
-      setServers(serversRes.data.servers || serversRes.data || []);
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const canView = !authLoading && !!user?.isAdmin;
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      groupKey: '',
-      color: '#FFD700',
-      icon: '',
-      priority: 0,
-      serverId: '',
-      isActive: true,
-    });
-  };
-
-  const handleAdd = async () => {
-    try {
-      await adminApi.createChatRank({
-        ...formData,
-        priority: parseInt(formData.priority.toString()) || 0,
-        serverId: formData.serverId ? parseInt(formData.serverId) : null,
-      });
-      fetchData();
-      setShowModal(false);
-      resetForm();
-    } catch (error) {
-      console.error('Failed to add rank:', error);
-    }
-  };
-
-  const handleUpdate = async () => {
-    if (!editingRank) return;
-    try {
-      await adminApi.updateChatRank(editingRank.id, {
-        ...formData,
-        priority: parseInt(formData.priority.toString()) || 0,
-        serverId: formData.serverId ? parseInt(formData.serverId) : null,
-      });
-      fetchData();
-      setEditingRank(null);
-      resetForm();
-    } catch (error) {
-      console.error('Failed to update rank:', error);
-    }
-  };
-
-  const [modalConfig, setModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    content: React.ReactNode;
-    confirmText?: string;
-    cancelText?: string;
-    variant?: 'default' | 'danger' | 'warning' | 'success';
-    onConfirm?: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    content: null,
+  const list = usePaginatedQuery({
+    key: 'admin-chat-ranks',
+    fetcher: adminApi.getChatRanksPage,
+    filters: { serverId: {} },
+    enabled: canView,
   });
 
-  const closeModal = () => {
-    setModalConfig((prev) => ({ ...prev, isOpen: false }));
+  const serversQuery = useQuery({
+    queryKey: ['admin-server-options'],
+    queryFn: async (): Promise<ServerOption[]> => {
+      const { data } = await adminApi.getServers();
+      const rows: unknown = data?.servers ?? data;
+      return Array.isArray(rows) ? (rows as ServerOption[]) : [];
+    },
+    enabled: canView,
+    staleTime: 60_000,
+  });
+  const servers = serversQuery.data ?? [];
+  const serverLabel = (s: ServerOption) => s.displayName || s.name;
+
+  const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+
+  // --- Add / edit -------------------------------------------------------------
+  const [editor, setEditor] = useState<{ mode: 'create' } | { mode: 'edit'; rank: AdminChatRankRow } | null>(null);
+  const [form, setForm] = useState<RankForm>(EMPTY_FORM);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const openCreate = () => {
+    setForm(EMPTY_FORM);
+    setFormErrors({});
+    setFormError(null);
+    setEditor({ mode: 'create' });
+  };
+  const openEdit = (rank: AdminChatRankRow) => {
+    setForm(formFromRank(rank));
+    setFormErrors({});
+    setFormError(null);
+    setEditor({ mode: 'edit', rank });
+  };
+  const setField = <K extends keyof RankForm>(key: K, value: RankForm[K]) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const save = useMutation({
+    mutationFn: async (payload: ReturnType<typeof formToPayload>) => {
+      if (editor?.mode === 'edit') return adminApi.updateChatRank(editor.rank.id, payload);
+      return adminApi.createChatRank(payload);
+    },
+    onSuccess: async () => {
+      const wasEdit = editor?.mode === 'edit';
+      setEditor(null);
+      setNotice({ tone: 'success', text: wasEdit ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มแรงก์แชทแล้ว' });
+      await list.invalidate();
+    },
+    onError: (error) => setFormError(errorMessage(error, 'บันทึกไม่สำเร็จ กรุณาลองใหม่')),
+  });
+
+  const submitForm = () => {
+    const errors = validateForm(form);
+    setFormErrors(errors);
+    setFormError(null);
+    if (Object.keys(errors).length > 0) return;
+    save.mutate(formToPayload(form));
   };
 
-  const showConfirmModal = ({
-    title,
-    content,
-    onConfirm,
-    variant = 'default',
-    confirmText = 'ยืนยัน',
-    cancelText = 'ยกเลิก',
-  }: {
-    title: string;
-    content: React.ReactNode;
-    onConfirm?: () => void;
-    variant?: 'default' | 'danger' | 'warning' | 'success';
-    confirmText?: string;
-    cancelText?: string;
-  }) => {
-    setModalConfig({
-      isOpen: true,
-      title,
-      content,
-      onConfirm: onConfirm
-        ? () => {
-          onConfirm();
-          closeModal();
-        }
-        : undefined,
-      variant,
-      confirmText,
-      cancelText,
-    });
+  // --- Toggle / delete ------------------------------------------------------------
+  const toggleActive = useMutation({
+    mutationFn: (rank: AdminChatRankRow) => adminApi.updateChatRank(rank.id, { isActive: !rank.isActive }),
+    onSuccess: async (_res, rank) => {
+      setNotice({ tone: 'success', text: `${rank.isActive ? 'ปิด' : 'เปิด'}ใช้งานแรงก์ ${rank.name} แล้ว` });
+      await list.invalidate();
+    },
+    onError: (error) => setNotice({ tone: 'danger', text: errorMessage(error, 'เปลี่ยนสถานะไม่สำเร็จ') }),
+  });
+
+  const [deleting, setDeleting] = useState<AdminChatRankRow | null>(null);
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    await adminApi.deleteChatRank(deleting.id);
+    setNotice({ tone: 'success', text: `ลบแรงก์ ${deleting.name} แล้ว` });
+    await list.invalidate();
   };
 
-  const handleDelete = async (id: number) => {
-    showConfirmModal({
-      title: 'Delete Chat Rank?',
-      content: <p>Are you sure you want to delete this chat rank? This action cannot be undone.</p>,
-      onConfirm: async () => {
-        try {
-          await adminApi.deleteChatRank(id);
-          fetchData();
-        } catch (error) {
-          console.error('Failed to delete rank:', error);
-        }
-      },
-      variant: 'danger',
-      confirmText: 'Delete',
-    });
-  };
-
-  const handleToggleActive = async (rank: ChatRank) => {
-    try {
-      await adminApi.updateChatRank(rank.id, { isActive: !rank.isActive });
-      fetchData();
-    } catch (error) {
-      console.error('Failed to toggle rank:', error);
-    }
-  };
-
-  const filteredRanks = filterServerId === 'all'
-    ? ranks
-    : filterServerId === 'global'
-      ? ranks.filter(r => r.serverId === null)
-      : ranks.filter(r => r.serverId === parseInt(filterServerId));
-
-  if (loading) {
+  if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
-      </div>
+      <AdminPage>
+        <AdminPageHeader eyebrow="CHAT RANKS" title="แรงก์ในแชท" description="กำลังตรวจสอบสิทธิ์…" />
+      </AdminPage>
     );
   }
 
+  const serverFilterOptions = [
+    { value: '0', label: 'เฉพาะแรงก์ทั่วไป' },
+    ...servers.map((s) => ({ value: String(s.id), label: serverLabel(s) })),
+  ];
+  if (list.filters.serverId && !serverFilterOptions.some((o) => o.value === list.filters.serverId)) {
+    serverFilterOptions.push({ value: list.filters.serverId, label: `เซิร์ฟเวอร์ ID ${list.filters.serverId}` });
+  }
+
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Chat Ranks</h1>
-          <p className="text-gray-400 text-sm mt-1">
-            Configure chat display for Permissions plugin groups
-          </p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <span>+</span> Add Rank
-        </button>
-      </div>
+    <AdminPage>
+      <AdminPageHeader
+        eyebrow="CHAT RANKS"
+        title="แรงก์ในแชท"
+        description="กำหนดสี ไอคอน และลำดับการแสดงผลในแชท ตามกลุ่มของปลั๊กอิน Permissions"
+        actions={
+          <AdminButton variant="primary" icon={<Plus />} onClick={openCreate}>
+            เพิ่มแรงก์
+          </AdminButton>
+        }
+      />
 
-      {/* Filter */}
-      <div className="mb-4">
-        <select
-          value={filterServerId}
-          onChange={(e) => setFilterServerId(e.target.value)}
-          className="bg-black/60 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
-        >
-          <option value="all">All Servers</option>
-          <option value="global">Global Only</option>
-          {servers.map((server) => (
-            <option key={server.id} value={server.id}>{server.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Ranks Table */}
-      <div className="bg-black/60 rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-black/40">
-            <tr>
-              <th className="px-4 py-3 text-left">Priority</th>
-              <th className="px-4 py-3 text-left">Preview</th>
-              <th className="px-4 py-3 text-left">Name</th>
-              <th className="px-4 py-3 text-left">Group Key</th>
-              <th className="px-4 py-3 text-left">Server</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRanks.map((rank) => (
-              <tr key={rank.id} className="border-t border-white/5 hover:bg-white/5">
-                <td className="px-4 py-3 text-center">
-                  <span className="bg-black/40 px-2 py-1 rounded text-sm">{rank.priority}</span>
-                </td>
-                <td className="px-4 py-3">
-                  <span style={{ color: rank.color }}>
-                    {rank.icon && `${rank.icon} `}
-                    [{rank.name}]
-                  </span>
-                  <span className="text-gray-300"> Player</span>
-                </td>
-                <td className="px-4 py-3 font-medium">{rank.name}</td>
-                <td className="px-4 py-3">
-                  <code className="bg-black/40 px-2 py-1 rounded text-xs text-green-400">
-                    {rank.groupKey}
-                  </code>
-                </td>
-                <td className="px-4 py-3 text-sm">
-                  {rank.server ? (
-                    <span className="text-blue-400">{rank.server.name}</span>
-                  ) : (
-                    <span className="text-yellow-400">Global</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => handleToggleActive(rank)}
-                    className={`px-2 py-1 rounded text-xs ${rank.isActive
-                      ? 'bg-green-600/20 text-green-400'
-                      : 'bg-red-600/20 text-red-400'
-                      }`}
-                  >
-                    {rank.isActive ? 'Active' : 'Inactive'}
-                  </button>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setEditingRank(rank);
-                        setFormData({
-                          name: rank.name,
-                          groupKey: rank.groupKey,
-                          color: rank.color,
-                          icon: rank.icon || '',
-                          priority: rank.priority,
-                          serverId: rank.serverId ? rank.serverId.toString() : '',
-                          isActive: rank.isActive,
-                        });
-                      }}
-                      className="text-blue-400 hover:text-blue-300"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(rank.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filteredRanks.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                  No chat ranks configured. Click &quot;Add Rank&quot; to create one.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Info Section */}
-      <div className="mt-8 bg-black/60 rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4">How It Works</h2>
-        <div className="space-y-4 text-gray-400 text-sm">
-          <div>
-            <h3 className="text-white font-medium mb-1">Group Key</h3>
-            <p>The group name from Permissions plugin (e.g., &quot;VIP&quot;, &quot;Admin&quot;, &quot;Moderator&quot;).
-              Players in this group will display with this rank&apos;s styling in chat.</p>
-          </div>
-          <div>
-            <h3 className="text-white font-medium mb-1">Priority</h3>
-            <p>Higher priority ranks display first when a player has multiple groups.
-              For example, if a player has both &quot;VIP&quot; (priority 10) and &quot;Admin&quot; (priority 100),
-              they&apos;ll show as Admin.</p>
-          </div>
-          <div>
-            <h3 className="text-white font-medium mb-1">Server-Specific vs Global</h3>
-            <p>Server-specific ranks only apply on that server.
-              Global ranks apply to all servers (but can be overridden by server-specific ranks).</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Add/Edit Modal */}
-      {(showModal || editingRank) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-black/60 rounded-lg p-6 w-full max-w-lg">
-            <h2 className="text-xl font-bold mb-4">
-              {editingRank ? 'Edit Chat Rank' : 'Add New Chat Rank'}
-            </h2>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Display Name</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="VIP"
-                    className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Group Key</label>
-                  <input
-                    type="text"
-                    value={formData.groupKey}
-                    onChange={(e) => setFormData({ ...formData, groupKey: e.target.value })}
-                    placeholder="VIP"
-                    className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Color</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={formData.color}
-                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      className="h-[38px] w-12 bg-black/40 border border-gray-700 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={formData.color}
-                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      className="flex-1 bg-black/40 border border-gray-700 rounded-lg px-2 py-2 focus:outline-none focus:border-green-500 text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Icon</label>
-                  <input
-                    type="text"
-                    value={formData.icon}
-                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                    placeholder="Crown emoji"
-                    className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Priority</label>
-                  <input
-                    type="number"
-                    value={formData.priority}
-                    onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
-                    placeholder="0"
-                    className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Server (optional)</label>
-                <select
-                  value={formData.serverId}
-                  onChange={(e) => setFormData({ ...formData, serverId: e.target.value })}
-                  className="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-green-500"
-                >
-                  <option value="">Global (all servers)</option>
-                  {servers.map((server) => (
-                    <option key={server.id} value={server.id}>{server.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Preview */}
-              <div className="p-3 bg-black/40 rounded-lg">
-                <span className="text-xs text-gray-400 block mb-1">Preview:</span>
-                <span style={{ color: formData.color }}>
-                  {formData.icon && `${formData.icon} `}
-                  [{formData.name || 'RANK'}]
-                </span>
-                <span className="text-gray-300"> PlayerName: Hello everyone!</span>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setEditingRank(null);
-                  resetForm();
-                }}
-                className="px-4 py-2 text-gray-400 hover:text-white"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={editingRank ? handleUpdate : handleAdd}
-                disabled={!formData.name || !formData.groupKey || !formData.color}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {editingRank ? 'Update' : 'Add Rank'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {notice && (
+        <AdminNotice tone={notice.tone} onDismiss={() => setNotice(null)}>
+          {notice.text}
+        </AdminNotice>
       )}
-      {/* Accessible Dialog */}
-      <Dialog
-        isOpen={modalConfig.isOpen}
-        onClose={closeModal}
-        onConfirm={modalConfig.onConfirm}
-        title={modalConfig.title}
-        variant={modalConfig.variant}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
+
+      <AdminPanel flush>
+        <AdminToolbar list={list} searchPlaceholder="ค้นหาชื่อหรือ Group key…">
+          <AdminFilterSelect
+            label="เซิร์ฟเวอร์"
+            value={list.filters.serverId ?? ''}
+            onChange={(v) => list.setFilter('serverId', v)}
+            options={serverFilterOptions}
+            allLabel="ทุกเซิร์ฟเวอร์"
+          />
+        </AdminToolbar>
+
+        <AdminTable caption="รายการแรงก์ในแชท" busy={list.isFetching} minWidth={900}>
+          <AdminTableHead>
+            <tr>
+              <AdminTh align="right">ลำดับ</AdminTh>
+              <AdminTh>ตัวอย่าง</AdminTh>
+              <AdminTh>ชื่อ</AdminTh>
+              <AdminTh>Group key</AdminTh>
+              <AdminTh>เซิร์ฟเวอร์</AdminTh>
+              <AdminTh>สถานะ</AdminTh>
+              <AdminTh align="right">จัดการ</AdminTh>
+            </tr>
+          </AdminTableHead>
+          <AdminTableBody
+            colSpan={COLS}
+            isInitialLoading={list.isInitialLoading}
+            isPlaceholderData={list.isPlaceholderData}
+            isError={list.isError}
+            onRetry={list.refetch}
+            errorMessage={list.isError ? errorMessage(list.error, 'โหลดรายการแรงก์ไม่สำเร็จ') : undefined}
+            isEmpty={list.items.length === 0}
+            emptyTitle={list.isFiltered ? 'ไม่พบแรงก์ที่ตรงกับตัวกรอง' : 'ยังไม่มีแรงก์ในแชท'}
+            emptyDescription={list.isFiltered ? undefined : 'กด “เพิ่มแรงก์” เพื่อเริ่มต้น'}
+            emptyAction={
+              list.isFiltered ? (
+                <AdminButton size="sm" onClick={list.resetAll}>
+                  ล้างตัวกรอง
+                </AdminButton>
+              ) : undefined
+            }
+            skeletonRows={Math.min(list.pageSize, 10)}
+          >
+            {list.items.map((rank) => {
+              const togglingThis = toggleActive.isPending && toggleActive.variables?.id === rank.id;
+              return (
+                <AdminTr key={rank.id}>
+                  <AdminTd align="right" mono nowrap>
+                    {rank.priority}
+                  </AdminTd>
+                  <AdminTd>
+                    <RankPreview color={rank.color} icon={rank.icon} name={rank.name} player="Player" />
+                  </AdminTd>
+                  <AdminTd>
+                    <span className="font-semibold">{rank.name}</span>
+                  </AdminTd>
+                  <AdminTd mono muted nowrap>
+                    {rank.groupKey}
+                  </AdminTd>
+                  <AdminTd nowrap>
+                    {rank.server ? (
+                      <span>{rank.server.name}</span>
+                    ) : rank.serverId ? (
+                      <span className="text-iris-muted">ID {rank.serverId}</span>
+                    ) : (
+                      <StatusBadge tone="info">ทุกเซิร์ฟเวอร์</StatusBadge>
+                    )}
+                  </AdminTd>
+                  <AdminTd nowrap>
+                    <StatusBadge tone={rank.isActive ? 'success' : 'neutral'}>
+                      {rank.isActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                    </StatusBadge>
+                  </AdminTd>
+                  <AdminTd align="right" nowrap>
+                    <AdminIconButton aria-label={`แก้ไขแรงก์ ${rank.name}`} onClick={() => openEdit(rank)}>
+                      <Pencil />
+                    </AdminIconButton>
+                    <AdminIconButton
+                      aria-label={`${rank.isActive ? 'ปิด' : 'เปิด'}ใช้งานแรงก์ ${rank.name}`}
+                      onClick={() => toggleActive.mutate(rank)}
+                      disabled={togglingThis}
+                    >
+                      <Power />
+                    </AdminIconButton>
+                    <AdminIconButton tone="danger" aria-label={`ลบแรงก์ ${rank.name}`} onClick={() => setDeleting(rank)}>
+                      <Trash2 />
+                    </AdminIconButton>
+                  </AdminTd>
+                </AdminTr>
+              );
+            })}
+          </AdminTableBody>
+        </AdminTable>
+
+        <Pagination {...list.paginationProps} />
+      </AdminPanel>
+
+      <AdminPanel title="วิธีการทำงาน">
+        <dl className="grid gap-4 text-sm sm:grid-cols-3">
+          <div>
+            <dt className="font-semibold text-iris-pearl">Group key</dt>
+            <dd className="mt-1 text-iris-muted">
+              ชื่อกลุ่มในปลั๊กอิน Permissions เช่น VIP, Admin ผู้เล่นในกลุ่มนี้จะแสดงในแชทด้วยรูปแบบของแรงก์
+            </dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-iris-pearl">ลำดับ</dt>
+            <dd className="mt-1 text-iris-muted">
+              ถ้าผู้เล่นอยู่หลายกลุ่ม แรงก์ที่ลำดับสูงกว่าจะแสดงก่อน เช่น Admin (100) แสดงแทน VIP (10)
+            </dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-iris-pearl">เฉพาะเซิร์ฟเวอร์ / ทั่วไป</dt>
+            <dd className="mt-1 text-iris-muted">
+              แรงก์ทั่วไปใช้กับทุกเซิร์ฟเวอร์ แรงก์เฉพาะเซิร์ฟเวอร์ใช้กับเซิร์ฟเวอร์นั้นและมีผลเหนือแรงก์ทั่วไป
+            </dd>
+          </div>
+        </dl>
+      </AdminPanel>
+
+      {/* Add / edit */}
+      <AdminDialog
+        open={editor !== null}
+        onClose={() => setEditor(null)}
+        busy={save.isPending}
+        title={editor?.mode === 'edit' ? `แก้ไขแรงก์ ${editor.rank.name}` : 'เพิ่มแรงก์'}
+        footer={
+          <>
+            <AdminButton variant="ghost" onClick={() => setEditor(null)} disabled={save.isPending}>
+              ยกเลิก
+            </AdminButton>
+            <AdminButton variant="primary" onClick={submitForm} loading={save.isPending}>
+              {editor?.mode === 'edit' ? 'บันทึก' : 'เพิ่มแรงก์'}
+            </AdminButton>
+          </>
+        }
       >
-        {modalConfig.content}
-      </Dialog>
-    </div>
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitForm();
+          }}
+        >
+          {formError && <AdminNotice tone="danger">{formError}</AdminNotice>}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <AdminField label="ชื่อที่แสดง" required error={formErrors.name}>
+              {(field) => (
+                <input
+                  {...field}
+                  className={adminInputClass}
+                  value={form.name}
+                  maxLength={64}
+                  placeholder="VIP"
+                  onChange={(e) => setField('name', e.target.value)}
+                />
+              )}
+            </AdminField>
+            <AdminField label="Group key" required error={formErrors.groupKey} hint="ชื่อกลุ่มในปลั๊กอิน Permissions">
+              {(field) => (
+                <input
+                  {...field}
+                  className={`${adminInputClass} font-mono`}
+                  value={form.groupKey}
+                  maxLength={64}
+                  placeholder="VIP"
+                  onChange={(e) => setField('groupKey', e.target.value)}
+                />
+              )}
+            </AdminField>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <AdminField label="สี" required error={formErrors.color}>
+              {(field) => (
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    aria-label="เลือกสี"
+                    value={HEX_COLOR.test(form.color) ? form.color : DEFAULT_COLOR}
+                    onChange={(e) => setField('color', e.target.value)}
+                    className="h-11 w-12 shrink-0 cursor-pointer rounded-lg border border-white/10 bg-transparent"
+                  />
+                  <input
+                    {...field}
+                    className={`${adminInputClass} font-mono`}
+                    value={form.color}
+                    maxLength={32}
+                    onChange={(e) => setField('color', e.target.value)}
+                  />
+                </div>
+              )}
+            </AdminField>
+            <AdminField label="ไอคอน">
+              {(field) => (
+                <input
+                  {...field}
+                  className={adminInputClass}
+                  value={form.icon}
+                  maxLength={32}
+                  onChange={(e) => setField('icon', e.target.value)}
+                />
+              )}
+            </AdminField>
+            <AdminField label="ลำดับ" error={formErrors.priority} hint="ยิ่งสูงยิ่งแสดงก่อน">
+              {(field) => (
+                <input
+                  {...field}
+                  className={`${adminInputClass} font-mono`}
+                  inputMode="numeric"
+                  value={form.priority}
+                  onChange={(e) => setField('priority', e.target.value.replace(/[^0-9-]/g, ''))}
+                />
+              )}
+            </AdminField>
+          </div>
+
+          <AdminField label="เซิร์ฟเวอร์" hint="เว้นว่างเพื่อใช้กับทุกเซิร์ฟเวอร์">
+            {(field) => (
+              <select {...field} className={adminInputClass} value={form.serverId} onChange={(e) => setField('serverId', e.target.value)}>
+                <option value="">ทุกเซิร์ฟเวอร์ (ทั่วไป)</option>
+                {form.serverId && !servers.some((s) => String(s.id) === form.serverId) && (
+                  <option value={form.serverId}>
+                    {editor?.mode === 'edit' && editor.rank.server ? editor.rank.server.name : `เซิร์ฟเวอร์ ID ${form.serverId}`}
+                  </option>
+                )}
+                {servers.map((s) => (
+                  <option key={s.id} value={String(s.id)}>
+                    {serverLabel(s)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </AdminField>
+
+          <label className="flex items-center gap-2 text-sm text-iris-pearl">
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(e) => setField('isActive', e.target.checked)}
+              className="h-4 w-4 accent-iris-cyan"
+            />
+            เปิดใช้งาน
+          </label>
+
+          <p className="rounded-xl border border-white/[0.06] bg-iris-ink/60 px-3 py-2 text-sm">
+            <span className="text-xs text-iris-muted">ตัวอย่าง: </span>
+            <RankPreview color={form.color} icon={form.icon} name={form.name} player="PlayerName: สวัสดี!" />
+          </p>
+          <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
+        </form>
+      </AdminDialog>
+
+      <ConfirmDialog
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onConfirm={confirmDelete}
+        title="ลบแรงก์นี้?"
+        description={deleting ? `ลบแรงก์ ${deleting.name} (${deleting.groupKey}) การลบไม่สามารถย้อนกลับได้` : undefined}
+        confirmText="ลบแรงก์"
+      />
+    </AdminPage>
+  );
+}
+
+export default function ChatRanksPage() {
+  return (
+    <AdminSuspense>
+      <ChatRanksAdmin />
+    </AdminSuspense>
   );
 }

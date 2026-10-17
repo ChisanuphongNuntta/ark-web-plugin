@@ -1,512 +1,310 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/lib/store';
-import { usePermissions } from '@/hooks/usePermissions';
-import { adminApi } from '@/lib/api';
+import { useMutation } from '@tanstack/react-query';
+import { Download, RefreshCw, Trash2 } from 'lucide-react';
 import {
-  Loader2,
-  Search,
-  Key,
-  Wifi,
-  Server,
-  Map,
-  Clock,
-  RefreshCw,
-  Trash2,
-  Activity,
-  AlertCircle,
-  CheckCircle,
-  Download,
-} from 'lucide-react';
-import Link from 'next/link';
-import Surface from '@/components/ui/Surface';
-import { Button } from '@/components/ui/Button';
-import Dialog from '@/components/ui/Dialog';
+  AdminIconButton,
+  AdminNotice,
+  AdminPage,
+  AdminPageHeader,
+  AdminPanel,
+  AdminSuspense,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+  AdminToolbar,
+  AdminTr,
+  AdminButton,
+  ConfirmDialog,
+  Pagination,
+  StatusBadge,
+  formatCount,
+} from '@/components/admin';
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useAuthStore } from '@/lib/store';
+import { adminApi, type AdminApiKeyRow } from '@/lib/api';
 
-interface ApiKeyUser {
-  id: string;
-  discordId: string;
-  discordUsername: string | null;
-  discordAvatar: string | null;
-  steamId: string | null;
-  apiKey: string | null;
-  apiKeyIp: string | null;
-  apiKeyCreatedAt: string | null;
-  apiKeyServerId: number | null;
-  apiKeyServerName: string | null;
-  apiKeyServerMap: string | null;
-  apiKeyServerPort: number | null;
-  apiKeyLastUsed: string | null;
-  isBanned: boolean;
+const COLS = 7;
+
+function errorMessage(error: unknown, fallback: string): string {
+  const e = error as { response?: { data?: { message?: string; error?: string } } } | null;
+  return e?.response?.data?.message || e?.response?.data?.error || fallback;
 }
 
-export default function AdminApiKeysPage() {
-  const { user, isLoading: authLoading } = useAuthStore();
-  const { canManageApiKeys, apiKeyServerId } = usePermissions();
-  const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [message, setMessage] = useState<{
-    type: 'success' | 'error';
-    text: string;
-  } | null>(null);
+function formatDateTime(iso: string | null, withTime = true): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return '—';
+  return withTime
+    ? d.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+    : d.toLocaleDateString('th-TH', { dateStyle: 'medium' });
+}
 
-  const showMessage = (type: 'success' | 'error', text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 5000);
+/** Error bodies of blob downloads arrive as a Blob; read the JSON message out of it. */
+async function blobErrorMessage(error: unknown, fallback: string): Promise<string> {
+  const data = (error as { response?: { data?: unknown } } | null)?.response?.data;
+  if (typeof Blob !== 'undefined' && data instanceof Blob) {
+    try {
+      const parsed = JSON.parse(await data.text()) as { message?: string; error?: string };
+      return parsed.message || parsed.error || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return errorMessage(error, fallback);
+}
+
+function ApiKeysAdmin() {
+  const { user, isLoading: authLoading } = useAuthStore();
+  const { canManageApiKeys } = usePermissions();
+  const isRoot = user?.role === 'root';
+
+  const list = usePaginatedQuery({
+    key: 'admin-api-keys',
+    fetcher: adminApi.getApiKeysPage,
+    enabled: !authLoading && canManageApiKeys,
+  });
+
+  const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+  const [resetting, setResetting] = useState<AdminApiKeyRow | null>(null);
+  const [revoking, setRevoking] = useState<AdminApiKeyRow | null>(null);
+
+  const confirmResetIp = async () => {
+    if (!resetting) return;
+    await adminApi.resetApiKeyIp(resetting.id);
+    setNotice({ tone: 'success', text: `รีเซ็ต IP ของ ${resetting.discordUsername || resetting.discordId} แล้ว` });
+    await list.invalidate();
   };
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-api-keys', page, search],
-    queryFn: () => adminApi.getApiKeys(page, search).then((res) => res.data),
-    enabled: canManageApiKeys,
-  });
+  const confirmRevoke = async () => {
+    if (!revoking) return;
+    await adminApi.revokeApiKey(revoking.id);
+    setNotice({ tone: 'success', text: `ยกเลิก API key ของ ${revoking.discordUsername || revoking.discordId} แล้ว` });
+    await list.invalidate();
+  };
 
-  const resetIpMutation = useMutation({
-    mutationFn: (userId: string) => adminApi.resetApiKeyIp(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-api-keys'] });
-      showMessage('success', 'IP Whitelist ถูกรีเซ็ตแล้ว');
-    },
-    onError: () => {
-      showMessage('error', 'เกิดข้อผิดพลาดในการรีเซ็ต IP');
-    },
-  });
-
-  const revokeKeyMutation = useMutation({
-    mutationFn: (userId: string) => adminApi.revokeApiKey(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-api-keys'] });
-      showMessage('success', 'API Key ถูกยกเลิกแล้ว');
-    },
-    onError: () => {
-      showMessage('error', 'เกิดข้อผิดพลาดในการยกเลิก API Key');
-    },
-  });
-
-  const downloadMutation = useMutation({
+  const download = useMutation({
     mutationFn: (userId: string) => adminApi.downloadPlugin(userId),
     onSuccess: (response) => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      const contentDisposition = response.headers['content-disposition'];
+      const disposition: unknown = response.headers['content-disposition'];
       let fileName = 'HeartShop_Plugin.zip';
-      if (contentDisposition) {
-        const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
-        if (fileNameMatch.length === 2) fileName = fileNameMatch[1];
+      if (typeof disposition === 'string') {
+        const match = disposition.match(/filename="(.+)"/);
+        if (match && match[1]) fileName = match[1];
       }
       link.setAttribute('download', fileName);
       document.body.appendChild(link);
       link.click();
       link.remove();
-      showMessage('success', '📦 Download Started!');
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      setNotice({ tone: 'success', text: 'เริ่มดาวน์โหลดแพ็กเกจปลั๊กอินแล้ว' });
     },
-    onError: (error: any) => {
-      if (error.response?.data instanceof Blob) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const errorObj = JSON.parse(reader.result as string);
-            showMessage('error', errorObj.message || errorObj.error || 'Download failed');
-          } catch (e) {
-            showMessage('error', 'Download failed'); // Fallback
-          }
-        };
-        reader.readAsText(error.response.data);
-      } else {
-        showMessage('error', 'Download failed');
-      }
+    onError: async (error) => {
+      setNotice({ tone: 'danger', text: await blobErrorMessage(error, 'ดาวน์โหลดไม่สำเร็จ') });
     },
   });
-
-  const [modalConfig, setModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    content: React.ReactNode;
-    confirmText?: string;
-    cancelText?: string;
-    variant?: 'default' | 'danger' | 'warning' | 'success';
-    onConfirm?: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    content: null,
-  });
-
-  const closeModal = () => {
-    setModalConfig((prev) => ({ ...prev, isOpen: false }));
-  };
-
-  const showModal = ({
-    title,
-    content,
-    onConfirm,
-    variant = 'default',
-    confirmText = 'ยืนยัน',
-    cancelText = 'ยกเลิก',
-  }: {
-    title: string;
-    content: React.ReactNode;
-    onConfirm?: () => void;
-    variant?: 'default' | 'danger' | 'warning' | 'success';
-    confirmText?: string;
-    cancelText?: string;
-  }) => {
-    setModalConfig({
-      isOpen: true,
-      title,
-      content,
-      onConfirm: onConfirm
-        ? () => {
-          onConfirm();
-          closeModal();
-        }
-        : undefined,
-      variant,
-      confirmText,
-      cancelText,
-    });
-  };
-
-  const handleResetIp = (apiKeyUser: ApiKeyUser) => {
-    showModal({
-      title: 'รีเซ็ต IP Whitelist?',
-      content: (
-        <p>
-          ต้องการรีเซ็ต IP Whitelist ของ <strong className="text-white">{apiKeyUser.discordUsername}</strong> ใช่หรือไม่?
-        </p>
-      ),
-      onConfirm: () => resetIpMutation.mutate(apiKeyUser.id),
-      variant: 'warning',
-      confirmText: 'รีเซ็ต',
-    });
-  };
-
-  const handleRevokeKey = (apiKeyUser: ApiKeyUser) => {
-    showModal({
-      title: 'ยกเลิก API Key?',
-      content: (
-        <div className="space-y-2">
-          <p>
-            คุณต้องการยกเลิก API Key ของ <strong className="text-white">{apiKeyUser.discordUsername}</strong> ใช่หรือไม่?
-          </p>
-          <p className="text-red-400 text-sm bg-red-500/10 p-2 rounded border border-red-500/20">
-            ⚠️ การดำเนินการนี้จะทำให้ ARK Plugin ของผู้ใช้ใช้งานไม่ได้ทันที
-          </p>
-        </div>
-      ),
-      onConfirm: () => revokeKeyMutation.mutate(apiKeyUser.id),
-      variant: 'danger',
-      confirmText: 'ยกเลิก Key',
-    });
-  };
 
   if (authLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="relative">
-          <div className="absolute inset-0 bg-emerald-500/30 rounded-full blur-xl animate-pulse"></div>
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-400 relative" />
-        </div>
-      </div>
+      <AdminPage>
+        <AdminPageHeader eyebrow="API KEYS" title="จัดการ API key" description="กำลังตรวจสอบสิทธิ์…" />
+      </AdminPage>
     );
   }
 
   if (!canManageApiKeys) {
     return (
-      <Surface className="border-red-500/30">
-        <div className="text-center py-12">
-          <p className="text-red-400">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
-          <p className="text-gray-500 text-sm mt-2">เฉพาะ Server Admin และ Root เท่านั้น</p>
-        </div>
-      </Surface>
+      <AdminPage>
+        <AdminPageHeader eyebrow="API KEYS" title="จัดการ API key" />
+        <AdminNotice tone="danger" title="คุณไม่มีสิทธิ์เข้าถึงหน้านี้">
+          เฉพาะ Server Admin และ Root เท่านั้น
+        </AdminNotice>
+      </AdminPage>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Link href="/admin" className="text-gray-400 hover:text-white text-sm">
-            &larr; กลับ Admin
-          </Link>
-          <h1 className="text-3xl font-bold mt-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-3">
-            <Key className="h-8 w-8 text-emerald-400" />
-            จัดการ API Keys
-          </h1>
-        </div>
-        <div className="text-right">
-          <p className="text-gray-400 text-sm">API Keys ทั้งหมด</p>
-          <p className="text-2xl font-bold text-white">{data?.pagination?.total || 0}</p>
-        </div>
-      </div>
+    <AdminPage>
+      <AdminPageHeader
+        eyebrow="API KEYS"
+        title="จัดการ API key"
+        description={
+          list.pagination.total > 0
+            ? `API key ของผู้ใช้ที่ผูกกับปลั๊กอิน ทั้งหมด ${formatCount(list.pagination.total)} รายการ`
+            : 'API key ของผู้ใช้ที่ผูกกับปลั๊กอิน'
+        }
+      />
 
-      {/* Message Alert */}
-      {message && (
-        <Surface className={message.type === 'success' ? 'border-green-500/30' : 'border-red-500/30'}>
-          <div className={`p-4 ${message.type === 'success' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-            <div className="flex items-center gap-3">
-              {message.type === 'success' ? (
-                <CheckCircle className="h-5 w-5 text-green-400" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-red-400" />
-              )}
-              <span className={message.type === 'success' ? 'text-green-400' : 'text-red-400'}>
-                {message.text}
-              </span>
-            </div>
-          </div>
-        </Surface>
+      {notice && (
+        <AdminNotice tone={notice.tone} onDismiss={() => setNotice(null)}>
+          {notice.text}
+        </AdminNotice>
       )}
 
-      {/* Search */}
-      <Surface glowOnHover>
-        <div className="p-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-emerald-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="ค้นหาด้วย Discord Username, Steam ID, หรือ Server Name..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="input w-full pl-12 bg-black/40 border-emerald-500/30 focus:border-emerald-500/50"
-            />
-          </div>
-        </div>
-      </Surface>
+      <AdminPanel flush>
+        <AdminToolbar list={list} searchPlaceholder="ค้นหาชื่อ Discord, Steam ID หรือเซิร์ฟเวอร์…" />
 
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="relative">
-            <div className="absolute inset-0 bg-emerald-500/30 rounded-full blur-xl animate-pulse"></div>
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-400 relative" />
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* API Keys Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {data?.apiKeys?.map((apiKeyUser: ApiKeyUser) => (
-              <Surface key={apiKeyUser.id} glowOnHover>
-                <div className="p-5">
-                  {/* User Header */}
-                  <div className="flex items-center gap-4 mb-4">
-                    {apiKeyUser.discordAvatar ? (
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-emerald-500/30 rounded-full blur-md"></div>
-                        <img
-                          src={apiKeyUser.discordAvatar}
-                          alt=""
-                          className="w-12 h-12 rounded-full relative border-2 border-emerald-500/30"
-                        />
+        <AdminTable caption="รายการ API key" busy={list.isFetching} minWidth={980}>
+          <AdminTableHead>
+            <tr>
+              <AdminTh>ผู้ใช้</AdminTh>
+              <AdminTh>API key</AdminTh>
+              <AdminTh>เซิร์ฟเวอร์</AdminTh>
+              <AdminTh>IP ที่ลงทะเบียน</AdminTh>
+              <AdminTh>ใช้งานล่าสุด</AdminTh>
+              <AdminTh>สร้างเมื่อ</AdminTh>
+              <AdminTh align="right">จัดการ</AdminTh>
+            </tr>
+          </AdminTableHead>
+          <AdminTableBody
+            colSpan={COLS}
+            isInitialLoading={list.isInitialLoading}
+            isPlaceholderData={list.isPlaceholderData}
+            isError={list.isError}
+            onRetry={list.refetch}
+            errorMessage={list.isError ? errorMessage(list.error, 'โหลดรายการ API key ไม่สำเร็จ') : undefined}
+            isEmpty={list.items.length === 0}
+            emptyTitle={list.isFiltered ? 'ไม่พบ API key ที่ตรงกับคำค้น' : 'ยังไม่มี API key'}
+            emptyAction={
+              list.isFiltered ? (
+                <AdminButton size="sm" onClick={list.resetAll}>
+                  ล้างคำค้น
+                </AdminButton>
+              ) : undefined
+            }
+            skeletonRows={Math.min(list.pageSize, 10)}
+          >
+            {list.items.map((k) => {
+              const name = k.discordUsername || 'ไม่ทราบชื่อ';
+              const downloadingThis = download.isPending && download.variables === k.id;
+              return (
+                <AdminTr key={k.id}>
+                  <AdminTd>
+                    <div className="flex items-center gap-3">
+                      {k.discordAvatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={k.discordAvatar} alt="" className="h-9 w-9 shrink-0 rounded-full border border-white/10" />
+                      ) : (
+                        <div className="h-9 w-9 shrink-0 rounded-full border border-white/10 bg-iris-river/40" aria-hidden="true" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 font-semibold">
+                          <span className="truncate">{name}</span>
+                          {k.isBanned && <StatusBadge tone="danger">ถูกแบน</StatusBadge>}
+                        </div>
+                        <div className="truncate font-mono text-xs text-iris-muted">{k.steamId || 'ไม่มี Steam ID'}</div>
                       </div>
+                    </div>
+                  </AdminTd>
+                  <AdminTd mono muted nowrap>
+                    {k.apiKey || '—'}
+                  </AdminTd>
+                  <AdminTd>
+                    {k.apiKeyServerName ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <StatusBadge tone="success" dot>
+                            เชื่อมต่อแล้ว
+                          </StatusBadge>
+                          <span className="font-semibold">{k.apiKeyServerName}</span>
+                        </div>
+                        <div className="text-xs text-iris-muted">
+                          {k.apiKeyServerMap || '—'}
+                          {k.apiKeyServerPort ? ` · พอร์ต ${k.apiKeyServerPort}` : ''}
+                        </div>
+                      </>
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/20 border-2 border-emerald-500/30" />
+                      <StatusBadge tone="neutral">ยังไม่เชื่อมต่อ</StatusBadge>
                     )}
-                    <div className="flex-1">
-                      <h3 className="font-bold text-white">
-                        {apiKeyUser.discordUsername || 'Unknown'}
-                      </h3>
-                      <p className="text-xs text-gray-500 font-mono">{apiKeyUser.apiKey}</p>
-                    </div>
-                    {apiKeyUser.isBanned && (
-                      <span className="px-2 py-1 rounded-lg text-xs bg-red-500/20 text-red-400 border border-red-500/30">
-                        Banned
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Server Info */}
-                  {apiKeyUser.apiKeyServerName ? (
-                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Server className="h-4 w-4 text-green-400" />
-                        <span className="text-green-400 font-semibold text-sm">เชื่อมต่ออยู่</span>
-                        <div className="ml-auto h-2 w-2 bg-green-400 rounded-full animate-pulse"></div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-gray-500 text-xs">Server Name</p>
-                          <p className="text-white font-medium">{apiKeyUser.apiKeyServerName}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500 text-xs">Map</p>
-                          <p className="text-emerald-400 font-medium">{apiKeyUser.apiKeyServerMap || '-'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-500/10 border border-gray-500/20 rounded-xl p-4 mb-4">
-                      <div className="flex items-center gap-2">
-                        <Server className="h-4 w-4 text-gray-500" />
-                        <span className="text-gray-500 text-sm">ยังไม่มีการเชื่อมต่อ</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Info Grid */}
-                  <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-                    {/* IP Address */}
-                    <div className="bg-black/40 rounded-lg p-3 border border-emerald-500/10">
-                      <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
-                        <Wifi className="h-3 w-3" />
-                        Registered IP
-                      </div>
-                      {apiKeyUser.apiKeyIp ? (
-                        <p className="text-green-400 font-mono text-xs">{apiKeyUser.apiKeyIp}</p>
-                      ) : (
-                        <p className="text-gray-500 text-xs">รอการเชื่อมต่อ</p>
-                      )}
-                    </div>
-
-                    {/* Last Used */}
-                    <div className="bg-black/40 rounded-lg p-3 border border-emerald-500/10">
-                      <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
-                        <Activity className="h-3 w-3" />
-                        ใช้งานล่าสุด
-                      </div>
-                      {apiKeyUser.apiKeyLastUsed ? (
-                        <p className="text-teal-400 text-xs">
-                          {new Date(apiKeyUser.apiKeyLastUsed).toLocaleString('th-TH', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          })}
-                        </p>
-                      ) : (
-                        <p className="text-gray-500 text-xs">-</p>
-                      )}
-                    </div>
-
-                    {/* Created At */}
-                    <div className="bg-black/40 rounded-lg p-3 border border-emerald-500/10">
-                      <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
-                        <Clock className="h-3 w-3" />
-                        สร้างเมื่อ
-                      </div>
-                      {apiKeyUser.apiKeyCreatedAt ? (
-                        <p className="text-gray-400 text-xs">
-                          {new Date(apiKeyUser.apiKeyCreatedAt).toLocaleDateString('th-TH')}
-                        </p>
-                      ) : (
-                        <p className="text-gray-500 text-xs">-</p>
-                      )}
-                    </div>
-
-                    {/* Steam ID */}
-                    <div className="bg-black/40 rounded-lg p-3 border border-emerald-500/10">
-                      <div className="flex items-center gap-1 text-gray-500 text-xs mb-1">
-                        Steam ID
-                      </div>
-                      <p className="text-gray-400 text-xs font-mono truncate">
-                        {apiKeyUser.steamId || '-'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    {user?.role === 'root' && (
-                      <button
-                        onClick={() => downloadMutation.mutate(apiKeyUser.id)}
-                        disabled={downloadMutation.isPending}
-                        className="px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium flex items-center justify-center gap-2 transition-all"
-                        title="ดาวน์โหลด Plugin Package"
+                  </AdminTd>
+                  <AdminTd mono nowrap muted={!k.apiKeyIp}>
+                    {k.apiKeyIp || 'รอการเชื่อมต่อ'}
+                  </AdminTd>
+                  <AdminTd nowrap muted>
+                    {formatDateTime(k.apiKeyLastUsed)}
+                  </AdminTd>
+                  <AdminTd nowrap muted>
+                    {formatDateTime(k.apiKeyCreatedAt, false)}
+                  </AdminTd>
+                  <AdminTd align="right" nowrap>
+                    {isRoot && (
+                      <AdminIconButton
+                        aria-label={`ดาวน์โหลดแพ็กเกจปลั๊กอินของ ${name}`}
+                        title="ดาวน์โหลดแพ็กเกจปลั๊กอิน"
+                        onClick={() => download.mutate(k.id)}
+                        disabled={download.isPending}
+                        aria-busy={downloadingThis || undefined}
                       >
-                        {downloadMutation.isPending && downloadMutation.variables === apiKeyUser.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )}
-                        Plugin Package
-                      </button>
+                        <Download />
+                      </AdminIconButton>
                     )}
-                    <button
-                      onClick={() => handleResetIp(apiKeyUser)}
-                      disabled={resetIpMutation.isPending}
-                      className="flex-1 px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm font-medium flex items-center justify-center gap-2 transition-all"
+                    <AdminIconButton
+                      aria-label={`รีเซ็ต IP ของ ${name}`}
+                      title="รีเซ็ต IP"
+                      onClick={() => setResetting(k)}
+                      disabled={!k.apiKeyIp}
                     >
-                      {resetIpMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
-                      รีเซ็ต IP
-                    </button>
-                    <button
-                      onClick={() => handleRevokeKey(apiKeyUser)}
-                      disabled={revokeKeyMutation.isPending}
-                      className="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-medium flex items-center justify-center gap-2 transition-all"
+                      <RefreshCw />
+                    </AdminIconButton>
+                    <AdminIconButton
+                      tone="danger"
+                      aria-label={`ยกเลิก API key ของ ${name}`}
+                      title="ยกเลิก API key"
+                      onClick={() => setRevoking(k)}
                     >
-                      {revokeKeyMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </Surface>
-            ))}
+                      <Trash2 />
+                    </AdminIconButton>
+                  </AdminTd>
+                </AdminTr>
+              );
+            })}
+          </AdminTableBody>
+        </AdminTable>
 
-            {(!data?.apiKeys || data.apiKeys.length === 0) && (
-              <div className="col-span-2">
-                <Surface>
-                  <div className="py-12 text-center text-gray-400">
-                    <Key className="h-12 w-12 mx-auto mb-4 text-emerald-400/50" />
-                    <p>ไม่พบ API Keys</p>
-                  </div>
-                </Surface>
-              </div>
-            )}
-          </div>
+        <Pagination {...list.paginationProps} />
+      </AdminPanel>
 
-          {/* Pagination */}
-          {data?.pagination && data.pagination.totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4">
-              <Button
-                variant="secondary"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                ก่อนหน้า
-              </Button>
-              <div className="px-4 py-2 bg-black/40 rounded-xl border border-emerald-500/20">
-                <span className="text-gray-400">หน้า </span>
-                <span className="text-emerald-400 font-bold">{page}</span>
-                <span className="text-gray-400"> / {data.pagination.totalPages}</span>
-              </div>
-              <Button
-                variant="secondary"
-                onClick={() => setPage((p) => Math.min(data.pagination.totalPages, p + 1))}
-                disabled={page === data.pagination.totalPages}
-              >
-                ถัดไป
-              </Button>
-            </div>
-          )}
-        </>
-      )}
-      {/* Accessible Dialog */}
-      <Dialog
-        isOpen={modalConfig.isOpen}
-        onClose={closeModal}
-        onConfirm={modalConfig.onConfirm}
-        title={modalConfig.title}
-        variant={modalConfig.variant}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-      >
-        {modalConfig.content}
-      </Dialog>
-    </div>
+      <ConfirmDialog
+        open={resetting !== null}
+        onClose={() => setResetting(null)}
+        onConfirm={confirmResetIp}
+        tone="default"
+        title="รีเซ็ต IP?"
+        description={
+          resetting
+            ? `ล้าง IP ที่ลงทะเบียนของ ${resetting.discordUsername || resetting.discordId} ปลั๊กอินจะลงทะเบียน IP ใหม่เมื่อเชื่อมต่อครั้งถัดไป`
+            : undefined
+        }
+        confirmText="รีเซ็ต IP"
+      />
+
+      <ConfirmDialog
+        open={revoking !== null}
+        onClose={() => setRevoking(null)}
+        onConfirm={confirmRevoke}
+        title="ยกเลิก API key?"
+        description={
+          revoking
+            ? `ปลั๊กอินที่ใช้คีย์ของ ${revoking.discordUsername || revoking.discordId} จะใช้งานไม่ได้ทันที การยกเลิกไม่สามารถย้อนกลับได้`
+            : undefined
+        }
+        confirmText="ยกเลิกคีย์"
+      />
+    </AdminPage>
+  );
+}
+
+export default function AdminApiKeysPage() {
+  return (
+    <AdminSuspense>
+      <ApiKeysAdmin />
+    </AdminSuspense>
   );
 }

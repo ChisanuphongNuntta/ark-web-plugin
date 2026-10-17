@@ -169,16 +169,14 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
   size,
   strokeWidth = 1.75,
 }) => {
-  const IconComponent = resolveCategoryIcon(iconKey, slug, name, emoji);
-
-  return (
-    <IconComponent
-      className={className}
-      size={size}
-      strokeWidth={strokeWidth}
-      aria-hidden="true"
-    />
-  );
+  // createElement (not JSX) because the icon is a stable module-level Lucide
+  // component picked by lookup, not a component defined during render.
+  return React.createElement(resolveCategoryIcon(iconKey, slug, name, emoji), {
+    className,
+    size,
+    strokeWidth,
+    'aria-hidden': true,
+  });
 };
 
 export default CategoryIcon;

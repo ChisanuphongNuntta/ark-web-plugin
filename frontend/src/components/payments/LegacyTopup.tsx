@@ -134,6 +134,11 @@ const TIER_PROFILES: Record<string, TierProfile> = {
   },
 };
 
+/** Fallback reference when the user leaves the transfer ref blank (module scope keeps render pure). */
+function generateTransferRef(): string {
+  return `TRX-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+}
+
 export function LegacyTopupPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -228,7 +233,7 @@ export function LegacyTopupPage() {
         amountThb: currentPkg.price,
         pointsToCredit: totalCoinsToReceive,
         transferBank: selectedBank,
-        transferRef: transferRef || `TRX-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        transferRef: transferRef || generateTransferRef(),
         slipImageUrl: slipPreviewUrl || '/images/mock/slips/sample-slip-01.svg',
       });
 

@@ -1,356 +1,367 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/lib/store';
-import { productApi, adminApi } from '@/lib/api';
-import {
-  Loader2,
-  Plus,
-  Edit2,
-  Trash2,
-  X,
-  FolderOpen,
-  Package,
-  AlertTriangle,
-  ArrowLeft,
-} from 'lucide-react';
 import Link from 'next/link';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Archive, ArrowLeft, Loader2, Pencil, Plus, Save } from 'lucide-react';
+import {
+  AdminButton,
+  AdminDialog,
+  AdminField,
+  AdminIconButton,
+  AdminNotice,
+  AdminPage,
+  AdminPageHeader,
+  AdminPanel,
+  AdminSuspense,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+  AdminToolbar,
+  AdminTr,
+  ConfirmDialog,
+  Pagination,
+  StatusBadge,
+  adminInputClass,
+} from '@/components/admin';
+import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
+import { adminApi, type AdminCategoryRow } from '@/lib/api';
+import { useAuthStore } from '@/lib/store';
 
-interface Category {
-  id: number;
+interface CategoryForm {
   name: string;
-  description: string | null;
-  icon: string | null;
+  description: string;
+  icon: string;
   sortOrder: number;
   isActive: boolean;
-  _count?: {
-    products: number;
-  };
 }
 
-export default function AdminCategoriesPage() {
+const EMPTY_FORM: CategoryForm = { name: '', description: '', icon: '', sortOrder: 0, isActive: true };
+const COLS = 5;
+
+function apiErrorText(error: unknown): string {
+  const e = error as { response?: { data?: { error?: unknown; message?: unknown } } } | null;
+  const msg = e?.response?.data?.error ?? e?.response?.data?.message;
+  return typeof msg === 'string' && msg ? msg : 'บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง';
+}
+
+function CategoriesAdmin() {
   const { user, isLoading: authLoading } = useAuthStore();
+  const isAdmin = Boolean(user?.isAdmin);
   const queryClient = useQueryClient();
 
-  const [showModal, setShowModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    icon: '',
-    sortOrder: 0,
-    isActive: true,
+  const list = usePaginatedQuery({
+    key: 'admin-categories',
+    fetcher: adminApi.getCategoriesPage,
+    enabled: isAdmin,
   });
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-categories'],
-    queryFn: () => productApi.getCategories().then((res) => res.data),
-  });
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editing, setEditing] = useState<AdminCategoryRow | null>(null);
+  const [form, setForm] = useState<CategoryForm>(EMPTY_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deactivating, setDeactivating] = useState<AdminCategoryRow | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const createMutation = useMutation({
-    mutationFn: (data: typeof formData) => adminApi.createCategory(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      closeModal();
+  const afterChange = () => {
+    void list.invalidate();
+    // Product page filter/form list and the public shop categories.
+    void queryClient.invalidateQueries({ queryKey: ['admin-categories-all'] });
+    void queryClient.invalidateQueries({ queryKey: ['categories'] });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number | null; data: CategoryForm }) =>
+      id === null ? adminApi.createCategory(data) : adminApi.updateCategory(id, data),
+    onSuccess: (_res, vars) => {
+      afterChange();
+      setEditorOpen(false);
+      setNotice(vars.id === null ? 'เพิ่มหมวดหมู่แล้ว' : 'บันทึกการแก้ไขแล้ว');
     },
+    onError: (error) => setFormError(apiErrorText(error)),
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: typeof formData }) =>
-      adminApi.updateCategory(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      closeModal();
-    },
-  });
-
-  const deleteMutation = useMutation({
+  const deactivateMutation = useMutation({
     mutationFn: (id: number) => adminApi.deleteCategory(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      setDeleteConfirm(null);
+      afterChange();
+      setNotice('ปิดใช้งานหมวดหมู่แล้ว');
     },
   });
 
-  const openCreateModal = () => {
-    setEditingCategory(null);
-    setFormData({
-      name: '',
-      description: '',
-      icon: '',
-      sortOrder: 0,
-      isActive: true,
-    });
-    setShowModal(true);
+  const openEditor = (category: AdminCategoryRow | null) => {
+    setEditing(category);
+    setFormError(null);
+    saveMutation.reset();
+    setForm(
+      category
+        ? {
+            name: category.name,
+            description: category.description ?? '',
+            icon: category.icon ?? '',
+            sortOrder: category.sortOrder ?? 0,
+            isActive: category.isActive,
+          }
+        : EMPTY_FORM,
+    );
+    setEditorOpen(true);
   };
 
-  const openEditModal = (category: Category) => {
-    setEditingCategory(category);
-    setFormData({
-      name: category.name,
-      description: category.description || '',
-      icon: category.icon || '',
-      sortOrder: category.sortOrder,
-      isActive: category.isActive,
-    });
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setEditingCategory(null);
+  const closeEditor = () => {
+    if (!saveMutation.isPending) setEditorOpen(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingCategory) {
-      updateMutation.mutate({ id: editingCategory.id, data: formData });
-    } else {
-      createMutation.mutate(formData);
+    if (saveMutation.isPending) return;
+    const name = form.name.trim();
+    if (!name) {
+      setFormError('กรุณากรอกชื่อหมวดหมู่');
+      return;
     }
+    setFormError(null);
+    saveMutation.mutate({
+      id: editing?.id ?? null,
+      data: { ...form, name, description: form.description.trim(), icon: form.icon.trim(), sortOrder: Math.trunc(Number(form.sortOrder) || 0) },
+    });
   };
+
+  const set = <K extends keyof CategoryForm>(key: K, value: CategoryForm[K]) => setForm((f) => ({ ...f, [key]: value }));
 
   if (authLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
+      <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-label="กำลังโหลด">
+        <Loader2 className="h-7 w-7 animate-spin text-iris-cyan" aria-hidden="true" />
       </div>
     );
   }
 
-  if (!user?.isAdmin) {
+  if (!isAdmin) {
     return (
-      <GlassCard variant="danger" className="p-12 text-center">
-        <p className="text-rose-400 font-bold">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
-      </GlassCard>
+      <AdminPage>
+        <AdminNotice tone="danger" title="ไม่มีสิทธิ์เข้าถึงหน้านี้">
+          หน้านี้สำหรับผู้ดูแลเว็บไซต์เท่านั้น
+        </AdminNotice>
+      </AdminPage>
     );
   }
+
+  const saving = saveMutation.isPending;
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <Link href="/admin">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              กลับ Admin
-            </Button>
-          </Link>
-          <h1 className="mt-2 text-2xl sm:text-3xl font-black text-iris-pearl flex items-center gap-3">
-            <FolderOpen className="h-7 w-7 text-iris-cyan" />
-            จัดการหมวดหมู่สินค้า
-          </h1>
-        </div>
-        <Button
-          variant="primary"
-          onClick={openCreateModal}
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          เพิ่มหมวดหมู่ใหม่
-        </Button>
-      </div>
+    <AdminPage>
+      <AdminPageHeader
+        eyebrow="CATEGORIES"
+        title="จัดการหมวดหมู่สินค้า"
+        description="กำหนดชื่อ ไอคอน และลำดับของหมวดหมู่ที่แสดงในร้านค้า"
+        actions={
+          <>
+            <Link href="/admin" className="btn-secondary">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              กลับหน้าแอดมิน
+            </Link>
+            <AdminButton variant="primary" icon={<Plus />} onClick={() => openEditor(null)}>
+              เพิ่มหมวดหมู่
+            </AdminButton>
+          </>
+        }
+      />
 
-      {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-iris-cyan" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data?.categories?.map((category: Category) => (
-            <GlassCard key={category.id} hoverEffect="lift" className="p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-iris-cyan/10 border border-iris-cyan/30 text-iris-cyan text-xl">
-                      {category.icon || '📦'}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-base text-iris-pearl">{category.name}</h3>
-                      <div className="flex items-center gap-2 mt-1 text-xs">
-                        <span className="text-iris-muted flex items-center gap-1">
-                          <Package className="h-3 w-3" />
-                          {category._count?.products || 0} สินค้า
-                        </span>
-                        {!category.isActive && (
-                          <Badge variant="muted">ปิดใช้งาน</Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {category.description && (
-                  <p className="text-xs text-iris-muted mt-3 line-clamp-2">
-                    {category.description}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openEditModal(category)}
-                  className="flex-1"
-                >
-                  <Edit2 className="h-3.5 w-3.5 mr-1" />
-                  แก้ไข
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => setDeleteConfirm(category.id)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </GlassCard>
-          ))}
-
-          {(!data?.categories || data.categories.length === 0) && (
-            <GlassCard className="col-span-full p-12 text-center">
-              <FolderOpen className="mx-auto h-12 w-12 text-iris-muted/40 mb-3" />
-              <p className="text-iris-muted">ยังไม่มีหมวดหมู่สินค้าในระบบ</p>
-              <div className="mt-4">
-                <Button variant="primary" onClick={openCreateModal}>
-                  <Plus className="h-4 w-4 mr-1.5" />
-                  เพิ่มหมวดหมู่แรก
-                </Button>
-              </div>
-            </GlassCard>
-          )}
-        </div>
+      {notice && (
+        <AdminNotice tone="success" onDismiss={() => setNotice(null)}>
+          {notice}
+        </AdminNotice>
       )}
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={showModal} onOpenChange={(open) => !open && closeModal()}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {editingCategory ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}
-            </DialogTitle>
-            <DialogDescription>
-              กำหนดชื่อ ไอคอน และลำดับการแสดงผลของหมวดหมู่สินค้า
-            </DialogDescription>
-          </DialogHeader>
+      <AdminPanel flush>
+        <AdminToolbar list={list} searchPlaceholder="ค้นหาชื่อหมวดหมู่…" />
 
-          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-            <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-iris-muted">
-                ชื่อหมวดหมู่ *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="เช่น ไดโนเสาร์ Apex, อาวุธ Tek"
-                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-iris-pearl focus:border-iris-cyan focus:outline-none"
-              />
-            </div>
+        <AdminTable caption="รายการหมวดหมู่สินค้า" busy={list.isFetching}>
+          <AdminTableHead>
+            <tr>
+              <AdminTh>หมวดหมู่</AdminTh>
+              <AdminTh align="right">สินค้า</AdminTh>
+              <AdminTh align="right">ลำดับ</AdminTh>
+              <AdminTh>สถานะ</AdminTh>
+              <AdminTh align="right">จัดการ</AdminTh>
+            </tr>
+          </AdminTableHead>
+          <AdminTableBody
+            colSpan={COLS}
+            isInitialLoading={list.isInitialLoading}
+            isPlaceholderData={list.isPlaceholderData}
+            isError={list.isError}
+            onRetry={list.refetch}
+            errorMessage="โหลดหมวดหมู่ไม่สำเร็จ"
+            isEmpty={list.items.length === 0}
+            emptyTitle={list.isFiltered ? 'ไม่พบหมวดหมู่ที่ค้นหา' : 'ยังไม่มีหมวดหมู่สินค้า'}
+            emptyAction={
+              list.isFiltered ? (
+                <AdminButton size="sm" onClick={list.resetAll}>
+                  ล้างคำค้นหา
+                </AdminButton>
+              ) : (
+                <AdminButton size="sm" variant="primary" icon={<Plus />} onClick={() => openEditor(null)}>
+                  เพิ่มหมวดหมู่แรก
+                </AdminButton>
+              )
+            }
+            skeletonRows={Math.min(list.pageSize, 10)}
+          >
+            {list.items.map((c) => (
+              <AdminTr key={c.id}>
+                <AdminTd>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-iris-midnight text-base"
+                      aria-hidden="true"
+                    >
+                      {c.icon || c.name.slice(0, 1)}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-iris-pearl">{c.name}</div>
+                      {c.description && <div className="line-clamp-1 text-xs text-iris-muted">{c.description}</div>}
+                    </div>
+                  </div>
+                </AdminTd>
+                <AdminTd align="right" mono>
+                  {(c._count?.products ?? 0).toLocaleString('th-TH')}
+                </AdminTd>
+                <AdminTd align="right" mono muted>
+                  {c.sortOrder}
+                </AdminTd>
+                <AdminTd>
+                  <StatusBadge tone={c.isActive ? 'success' : 'neutral'} dot>
+                    {c.isActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                  </StatusBadge>
+                </AdminTd>
+                <AdminTd align="right" nowrap>
+                  <AdminIconButton aria-label={`แก้ไข ${c.name}`} onClick={() => openEditor(c)}>
+                    <Pencil />
+                  </AdminIconButton>
+                  <AdminIconButton
+                    tone="danger"
+                    aria-label={`ปิดใช้งาน ${c.name}`}
+                    disabled={!c.isActive}
+                    onClick={() => setDeactivating(c)}
+                  >
+                    <Archive />
+                  </AdminIconButton>
+                </AdminTd>
+              </AdminTr>
+            ))}
+          </AdminTableBody>
+        </AdminTable>
 
-            <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-iris-muted">
-                คำอธิบาย
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="คำอธิบายสั้นๆ เกี่ยวกับหมวดหมู่นี้"
-                rows={2}
-                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2 text-sm text-iris-pearl focus:border-iris-cyan focus:outline-none"
-              />
-            </div>
+        <Pagination {...list.paginationProps} />
+      </AdminPanel>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-iris-muted">
-                  ไอคอน (Icon Key / Emoji)
-                </label>
-                <input
-                  type="text"
-                  value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                  placeholder="เช่น 🦖, ⚔️, 🛡️"
-                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-iris-pearl focus:border-iris-cyan focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-iris-muted">
-                  ลำดับการแสดงผล
-                </label>
-                <input
-                  type="number"
-                  value={formData.sortOrder}
-                  onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-iris-pearl focus:border-iris-cyan focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <input
-                type="checkbox"
-                id="catIsActive"
-                checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="h-4 w-4 rounded border-white/10 bg-black/50 text-iris-cyan focus:ring-iris-cyan"
-              />
-              <label htmlFor="catIsActive" className="text-xs text-iris-pearl cursor-pointer font-bold">
-                เปิดใช้งานหมวดหมู่นี้ (Active)
-              </label>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={closeModal}>
-                ยกเลิก
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                isLoading={createMutation.isPending || updateMutation.isPending}
-              >
-                {editingCategory ? 'บันทึกการแก้ไข' : 'สร้างหมวดหมู่'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={Boolean(deleteConfirm)} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>ยืนยันการลบหมวดหมู่?</DialogTitle>
-            <DialogDescription>
-              การลบหมวดหมู่นี้อาจส่งผลต่อสินค้าที่อยู่ในหมวดหมู่ดังกล่าว คุณแน่ใจหรือไม่ว่าต้องการดำเนินการต่อ
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+      <AdminDialog
+        open={editorOpen}
+        onClose={closeEditor}
+        busy={saving}
+        title={editing ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}
+        description="กำหนดชื่อ ไอคอน และลำดับการแสดงผลของหมวดหมู่สินค้า"
+        footer={
+          <>
+            <AdminButton variant="secondary" onClick={closeEditor} disabled={saving}>
               ยกเลิก
-            </Button>
-            <Button
-              variant="danger"
-              isLoading={deleteMutation.isPending}
-              onClick={() => deleteConfirm && deleteMutation.mutate(deleteConfirm)}
-            >
-              ยืนยันการลบ
-            </Button>
+            </AdminButton>
+            <AdminButton variant="primary" type="submit" form="category-form" loading={saving} icon={<Save />}>
+              {editing ? 'บันทึกการแก้ไข' : 'เพิ่มหมวดหมู่'}
+            </AdminButton>
+          </>
+        }
+      >
+        <form id="category-form" onSubmit={handleSubmit} noValidate className="space-y-4">
+          {formError && <AdminNotice tone="danger">{formError}</AdminNotice>}
+          <AdminField label="ชื่อหมวดหมู่" required>
+            {(field) => (
+              <input
+                {...field}
+                type="text"
+                value={form.name}
+                maxLength={100}
+                onChange={(e) => set('name', e.target.value)}
+                placeholder="เช่น ไดโนเสาร์ Apex, อาวุธ Tek"
+                className={adminInputClass}
+              />
+            )}
+          </AdminField>
+          <AdminField label="คำอธิบาย">
+            {(field) => (
+              <textarea
+                {...field}
+                rows={2}
+                value={form.description}
+                onChange={(e) => set('description', e.target.value)}
+                placeholder="คำอธิบายสั้นๆ เกี่ยวกับหมวดหมู่นี้"
+                className={`${adminInputClass} resize-y`}
+              />
+            )}
+          </AdminField>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <AdminField label="ไอคอน" hint="คีย์ไอคอนหรืออีโมจิ 1 ตัว">
+              {(field) => (
+                <input
+                  {...field}
+                  type="text"
+                  value={form.icon}
+                  maxLength={50}
+                  onChange={(e) => set('icon', e.target.value)}
+                  className={adminInputClass}
+                />
+              )}
+            </AdminField>
+            <AdminField label="ลำดับการแสดงผล" hint="น้อยแสดงก่อน">
+              {(field) => (
+                <input
+                  {...field}
+                  type="number"
+                  value={form.sortOrder}
+                  onChange={(e) => set('sortOrder', parseInt(e.target.value, 10) || 0)}
+                  className={adminInputClass}
+                />
+              )}
+            </AdminField>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 transition hover:border-white/15">
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(e) => set('isActive', e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-iris-cyan"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-iris-pearl">เปิดใช้งานหมวดหมู่นี้</span>
+              <span className="block text-xs text-iris-muted">หมวดหมู่ที่ปิดจะไม่แสดงในร้านค้า</span>
+            </span>
+          </label>
+        </form>
+      </AdminDialog>
+
+      <ConfirmDialog
+        open={deactivating !== null}
+        onClose={() => setDeactivating(null)}
+        onConfirm={() => deactivateMutation.mutateAsync(deactivating!.id)}
+        title="ปิดใช้งานหมวดหมู่นี้?"
+        description={
+          deactivating
+            ? `“${deactivating.name}” จะไม่แสดงในร้านค้า สินค้า ${(deactivating._count?.products ?? 0).toLocaleString('th-TH')} รายการในหมวดนี้ยังอยู่ และเปิดใช้งานใหม่ได้จากหน้าแก้ไข`
+            : undefined
+        }
+        confirmText="ปิดใช้งาน"
+      />
+    </AdminPage>
+  );
+}
+
+export default function AdminCategoriesPage() {
+  return (
+    <AdminSuspense>
+      <CategoriesAdmin />
+    </AdminSuspense>
   );
 }

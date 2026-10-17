@@ -1,40 +1,50 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { contentApi } from '@/lib/api';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/Button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
+import { useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
-  Save,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Code,
+  ExternalLink,
   Eye,
   EyeOff,
-  Settings,
-  Plus,
-  Trash2,
-  GripVertical,
-  ChevronUp,
-  ChevronDown,
-  Loader2,
-  X,
-  Image as ImageIcon,
-  Type,
   FileText,
-  Layout,
-  Video,
-  Code,
-  Minus,
   Grid3X3,
-  Clock,
+  Image as ImageIcon,
+  Layout,
   List,
+  Loader2,
   MessageSquare,
+  Minus,
+  Pencil,
+  Plus,
+  Save,
+  Settings,
   ShoppingCart,
-  ExternalLink,
+  Trash2,
+  Type,
+  Video,
+  type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
+import {
+  AdminButton,
+  AdminDialog,
+  AdminField,
+  AdminIconButton,
+  AdminNotice,
+  AdminPage,
+  AdminPageHeader,
+  AdminPanel,
+  ConfirmDialog,
+  StatusBadge,
+  adminInputClass,
+} from '@/components/admin';
+import { contentApi } from '@/lib/api';
 
 interface ContentBlock {
   id: number;
@@ -54,7 +64,17 @@ interface BlockType {
   defaultContent: any;
 }
 
-const blockIcons: Record<string, any> = {
+interface PageSettings {
+  title: string;
+  slug: string;
+  description: string;
+  pageType: string;
+  metaTitle: string;
+  metaDescription: string;
+  layout: string;
+}
+
+const BLOCK_ICONS: Record<string, LucideIcon> = {
   heading: Type,
   text: FileText,
   image: ImageIcon,
@@ -72,729 +92,585 @@ const blockIcons: Record<string, any> = {
   tabs: MessageSquare,
 };
 
+const BLOCK_LABEL: Record<string, string> = {
+  heading: 'หัวข้อ',
+  text: 'ข้อความ',
+  image: 'รูปภาพ',
+  gallery: 'แกลเลอรี',
+  banner: 'แบนเนอร์',
+  grid: 'กริด',
+  button: 'ปุ่ม',
+  divider: 'เส้นคั่น',
+  spacer: 'ระยะห่าง',
+  html: 'HTML',
+  'product-list': 'รายการสินค้า',
+  countdown: 'นับถอยหลัง',
+  video: 'วิดีโอ',
+  accordion: 'หัวข้อพับได้',
+  tabs: 'แท็บ',
+};
+
+const PAGE_TYPE_OPTIONS = [
+  { value: 'custom', label: 'กำหนดเอง' },
+  { value: 'home', label: 'หน้าหลัก' },
+  { value: 'promotion', label: 'โปรโมชั่น' },
+  { value: 'event', label: 'อีเวนท์' },
+  { value: 'info', label: 'ข้อมูล' },
+];
+
+const LAYOUT_OPTIONS = [
+  { value: 'default', label: 'มาตรฐาน' },
+  { value: 'full-width', label: 'เต็มความกว้าง' },
+  { value: 'sidebar', label: 'มีแถบด้านข้าง' },
+];
+
+const EMPTY_SETTINGS: PageSettings = {
+  title: '',
+  slug: '',
+  description: '',
+  pageType: 'custom',
+  metaTitle: '',
+  metaDescription: '',
+  layout: 'default',
+};
+
+function blockLabel(type: string): string {
+  return BLOCK_LABEL[type] ?? type.replace(/-/g, ' ');
+}
+
+function apiErrorText(error: unknown, fallback: string): string {
+  const e = error as { response?: { data?: { error?: unknown; message?: unknown } } } | null;
+  const msg = e?.response?.data?.error ?? e?.response?.data?.message;
+  return typeof msg === 'string' && msg ? msg : fallback;
+}
+
+function settingsFromPage(page: any): PageSettings {
+  return {
+    title: page.title ?? '',
+    slug: page.slug ?? '',
+    description: page.description || '',
+    pageType: page.pageType || 'custom',
+    metaTitle: page.metaTitle || '',
+    metaDescription: page.metaDescription || '',
+    layout: page.layout || 'default',
+  };
+}
+
 export default function PageEditorPage() {
   const params = useParams();
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const pageId = parseInt(params.id as string);
+  const pageId = parseInt(String(params.id ?? ''), 10);
+  const validId = Number.isFinite(pageId) && pageId > 0;
 
   const [showAddBlock, setShowAddBlock] = useState(false);
   const [editingBlock, setEditingBlock] = useState<ContentBlock | null>(null);
+  const [deletingBlock, setDeletingBlock] = useState<ContentBlock | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [pageSettings, setPageSettings] = useState({
-    title: '',
-    slug: '',
-    description: '',
-    pageType: 'custom',
-    metaTitle: '',
-    metaDescription: '',
-    layout: 'default',
-  });
+  const [pageSettings, setPageSettings] = useState<PageSettings>(EMPTY_SETTINGS);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
 
-  // Fetch page data
-  const { data: pageData, isLoading } = useQuery({
+  const { data: pageData, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-page', pageId],
-    queryFn: () => contentApi.getPageById(pageId).then(res => res.data),
-    enabled: !!pageId,
+    queryFn: () => contentApi.getPageById(pageId).then((res) => res.data),
+    enabled: validId,
   });
 
-  // Fetch block types
   const { data: blockTypesData } = useQuery({
     queryKey: ['block-types'],
-    queryFn: () => contentApi.getBlockTypes().then(res => res.data),
+    queryFn: () => contentApi.getBlockTypes().then((res) => res.data),
   });
 
-  // Update page settings when data loads
-  useEffect(() => {
-    if (pageData?.page) {
-      setPageSettings({
-        title: pageData.page.title,
-        slug: pageData.page.slug,
-        description: pageData.page.description || '',
-        pageType: pageData.page.pageType,
-        metaTitle: pageData.page.metaTitle || '',
-        metaDescription: pageData.page.metaDescription || '',
-        layout: pageData.page.layout,
-      });
-    }
-  }, [pageData]);
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ['admin-page', pageId] });
+    // Keep the paginated list (status, block count) in sync.
+    void queryClient.invalidateQueries({ queryKey: ['admin-content-pages'] });
+  };
+  const fail = (fallback: string) => (error: unknown) => setNotice({ tone: 'danger', text: apiErrorText(error, fallback) });
 
-  // Update page mutation
   const updatePageMutation = useMutation({
-    mutationFn: (data: any) => contentApi.updatePage(pageId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-page', pageId] });
-    },
+    mutationFn: (data: Partial<PageSettings> & { isPublished?: boolean }) => contentApi.updatePage(pageId, data),
+    onSuccess: refresh,
   });
 
-  // Create block mutation
   const createBlockMutation = useMutation({
-    mutationFn: (data: { blockType: string; content: any }) =>
-      contentApi.createBlock(pageId, data),
+    mutationFn: (data: { blockType: string; content: any }) => contentApi.createBlock(pageId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-page', pageId] });
+      refresh();
       setShowAddBlock(false);
+      setNotice({ tone: 'success', text: 'เพิ่มบล็อกแล้ว' });
     },
+    onError: fail('เพิ่มบล็อกไม่สำเร็จ'),
   });
 
-  // Update block mutation
   const updateBlockMutation = useMutation({
-    mutationFn: ({ blockId, data }: { blockId: number; data: any }) =>
-      contentApi.updateBlock(blockId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-page', pageId] });
-      setEditingBlock(null);
-    },
+    mutationFn: ({ blockId, data }: { blockId: number; data: any }) => contentApi.updateBlock(blockId, data),
+    onSuccess: refresh,
   });
 
-  // Delete block mutation
   const deleteBlockMutation = useMutation({
     mutationFn: (blockId: number) => contentApi.deleteBlock(blockId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-page', pageId] });
+      refresh();
+      setNotice({ tone: 'success', text: 'ลบบล็อกแล้ว' });
     },
   });
 
-  // Reorder blocks mutation
   const reorderBlocksMutation = useMutation({
-    mutationFn: (blockOrders: { id: number; sortOrder: number }[]) =>
-      contentApi.reorderBlocks(pageId, blockOrders),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-page', pageId] });
-    },
+    mutationFn: (blockOrders: { id: number; sortOrder: number }[]) => contentApi.reorderBlocks(pageId, blockOrders),
+    onSuccess: refresh,
+    onError: fail('จัดลำดับบล็อกไม่สำเร็จ'),
   });
 
-  const handleAddBlock = (blockType: BlockType) => {
-    createBlockMutation.mutate({
-      blockType: blockType.type,
-      content: blockType.defaultContent,
-    });
-  };
-
-  const handleMoveBlock = (blockId: number, direction: 'up' | 'down') => {
-    if (!pageData?.page?.blocks) return;
-
-    const blocks = [...pageData.page.blocks];
-    const index = blocks.findIndex((b: ContentBlock) => b.id === blockId);
-
-    if (
-      (direction === 'up' && index === 0) ||
-      (direction === 'down' && index === blocks.length - 1)
-    ) {
-      return;
-    }
-
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    [blocks[index], blocks[newIndex]] = [blocks[newIndex], blocks[index]];
-
-    const blockOrders = blocks.map((block: ContentBlock, i: number) => ({
-      id: block.id,
-      sortOrder: i,
-    }));
-
-    reorderBlocksMutation.mutate(blockOrders);
-  };
-
-  const handleToggleBlockVisibility = (block: ContentBlock) => {
-    updateBlockMutation.mutate({
-      blockId: block.id,
-      data: { isVisible: !block.isVisible },
-    });
-  };
-
-  const handleSaveSettings = () => {
-    updatePageMutation.mutate(pageSettings);
-    setShowSettings(false);
-  };
-
-  const handleTogglePublish = () => {
-    updatePageMutation.mutate({ isPublished: !pageData?.page?.isPublished });
-  };
-
-  const [modalConfig, setModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    content: React.ReactNode;
-    confirmText?: string;
-    cancelText?: string;
-    variant?: 'default' | 'danger' | 'warning' | 'success';
-    onConfirm?: () => void;
-    singleButton?: boolean;
-  }>({
-    isOpen: false,
-    title: '',
-    content: null,
-  });
-
-  const closeModal = () => {
-    setModalConfig((prev) => ({ ...prev, isOpen: false }));
-  };
-
-  const showConfirmModal = ({
-    title,
-    content,
-    onConfirm,
-    variant = 'default',
-    confirmText = 'ยืนยัน',
-    cancelText = 'ยกเลิก',
-    singleButton = false,
-  }: {
-    title: string;
-    content: React.ReactNode;
-    onConfirm?: () => void;
-    variant?: 'default' | 'danger' | 'warning' | 'success';
-    confirmText?: string;
-    cancelText?: string;
-    singleButton?: boolean;
-  }) => {
-    setModalConfig({
-      isOpen: true,
-      title,
-      content,
-      onConfirm: onConfirm
-        ? () => {
-          onConfirm();
-          closeModal();
-        }
-        : singleButton ? closeModal : undefined,
-      variant,
-      confirmText,
-      cancelText,
-      singleButton,
-    });
-  };
-
-  // ESC to close modals
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowAddBlock(false);
-        setEditingBlock(null);
-        setShowSettings(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  if (isLoading) {
+  if (!validId || isError || (!isLoading && !pageData?.page)) {
     return (
-      <div className="flex justify-center py-24">
-        <div className="relative">
-          <div className="absolute inset-0 bg-emerald-500/30 rounded-full blur-xl animate-pulse"></div>
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-400 relative" />
-        </div>
-      </div>
+      <AdminPage>
+        <AdminNotice tone="danger" title={isError ? 'โหลดหน้าไม่สำเร็จ' : 'ไม่พบหน้าที่ต้องการ'}>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {isError && (
+              <AdminButton size="sm" onClick={() => void refetch()}>
+                ลองอีกครั้ง
+              </AdminButton>
+            )}
+            <Link href="/admin/content" className="btn-secondary min-h-9 px-3.5 py-1.5 text-xs">
+              กลับไปรายการหน้า
+            </Link>
+          </div>
+        </AdminNotice>
+      </AdminPage>
     );
   }
 
-  if (!pageData?.page) {
+  if (isLoading || !pageData?.page) {
     return (
-      <div className="text-center py-24">
-        <p className="text-gray-400">ไม่พบหน้าที่ต้องการ</p>
-        <Link href="/admin/content" className="text-emerald-400 hover:underline mt-2 inline-block">
-          กลับไปรายการหน้า
-        </Link>
+      <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-label="กำลังโหลด">
+        <Loader2 className="h-7 w-7 animate-spin text-iris-cyan" aria-hidden="true" />
       </div>
     );
   }
 
   const page = pageData.page;
-  const blocks = page.blocks || [];
-  const blockTypes = blockTypesData?.blockTypes || [];
+  const blocks: ContentBlock[] = page.blocks || [];
+  const blockTypes: BlockType[] = blockTypesData?.blockTypes || [];
+  const published = Boolean(page.isPublished);
+  const busy = updatePageMutation.isPending || reorderBlocksMutation.isPending;
+
+  const handleMoveBlock = (blockId: number, direction: 'up' | 'down') => {
+    if (reorderBlocksMutation.isPending) return;
+    const ordered = [...blocks];
+    const index = ordered.findIndex((b) => b.id === blockId);
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (index < 0 || newIndex < 0 || newIndex >= ordered.length) return;
+    [ordered[index], ordered[newIndex]] = [ordered[newIndex], ordered[index]];
+    reorderBlocksMutation.mutate(ordered.map((b, i) => ({ id: b.id, sortOrder: i })));
+  };
+
+  const handleToggleBlockVisibility = (block: ContentBlock) => {
+    updateBlockMutation.mutate(
+      { blockId: block.id, data: { isVisible: !block.isVisible } },
+      { onError: fail('เปลี่ยนการแสดงผลบล็อกไม่สำเร็จ') },
+    );
+  };
+
+  const handleTogglePublish = () => {
+    updatePageMutation.mutate(
+      { isPublished: !published },
+      {
+        onSuccess: () => setNotice({ tone: 'success', text: published ? 'ปิดการเผยแพร่แล้ว' : 'เผยแพร่หน้าแล้ว' }),
+        onError: fail('เปลี่ยนสถานะการเผยแพร่ไม่สำเร็จ'),
+      },
+    );
+  };
+
+  const openSettings = () => {
+    setPageSettings(settingsFromPage(page));
+    setSettingsError(null);
+    setShowSettings(true);
+  };
+
+  const closeSettings = () => {
+    if (!updatePageMutation.isPending) setShowSettings(false);
+  };
+
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (updatePageMutation.isPending) return;
+    if (!pageSettings.title.trim() || !pageSettings.slug.trim()) {
+      setSettingsError('กรุณากรอกชื่อหน้าและ URL slug');
+      return;
+    }
+    setSettingsError(null);
+    updatePageMutation.mutate(
+      { ...pageSettings, title: pageSettings.title.trim(), slug: pageSettings.slug.trim() },
+      {
+        onSuccess: () => {
+          setShowSettings(false);
+          setNotice({ tone: 'success', text: 'บันทึกการตั้งค่าหน้าแล้ว' });
+        },
+        onError: (error) => setSettingsError(apiErrorText(error, 'บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง')),
+      },
+    );
+  };
+
+  const setSetting = <K extends keyof PageSettings>(key: K, value: PageSettings[K]) =>
+    setPageSettings((s) => ({ ...s, [key]: value }));
+
+  // Keep an unknown stored layout (e.g. "contained" from the create form) selectable so saving doesn't change it.
+  const layoutOptions = LAYOUT_OPTIONS.some((o) => o.value === pageSettings.layout)
+    ? LAYOUT_OPTIONS
+    : [...LAYOUT_OPTIONS, { value: pageSettings.layout, label: pageSettings.layout }];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/admin/content"
-            className="p-2 rounded-lg bg-black/40 border border-emerald-500/30 hover:border-emerald-500/50 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-              {page.title}
-            </h1>
-            <p className="text-sm text-gray-400">/{page.slug}</p>
-          </div>
-
-          {/* Status badge */}
-          <div
-            className={`px-3 py-1 rounded-full text-xs font-medium border ${page.isPublished
-              ? 'bg-green-500/20 text-green-400 border-green-500/30'
-              : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-              }`}
-          >
-            {page.isPublished ? 'Published' : 'Draft'}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Preview */}
-          <a
-            href={`/p/${page.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 rounded-xl bg-black/40 border border-emerald-500/30 hover:border-emerald-500/50 transition-colors flex items-center gap-2"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Preview
-          </a>
-
-          {/* Settings */}
-          <button
-            onClick={() => setShowSettings(true)}
-            className="p-2 rounded-xl bg-black/40 border border-emerald-500/30 hover:border-emerald-500/50 transition-colors"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
-
-          {/* Publish/Unpublish */}
-          <button
-            onClick={handleTogglePublish}
-            disabled={updatePageMutation.isPending}
-            className={`px-4 py-2 rounded-xl border transition-colors flex items-center gap-2 ${page.isPublished
-              ? 'bg-yellow-500/20 border-yellow-500/30 hover:border-yellow-500/50 text-yellow-400'
-              : 'bg-green-500/20 border-green-500/30 hover:border-green-500/50 text-green-400'
-              }`}
-          >
-            {page.isPublished ? (
-              <>
-                <EyeOff className="h-4 w-4" />
-                Unpublish
-              </>
-            ) : (
-              <>
-                <Eye className="h-4 w-4" />
-                Publish
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Blocks */}
-      <div className="space-y-4">
-        {blocks.length === 0 ? (
-          <GlassCard>
-            <div className="text-center py-16">
-              <div className="relative inline-block mb-4">
-                <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl"></div>
-                <Layout className="h-16 w-16 text-emerald-400/50 relative mx-auto" />
-              </div>
-              <p className="text-gray-400 text-lg mb-4">ยังไม่มี Content Block</p>
-              <Button onClick={() => setShowAddBlock(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                เพิ่ม Block แรก
-              </Button>
-            </div>
-          </GlassCard>
-        ) : (
+    <AdminPage>
+      <AdminPageHeader
+        eyebrow="PAGE EDITOR"
+        title={page.title}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            <span className="font-mono">/p/{page.slug}</span>
+            <StatusBadge tone={published ? 'success' : 'neutral'} dot>
+              {published ? 'เผยแพร่แล้ว' : 'ฉบับร่าง'}
+            </StatusBadge>
+          </span>
+        }
+        actions={
           <>
-            {blocks.map((block: ContentBlock, index: number) => {
-              const IconComponent = blockIcons[block.blockType] || FileText;
-              return (
-                <GlassCard key={block.id} glowOnHover>
-                  <div className="p-4">
-                    <div className="flex items-center gap-4">
-                      {/* Drag handle */}
-                      <div className="text-gray-500 cursor-move">
-                        <GripVertical className="h-5 w-5" />
-                      </div>
-
-                      {/* Block type icon */}
-                      <div className="p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
-                        <IconComponent className="h-5 w-5 text-emerald-400" />
-                      </div>
-
-                      {/* Block info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium capitalize">
-                            {block.blockType.replace('-', ' ')}
-                          </span>
-                          {!block.isVisible && (
-                            <span className="px-2 py-0.5 rounded text-xs bg-gray-500/20 text-gray-400">
-                              Hidden
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500 line-clamp-1">
-                          {getBlockPreview(block)}
-                        </p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        {/* Move up */}
-                        <button
-                          onClick={() => handleMoveBlock(block.id, 'up')}
-                          disabled={index === 0}
-                          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-30"
-                        >
-                          <ChevronUp className="h-4 w-4" />
-                        </button>
-
-                        {/* Move down */}
-                        <button
-                          onClick={() => handleMoveBlock(block.id, 'down')}
-                          disabled={index === blocks.length - 1}
-                          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-30"
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </button>
-
-                        {/* Toggle visibility */}
-                        <button
-                          onClick={() => handleToggleBlockVisibility(block)}
-                          className={`p-1.5 rounded-lg transition-colors ${block.isVisible
-                            ? 'hover:bg-white/10'
-                            : 'bg-yellow-500/20 text-yellow-400'
-                            }`}
-                        >
-                          {block.isVisible ? (
-                            <Eye className="h-4 w-4" />
-                          ) : (
-                            <EyeOff className="h-4 w-4" />
-                          )}
-                        </button>
-
-                        {/* Edit */}
-                        <button
-                          onClick={() => setEditingBlock(block)}
-                          className="p-1.5 rounded-lg hover:bg-blue-500/20 text-blue-400 transition-colors"
-                        >
-                          <Settings className="h-4 w-4" />
-                        </button>
-
-                        {/* Delete */}
-                        <button
-                          onClick={() => {
-                            showConfirmModal({
-                              title: 'ลบ Content Block?',
-                              content: <p>คุณต้องการลบ Block นี้ใช่หรือไม่? การกระทำนี้ไม่สามารถเรียกคืนได้</p>,
-                              variant: 'danger',
-                              confirmText: 'ลบ',
-                              onConfirm: () => deleteBlockMutation.mutate(block.id),
-                            });
-                          }}
-                          className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </GlassCard>
-              );
-            })}
-
-            {/* Add Block Button */}
-            <button
-              onClick={() => setShowAddBlock(true)}
-              className="w-full py-4 rounded-xl border-2 border-dashed border-emerald-500/30 hover:border-emerald-500/50 text-emerald-400 transition-colors flex items-center justify-center gap-2"
+            <Link href="/admin/content" className="btn-secondary">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              รายการหน้า
+            </Link>
+            <a href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer" className="btn-secondary">
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              ดูตัวอย่าง
+            </a>
+            <AdminButton icon={<Settings />} onClick={openSettings}>
+              ตั้งค่าหน้า
+            </AdminButton>
+            <AdminButton
+              variant="primary"
+              icon={published ? <EyeOff /> : <Eye />}
+              loading={updatePageMutation.isPending && !showSettings}
+              disabled={busy}
+              onClick={handleTogglePublish}
             >
-              <Plus className="h-5 w-5" />
-              เพิ่ม Block
-            </button>
+              {published ? 'ปิดการเผยแพร่' : 'เผยแพร่'}
+            </AdminButton>
           </>
-        )}
-      </div>
+        }
+      />
 
-      {/* Add Block Modal */}
-      {showAddBlock && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={() => setShowAddBlock(false)}
-          ></div>
-
-          <div className="relative z-10 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-            <GlassCard>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                    เพิ่ม Block
-                  </h2>
-                  <button
-                    onClick={() => setShowAddBlock(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {blockTypes.map((blockType: BlockType) => {
-                    const IconComponent = blockIcons[blockType.type] || FileText;
-                    return (
-                      <button
-                        key={blockType.type}
-                        onClick={() => handleAddBlock(blockType)}
-                        disabled={createBlockMutation.isPending}
-                        className="p-4 rounded-xl bg-black/40 border border-emerald-500/30 hover:border-emerald-500/50 transition-all text-left group"
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 group-hover:bg-emerald-500/30 transition-colors">
-                            <IconComponent className="h-5 w-5 text-emerald-400" />
-                          </div>
-                          <span className="text-2xl">{blockType.icon}</span>
-                        </div>
-                        <h3 className="font-medium mb-1">{blockType.name}</h3>
-                        <p className="text-xs text-gray-500">{blockType.description}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </GlassCard>
-          </div>
-        </div>
+      {notice && (
+        <AdminNotice tone={notice.tone} onDismiss={() => setNotice(null)}>
+          {notice.text}
+        </AdminNotice>
       )}
 
-      {/* Edit Block Modal */}
+      <AdminPanel
+        title="บล็อกเนื้อหา"
+        description={blocks.length > 0 ? `${blocks.length.toLocaleString('th-TH')} บล็อก เรียงจากบนลงล่าง` : undefined}
+        actions={
+          blocks.length > 0 ? (
+            <AdminButton size="sm" variant="primary" icon={<Plus />} onClick={() => setShowAddBlock(true)}>
+              เพิ่มบล็อก
+            </AdminButton>
+          ) : undefined
+        }
+      >
+        {blocks.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
+            <Layout className="h-10 w-10 text-iris-muted/60" aria-hidden="true" />
+            <p className="text-sm text-iris-muted">หน้านี้ยังไม่มีบล็อกเนื้อหา</p>
+            <AdminButton variant="primary" icon={<Plus />} onClick={() => setShowAddBlock(true)}>
+              เพิ่มบล็อกแรก
+            </AdminButton>
+          </div>
+        ) : (
+          <ol className="space-y-2" aria-busy={reorderBlocksMutation.isPending || undefined}>
+            {blocks.map((block, index) => {
+              const Icon = BLOCK_ICONS[block.blockType] ?? FileText;
+              const label = blockLabel(block.blockType);
+              return (
+                <li
+                  key={block.id}
+                  className="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-iris-midnight/60 p-3 sm:flex-row sm:items-center"
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="w-6 shrink-0 text-right font-mono text-xs text-iris-muted">{index + 1}</span>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03]">
+                      <Icon className="h-4 w-4 text-iris-cyan" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-iris-pearl">{label}</span>
+                        {!block.isVisible && (
+                          <StatusBadge tone="warning">ซ่อนอยู่</StatusBadge>
+                        )}
+                      </div>
+                      <p className="line-clamp-1 text-xs text-iris-muted">{getBlockPreview(block)}</p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center justify-end gap-1">
+                    <AdminIconButton
+                      aria-label={`เลื่อนบล็อก ${label} ขึ้น`}
+                      disabled={index === 0 || reorderBlocksMutation.isPending}
+                      onClick={() => handleMoveBlock(block.id, 'up')}
+                    >
+                      <ChevronUp />
+                    </AdminIconButton>
+                    <AdminIconButton
+                      aria-label={`เลื่อนบล็อก ${label} ลง`}
+                      disabled={index === blocks.length - 1 || reorderBlocksMutation.isPending}
+                      onClick={() => handleMoveBlock(block.id, 'down')}
+                    >
+                      <ChevronDown />
+                    </AdminIconButton>
+                    <AdminIconButton
+                      aria-label={block.isVisible ? `ซ่อนบล็อก ${label}` : `แสดงบล็อก ${label}`}
+                      onClick={() => handleToggleBlockVisibility(block)}
+                    >
+                      {block.isVisible ? <Eye /> : <EyeOff />}
+                    </AdminIconButton>
+                    <AdminIconButton aria-label={`แก้ไขบล็อก ${label}`} onClick={() => setEditingBlock(block)}>
+                      <Pencil />
+                    </AdminIconButton>
+                    <AdminIconButton tone="danger" aria-label={`ลบบล็อก ${label}`} onClick={() => setDeletingBlock(block)}>
+                      <Trash2 />
+                    </AdminIconButton>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </AdminPanel>
+
+      {/* Add block */}
+      <AdminDialog
+        open={showAddBlock}
+        onClose={() => {
+          if (!createBlockMutation.isPending) setShowAddBlock(false);
+        }}
+        busy={createBlockMutation.isPending}
+        size="lg"
+        title="เพิ่มบล็อก"
+        description="เลือกชนิดบล็อกที่ต้องการ บล็อกใหม่จะต่อท้ายหน้า"
+      >
+        {blockTypes.length === 0 ? (
+          <p className="py-6 text-center text-sm text-iris-muted">กำลังโหลดชนิดบล็อก…</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+            {blockTypes.map((bt) => {
+              const Icon = BLOCK_ICONS[bt.type] ?? FileText;
+              return (
+                <button
+                  key={bt.type}
+                  type="button"
+                  onClick={() => createBlockMutation.mutate({ blockType: bt.type, content: bt.defaultContent })}
+                  disabled={createBlockMutation.isPending}
+                  className="flex flex-col gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.05] disabled:opacity-50"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-iris-midnight">
+                    <Icon className="h-4 w-4 text-iris-cyan" aria-hidden="true" />
+                  </span>
+                  <span className="text-sm font-semibold text-iris-pearl">{bt.name}</span>
+                  {bt.description && <span className="text-xs text-iris-muted">{bt.description}</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </AdminDialog>
+
+      {/* Edit block (keyed so state resets per block) */}
       {editingBlock && (
         <BlockEditor
+          key={editingBlock.id}
           block={editingBlock}
+          isPending={updateBlockMutation.isPending}
+          onClose={() => {
+            if (!updateBlockMutation.isPending) setEditingBlock(null);
+          }}
           onSave={(content, settings) =>
-            updateBlockMutation.mutate({
-              blockId: editingBlock.id,
-              data: { content, settings },
+            updateBlockMutation.mutateAsync({ blockId: editingBlock.id, data: { content, settings } }).then(() => {
+              setEditingBlock(null);
+              setNotice({ tone: 'success', text: 'บันทึกบล็อกแล้ว' });
             })
           }
-          onClose={() => setEditingBlock(null)}
-          isPending={updateBlockMutation.isPending}
         />
       )}
 
-      {/* Page Settings Modal */}
-      {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={() => setShowSettings(false)}
-          ></div>
-
-          <div className="relative z-10 w-full max-w-lg max-h-[80vh] overflow-y-auto">
-            <GlassCard>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                    ตั้งค่าหน้า
-                  </h2>
-                  <button
-                    onClick={() => setShowSettings(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">ชื่อหน้า</label>
-                    <input
-                      type="text"
-                      value={pageSettings.title}
-                      onChange={(e) =>
-                        setPageSettings({ ...pageSettings, title: e.target.value })
-                      }
-                      className="input w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Slug (URL)</label>
-                    <div className="flex items-center">
-                      <span className="px-3 py-2 bg-black/40 border border-r-0 border-emerald-500/30 rounded-l-xl text-gray-500">
-                        /p/
-                      </span>
-                      <input
-                        type="text"
-                        value={pageSettings.slug}
-                        onChange={(e) =>
-                          setPageSettings({
-                            ...pageSettings,
-                            slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''),
-                          })
-                        }
-                        className="input rounded-l-none flex-1"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">คำอธิบาย</label>
-                    <textarea
-                      value={pageSettings.description}
-                      onChange={(e) =>
-                        setPageSettings({ ...pageSettings, description: e.target.value })
-                      }
-                      rows={3}
-                      className="input w-full resize-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">ประเภทหน้า</label>
-                    <select
-                      value={pageSettings.pageType}
-                      onChange={(e) =>
-                        setPageSettings({ ...pageSettings, pageType: e.target.value })
-                      }
-                      className="input w-full"
-                    >
-                      <option value="custom">กำหนดเอง</option>
-                      <option value="home">หน้าหลัก</option>
-                      <option value="promotion">โปรโมชั่น</option>
-                      <option value="event">อีเวนท์</option>
-                      <option value="info">ข้อมูล</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Layout</label>
-                    <select
-                      value={pageSettings.layout}
-                      onChange={(e) =>
-                        setPageSettings({ ...pageSettings, layout: e.target.value })
-                      }
-                      className="input w-full"
-                    >
-                      <option value="default">Default</option>
-                      <option value="full-width">Full Width</option>
-                      <option value="sidebar">With Sidebar</option>
-                    </select>
-                  </div>
-
-                  <hr className="border-gray-700" />
-
-                  <h3 className="font-medium text-gray-300">SEO</h3>
-
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Meta Title</label>
-                    <input
-                      type="text"
-                      value={pageSettings.metaTitle}
-                      onChange={(e) =>
-                        setPageSettings({ ...pageSettings, metaTitle: e.target.value })
-                      }
-                      className="input w-full"
-                      placeholder={pageSettings.title}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Meta Description</label>
-                    <textarea
-                      value={pageSettings.metaDescription}
-                      onChange={(e) =>
-                        setPageSettings({ ...pageSettings, metaDescription: e.target.value })
-                      }
-                      rows={2}
-                      className="input w-full resize-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 mt-6">
-                  <button
-                    onClick={() => setShowSettings(false)}
-                    className="px-4 py-2 rounded-xl border border-gray-500/30 hover:border-gray-500/50 transition-colors"
-                  >
-                    ยกเลิก
-                  </button>
-                  <Button
-                    onClick={handleSaveSettings}
-                    disabled={updatePageMutation.isPending}
-                  >
-                    {updatePageMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
-                    บันทึก
-                  </Button>
-                </div>
-              </div>
-            </GlassCard>
-          </div>
-        </div>
-      )}
-
-      {/* Laser Modal */}
-      <Dialog open={modalConfig.isOpen} onOpenChange={(open) => !open && closeModal()}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{modalConfig.title}</DialogTitle>
-          </DialogHeader>
-          <div className="py-2 text-sm text-iris-muted">
-            {modalConfig.content}
-          </div>
-          <div className="flex justify-end gap-2 pt-4">
-            {!modalConfig.singleButton && (
-              <Button variant="outline" onClick={closeModal}>
-                {modalConfig.cancelText || 'ยกเลิก'}
-              </Button>
-            )}
-            <Button
-              variant={modalConfig.variant === 'danger' ? 'danger' : 'primary'}
-              onClick={() => {
-                modalConfig.onConfirm?.();
-                closeModal();
-              }}
+      {/* Page settings */}
+      <AdminDialog
+        open={showSettings}
+        onClose={closeSettings}
+        busy={updatePageMutation.isPending}
+        title="ตั้งค่าหน้า"
+        description="ชื่อ URL ประเภท และข้อมูล SEO ของหน้า"
+        footer={
+          <>
+            <AdminButton variant="secondary" onClick={closeSettings} disabled={updatePageMutation.isPending}>
+              ยกเลิก
+            </AdminButton>
+            <AdminButton
+              variant="primary"
+              type="submit"
+              form="page-settings-form"
+              loading={updatePageMutation.isPending}
+              icon={<Save />}
             >
-              {modalConfig.confirmText || 'ตกลง'}
-            </Button>
+              บันทึก
+            </AdminButton>
+          </>
+        }
+      >
+        <form id="page-settings-form" onSubmit={handleSaveSettings} noValidate className="space-y-4">
+          {settingsError && <AdminNotice tone="danger">{settingsError}</AdminNotice>}
+          <AdminField label="ชื่อหน้า" required>
+            {(field) => (
+              <input
+                {...field}
+                type="text"
+                value={pageSettings.title}
+                onChange={(e) => setSetting('title', e.target.value)}
+                className={adminInputClass}
+              />
+            )}
+          </AdminField>
+          <AdminField label="URL slug" required hint={`/p/${pageSettings.slug || '…'}`}>
+            {(field) => (
+              <input
+                {...field}
+                type="text"
+                value={pageSettings.slug}
+                onChange={(e) => setSetting('slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                className={`${adminInputClass} font-mono`}
+              />
+            )}
+          </AdminField>
+          <AdminField label="คำอธิบาย">
+            {(field) => (
+              <textarea
+                {...field}
+                rows={3}
+                value={pageSettings.description}
+                onChange={(e) => setSetting('description', e.target.value)}
+                className={`${adminInputClass} resize-y`}
+              />
+            )}
+          </AdminField>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <AdminField label="ประเภทหน้า">
+              {(field) => (
+                <select
+                  {...field}
+                  value={pageSettings.pageType}
+                  onChange={(e) => setSetting('pageType', e.target.value)}
+                  className={adminInputClass}
+                >
+                  {PAGE_TYPE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </AdminField>
+            <AdminField label="เลย์เอาต์">
+              {(field) => (
+                <select
+                  {...field}
+                  value={pageSettings.layout}
+                  onChange={(e) => setSetting('layout', e.target.value)}
+                  className={adminInputClass}
+                >
+                  {layoutOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </AdminField>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <div className="border-t border-white/[0.06] pt-4">
+            <p className="eyebrow">SEO</p>
+          </div>
+          <AdminField label="Meta title" hint="เว้นว่างเพื่อใช้ชื่อหน้า">
+            {(field) => (
+              <input
+                {...field}
+                type="text"
+                value={pageSettings.metaTitle}
+                placeholder={pageSettings.title}
+                onChange={(e) => setSetting('metaTitle', e.target.value)}
+                className={adminInputClass}
+              />
+            )}
+          </AdminField>
+          <AdminField label="Meta description">
+            {(field) => (
+              <textarea
+                {...field}
+                rows={2}
+                value={pageSettings.metaDescription}
+                onChange={(e) => setSetting('metaDescription', e.target.value)}
+                className={`${adminInputClass} resize-y`}
+              />
+            )}
+          </AdminField>
+        </form>
+      </AdminDialog>
+
+      <ConfirmDialog
+        open={deletingBlock !== null}
+        onClose={() => setDeletingBlock(null)}
+        onConfirm={() => deleteBlockMutation.mutateAsync(deletingBlock!.id)}
+        title="ลบบล็อกนี้?"
+        description={
+          deletingBlock ? `บล็อก “${blockLabel(deletingBlock.blockType)}” จะถูกลบถาวร ไม่สามารถย้อนกลับได้` : undefined
+        }
+        confirmText="ลบบล็อก"
+      />
+    </AdminPage>
   );
 }
 
-// Helper function to get block preview text
 function getBlockPreview(block: ContentBlock): string {
-  const content = block.content;
+  const content = block.content ?? {};
   switch (block.blockType) {
     case 'heading':
-      return content.text || 'Empty heading';
+      return content.text || 'หัวข้อว่าง';
     case 'text':
-      return content.text?.substring(0, 100) || 'Empty text';
+      return content.text?.substring(0, 100) || 'ข้อความว่าง';
     case 'image':
-      return content.url ? 'Image set' : 'No image';
+      return content.url ? 'ตั้งค่ารูปแล้ว' : 'ยังไม่มีรูป';
     case 'gallery':
-      return `${content.images?.length || 0} images`;
+      return `${content.images?.length || 0} รูป`;
     case 'banner':
-      return content.title || 'Banner';
+      return content.title || 'แบนเนอร์';
     case 'button':
-      return content.text || 'Button';
+      return content.text || 'ปุ่ม';
     case 'divider':
-      return 'Divider';
+      return 'เส้นคั่น';
     case 'spacer':
-      return `${content.height || 40}px spacer`;
+      return `ระยะห่าง ${content.height || 40}px`;
     case 'html':
-      return content.html ? 'Custom HTML' : 'Empty HTML';
+      return content.html ? 'HTML กำหนดเอง' : 'HTML ว่าง';
     case 'product-list':
-      return `${content.limit || 8} products`;
+      return `${content.limit || 8} สินค้า`;
     case 'countdown':
-      return content.endDate || 'Countdown';
+      return content.endDate || 'นับถอยหลัง';
     case 'video':
-      return content.url || 'No video';
+      return content.url || 'ยังไม่มีวิดีโอ';
     case 'accordion':
-      return `${content.items?.length || 0} items`;
+      return `${content.items?.length || 0} รายการ`;
     case 'tabs':
-      return `${content.tabs?.length || 0} tabs`;
+      return `${content.tabs?.length || 0} แท็บ`;
     default:
       return block.blockType;
   }
 }
 
-// Block Editor Component
 function BlockEditor({
   block,
   onSave,
@@ -802,349 +678,255 @@ function BlockEditor({
   isPending,
 }: {
   block: ContentBlock;
-  onSave: (content: any, settings: any) => void;
+  onSave: (content: any, settings: any) => Promise<void>;
   onClose: () => void;
   isPending: boolean;
 }) {
-  const [content, setContent] = useState(block.content);
-  const [settings, setSettings] = useState(block.settings || {});
+  const [content, setContent] = useState<any>(block.content ?? {});
+  const [settings] = useState<any>(block.settings || {});
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = () => {
-    onSave(content, settings);
+  const set = (key: string, value: unknown) => setContent((c: any) => ({ ...c, [key]: value }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isPending) return;
+    setError(null);
+    onSave(content, settings).catch((err: unknown) => setError(apiErrorText(err, 'บันทึกบล็อกไม่สำเร็จ')));
   };
 
+  const textField = (key: string, label: string, placeholder?: string) => (
+    <AdminField label={label}>
+      {(field) => (
+        <input
+          {...field}
+          type="text"
+          value={content[key] || ''}
+          placeholder={placeholder}
+          onChange={(e) => set(key, e.target.value)}
+          className={adminInputClass}
+        />
+      )}
+    </AdminField>
+  );
+
+  const checkField = (key: string, label: string) => (
+    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 text-sm text-iris-pearl transition hover:border-white/15">
+      <input
+        type="checkbox"
+        checked={Boolean(content[key])}
+        onChange={(e) => set(key, e.target.checked)}
+        className="h-4 w-4 shrink-0 accent-iris-cyan"
+      />
+      {label}
+    </label>
+  );
+
+  const known = [
+    'heading', 'text', 'image', 'banner', 'button', 'spacer', 'html', 'product-list', 'video', 'countdown', 'divider',
+  ].includes(block.blockType);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+    <AdminDialog
+      open
+      onClose={onClose}
+      busy={isPending}
+      size="lg"
+      title={`แก้ไขบล็อก${blockLabel(block.blockType)}`}
+      footer={
+        <>
+          <AdminButton variant="secondary" onClick={onClose} disabled={isPending}>
+            ยกเลิก
+          </AdminButton>
+          <AdminButton variant="primary" type="submit" form="block-editor-form" loading={isPending} icon={<Save />}>
+            บันทึก
+          </AdminButton>
+        </>
+      }
+    >
+      <form id="block-editor-form" onSubmit={handleSubmit} noValidate className="space-y-4">
+        {error && <AdminNotice tone="danger">{error}</AdminNotice>}
 
-      <div className="relative z-10 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-        <GlassCard>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent capitalize">
-                แก้ไข {block.blockType.replace('-', ' ')}
-              </h2>
-              <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-colors">
-                <X className="h-5 w-5" />
-              </button>
+        {block.blockType === 'heading' && (
+          <>
+            {textField('text', 'ข้อความ', 'หัวข้อ…')}
+            <AdminField label="ระดับหัวข้อ">
+              {(field) => (
+                <select
+                  {...field}
+                  value={content.level || 2}
+                  onChange={(e) => set('level', parseInt(e.target.value, 10))}
+                  className={adminInputClass}
+                >
+                  <option value={1}>H1 - ใหญ่สุด</option>
+                  <option value={2}>H2 - ใหญ่</option>
+                  <option value={3}>H3 - กลาง</option>
+                  <option value={4}>H4 - เล็ก</option>
+                  <option value={5}>H5 - เล็กมาก</option>
+                  <option value={6}>H6 - เล็กสุด</option>
+                </select>
+              )}
+            </AdminField>
+          </>
+        )}
+
+        {block.blockType === 'text' && (
+          <AdminField label="ข้อความ" hint="รองรับ Markdown">
+            {(field) => (
+              <textarea
+                {...field}
+                rows={8}
+                value={content.text || ''}
+                placeholder="เขียนข้อความที่นี่…"
+                onChange={(e) => set('text', e.target.value)}
+                className={`${adminInputClass} resize-y font-mono text-sm`}
+              />
+            )}
+          </AdminField>
+        )}
+
+        {block.blockType === 'image' && (
+          <>
+            {textField('url', 'URL รูปภาพ', 'https://…')}
+            {textField('alt', 'คำอธิบายรูป (alt)', 'คำอธิบายรูปภาพ…')}
+            {textField('caption', 'คำบรรยายใต้รูป', 'ข้อความใต้รูป…')}
+            {content.url && (
+              // eslint-disable-next-line @next/next/no-img-element -- admin preview of an arbitrary URL
+              <img src={content.url} alt={content.alt || ''} className="max-h-48 rounded-lg border border-white/[0.08]" />
+            )}
+          </>
+        )}
+
+        {block.blockType === 'banner' && (
+          <>
+            {textField('imageUrl', 'รูปพื้นหลัง', 'https://…')}
+            {textField('title', 'หัวข้อ')}
+            {textField('subtitle', 'หัวข้อรอง')}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {textField('buttonText', 'ข้อความปุ่ม')}
+              {textField('buttonLink', 'ลิงก์ปุ่ม')}
             </div>
+          </>
+        )}
 
-            <div className="space-y-4">
-              {/* Block-specific editor */}
-              {block.blockType === 'heading' && (
-                <>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">ข้อความ</label>
-                    <input
-                      type="text"
-                      value={content.text || ''}
-                      onChange={(e) => setContent({ ...content, text: e.target.value })}
-                      className="input w-full"
-                      placeholder="หัวข้อ..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">ระดับหัวข้อ</label>
-                    <select
-                      value={content.level || 2}
-                      onChange={(e) => setContent({ ...content, level: parseInt(e.target.value) })}
-                      className="input w-full"
-                    >
-                      <option value={1}>H1 - ใหญ่สุด</option>
-                      <option value={2}>H2 - ใหญ่</option>
-                      <option value={3}>H3 - กลาง</option>
-                      <option value={4}>H4 - เล็ก</option>
-                      <option value={5}>H5 - เล็กมาก</option>
-                      <option value={6}>H6 - เล็กสุด</option>
-                    </select>
-                  </div>
-                </>
+        {block.blockType === 'button' && (
+          <>
+            {textField('text', 'ข้อความ')}
+            {textField('link', 'ลิงก์')}
+            <AdminField label="รูปแบบปุ่ม">
+              {(field) => (
+                <select
+                  {...field}
+                  value={content.style || 'primary'}
+                  onChange={(e) => set('style', e.target.value)}
+                  className={adminInputClass}
+                >
+                  <option value="primary">หลัก</option>
+                  <option value="secondary">รอง (เส้นขอบ)</option>
+                  <option value="success">สำเร็จ</option>
+                  <option value="danger">อันตราย</option>
+                </select>
               )}
+            </AdminField>
+          </>
+        )}
 
-              {block.blockType === 'text' && (
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">ข้อความ (รองรับ Markdown)</label>
-                  <textarea
-                    value={content.text || ''}
-                    onChange={(e) => setContent({ ...content, text: e.target.value })}
-                    rows={8}
-                    className="input w-full resize-none font-mono text-sm"
-                    placeholder="เขียนข้อความที่นี่..."
-                  />
-                </div>
+        {block.blockType === 'spacer' && (
+          <AdminField label="ความสูง (px)" hint="0–200">
+            {(field) => (
+              <input
+                {...field}
+                type="number"
+                min={0}
+                max={200}
+                value={content.height ?? 40}
+                onChange={(e) => set('height', parseInt(e.target.value, 10) || 0)}
+                className={adminInputClass}
+              />
+            )}
+          </AdminField>
+        )}
+
+        {block.blockType === 'html' && (
+          <AdminField label="โค้ด HTML">
+            {(field) => (
+              <textarea
+                {...field}
+                rows={10}
+                value={content.html || ''}
+                placeholder="<div>…</div>"
+                onChange={(e) => set('html', e.target.value)}
+                className={`${adminInputClass} resize-y font-mono text-sm`}
+              />
+            )}
+          </AdminField>
+        )}
+
+        {block.blockType === 'product-list' && (
+          <>
+            <AdminField label="จำนวนสินค้า" hint="1–24">
+              {(field) => (
+                <input
+                  {...field}
+                  type="number"
+                  min={1}
+                  max={24}
+                  value={content.limit ?? 8}
+                  onChange={(e) => set('limit', parseInt(e.target.value, 10) || 1)}
+                  className={adminInputClass}
+                />
               )}
+            </AdminField>
+            {checkField('featured', 'แสดงเฉพาะสินค้าแนะนำ')}
+          </>
+        )}
 
-              {block.blockType === 'image' && (
-                <>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">URL รูปภาพ</label>
-                    <input
-                      type="text"
-                      value={content.url || ''}
-                      onChange={(e) => setContent({ ...content, url: e.target.value })}
-                      className="input w-full"
-                      placeholder="https://..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Alt Text</label>
-                    <input
-                      type="text"
-                      value={content.alt || ''}
-                      onChange={(e) => setContent({ ...content, alt: e.target.value })}
-                      className="input w-full"
-                      placeholder="คำอธิบายรูปภาพ..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Caption</label>
-                    <input
-                      type="text"
-                      value={content.caption || ''}
-                      onChange={(e) => setContent({ ...content, caption: e.target.value })}
-                      className="input w-full"
-                      placeholder="คำอธิบายใต้รูป..."
-                    />
-                  </div>
-                  {content.url && (
-                    <div className="mt-4">
-                      <img src={content.url} alt={content.alt} className="max-h-48 rounded-lg" />
-                    </div>
-                  )}
-                </>
+        {block.blockType === 'video' && (
+          <>
+            {textField('url', 'URL วิดีโอ (YouTube/Embed)', 'https://www.youtube.com/watch?v=…')}
+            {checkField('autoplay', 'เล่นอัตโนมัติ')}
+          </>
+        )}
+
+        {block.blockType === 'countdown' && (
+          <>
+            {textField('title', 'หัวข้อ', 'อีเวนท์จะจบใน…')}
+            <AdminField label="วันสิ้นสุด">
+              {(field) => (
+                <input
+                  {...field}
+                  type="datetime-local"
+                  value={content.endDate || ''}
+                  onChange={(e) => set('endDate', e.target.value)}
+                  className={adminInputClass}
+                />
               )}
+            </AdminField>
+          </>
+        )}
 
-              {block.blockType === 'banner' && (
-                <>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">รูปพื้นหลัง</label>
-                    <input
-                      type="text"
-                      value={content.imageUrl || ''}
-                      onChange={(e) => setContent({ ...content, imageUrl: e.target.value })}
-                      className="input w-full"
-                      placeholder="https://..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">หัวข้อ</label>
-                    <input
-                      type="text"
-                      value={content.title || ''}
-                      onChange={(e) => setContent({ ...content, title: e.target.value })}
-                      className="input w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">หัวข้อรอง</label>
-                    <input
-                      type="text"
-                      value={content.subtitle || ''}
-                      onChange={(e) => setContent({ ...content, subtitle: e.target.value })}
-                      className="input w-full"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm text-gray-400 mb-1">ข้อความปุ่ม</label>
-                      <input
-                        type="text"
-                        value={content.buttonText || ''}
-                        onChange={(e) => setContent({ ...content, buttonText: e.target.value })}
-                        className="input w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-400 mb-1">Link ปุ่ม</label>
-                      <input
-                        type="text"
-                        value={content.buttonLink || ''}
-                        onChange={(e) => setContent({ ...content, buttonLink: e.target.value })}
-                        className="input w-full"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {block.blockType === 'button' && (
-                <>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">ข้อความ</label>
-                    <input
-                      type="text"
-                      value={content.text || ''}
-                      onChange={(e) => setContent({ ...content, text: e.target.value })}
-                      className="input w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Link</label>
-                    <input
-                      type="text"
-                      value={content.link || ''}
-                      onChange={(e) => setContent({ ...content, link: e.target.value })}
-                      className="input w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Style</label>
-                    <select
-                      value={content.style || 'primary'}
-                      onChange={(e) => setContent({ ...content, style: e.target.value })}
-                      className="input w-full"
-                    >
-                      <option value="primary">Primary (Purple)</option>
-                      <option value="secondary">Secondary (Outline)</option>
-                      <option value="success">Success (Green)</option>
-                      <option value="danger">Danger (Red)</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {block.blockType === 'spacer' && (
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">ความสูง (px)</label>
-                  <input
-                    type="number"
-                    value={content.height || 40}
-                    onChange={(e) => setContent({ ...content, height: parseInt(e.target.value) })}
-                    className="input w-full"
-                    min={0}
-                    max={200}
-                  />
-                </div>
-              )}
-
-              {block.blockType === 'html' && (
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">HTML Code</label>
-                  <textarea
-                    value={content.html || ''}
-                    onChange={(e) => setContent({ ...content, html: e.target.value })}
-                    rows={10}
-                    className="input w-full resize-none font-mono text-sm"
-                    placeholder="<div>...</div>"
-                  />
-                </div>
-              )}
-
-              {block.blockType === 'product-list' && (
-                <>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">จำนวนสินค้า</label>
-                    <input
-                      type="number"
-                      value={content.limit || 8}
-                      onChange={(e) => setContent({ ...content, limit: parseInt(e.target.value) })}
-                      className="input w-full"
-                      min={1}
-                      max={24}
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="featured"
-                      checked={content.featured || false}
-                      onChange={(e) => setContent({ ...content, featured: e.target.checked })}
-                      className="rounded"
-                    />
-                    <label htmlFor="featured" className="text-sm text-gray-400">
-                      แสดงเฉพาะสินค้าแนะนำ
-                    </label>
-                  </div>
-                </>
-              )}
-
-              {block.blockType === 'video' && (
-                <>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">URL วิดีโอ (YouTube/Embed)</label>
-                    <input
-                      type="text"
-                      value={content.url || ''}
-                      onChange={(e) => setContent({ ...content, url: e.target.value })}
-                      className="input w-full"
-                      placeholder="https://www.youtube.com/watch?v=..."
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="autoplay"
-                      checked={content.autoplay || false}
-                      onChange={(e) => setContent({ ...content, autoplay: e.target.checked })}
-                      className="rounded"
-                    />
-                    <label htmlFor="autoplay" className="text-sm text-gray-400">
-                      เล่นอัตโนมัติ
-                    </label>
-                  </div>
-                </>
-              )}
-
-              {block.blockType === 'countdown' && (
-                <>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">หัวข้อ</label>
-                    <input
-                      type="text"
-                      value={content.title || ''}
-                      onChange={(e) => setContent({ ...content, title: e.target.value })}
-                      className="input w-full"
-                      placeholder="Event ends in..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">วันสิ้นสุด</label>
-                    <input
-                      type="datetime-local"
-                      value={content.endDate || ''}
-                      onChange={(e) => setContent({ ...content, endDate: e.target.value })}
-                      className="input w-full"
-                    />
-                  </div>
-                </>
-              )}
-
-              {block.blockType === 'divider' && (
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Style</label>
-                  <select
-                    value={content.style || 'solid'}
-                    onChange={(e) => setContent({ ...content, style: e.target.value })}
-                    className="input w-full"
-                  >
-                    <option value="solid">เส้นตรง</option>
-                    <option value="dashed">เส้นประ</option>
-                    <option value="dotted">จุด</option>
-                    <option value="gradient">Gradient</option>
-                  </select>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 rounded-xl border border-gray-500/30 hover:border-gray-500/50 transition-colors"
+        {block.blockType === 'divider' && (
+          <AdminField label="รูปแบบเส้น">
+            {(field) => (
+              <select
+                {...field}
+                value={content.style || 'solid'}
+                onChange={(e) => set('style', e.target.value)}
+                className={adminInputClass}
               >
-                ยกเลิก
-              </button>
-              <Button onClick={handleSave} disabled={isPending}>
-                {isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                บันทึก
-              </Button>
-            </div>
-          </div>
-        </GlassCard>
-      </div>
-    </div>
+                <option value="solid">เส้นตรง</option>
+                <option value="dashed">เส้นประ</option>
+                <option value="dotted">จุด</option>
+                <option value="gradient">ไล่สี</option>
+              </select>
+            )}
+          </AdminField>
+        )}
+
+        {!known && (
+          <p className="text-sm text-iris-muted">บล็อกชนิดนี้ยังไม่มีตัวแก้ไขในหน้านี้ กดบันทึกเพื่อเก็บค่าเดิม</p>
+        )}
+      </form>
+    </AdminDialog>
   );
 }
