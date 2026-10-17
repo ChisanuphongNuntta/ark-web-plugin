@@ -22,10 +22,19 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
-import {
-  parseServerDirectorySeed,
-  planDirectorySeed,
-} from '../src/services/serverDirectorySeed.js';
+import type * as SeedModule from '../src/services/serverDirectorySeed.js';
+
+// Source checkouts run from src/; the production image only ships the compiled dist/.
+async function loadSeedModule(): Promise<typeof SeedModule> {
+  for (const candidate of ['../src/services/serverDirectorySeed.js', '../dist/services/serverDirectorySeed.js']) {
+    try {
+      return await import(candidate);
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'ERR_MODULE_NOT_FOUND') throw err;
+    }
+  }
+  throw new Error('serverDirectorySeed module not found in src/ or dist/');
+}
 
 const STATUS_PAGES_KEY = 'directory.statusPages';
 
@@ -34,6 +43,7 @@ const dataPath = path.join(here, 'seed-data', 'server-directory.json');
 const dryRun = process.argv.includes('--dry-run');
 
 async function main() {
+  const { parseServerDirectorySeed, planDirectorySeed } = await loadSeedModule();
   const plan = planDirectorySeed(parseServerDirectorySeed(JSON.parse(fs.readFileSync(dataPath, 'utf-8'))));
 
   console.log(`Server directory seed: ${plan.clusters.length} clusters, ${plan.servers.length} servers${dryRun ? ' (dry run)' : ''}`);
