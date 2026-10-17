@@ -110,16 +110,25 @@ export function Footer() {
               © {new Date().getFullYear()} IRIS Thailand · HeartShop Ecosystem. All rights reserved.
             </p>
             <p className="text-[11px] text-slate-500">
-              ภาพ ARK: Studio Wildcard ·{' '}
+              ภาพสัตว์:{' '}
               <a
                 className="underline underline-offset-4 hover:text-cyan-300 transition-colors"
                 href="https://ark.wiki.gg/"
                 target="_blank"
                 rel="noreferrer"
               >
-                ARK Official Community Wiki
+                ark.wiki.gg
               </a>{' '}
-              · คลังภาพ IRIS
+              (
+              <a
+                className="underline underline-offset-4 hover:text-cyan-300 transition-colors"
+                href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                CC BY-NC-SA
+              </a>
+              ) · ARK © Studio Wildcard · คลังภาพ IRIS
             </p>
           </div>
 

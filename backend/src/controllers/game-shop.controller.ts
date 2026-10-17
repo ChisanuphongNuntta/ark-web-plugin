@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService, { SYSTEM_ACCOUNTS, userAccountKey } from '../services/wallet.service.js';
+import { resolveDinoCatalogDelivery } from '../services/dinoCatalogDelivery.js';
 
 type PluginRequest = Request & { serverId?: number };
 
@@ -16,30 +17,14 @@ const cleanBlueprint = (value: unknown) => String(value ?? '').replace(/^"+|"+$/
 
 const buildDeliveryPayload = (product: any, orderId: string, purchasedQuantity: number) => {
   if (product.productType === 'dino') {
-    const configured = product.deliveryPayload?.spawn ?? product.deliveryPayload?.definition ?? {};
-    const level = Number(configured.level ?? configured.Level ?? 1);
-    if (!Number.isSafeInteger(level) || level < 1 || level > 10_000) {
-      throw new AppError('Dino level is outside the supported range', 409);
+    const result = resolveDinoCatalogDelivery(product, orderId);
+    if (!result.ok) {
+      throw new AppError(
+        result.reason === 'level' ? 'Dino level is outside the supported range' : 'Dino delivery blueprint is invalid',
+        409,
+      );
     }
-    const blueprint = cleanBlueprint(configured.blueprint ?? configured.Blueprint ?? product.itemBlueprint);
-    if (!blueprint || blueprint !== product.itemBlueprint) {
-      throw new AppError('Dino delivery blueprint is invalid', 409);
-    }
-    return {
-      deliveryType: 'dino_catalog',
-      payload: {
-        schemaVersion: 1,
-        orderId,
-        productType: 'dino',
-        productName: product.name,
-        dino: {
-          blueprint,
-          level,
-          forceTame: true,
-          neutered: Boolean(configured.neutered ?? configured.Neutered),
-        },
-      },
-    };
+    return { deliveryType: result.deliveryType, payload: result.payload };
   }
 
   const configuredItems = Array.isArray(product.deliveryPayload?.definition?.Items)

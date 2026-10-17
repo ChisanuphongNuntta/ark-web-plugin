@@ -6,6 +6,7 @@ import { AppError } from '../middlewares/errorHandler.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
 import promotionService from '../services/promotion.service.js';
 import { isServerDeliverable } from '../services/serverDirectory.service.js';
+import { resolveDinoCatalogDelivery } from '../services/dinoCatalogDelivery.js';
 
 function serializeCheckoutSession(session: any) {
   return {
@@ -48,27 +49,11 @@ const cleanBlueprint = (value: unknown) => String(value ?? '').replace(/^"+|"+$/
 
 function buildCheckoutDelivery(item: any, orderId: string) {
   if (item.productType === 'dino') {
-    const configured = item.deliveryPayload?.spawn ?? item.deliveryPayload?.definition ?? {};
-    const blueprint = cleanBlueprint(configured.blueprint ?? configured.Blueprint ?? item.itemBlueprint);
-    const level = Number(configured.level ?? configured.Level ?? 1);
-    if (!blueprint || blueprint !== item.itemBlueprint || !Number.isSafeInteger(level) || level < 1 || level > 10_000) {
+    const result = resolveDinoCatalogDelivery(item, orderId);
+    if (!result.ok) {
       throw new AppError(`Dino delivery definition is invalid for "${item.name}"`, 409);
     }
-    return {
-      deliveryType: 'dino_catalog',
-      payload: {
-        schemaVersion: 1,
-        orderId,
-        productType: 'dino',
-        productName: item.name,
-        dino: {
-          blueprint,
-          level,
-          forceTame: true,
-          neutered: Boolean(configured.neutered ?? configured.Neutered),
-        },
-      },
-    };
+    return { deliveryType: result.deliveryType, payload: result.payload };
   }
 
   const configuredItems = Array.isArray(item.deliveryPayload?.definition?.Items)
