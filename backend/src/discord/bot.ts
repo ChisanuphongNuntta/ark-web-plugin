@@ -10,6 +10,8 @@ import {
 } from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 import { io, emitChatMessage } from '../websocket/index.js';
+import { getServiceRole } from '../config/serviceRole.js';
+import { publishDiscordRelay } from './relay.js';
 
 const prisma = new PrismaClient();
 
@@ -193,7 +195,11 @@ export async function sendToDiscord(message: {
   playerRank?: { name: string; color: string; icon: string | null } | null;
   content: string;
 }) {
-  if (!discordClient) return;
+  if (!discordClient) {
+    // The bot lives in the web process; the plugin gateway forwards through Redis.
+    if (getServiceRole() === 'plugin-gateway') await publishDiscordRelay(message);
+    return;
+  }
 
   try {
     // Find channels that should receive this message

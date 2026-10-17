@@ -321,7 +321,7 @@ export default function ServersPage() {
         <pre className="bg-black/40 p-4 rounded-lg text-sm overflow-x-auto">
           {`{
   "HeartShop": {
-    "ApiUrl": "${typeof window !== 'undefined' ? window.location.origin : ''}/api/plugin",
+    "ApiUrl": "https://localhost:8443/api/plugin",
     "ApiKey": "<PASTE_API_KEY_HERE>",
     "ServerId": <SERVER_ID>,
     ...

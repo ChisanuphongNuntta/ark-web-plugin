@@ -28,7 +28,9 @@ import checkoutRoutes from './routes/checkout.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import promotionRoutes from './routes/promotion.routes.js';
 import { setupSocketIO } from './websocket/index.js';
-import { startDiscordBot, registerCommands } from './discord/bot.js';
+import { startDiscordBot, registerCommands, sendToDiscord } from './discord/bot.js';
+import { startDiscordRelaySubscriber } from './discord/relay.js';
+import { getServiceRole, servesPlugin, servesWeb } from './config/serviceRole.js';
 
 dotenv.config();
 
@@ -41,6 +43,7 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+const SERVICE_ROLE = getServiceRole();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -61,6 +64,8 @@ const generalLimiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  // Plugin traffic has its own per-server limiter; all local game servers share one NAT IP.
+  skip: (req) => req.originalUrl.startsWith('/api/plugin'),
 });
 
 // Rate limiting - Plugin API (higher limit for server communication)
@@ -97,40 +102,40 @@ app.use('/uploads', express.static('public/uploads'));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', role: SERVICE_ROLE, timestamp: new Date().toISOString() });
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/user', userApiRoutes); // User API Key Management
-app.use('/api/products', productRoutes);
-app.use('/api/servers', serverRoutes); // Public server directory (ServerStatus, isOnline derived from lastHeartbeat)
-app.use('/api/site', siteRoutes); // Public site settings (season theme, announcement)
-app.use('/api/orders', orderRoutes);
-app.use('/api/wallet', walletRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/checkout', checkoutRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/promotions', promotionRoutes);
-app.use('/api/plugin', pluginRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/pdpa', pdpaRoutes);
-app.use('/api/audit', auditRoutes);
-app.use('/api/content', contentRoutes);
+if (servesWeb(SERVICE_ROLE)) {
+  app.use('/api/auth', authRoutes);
+  app.use('/api/users', userRoutes);
+  app.use('/api/user', userApiRoutes); // User API Key Management
+  app.use('/api/products', productRoutes);
+  app.use('/api/servers', serverRoutes); // Public server directory (ServerStatus, isOnline derived from lastHeartbeat)
+  app.use('/api/site', siteRoutes); // Public site settings (season theme, announcement)
+  app.use('/api/orders', orderRoutes);
+  app.use('/api/wallet', walletRoutes);
+  app.use('/api/cart', cartRoutes);
+  app.use('/api/checkout', checkoutRoutes);
+  app.use('/api/payments', paymentRoutes);
+  app.use('/api/promotions', promotionRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/pdpa', pdpaRoutes);
+  app.use('/api/audit', auditRoutes);
+  app.use('/api/content', contentRoutes);
+  app.use('/api/protection', protectionUserRoutes);          // User API (JWT auth)
+  app.use('/api/admin/protection', protectionAdminRoutes);   // Admin API (JWT + Admin role)
+  app.use('/api/market', dinoMarketRoutes);
+  app.use('/api/chat', chatRoutes);
+}
 
-// Protection Routes
-app.use('/api/plugin/protection', protectionPluginRoutes); // Plugin API (API Key auth)
-app.use('/api/protection', protectionUserRoutes);          // User API (JWT auth)
-app.use('/api/admin/protection', protectionAdminRoutes);   // Admin API (JWT + Admin role)
-
-// Dino Marketplace Routes
-app.use('/api/market', dinoMarketRoutes);
-app.use('/api/plugin/market', dinoMarketRoutes); // Also mount under /api/plugin for plugin compatibility
-
-// Chat Routes (for plugin polling and web)
-app.use('/api/chat', chatRoutes);
-app.use('/api/plugin/chat', chatRoutes); // Also mount under /api/plugin for plugin compatibility
+// Signed game-server API. In production it runs in the separate plugin-gateway process,
+// which nginx exposes only on a host-loopback port (see docker/nginx/conf.d/heartshop.conf).
+if (servesPlugin(SERVICE_ROLE)) {
+  app.use('/api/plugin', pluginRoutes);
+  app.use('/api/plugin/protection', protectionPluginRoutes); // Plugin API (API Key auth)
+  app.use('/api/plugin/market', dinoMarketRoutes); // Also mount under /api/plugin for plugin compatibility
+  app.use('/api/plugin/chat', chatRoutes); // Also mount under /api/plugin for plugin compatibility
+}
 
 // Error handler
 app.use(errorHandler);
@@ -146,18 +151,22 @@ const httpServer = createServer(app);
 // Initialize Socket.IO and Discord bot
 async function startServer() {
   try {
+    // The gateway also attaches Socket.IO so its emits reach web clients through the Redis adapter.
     await setupSocketIO(httpServer);
     console.log('Socket.IO WebSocket server ready');
 
-    // Start Discord bot
-    const discordBot = await startDiscordBot();
-    if (discordBot) {
-      // Register commands after bot is ready
-      setTimeout(() => registerCommands(), 2000);
+    if (servesWeb(SERVICE_ROLE)) {
+      // One Discord process only (see docker-compose backend replicas note).
+      const discordBot = await startDiscordBot();
+      if (discordBot) {
+        // Register commands after bot is ready
+        setTimeout(() => registerCommands(), 2000);
+      }
+      if (SERVICE_ROLE === 'web') await startDiscordRelaySubscriber(sendToDiscord);
     }
 
     httpServer.listen(PORT, () => {
-      console.log(`Heart Shop API running on http://localhost:${PORT}`);
+      console.log(`Heart Shop API (${SERVICE_ROLE}) running on http://localhost:${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {
