@@ -1,54 +1,75 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database.js';
+import { isServerOnline, HEARTBEAT_ONLINE_WINDOW_MS } from '../utils/serverStatus.js';
+import serverDirectoryService, {
+  SERVER_SUMMARY_SELECT,
+  ServerSummarySource,
+  toServerSummary,
+} from '../services/serverDirectory.service.js';
 
-// A server is considered "online" when its last heartbeat is within this window.
-// Plugins are expected to heartbeat well inside this interval (see openapi HeartbeatRequest).
-export const HEARTBEAT_ONLINE_WINDOW_MS = 3 * 60 * 1000; // 3 minutes
+// Re-exported for backward compatibility (tests and older imports).
+export { isServerOnline, HEARTBEAT_ONLINE_WINDOW_MS };
 
-export function isServerOnline(lastHeartbeat: Date | null, now: Date = new Date()): boolean {
-  if (!lastHeartbeat) return false;
-  return now.getTime() - lastHeartbeat.getTime() <= HEARTBEAT_ONLINE_WINDOW_MS;
-}
+const truthy = (value: unknown) => value === 'true' || value === '1';
 
 export class ServerController {
-  // Public-safe server directory.
-  // SECURITY: only non-sensitive fields are selected; apiKey/webhookUrl are never exposed.
-  // isOnline is DERIVED from lastHeartbeat recency, it is not a stored column.
+  // GET /servers — public-safe server list for server-selection and live-status surfaces.
+  // SECURITY: only non-sensitive fields are selected; apiKey/webhookUrl/credential secrets are
+  // never exposed (credentials are selected only as an id to compute `deliverable`).
+  // isOnline/online are DERIVED from lastHeartbeat recency, they are not stored columns.
+  // Response: { servers: Array<ServerSummary & legacy ServerStatus fields> }.
+  // ?deliverable=true keeps only servers shop delivery can target.
   getServers = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const now = new Date();
+      const onlyDeliverable = truthy(req.query?.deliverable);
+      const where = onlyDeliverable
+        ? { isActive: true, drainMode: false, credentials: { some: { status: 'active' } } }
+        : { isActive: true };
+
       const servers = await prisma.server.findMany({
-        where: { isActive: true },
+        where,
         select: {
-          id: true,
-          name: true,
-          map: true,
-          isActive: true,
-          lastHeartbeat: true,
+          ...SERVER_SUMMARY_SELECT,
           chatTag: true,
           chatColor: true,
           chatIcon: true,
-          drainMode: true,
           capabilities: true,
         },
         orderBy: { id: 'asc' },
       });
 
-      const result = servers.map((server) => ({
-        id: server.id,
-        name: server.name,
-        map: server.map,
-        isActive: server.isActive,
-        isOnline: isServerOnline(server.lastHeartbeat, now),
-        lastHeartbeat: server.lastHeartbeat ? server.lastHeartbeat.toISOString() : null,
-        chatTag: server.chatTag,
-        chatColor: server.chatColor,
-        chatIcon: server.chatIcon,
-        drainMode: server.drainMode,
-        supportsDinoDelivery: (server.capabilities ?? []).includes('delivery.dino.v2'),
-      }));
+      const result = servers
+        .map((server: any) => {
+          const summary = toServerSummary(server as ServerSummarySource, now);
+          return {
+            // Legacy ServerStatus fields (kept for backward compatibility; id/name/map come
+            // from the summary below)
+            isActive: server.isActive,
+            isOnline: summary.online,
+            lastHeartbeat: server.lastHeartbeat ? server.lastHeartbeat.toISOString() : null,
+            chatTag: server.chatTag ?? null,
+            chatColor: server.chatColor ?? null,
+            chatIcon: server.chatIcon ?? null,
+            drainMode: Boolean(server.drainMode),
+            supportsDinoDelivery: (server.capabilities ?? []).includes('delivery.dino.v2'),
+            // ServerSummary (UI redesign 2026-10)
+            ...summary,
+          };
+        })
+        // Defensive re-check: the DB filter already enforces this.
+        .filter((server) => !onlyDeliverable || server.deliverable);
 
       res.json({ servers: result });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // GET /servers/directory — public grouped directory (PVE / PVE Mod / PvPvE sets).
+  getDirectory = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.json(await serverDirectoryService.getDirectory());
     } catch (error) {
       next(error);
     }

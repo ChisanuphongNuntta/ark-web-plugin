@@ -114,7 +114,7 @@ describe('Cart & Checkout System', () => {
             serverId: 1,
             quantity: 2,
             product: { id: 1, name: 'Rifle', price: 100, isActive: true, stock: 10, maxPerUser: null, itemBlueprint: 'bp', quality: 1, isBlueprint: false },
-            server: { id: 1, name: 'PVE', isActive: true },
+            server: { id: 1, name: 'PVE', isActive: true, drainMode: false, isAvailable: true, credentials: [{ id: 'cred-1' }] },
           },
         ],
       };
@@ -154,6 +154,79 @@ describe('Cart & Checkout System', () => {
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 'cs1', totalAmount: '200' }));
     });
 
+    it.each([
+      ['has no active plugin credential', { credentials: [] }, 'is not connected for delivery yet'],
+      ['is closed (isAvailable=false)', { isAvailable: false }, 'is closed'],
+      ['is draining deliveries', { drainMode: true }, 'is temporarily draining deliveries'],
+    ])('createCheckoutSession rejects a line whose server %s', async (_label, override, message) => {
+      db.cart.findUnique.mockResolvedValueOnce({
+        id: 'c1',
+        items: [
+          {
+            productId: 1,
+            serverId: 1,
+            quantity: 1,
+            product: { id: 1, name: 'Rifle', price: 100, isActive: true, stock: 10, maxPerUser: null, itemBlueprint: 'bp', quality: 1, isBlueprint: false },
+            server: { id: 1, name: 'PVE', isActive: true, drainMode: false, isAvailable: true, credentials: [{ id: 'cred-1' }], ...override },
+          },
+        ],
+      });
+      db.checkoutSession.findUnique.mockResolvedValueOnce(null);
+
+      const req: any = { user: { id: 'u1' }, body: { idempotencyKey: 'idem-blocked' } };
+      const res: any = { json: vi.fn() };
+      const next = vi.fn();
+
+      await checkoutController.createCheckoutSession(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 409, message: expect.stringContaining(message) }));
+      expect(db.checkoutSession.create).not.toHaveBeenCalled();
+      expect(db.cart.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+        include: { items: { include: { product: true, server: { include: { credentials: expect.objectContaining({ where: { status: 'active' } }) } } } } },
+      }));
+    });
+
+    it('commitCheckoutSession refuses a server that lost its credential after the session was created', async () => {
+      const mockSession = {
+        id: 'cs3',
+        userId: 'u1',
+        totalAmount: 100n,
+        status: 'pending',
+        expiresAt: new Date(Date.now() + 100000),
+        cartSnapshot: [
+          { productId: 1, serverId: 1, quantity: 1, price: 100, name: 'Rifle', productType: 'item', itemBlueprint: 'bp', quality: 1, isBlueprint: false },
+        ],
+      };
+      db.checkoutSession.findUnique.mockResolvedValueOnce(mockSession);
+      const mockTx: any = {
+        user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'u1', steamId: 'steam-123' }) },
+        product: {
+          findUniqueOrThrow: vi.fn().mockResolvedValue({
+            id: 1, name: 'Rifle', price: 100, categoryId: null, isActive: true, stock: 10, maxPerUser: null,
+            productType: 'item', itemBlueprint: 'bp', quality: 1, isBlueprint: false, requiredCapabilities: [],
+          }),
+          update: vi.fn(),
+        },
+        server: {
+          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'PVE', isActive: true, drainMode: false, isAvailable: true, capabilities: [], credentials: [] }),
+        },
+        deliveryJob: { create: vi.fn() },
+        checkoutSession: { findUniqueOrThrow: vi.fn().mockResolvedValue(mockSession), update: vi.fn() },
+        $queryRaw: vi.fn().mockResolvedValue([]),
+      };
+      db.$transaction.mockImplementationOnce((callback: any) => callback(mockTx));
+
+      const req: any = { user: { id: 'u1' }, params: { id: 'cs3' } };
+      const res: any = { json: vi.fn() };
+      const next = vi.fn();
+
+      await checkoutController.commitCheckoutSession(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 409, message: 'Server "PVE" is unavailable for delivery' }));
+      expect(mockTx.deliveryJob.create).not.toHaveBeenCalled();
+      expect(vi.mocked(walletService.post)).not.toHaveBeenCalled();
+    });
+
     it('createCheckoutSession rejects if user has insufficient wallet balance', async () => {
       const mockCart = {
         id: 'c1',
@@ -163,7 +236,7 @@ describe('Cart & Checkout System', () => {
             serverId: 1,
             quantity: 2,
             product: { id: 1, name: 'Rifle', price: 100, isActive: true, stock: 10, maxPerUser: null, itemBlueprint: 'bp', quality: 1, isBlueprint: false },
-            server: { id: 1, name: 'PVE', isActive: true },
+            server: { id: 1, name: 'PVE', isActive: true, drainMode: false, isAvailable: true, credentials: [{ id: 'cred-1' }] },
           },
         ],
       };
@@ -222,7 +295,7 @@ describe('Cart & Checkout System', () => {
           update: vi.fn().mockResolvedValue({}),
         },
         server: {
-          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'PVE', isActive: true, drainMode: false, capabilities: [] }),
+          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'PVE', isActive: true, drainMode: false, isAvailable: true, capabilities: [], credentials: [{ id: 'cred-1' }] }),
         },
         order: {
           create: vi.fn().mockResolvedValue({ id: 'o1' }),
@@ -312,7 +385,7 @@ describe('Cart & Checkout System', () => {
           }),
           update: vi.fn().mockResolvedValue({}),
         },
-        server: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'PVE', isActive: true, drainMode: false, capabilities: [] }) },
+        server: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'PVE', isActive: true, drainMode: false, isAvailable: true, capabilities: [], credentials: [{ id: 'cred-1' }] }) },
         order: { create: vi.fn().mockResolvedValue({ id: 'o2' }) },
         orderGroup: { create: vi.fn().mockResolvedValue({ id: 'og2' }) },
         orderItem: { create: vi.fn().mockResolvedValue({ id: 'oi2' }) },

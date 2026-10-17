@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { AdminController } from '../controllers/admin.controller.js';
+import adminConsoleController from '../controllers/adminConsole.controller.js';
+import siteController from '../controllers/site.controller.js';
 import {
   authenticate,
   requireAdmin,
@@ -39,6 +41,25 @@ router.delete('/categories/:id', requireWebsiteAdmin as any, adminController.del
 router.get('/orders', requireWebsiteAdmin as any, adminController.getAllOrders as any);
 router.post('/orders/:id/refund', requireWebsiteAdmin as any, adminController.refundOrder as any);
 
+// Categories incl. inactive (console list; public /products/categories is active-only)
+router.get('/categories', requireWebsiteAdmin as any, adminConsoleController.getCategories as any);
+
+// Promotions / vouchers (read-only list; no admin mutation API exists yet)
+router.get('/promotions', requireWebsiteAdmin as any, adminConsoleController.getPromotions as any);
+
+// Site settings: seasonal theme + announcement banner (UI redesign 2026-10)
+router.put('/site/settings', requireWebsiteAdmin as any, siteController.updateSettings as any);
+
+// Delivery rescue console (UI redesign 2026-10)
+router.get('/deliveries', requireWebsiteAdmin as any, adminConsoleController.getDeliveries as any);
+router.post('/deliveries/:id/retry', requireWebsiteAdmin as any, adminConsoleController.retryDelivery as any);
+
+// Audit log (UI redesign 2026-10)
+router.get('/audit-logs', requireWebsiteAdmin as any, adminConsoleController.getAuditLogs as any);
+
+// P2P dino market listings, read-only (UI redesign 2026-10)
+router.get('/market/listings', requireWebsiteAdmin as any, adminConsoleController.getMarketListings as any);
+
 // Bank slip topups management
 router.get('/payments/pending-slips', requireAdmin as any, adminController.getPendingSlips as any);
 router.post('/payments/approve/:id', requireAdmin as any, adminController.approveSlip as any);
@@ -76,6 +97,11 @@ router.post('/servers', requireRoot as any, adminController.createServer as any)
 router.put('/servers/:id', requireRoot as any, adminController.updateServer as any);
 router.delete('/servers/:id', requireRoot as any, adminController.deleteServer as any);
 router.post('/servers/:id/regenerate-key', requireRoot as any, adminController.regenerateServerApiKey as any);
+
+// Cluster management (Root only) — server directory groups (UI redesign 2026-10)
+router.get('/clusters', requireRoot as any, adminConsoleController.getClusters as any);
+router.post('/clusters', requireRoot as any, adminConsoleController.createCluster as any);
+router.put('/clusters/:id', requireRoot as any, adminConsoleController.updateCluster as any);
 
 // Plugin download (Root only)
 router.get('/api-keys/:userId/download-plugin', requireRoot as any, adminController.downloadPluginForUser as any);

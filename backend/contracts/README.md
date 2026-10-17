@@ -37,6 +37,8 @@ tsx scripts/issue-plugin-credential.ts revoke <keyId>                 # revoke a
 
 `npm run db:seed` also issues a dev credential for the seeded server and prints `{ keyId, secret }` once. Rotation supports a zero-downtime overlap window: a new keyId can be issued while the old one stays active until the plugin switches.
 
+UI redesign 2026-10 (`ui-redesign-2026-10.md`): `GET /servers` (ServerSummary, `?deliverable=true`), `GET /servers/directory`, `GET /site/settings`, `PUT /admin/site/settings`, admin clusters/deliveries/audit-logs/market/categories/promotions, extended `/admin/stats` and `/admin/servers`. Fixtures: `fixtures/server-directory.json`, `fixtures/site-settings.json`.
+
 Events (`events/`):
 
 - `wallet.transaction-posted.schema.json` + `wallet.transaction-posted.example.json` — emitted whenever a balanced ledger transaction is posted. Event entries carry BOTH sides of the double-entry; the per-user `GET /wallet/transactions` response only returns the caller's own entries.

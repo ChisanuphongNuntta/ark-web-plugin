@@ -13,19 +13,113 @@ import { isRefundable } from '../services/orderState.js';
 import pluginCredentialService from '../services/pluginCredential.service.js';
 import archiver from 'archiver';
 import { normalizeBlueprintPath } from '../utils/blueprint.js';
+import { z } from 'zod';
+import auditService from '../services/audit.service.js';
+import { HEARTBEAT_ONLINE_WINDOW_MS, isServerOnline } from '../utils/serverStatus.js';
+import { bangkokStartOfDay } from '../services/season.service.js';
+import { isServerDeliverable } from '../services/serverDirectory.service.js';
 
 const execAsync = promisify(exec);
+
+// Demo slip fixtures (and crediting the approving admin for a fixture id) are a local-demo
+// aid only. They are OFF unless explicitly enabled outside production; otherwise an unknown
+// slip id is a 404 and can never mint points.
+export function slipDemoFixturesEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.ENABLE_ADMIN_DEMO_FIXTURES === 'true' && env.NODE_ENV !== 'production';
+}
+
+// Orders that count as revenue for the dashboard "today" figure.
+const REVENUE_ORDER_STATUSES = ['paid', 'queued', 'delivering', 'delivered', 'failed'];
+
+const optionalNullableString = (max: number) => z.string().trim().max(max).nullable().optional();
+
+// Admin server write schema (UI redesign 2026-10 fields + legacy fields). drainMode and
+// credentials are intentionally NOT writable here; apiKey only on create.
+export const serverWriteSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    map: z.string().trim().min(1).max(120).optional(),
+    apiKey: z.string().trim().min(16).max(256).optional(),
+    isActive: z.boolean().optional(),
+    chatTag: optionalNullableString(32),
+    chatColor: optionalNullableString(32),
+    chatIcon: optionalNullableString(32),
+    clusterId: z.string().trim().max(64).nullable().optional(),
+    displayName: optionalNullableString(120),
+    gameMode: z.enum(['PVE', 'PVE_MOD', 'PVPVE']).optional(),
+    connectHost: z
+      .string()
+      .trim()
+      .max(253)
+      .regex(/^[A-Za-z0-9.-]*$/, 'hostname or IPv4 only')
+      .nullable()
+      .optional(),
+    connectPort: z.number().int().min(1).max(65535).nullable().optional(),
+    rates: optionalNullableString(32),
+    isModded: z.boolean().optional(),
+    isListed: z.boolean().optional(),
+    isAvailable: z.boolean().optional(),
+    sortOrder: z.number().int().min(-100000).max(100000).optional(),
+    imageUrl: z
+      .string()
+      .trim()
+      .max(1024)
+      .refine((v) => v === '' || (v.startsWith('/') && !v.startsWith('//')) || /^https:\/\//i.test(v), 'https:// URL or /path')
+      .nullable()
+      .optional(),
+  })
+  .strict();
+
+export function parseServerWrite(body: unknown): Record<string, unknown> {
+  const parsed = serverWriteSchema.safeParse(body ?? {});
+  if (!parsed.success) {
+    const message = parsed.error.issues.map((i) => `${i.path.join('.') || 'body'}: ${i.message}`).join('; ');
+    throw new AppError(`Invalid server: ${message}`, 400);
+  }
+  const data: Record<string, unknown> = { ...parsed.data };
+  // Empty strings clear nullable text columns.
+  for (const key of ['chatTag', 'chatColor', 'chatIcon', 'displayName', 'connectHost', 'rates', 'imageUrl', 'clusterId']) {
+    if (data[key] === '') data[key] = null;
+  }
+  return data;
+}
+
+// Admin server projection: all stored columns (root-only endpoint, existing behaviour) plus
+// derived online/deliverable, cluster ref and active-credential count. Credential secrets are
+// never selected.
+function toAdminServer(server: any, now: Date = new Date()) {
+  const { credentials, ...rest } = server;
+  const activeCredentialCount = Array.isArray(credentials) ? credentials.length : 0;
+  return {
+    ...rest,
+    online: isServerOnline(server.lastHeartbeat ?? null, now),
+    deliverable: isServerDeliverable({ isActive: server.isActive, drainMode: server.drainMode, credentials }),
+    activeCredentialCount,
+  };
+}
+
+const ADMIN_SERVER_INCLUDE = {
+  cluster: { select: { id: true, key: true, name: true } },
+  credentials: { where: { status: 'active' }, select: { id: true } },
+} as const;
 
 export class AdminController {
   // Dashboard stats
   getDashboardStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const now = new Date();
+      const startOfToday = bangkokStartOfDay(now);
       const [
         totalUsers,
         totalOrders,
         totalRevenue,
         pendingOrders,
         recentOrders,
+        pendingSlips,
+        failedDeliveries,
+        onlineServers,
+        todayRevenue,
+        todayTopups,
       ] = await Promise.all([
         prisma.user.count(),
         prisma.order.count(),
@@ -42,6 +136,19 @@ export class AdminController {
             product: { select: { name: true } },
           },
         }),
+        prisma.paymentIntent.count({ where: { provider: 'bank_slip', status: 'pending' } }),
+        prisma.deliveryJob.count({ where: { status: { in: ['failed', 'dead_letter'] } } }),
+        prisma.server.count({
+          where: { isActive: true, lastHeartbeat: { gte: new Date(now.getTime() - HEARTBEAT_ONLINE_WINDOW_MS) } },
+        }),
+        prisma.order.aggregate({
+          _sum: { totalPrice: true },
+          where: { status: { in: REVENUE_ORDER_STATUSES }, createdAt: { gte: startOfToday } },
+        }),
+        prisma.paymentIntent.aggregate({
+          _sum: { amountThb: true },
+          where: { status: 'completed', completedAt: { gte: startOfToday } },
+        }),
       ]);
 
       res.json({
@@ -50,6 +157,13 @@ export class AdminController {
           totalOrders,
           totalRevenue: totalRevenue._sum.totalPrice || 0,
           pendingOrders,
+          // UI redesign 2026-10 additions ("today" = Asia/Bangkok calendar day)
+          pendingSlips,
+          failedDeliveries,
+          onlineServers,
+          todayRevenue: todayRevenue?._sum?.totalPrice || 0,
+          todayTopupThb: Number(todayTopups?._sum?.amountThb ?? 0),
+          todayStartsAt: startOfToday.toISOString(),
         },
         recentOrders,
       });
@@ -689,14 +803,16 @@ export class AdminController {
     }
   };
 
-  // Server Management
+  // Server Management (root)
   getServers = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const now = new Date();
       const servers = await prisma.server.findMany({
-        orderBy: { id: 'asc' },
+        include: ADMIN_SERVER_INCLUDE,
+        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
       });
 
-      res.json({ servers });
+      res.json({ servers: servers.map((server) => toAdminServer(server, now)) });
     } catch (error) {
       next(error);
     }
@@ -704,28 +820,42 @@ export class AdminController {
 
   createServer = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { name, map, apiKey, chatTag, chatColor, chatIcon } = req.body;
+      const data = parseServerWrite(req.body);
 
-      if (!name || !map) {
+      if (!data.name || !data.map) {
         throw new AppError('Name and map are required', 400);
+      }
+      if (data.clusterId) {
+        const cluster = await prisma.cluster.findUnique({ where: { id: data.clusterId as string } });
+        if (!cluster) throw new AppError('Cluster not found', 404);
       }
 
       // Generate API key if not provided
-      const serverApiKey = apiKey || crypto.randomBytes(32).toString('base64url');
+      const serverApiKey = (data.apiKey as string | undefined) || crypto.randomBytes(32).toString('base64url');
 
       const server = await prisma.server.create({
         data: {
-          name,
-          map,
+          ...(data as any),
           apiKey: serverApiKey,
-          isActive: true,
-          chatTag: chatTag || null,
-          chatColor: chatColor || null,
-          chatIcon: chatIcon || null,
+          isActive: data.isActive ?? true,
+          // A new server has no plugin credential yet, so it starts drained (same
+          // as the seed + provision scripts). An operator lifts drain after the
+          // credential is issued and an in-game smoke test passes.
+          drainMode: true,
         },
+        include: ADMIN_SERVER_INCLUDE,
       });
 
-      res.status(201).json({ server });
+      const { apiKey: _omitApiKey, ...auditData } = data;
+      await auditService.log({
+        userId: req.user!.id,
+        action: 'server_create',
+        resource: 'server',
+        resourceId: String(server.id),
+        newValue: auditData,
+      }, req);
+
+      res.status(201).json({ server: toAdminServer(server) });
     } catch (error) {
       next(error);
     }
@@ -733,22 +863,36 @@ export class AdminController {
 
   updateServer = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
-      const { name, map, isActive, chatTag, chatColor, chatIcon } = req.body;
+      const id = parseInt(req.params.id);
+      if (!Number.isInteger(id)) throw new AppError('Invalid server id', 400);
+      const data = parseServerWrite(req.body);
+      // apiKey is rotated only through POST /admin/servers/:id/regenerate-key.
+      delete data.apiKey;
+
+      const existing = await prisma.server.findUnique({ where: { id } });
+      if (!existing) throw new AppError('Server not found', 404);
+      if (data.clusterId) {
+        const cluster = await prisma.cluster.findUnique({ where: { id: data.clusterId as string } });
+        if (!cluster) throw new AppError('Cluster not found', 404);
+      }
 
       const server = await prisma.server.update({
-        where: { id: parseInt(id) },
-        data: {
-          ...(name !== undefined && { name }),
-          ...(map !== undefined && { map }),
-          ...(isActive !== undefined && { isActive }),
-          ...(chatTag !== undefined && { chatTag: chatTag || null }),
-          ...(chatColor !== undefined && { chatColor: chatColor || null }),
-          ...(chatIcon !== undefined && { chatIcon: chatIcon || null }),
-        },
+        where: { id },
+        data: data as any,
+        include: ADMIN_SERVER_INCLUDE,
       });
 
-      res.json({ server });
+      const changedKeys = Object.keys(data);
+      await auditService.log({
+        userId: req.user!.id,
+        action: 'server_update',
+        resource: 'server',
+        resourceId: String(id),
+        oldValue: Object.fromEntries(changedKeys.map((key) => [key, (existing as any)[key]])),
+        newValue: data,
+      }, req);
+
+      res.json({ server: toAdminServer(server) });
     } catch (error) {
       next(error);
     }
@@ -1136,23 +1280,34 @@ export class AdminController {
         },
       ];
 
-      const allSlips = mapped.length > 0 ? mapped : fixtureSlips;
+      const allSlips = mapped.length > 0 || !slipDemoFixturesEnabled() ? mapped : fixtureSlips;
       res.json({ topups: allSlips, count: allSlips.length });
     } catch (error) {
       next(error);
     }
   };
 
+  // Approve a pending bank-slip top-up. Hardened (UI redesign 2026-10 audit):
+  //   * only provider=bank_slip intents in pending/processing can be approved (a Stripe or
+  //     expired/failed/refunded intent can never be credited from here);
+  //   * the status flip is a conditional update inside the credit transaction, and the ledger
+  //     credit is keyed `slip:<id>:credit`, so concurrent double-approval credits once;
+  //   * unknown ids are 404 unless demo fixtures are explicitly enabled outside production.
   approveSlip = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const notes = req.body?.notes || 'Approved by Supreme Admin';
+      const notes = typeof req.body?.notes === 'string' && req.body.notes.trim()
+        ? req.body.notes.trim().slice(0, 500)
+        : 'Approved by admin';
       const intent = await prisma.paymentIntent.findUnique({
         where: { id },
         include: { user: true },
       });
 
       if (intent) {
+        if (intent.provider !== 'bank_slip') {
+          throw new AppError('Only bank-slip top-ups can be approved manually', 409);
+        }
         if (intent.status === 'completed') {
           return res.json({
             success: true,
@@ -1161,18 +1316,13 @@ export class AdminController {
             alreadyApproved: true,
           });
         }
+        if (intent.status !== 'pending' && intent.status !== 'processing') {
+          throw new AppError(`Top-up in status "${intent.status}" cannot be approved`, 409);
+        }
 
         await prisma.$transaction(async (tx) => {
-          await walletService.creditUser(
-            intent.userId,
-            intent.pointsAmount,
-            `slip:${intent.id}:credit`,
-            'bank_slip_approval',
-            intent.id,
-            tx,
-          );
-          await tx.paymentIntent.update({
-            where: { id: intent.id },
+          const flipped = await tx.paymentIntent.updateMany({
+            where: { id: intent.id, status: intent.status },
             data: {
               status: 'completed',
               completedAt: new Date(),
@@ -1184,7 +1334,28 @@ export class AdminController {
               },
             },
           });
-        });
+          if (flipped.count !== 1) {
+            throw new AppError('Top-up was processed concurrently; refresh and try again', 409);
+          }
+          await walletService.creditUser(
+            intent.userId,
+            intent.pointsAmount,
+            `slip:${intent.id}:credit`,
+            'bank_slip_approval',
+            intent.id,
+            tx,
+          );
+        }, { isolationLevel: 'Serializable' });
+
+        await auditService.log({
+          userId: req.user!.id,
+          action: 'payment_slip_approve',
+          resource: 'payment_intent',
+          resourceId: intent.id,
+          oldValue: { status: intent.status },
+          newValue: { status: 'completed', pointsAmount: String(intent.pointsAmount), notes },
+          metadata: { targetUserId: intent.userId },
+        }, req);
 
         return res.json({
           success: true,
@@ -1193,7 +1364,12 @@ export class AdminController {
         });
       }
 
-      // If it's a demo/fixture ID, credit the approving admin so their coin counter actually increases in demo testing!
+      if (!slipDemoFixturesEnabled() || !/^topup-slip-\d{3}$/.test(id)) {
+        throw new AppError('Top-up not found', 404);
+      }
+
+      // Local demo only (ENABLE_ADMIN_DEMO_FIXTURES=true, NODE_ENV!=production): credit the
+      // approving admin so the demo counter visibly increases.
       const targetUserId = req.user!.id;
       const creditedPoints = id === 'topup-slip-002' ? 6000 : 1100;
       await prisma.$transaction(async (tx) => {
@@ -1218,26 +1394,57 @@ export class AdminController {
     }
   };
 
+  // Reject a pending bank-slip top-up (no money moves). Only pending/processing bank-slip
+  // intents can be rejected; a completed (credited) intent can never be flipped to failed.
   rejectSlip = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const reason = req.body?.reason || 'สลิปไม่ถูกต้องหรือไม่พบยอดเงิน';
+      const reason = typeof req.body?.reason === 'string' && req.body.reason.trim()
+        ? req.body.reason.trim().slice(0, 500)
+        : 'สลิปไม่ถูกต้องหรือไม่พบยอดเงิน';
       const intent = await prisma.paymentIntent.findUnique({ where: { id } });
 
-      if (intent) {
-        await prisma.paymentIntent.update({
-          where: { id },
-          data: {
-            status: 'failed',
-            metadata: {
-              ...((intent.metadata as any) || {}),
-              rejectedBy: req.user!.id,
-              rejectedAt: new Date().toISOString(),
-              rejectReason: reason,
-            },
-          },
-        });
+      if (!intent) {
+        if (slipDemoFixturesEnabled() && /^topup-slip-\d{3}$/.test(id)) {
+          return res.json({ success: true, message: 'Top-up rejected', id, demo: true });
+        }
+        throw new AppError('Top-up not found', 404);
       }
+      if (intent.provider !== 'bank_slip') {
+        throw new AppError('Only bank-slip top-ups can be rejected manually', 409);
+      }
+      if (intent.status === 'failed') {
+        return res.json({ success: true, message: 'Top-up already rejected', id, alreadyRejected: true });
+      }
+      if (intent.status !== 'pending' && intent.status !== 'processing') {
+        throw new AppError(`Top-up in status "${intent.status}" cannot be rejected`, 409);
+      }
+
+      const flipped = await prisma.paymentIntent.updateMany({
+        where: { id, status: intent.status },
+        data: {
+          status: 'failed',
+          metadata: {
+            ...((intent.metadata as any) || {}),
+            rejectedBy: req.user!.id,
+            rejectedAt: new Date().toISOString(),
+            rejectReason: reason,
+          },
+        },
+      });
+      if (flipped.count !== 1) {
+        throw new AppError('Top-up was processed concurrently; refresh and try again', 409);
+      }
+
+      await auditService.log({
+        userId: req.user!.id,
+        action: 'payment_slip_reject',
+        resource: 'payment_intent',
+        resourceId: id,
+        oldValue: { status: intent.status },
+        newValue: { status: 'failed', reason },
+        metadata: { targetUserId: intent.userId },
+      }, req);
 
       res.json({ success: true, message: 'Top-up rejected', id });
     } catch (error) {

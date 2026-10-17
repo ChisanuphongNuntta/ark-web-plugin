@@ -19,6 +19,7 @@
     "db:migrate": "npx prisma migrate dev",
     "db:studio": "npx prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "seed:servers": "tsx prisma/seed-server-directory.ts",
     "catalog:import": "tsx scripts/import-arkshop-catalog.ts",
     "catalog:audit-wiki": "tsx scripts/sync-ark-wiki-reference.ts",
     "balances:import": "node scripts/import-arkshop-balances.mjs",

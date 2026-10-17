@@ -319,16 +319,30 @@ enum ProductType {
 }
 
 // เซิร์ฟเวอร์ ARK
+// Server-directory play mode (UI redesign 2026-10). PVE_MOD = modded PvE set.
+enum GameMode {
+  PVE
+  PVE_MOD
+  PVPVE
+}
+
 model Cluster {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  name      String
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String    @id @default(cuid())
+  key         String    @unique
+  name        String
+  isActive    Boolean   @default(true) @map("is_active")
+  // Directory grouping (UI redesign 2026-10, additive)
+  gameMode    GameMode? @map("game_mode")
+  description String?
+  rates       String? // "X10" — shown on the directory group header
+  isModded    Boolean   @default(false) @map("is_modded")
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   servers Server[]
 
+  @@index([sortOrder])
   @@map("clusters")
 }
 
@@ -354,6 +368,21 @@ model Server {
   chatColor String? @map("chat_color") // "#FF5722" - hex color
   chatIcon  String? @map("chat_icon") // "⚔️" - emoji icon
 
+  // Public server directory (UI redesign 2026-10, additive). These columns describe how the
+  // server is LISTED; they never grant delivery. Delivery eligibility stays
+  // isActive && !drainMode && an active ServerCredential.
+  directoryKey String?  @unique @map("directory_key") // stable seed key "<clusterKey>:<map>"
+  displayName  String?  @map("display_name") // "The Island"
+  gameMode     GameMode @default(PVE) @map("game_mode")
+  connectHost  String?  @map("connect_host")
+  connectPort  Int?     @map("connect_port")
+  rates        String?
+  isModded     Boolean  @default(false) @map("is_modded")
+  isListed     Boolean  @default(true) @map("is_listed")
+  isAvailable  Boolean  @default(true) @map("is_available")
+  sortOrder    Int      @default(0) @map("sort_order")
+  imageUrl     String?  @map("image_url")
+
   // Relations
   orders           Order[]
   playerStats      PlayerStats[]
@@ -371,6 +400,7 @@ model Server {
   cluster          Cluster?           @relation(fields: [clusterId], references: [id], onDelete: SetNull)
 
   @@index([clusterId, isActive])
+  @@index([isListed, sortOrder])
   @@map("servers")
 }
 
@@ -1424,4 +1454,15 @@ model PromotionRedemption {
   @@index([checkoutSessionId])
   @@index([orderGroupId])
   @@map("promotion_redemptions")
+}
+
+// Site-wide key/value settings (UI redesign 2026-10): season theme, announcement banner,
+// directory status pages. Values are validated by src/services/siteSettings.service.ts.
+model SiteSetting {
+  key         String   @id
+  value       Json
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  updatedById String?  @map("updated_by_id")
+
+  @@map("site_settings")
 }

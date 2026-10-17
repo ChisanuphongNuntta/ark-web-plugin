@@ -5,6 +5,7 @@ import { AuthRequest } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
 import promotionService from '../services/promotion.service.js';
+import { isServerDeliverable } from '../services/serverDirectory.service.js';
 
 function serializeCheckoutSession(session: any) {
   return {
@@ -101,6 +102,37 @@ function buildCheckoutDelivery(item: any, orderId: string) {
   };
 }
 
+/**
+ * Only an active credential lets a plugin lease delivery jobs for a server, so
+ * checkout must load it to apply the same deliverability rule as the public
+ * server directory (`isServerDeliverable`) and the storefront ServerPicker.
+ */
+const ACTIVE_CREDENTIAL_INCLUDE = {
+  credentials: { where: { status: 'active' }, select: { id: true }, take: 1 },
+} as const;
+
+/**
+ * Why a cart line's server cannot take a delivery right now (null = OK).
+ * Mirrors frontend `deliveryBlockReason`: closed (isAvailable=false), inactive,
+ * drained, or no active plugin credential. Without this a direct API caller
+ * could pay for a DeliveryJob that no plugin can ever lease.
+ */
+function serverDeliveryBlock(server: {
+  name: string;
+  isActive: boolean;
+  drainMode?: boolean | null;
+  isAvailable?: boolean | null;
+  credentials?: Array<{ id: string }> | null;
+}): { message: string; status: number } | null {
+  if (!server.isActive) return { message: `Server "${server.name}" is inactive`, status: 400 };
+  if (server.isAvailable === false) return { message: `Server "${server.name}" is closed`, status: 409 };
+  if (server.drainMode) return { message: `Server "${server.name}" is temporarily draining deliveries`, status: 409 };
+  if (!isServerDeliverable(server)) {
+    return { message: `Server "${server.name}" is not connected for delivery yet`, status: 409 };
+  }
+  return null;
+}
+
 export class CheckoutController {
   createCheckoutSession = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -127,7 +159,7 @@ export class CheckoutController {
           items: {
             include: {
               product: true,
-              server: true,
+              server: { include: ACTIVE_CREDENTIAL_INCLUDE },
             },
           },
         },
@@ -145,12 +177,8 @@ export class CheckoutController {
           throw new AppError(`Product "${item.product.name}" is no longer active`, 400);
         }
 
-        if (!item.server.isActive) {
-          throw new AppError(`Server "${item.server.name}" is inactive`, 400);
-        }
-        if (item.server.drainMode) {
-          throw new AppError(`Server "${item.server.name}" is temporarily draining deliveries`, 409);
-        }
+        const serverBlock = serverDeliveryBlock(item.server);
+        if (serverBlock) throw new AppError(serverBlock.message, serverBlock.status);
 
         const requiredCapabilities: string[] = item.product.requiredCapabilities ?? [];
         const serverCapabilities: string[] = item.server.capabilities ?? [];
@@ -302,12 +330,15 @@ export class CheckoutController {
           const product = await tx.product.findUniqueOrThrow({
             where: { id: item.productId },
           });
-          const server = await tx.server.findUniqueOrThrow({ where: { id: item.serverId } });
+          const server = await tx.server.findUniqueOrThrow({
+            where: { id: item.serverId },
+            include: ACTIVE_CREDENTIAL_INCLUDE,
+          });
 
           if (!product.isActive) {
             throw new AppError(`Product "${product.name}" is no longer active`, 400);
           }
-          if (!server.isActive || server.drainMode) {
+          if (serverDeliveryBlock(server)) {
             throw new AppError(`Server "${server.name}" is unavailable for delivery`, 409);
           }
           const missingCapabilities = (product.requiredCapabilities ?? []).filter(

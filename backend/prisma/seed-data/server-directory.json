@@ -1,0 +1,103 @@
+{
+  "_source": "Scraped 2026-10-17 from https://www.iris-th.cloud (Listserver-PVE, list-server-pve-mod, Listserver-PVPVE, list-server-pvpve-pre-aqua). Data anomalies preserved and flagged below; an admin must confirm them.",
+  "_anomalies": [
+    "PVPVE Genesis Part 2 lists port 28013, identical to PVE_MOD Genesis Part 2 (28013) on the same host - one of them is wrong.",
+    "PVPVE Aquatica is labelled 'PvEvE' on the legacy site - treated as PvPvE.",
+    "Pre-Aqua Scorched Earth and Aquatica have no address; Valguero and Lost Island are marked 'Not Available'."
+  ],
+  "statusPages": [
+    "https://ark-status.iris-th.cloud/status/ark-pve-10",
+    "https://ark-status.iris-th.cloud/status/ark-pve-20",
+    "https://ark-status.iris-th.cloud/status/ark-pvp-10"
+  ],
+  "groups": [
+    {
+      "key": "pve-x10",
+      "name": "PvE X10 (No Mod)",
+      "gameMode": "PVE",
+      "rates": "X10",
+      "modded": false,
+      "servers": [
+        { "map": "TheIsland", "name": "The Island", "host": "ark.iris-th.cloud", "port": 28014 },
+        { "map": "TheCenter", "name": "The Center", "host": "ark.iris-th.cloud", "port": 28002 },
+        { "map": "Ragnarok", "name": "Ragnarok", "host": "ark.iris-th.cloud", "port": 28018 },
+        { "map": "Aberration", "name": "Aberration", "host": "ark.iris-th.cloud", "port": 28000 },
+        { "map": "Extinction", "name": "Extinction", "host": "ark.iris-th.cloud", "port": 28006 },
+        { "map": "ScorchedEarth", "name": "Scorched Earth", "host": "ark.iris-th.cloud", "port": 28020 },
+        { "map": "Valguero", "name": "Valguero", "host": "ark.iris-th.cloud", "port": 28022 },
+        { "map": "Genesis", "name": "Genesis Part 1", "host": "ark.iris-th.cloud", "port": 28010 },
+        { "map": "CrystalIsles", "name": "Crystal Isles", "host": "ark.iris-th.cloud", "port": 28004 },
+        { "map": "Genesis2", "name": "Genesis Part 2", "host": "ark.iris-th.cloud", "port": 28012 },
+        { "map": "LostIsland", "name": "Lost Island", "host": "ark.iris-th.cloud", "port": 28016 },
+        { "map": "Fjordur", "name": "Fjordur", "host": "ark.iris-th.cloud", "port": 28008 },
+        { "map": "Aquatica", "name": "Aquatica", "host": "ark.iris-th.cloud", "port": 28038 }
+      ]
+    },
+    {
+      "key": "pve-mod-x10",
+      "name": "PvE X10 Mod",
+      "gameMode": "PVE_MOD",
+      "rates": "X10",
+      "modded": true,
+      "servers": [
+        { "map": "TheIsland", "name": "The Island", "host": "ark.iris-th.cloud", "port": 28025 },
+        { "map": "TheCenter", "name": "The Center", "host": "ark.iris-th.cloud", "port": 28035 },
+        { "map": "Ragnarok", "name": "Ragnarok", "host": "ark.iris-th.cloud", "port": 28026 },
+        { "map": "Aberration", "name": "Aberration", "host": "ark.iris-th.cloud", "port": 28027 },
+        { "map": "Extinction", "name": "Extinction", "host": "ark.iris-th.cloud", "port": 28029 },
+        { "map": "ScorchedEarth", "name": "Scorched Earth", "host": "ark.iris-th.cloud", "port": 28034 },
+        { "map": "Valguero", "name": "Valguero", "host": "ark.iris-th.cloud", "port": 28036 },
+        { "map": "Genesis", "name": "Genesis Part 1", "host": "ark.iris-th.cloud", "port": 28031 },
+        { "map": "CrystalIsles", "name": "Crystal Isles", "host": "ark.iris-th.cloud", "port": 28028 },
+        { "map": "Genesis2", "name": "Genesis Part 2", "host": "ark.iris-th.cloud", "port": 28013 },
+        { "map": "LostIsland", "name": "Lost Island", "host": "ark.iris-th.cloud", "port": 28033 },
+        { "map": "Fjordur", "name": "Fjordur", "host": "ark.iris-th.cloud", "port": 28030 },
+        { "map": "Aquatica", "name": "Aquatica", "host": "ark.iris-th.cloud", "port": 28039 }
+      ]
+    },
+    {
+      "key": "pvpve-x10",
+      "name": "PvPvE X10 Mod",
+      "gameMode": "PVPVE",
+      "rates": "X10",
+      "modded": true,
+      "servers": [
+        { "map": "TheIsland", "name": "The Island", "host": "ark.iris-th.cloud", "port": 28015 },
+        { "map": "TheCenter", "name": "The Center", "host": "ark.iris-th.cloud", "port": 28003 },
+        { "map": "Ragnarok", "name": "Ragnarok", "host": "ark.iris-th.cloud", "port": 28019 },
+        { "map": "Aberration", "name": "Aberration", "host": "ark.iris-th.cloud", "port": 28001 },
+        { "map": "Extinction", "name": "Extinction", "host": "ark.iris-th.cloud", "port": 28007 },
+        { "map": "ScorchedEarth", "name": "Scorched Earth", "host": "ark.iris-th.cloud", "port": 28021 },
+        { "map": "Valguero", "name": "Valguero", "host": "ark.iris-th.cloud", "port": 28023 },
+        { "map": "Genesis", "name": "Genesis Part 1", "host": "ark.iris-th.cloud", "port": 28011 },
+        { "map": "CrystalIsles", "name": "Crystal Isles", "host": "ark.iris-th.cloud", "port": 28005 },
+        { "map": "Genesis2", "name": "Genesis Part 2", "host": "ark.iris-th.cloud", "port": 28013, "flag": "duplicate-port-needs-confirmation" },
+        { "map": "LostIsland", "name": "Lost Island", "host": "ark.iris-th.cloud", "port": 28017 },
+        { "map": "Fjordur", "name": "Fjordur", "host": "ark.iris-th.cloud", "port": 28009 },
+        { "map": "Aquatica", "name": "Aquatica", "host": "ark.iris-th.cloud", "port": 28037 }
+      ]
+    },
+    {
+      "key": "pvpve-pre-aqua",
+      "name": "PvPvE X10 Mod (Pre-Aqua)",
+      "gameMode": "PVPVE",
+      "rates": "X10",
+      "modded": true,
+      "servers": [
+        { "map": "TheIsland", "name": "The Island", "host": "pre-aqua.iris-th.cloud", "port": 27021 },
+        { "map": "TheCenter", "name": "The Center", "host": "pre-aqua.iris-th.cloud", "port": 27015 },
+        { "map": "Ragnarok", "name": "Ragnarok", "host": "pre-aqua.iris-th.cloud", "port": 27023 },
+        { "map": "Aberration", "name": "Aberration", "host": "pre-aqua.iris-th.cloud", "port": 28024 },
+        { "map": "Extinction", "name": "Extinction", "host": "pre-aqua.iris-th.cloud", "port": 28017 },
+        { "map": "ScorchedEarth", "name": "Scorched Earth", "host": null, "port": null, "available": false },
+        { "map": "Valguero", "name": "Valguero", "host": "pre-aqua.iris-th.cloud", "port": 28025, "available": false },
+        { "map": "Genesis", "name": "Genesis Part 1", "host": "pre-aqua.iris-th.cloud", "port": 28019 },
+        { "map": "CrystalIsles", "name": "Crystal Isles", "host": "pre-aqua.iris-th.cloud", "port": 28016 },
+        { "map": "Genesis2", "name": "Genesis Part 2", "host": "pre-aqua.iris-th.cloud", "port": 28020 },
+        { "map": "LostIsland", "name": "Lost Island", "host": "pre-aqua.iris-th.cloud", "port": 28022, "available": false },
+        { "map": "Fjordur", "name": "Fjordur", "host": "pre-aqua.iris-th.cloud", "port": 28018 },
+        { "map": "Aquatica", "name": "Aquatica", "host": null, "port": null, "available": false }
+      ]
+    }
+  ]
+}

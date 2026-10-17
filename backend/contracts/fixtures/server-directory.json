@@ -1,0 +1,1239 @@
+{
+  "groups": [
+    {
+      "key": "pve-x10",
+      "name": "PvE X10 (No Mod)",
+      "gameMode": "PVE",
+      "rates": "X10",
+      "isModded": false,
+      "description": null,
+      "servers": [
+        {
+          "id": 101,
+          "name": "PvE X10 (No Mod) - The Island",
+          "map": "TheIsland",
+          "displayName": "The Island",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28014
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 10
+        },
+        {
+          "id": 102,
+          "name": "PvE X10 (No Mod) - The Center",
+          "map": "TheCenter",
+          "displayName": "The Center",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28002
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 20
+        },
+        {
+          "id": 103,
+          "name": "PvE X10 (No Mod) - Ragnarok",
+          "map": "Ragnarok",
+          "displayName": "Ragnarok",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28018
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 30
+        },
+        {
+          "id": 104,
+          "name": "PvE X10 (No Mod) - Aberration",
+          "map": "Aberration",
+          "displayName": "Aberration",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28000
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 40
+        },
+        {
+          "id": 105,
+          "name": "PvE X10 (No Mod) - Extinction",
+          "map": "Extinction",
+          "displayName": "Extinction",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28006
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 50
+        },
+        {
+          "id": 106,
+          "name": "PvE X10 (No Mod) - Scorched Earth",
+          "map": "ScorchedEarth",
+          "displayName": "Scorched Earth",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28020
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 60
+        },
+        {
+          "id": 107,
+          "name": "PvE X10 (No Mod) - Valguero",
+          "map": "Valguero",
+          "displayName": "Valguero",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28022
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 70
+        },
+        {
+          "id": 108,
+          "name": "PvE X10 (No Mod) - Genesis Part 1",
+          "map": "Genesis",
+          "displayName": "Genesis Part 1",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28010
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 80
+        },
+        {
+          "id": 109,
+          "name": "PvE X10 (No Mod) - Crystal Isles",
+          "map": "CrystalIsles",
+          "displayName": "Crystal Isles",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28004
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 90
+        },
+        {
+          "id": 110,
+          "name": "PvE X10 (No Mod) - Genesis Part 2",
+          "map": "Genesis2",
+          "displayName": "Genesis Part 2",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28012
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 100
+        },
+        {
+          "id": 111,
+          "name": "PvE X10 (No Mod) - Lost Island",
+          "map": "LostIsland",
+          "displayName": "Lost Island",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28016
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 110
+        },
+        {
+          "id": 112,
+          "name": "PvE X10 (No Mod) - Fjordur",
+          "map": "Fjordur",
+          "displayName": "Fjordur",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28008
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 120
+        },
+        {
+          "id": 113,
+          "name": "PvE X10 (No Mod) - Aquatica",
+          "map": "Aquatica",
+          "displayName": "Aquatica",
+          "gameMode": "PVE",
+          "cluster": {
+            "id": "cl_pve-x10",
+            "key": "pve-x10",
+            "name": "PvE X10 (No Mod)"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28038
+          },
+          "rates": "X10",
+          "isModded": false,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 130
+        }
+      ]
+    },
+    {
+      "key": "pve-mod-x10",
+      "name": "PvE X10 Mod",
+      "gameMode": "PVE_MOD",
+      "rates": "X10",
+      "isModded": true,
+      "description": null,
+      "servers": [
+        {
+          "id": 114,
+          "name": "PvE X10 Mod - The Island",
+          "map": "TheIsland",
+          "displayName": "The Island",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28025
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 10
+        },
+        {
+          "id": 115,
+          "name": "PvE X10 Mod - The Center",
+          "map": "TheCenter",
+          "displayName": "The Center",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28035
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 20
+        },
+        {
+          "id": 116,
+          "name": "PvE X10 Mod - Ragnarok",
+          "map": "Ragnarok",
+          "displayName": "Ragnarok",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28026
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 30
+        },
+        {
+          "id": 117,
+          "name": "PvE X10 Mod - Aberration",
+          "map": "Aberration",
+          "displayName": "Aberration",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28027
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 40
+        },
+        {
+          "id": 118,
+          "name": "PvE X10 Mod - Extinction",
+          "map": "Extinction",
+          "displayName": "Extinction",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28029
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 50
+        },
+        {
+          "id": 119,
+          "name": "PvE X10 Mod - Scorched Earth",
+          "map": "ScorchedEarth",
+          "displayName": "Scorched Earth",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28034
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 60
+        },
+        {
+          "id": 120,
+          "name": "PvE X10 Mod - Valguero",
+          "map": "Valguero",
+          "displayName": "Valguero",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28036
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 70
+        },
+        {
+          "id": 121,
+          "name": "PvE X10 Mod - Genesis Part 1",
+          "map": "Genesis",
+          "displayName": "Genesis Part 1",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28031
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 80
+        },
+        {
+          "id": 122,
+          "name": "PvE X10 Mod - Crystal Isles",
+          "map": "CrystalIsles",
+          "displayName": "Crystal Isles",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28028
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 90
+        },
+        {
+          "id": 123,
+          "name": "PvE X10 Mod - Genesis Part 2",
+          "map": "Genesis2",
+          "displayName": "Genesis Part 2",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28013
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 100
+        },
+        {
+          "id": 124,
+          "name": "PvE X10 Mod - Lost Island",
+          "map": "LostIsland",
+          "displayName": "Lost Island",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28033
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 110
+        },
+        {
+          "id": 125,
+          "name": "PvE X10 Mod - Fjordur",
+          "map": "Fjordur",
+          "displayName": "Fjordur",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28030
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 120
+        },
+        {
+          "id": 126,
+          "name": "PvE X10 Mod - Aquatica",
+          "map": "Aquatica",
+          "displayName": "Aquatica",
+          "gameMode": "PVE_MOD",
+          "cluster": {
+            "id": "cl_pve-mod-x10",
+            "key": "pve-mod-x10",
+            "name": "PvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28039
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 130
+        }
+      ]
+    },
+    {
+      "key": "pvpve-x10",
+      "name": "PvPvE X10 Mod",
+      "gameMode": "PVPVE",
+      "rates": "X10",
+      "isModded": true,
+      "description": null,
+      "servers": [
+        {
+          "id": 127,
+          "name": "PvPvE X10 Mod - The Island",
+          "map": "TheIsland",
+          "displayName": "The Island",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28015
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 10
+        },
+        {
+          "id": 128,
+          "name": "PvPvE X10 Mod - The Center",
+          "map": "TheCenter",
+          "displayName": "The Center",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28003
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 20
+        },
+        {
+          "id": 129,
+          "name": "PvPvE X10 Mod - Ragnarok",
+          "map": "Ragnarok",
+          "displayName": "Ragnarok",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28019
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 30
+        },
+        {
+          "id": 130,
+          "name": "PvPvE X10 Mod - Aberration",
+          "map": "Aberration",
+          "displayName": "Aberration",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28001
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 40
+        },
+        {
+          "id": 131,
+          "name": "PvPvE X10 Mod - Extinction",
+          "map": "Extinction",
+          "displayName": "Extinction",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28007
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 50
+        },
+        {
+          "id": 132,
+          "name": "PvPvE X10 Mod - Scorched Earth",
+          "map": "ScorchedEarth",
+          "displayName": "Scorched Earth",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28021
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 60
+        },
+        {
+          "id": 133,
+          "name": "PvPvE X10 Mod - Valguero",
+          "map": "Valguero",
+          "displayName": "Valguero",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28023
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 70
+        },
+        {
+          "id": 134,
+          "name": "PvPvE X10 Mod - Genesis Part 1",
+          "map": "Genesis",
+          "displayName": "Genesis Part 1",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28011
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 80
+        },
+        {
+          "id": 135,
+          "name": "PvPvE X10 Mod - Crystal Isles",
+          "map": "CrystalIsles",
+          "displayName": "Crystal Isles",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28005
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 90
+        },
+        {
+          "id": 136,
+          "name": "PvPvE X10 Mod - Genesis Part 2",
+          "map": "Genesis2",
+          "displayName": "Genesis Part 2",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28013
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 100
+        },
+        {
+          "id": 137,
+          "name": "PvPvE X10 Mod - Lost Island",
+          "map": "LostIsland",
+          "displayName": "Lost Island",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28017
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 110
+        },
+        {
+          "id": 138,
+          "name": "PvPvE X10 Mod - Fjordur",
+          "map": "Fjordur",
+          "displayName": "Fjordur",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28009
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 120
+        },
+        {
+          "id": 139,
+          "name": "PvPvE X10 Mod - Aquatica",
+          "map": "Aquatica",
+          "displayName": "Aquatica",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-x10",
+            "key": "pvpve-x10",
+            "name": "PvPvE X10 Mod"
+          },
+          "connect": {
+            "host": "ark.iris-th.cloud",
+            "port": 28037
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 130
+        }
+      ]
+    },
+    {
+      "key": "pvpve-pre-aqua",
+      "name": "PvPvE X10 Mod (Pre-Aqua)",
+      "gameMode": "PVPVE",
+      "rates": "X10",
+      "isModded": true,
+      "description": null,
+      "servers": [
+        {
+          "id": 140,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - The Island",
+          "map": "TheIsland",
+          "displayName": "The Island",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 27021
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 10
+        },
+        {
+          "id": 141,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - The Center",
+          "map": "TheCenter",
+          "displayName": "The Center",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 27015
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 20
+        },
+        {
+          "id": 142,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Ragnarok",
+          "map": "Ragnarok",
+          "displayName": "Ragnarok",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 27023
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 30
+        },
+        {
+          "id": 143,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Aberration",
+          "map": "Aberration",
+          "displayName": "Aberration",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 28024
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 40
+        },
+        {
+          "id": 144,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Extinction",
+          "map": "Extinction",
+          "displayName": "Extinction",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 28017
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 50
+        },
+        {
+          "id": 145,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Scorched Earth",
+          "map": "ScorchedEarth",
+          "displayName": "Scorched Earth",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": null,
+          "rates": "X10",
+          "isModded": true,
+          "available": false,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 60
+        },
+        {
+          "id": 146,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Valguero",
+          "map": "Valguero",
+          "displayName": "Valguero",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 28025
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": false,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 70
+        },
+        {
+          "id": 147,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Genesis Part 1",
+          "map": "Genesis",
+          "displayName": "Genesis Part 1",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 28019
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 80
+        },
+        {
+          "id": 148,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Crystal Isles",
+          "map": "CrystalIsles",
+          "displayName": "Crystal Isles",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 28016
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 90
+        },
+        {
+          "id": 149,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Genesis Part 2",
+          "map": "Genesis2",
+          "displayName": "Genesis Part 2",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 28020
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 100
+        },
+        {
+          "id": 150,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Lost Island",
+          "map": "LostIsland",
+          "displayName": "Lost Island",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 28022
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": false,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 110
+        },
+        {
+          "id": 151,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Fjordur",
+          "map": "Fjordur",
+          "displayName": "Fjordur",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": {
+            "host": "pre-aqua.iris-th.cloud",
+            "port": 28018
+          },
+          "rates": "X10",
+          "isModded": true,
+          "available": true,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 120
+        },
+        {
+          "id": 152,
+          "name": "PvPvE X10 Mod (Pre-Aqua) - Aquatica",
+          "map": "Aquatica",
+          "displayName": "Aquatica",
+          "gameMode": "PVPVE",
+          "cluster": {
+            "id": "cl_pvpve-pre-aqua",
+            "key": "pvpve-pre-aqua",
+            "name": "PvPvE X10 Mod (Pre-Aqua)"
+          },
+          "connect": null,
+          "rates": "X10",
+          "isModded": true,
+          "available": false,
+          "online": false,
+          "playerCount": 0,
+          "deliverable": false,
+          "sortOrder": 130
+        }
+      ]
+    }
+  ],
+  "statusPages": [
+    "https://ark-status.iris-th.cloud/status/ark-pve-10",
+    "https://ark-status.iris-th.cloud/status/ark-pve-20",
+    "https://ark-status.iris-th.cloud/status/ark-pvp-10"
+  ]
+}
