@@ -185,20 +185,29 @@ describe('server-directory seed plan', () => {
   const json = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../prisma/seed-data/server-directory.json'), 'utf-8'));
   const plan = planDirectorySeed(parseServerDirectorySeed(json));
 
-  it('plans 4 clusters and 52 uniquely keyed servers', () => {
-    expect(plan.clusters.map((c) => c.key)).toEqual(['pve-x10', 'pve-mod-x10', 'pvpve-x10', 'pvpve-pre-aqua']);
-    expect(plan.clusters.map((c) => c.gameMode)).toEqual(['PVE', 'PVE_MOD', 'PVPVE', 'PVPVE']);
-    expect(plan.servers).toHaveLength(52);
-    expect(new Set(plan.servers.map((s) => s.directoryKey)).size).toBe(52);
+  it('plans 3 clusters and 39 uniquely keyed servers (Pre-Aqua removed by owner)', () => {
+    expect(plan.clusters.map((c) => c.key)).toEqual(['pve-x10', 'pve-mod-x10', 'pvpve-x10']);
+    expect(plan.clusters.map((c) => c.gameMode)).toEqual(['PVE', 'PVE_MOD', 'PVPVE']);
+    expect(plan.servers).toHaveLength(39);
+    expect(new Set(plan.servers.map((s) => s.directoryKey)).size).toBe(39);
     expect(plan.statusPages).toHaveLength(3);
   });
 
   it('uses human display names and marks address-less / not-available maps unavailable', () => {
     const island = plan.servers.find((s) => s.directoryKey === 'pve-x10:TheIsland')!;
     expect(island.listing).toMatchObject({ displayName: 'The Island', connectHost: 'ark.iris-th.cloud', connectPort: 28014, isAvailable: true, isListed: true });
-    const scorched = plan.servers.find((s) => s.directoryKey === 'pvpve-pre-aqua:ScorchedEarth')!;
+    const synthetic = planDirectorySeed(parseServerDirectorySeed({
+      groups: [{
+        key: 'test-group', name: 'Test', gameMode: 'PVPVE', rates: 'X10', modded: true,
+        servers: [
+          { map: 'ScorchedEarth', name: 'Scorched Earth', host: null, port: null, available: false },
+          { map: 'Valguero', name: 'Valguero', host: 'h.example', port: 1, available: false },
+        ],
+      }],
+    }));
+    const scorched = synthetic.servers.find((s) => s.directoryKey === 'test-group:ScorchedEarth')!;
     expect(scorched.listing).toMatchObject({ connectHost: null, connectPort: null, isAvailable: false });
-    const valguero = plan.servers.find((s) => s.directoryKey === 'pvpve-pre-aqua:Valguero')!;
+    const valguero = synthetic.servers.find((s) => s.directoryKey === 'test-group:Valguero')!;
     expect(valguero.listing.isAvailable).toBe(false);
     expect(plan.servers.find((s) => s.directoryKey === 'pvpve-x10:Genesis2')!.flag).toBe('duplicate-port-needs-confirmation');
   });
