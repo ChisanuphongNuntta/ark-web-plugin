@@ -13,7 +13,6 @@ import {
   Search,
   Settings,
   ShoppingBag,
-  Sparkles,
   X,
 } from 'lucide-react';
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
@@ -55,6 +54,18 @@ function IrisMark() {
   );
 }
 
+function IrisGlyph({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <Image
+      src="/images/brand/ark_iris_frozen_logo.jpg"
+      alt=""
+      aria-hidden="true"
+      width={16}
+      height={16}
+      className={`${className} shrink-0 rounded-[4px] object-cover`}
+    />
+  );
+}
 
 export function Navbar() {
   const pathname = usePathname();
@@ -153,7 +164,7 @@ export function Navbar() {
 
                   {/* Sparkle and Label */}
                   <span className="relative z-10 flex items-center gap-1 whitespace-nowrap">
-                    {active && <Sparkles className="h-3 w-3 text-cyan-300" />}
+                    {active && <IrisGlyph className="h-3.5 w-3.5" />}
                     {link.label}
                   </span>
                   <span className={`relative z-10 text-[0.56rem] font-medium tracking-wider uppercase whitespace-nowrap transition-colors ${
@@ -194,7 +205,7 @@ export function Navbar() {
                   >
                     <div className="border-b border-white/[0.08] px-3.5 py-2 mb-1">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-cyan-400/80 flex items-center gap-1.5">
-                        <Sparkles className="h-3 w-3 text-cyan-300" /> บริการและระบบสำรวจ
+                        <IrisGlyph className="h-3.5 w-3.5" /> บริการและระบบสำรวจ
                       </p>
                     </div>
                     {exploreLinks.map((link) => (
@@ -215,7 +226,7 @@ export function Navbar() {
                             {link.caption}
                           </span>
                         </div>
-                        <Sparkles className="h-3.5 w-3.5 text-cyan-300 opacity-0 transition-opacity group-hover:opacity-100" />
+                        <IrisGlyph className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
                       </Link>
                     ))}
                   </motion.div>
