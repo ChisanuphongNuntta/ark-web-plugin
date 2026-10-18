@@ -13,6 +13,17 @@
   - Admin rows `balanceAfter` fallback ordered by `postedAt`. CSV export uses keyset pagination with a 5s settle snapshot and adds a truncation marker row. Reconcile logs Redis-lock skips and, after 2 windows, runs without the lock (audit `ledger_reconcile_degraded`).
 - Verified: backend `tsc` + `vitest run tests/unit` (561 tests), frontend `tsc` + `eslint` (0 errors), `heart-plugin-backend:tx-check` and `heart-plugin-frontend:tx-check` Docker builds. Not deployed and no containers restarted.
 
+## IrisDefender (third-party anti-cheat, DLL only, no source) — 2026-10-19
+
+- False positive found: on 2026-10-18 15:55, right after a Tiktaalik was delivered to osv1 (character Skrael), there were 36 "Teleport" violations and 35 auto-kicks. The position read 0,0,0 every time (mount/attach), giving a delta of about 259k against the 8k limit.
+- Config changes on Server1 and Server2 (`ArkApi/Plugins/IrisDefender/config.json`). Backups are in `C:smdata\Backups\IrisDefender\Server{1,2}-20261019-015024`.
+  - ServerId changed from "PVP-CENTER" to PVE-THE-ISLAND-1 / PVE-RAGNAROK-2.
+  - `ViolationManager.PointsTeleport` set from 5 to 0: still logged, no kick.
+  - `Undermesh.Enabled` set to false: its floor Z and safe coords are The Center values.
+  - All 10 player-facing messages translated from Thai to English.
+- Discord webhook is disabled in that config. Teleport rubberbanding is still enabled.
+- A permanent fix (skip the teleport check while mounted or at a zero position) needs the IrisDefender source.
+
 ## Pending owner decisions — end of session 2026-10-18 23:15 (+07)
 
 - Server1: `drain_mode=false`, lifted for the in-game smoke test. The test passed: 3 items and 1 Aquatica dino (Tiktaalik) delivered. Server2 is still drained.
