@@ -16,7 +16,12 @@
 ## Pending owner decisions — end of session 2026-10-18 23:15 (+07)
 
 - Server1: `drain_mode=false`, lifted for the in-game smoke test. The test passed: 3 items and 1 Aquatica dino (Tiktaalik) delivered. Server2 is still drained.
-- Cryopod plugin is built (HeartShop.dll SHA-256 3a22c8e9..., commit d7c7c15) but NOT deployed. It needs a Server1 restart or plugin reload. Steps are in ark-plugin/BUILD.md.
+- Plugin 7dc0dae6... (commit 2f3f244: ArkShop-style item give, cryopod dinos, delivery guard, extras) was INSTALLED on Server1 and Server2 while both were stopped, on 2026-10-18 23:57 (+07). The old DLL ec155f58 and the configs are backed up in `C:smdata\Backups\HeartShop-plugin\Server{1,2}-20261018-235729`. Smoke test on the next start:
+  - the heartbeat lists delivery.dino.cryopod.v1, delivery.item.stats.v1 and delivery.dino.extras.v1;
+  - buying 2× a non-stackable item gives 2;
+  - a large resource pack is split into stacks;
+  - a dino arrives as a cryopod;
+  - a full inventory defers the delivery.
 - nginx 1.28.2 → 1.30.6: config tested OK, awaiting approval.
 - Refunds posted before 2026-10-18 sit in the `refundable` sub-account. Decide whether to move them to `available`.
 - Legacy items to fix: #212, #267 and #810 have names that don't match what they deliver. The Genesis Part 2 port 28013 appears twice.
