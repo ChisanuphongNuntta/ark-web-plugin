@@ -4,6 +4,7 @@ import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService, { SYSTEM_ACCOUNTS, userAccountKey } from '../services/wallet.service.js';
 import { resolveDinoCatalogDelivery } from '../services/dinoCatalogDelivery.js';
+import { resolveItemDelivery } from '../services/itemCatalogDelivery.js';
 
 type PluginRequest = Request & { serverId?: number };
 
@@ -12,8 +13,6 @@ const compatible = (required: string[], available: string[]) =>
 
 const isGameDeliverableProduct = (product: { productType: string; itemBlueprint: string | null }) =>
   (product.productType === 'item' || product.productType === 'dino') && Boolean(product.itemBlueprint);
-
-const cleanBlueprint = (value: unknown) => String(value ?? '').replace(/^"+|"+$/g, '').trim();
 
 const buildDeliveryPayload = (product: any, orderId: string, purchasedQuantity: number) => {
   if (product.productType === 'dino') {
@@ -27,35 +26,7 @@ const buildDeliveryPayload = (product: any, orderId: string, purchasedQuantity: 
     return { deliveryType: result.deliveryType, payload: result.payload };
   }
 
-  const configuredItems = Array.isArray(product.deliveryPayload?.definition?.Items)
-    ? product.deliveryPayload.definition.Items
-      .map((item: any) => ({
-        blueprint: cleanBlueprint(item?.Blueprint),
-        quantity: Math.max(1, Number(item?.Amount ?? 1)) * purchasedQuantity,
-        quality: Math.max(0, Number(item?.Quality ?? 0)),
-        isBlueprint: Boolean(item?.ForceBlueprint),
-      }))
-      .filter((item: any) => item.blueprint && Number.isSafeInteger(item.quantity))
-    : [];
-  const items = configuredItems.length > 0
-    ? configuredItems
-    : [{
-        blueprint: product.itemBlueprint,
-        quantity: product.quantity * purchasedQuantity,
-        quality: product.quality,
-        isBlueprint: product.isBlueprint,
-      }];
-  return {
-    deliveryType: 'order',
-    payload: {
-      schemaVersion: 1,
-      orderId,
-      productType: 'item',
-      productName: product.name,
-      item: items[0],
-      items,
-    },
-  };
+  return resolveItemDelivery(product, orderId, purchasedQuantity);
 };
 
 export class GameShopController {

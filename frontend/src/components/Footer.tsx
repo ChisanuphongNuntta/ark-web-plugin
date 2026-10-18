@@ -110,7 +110,7 @@ export function Footer() {
               © {new Date().getFullYear()} IRIS Thailand · HeartShop Ecosystem. All rights reserved.
             </p>
             <p className="text-[11px] text-slate-500">
-              ภาพสัตว์:{' '}
+              ภาพสัตว์และไอเทม:{' '}
               <a
                 className="underline underline-offset-4 hover:text-cyan-300 transition-colors"
                 href="https://ark.wiki.gg/"

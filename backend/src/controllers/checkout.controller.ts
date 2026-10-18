@@ -7,6 +7,7 @@ import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wall
 import promotionService from '../services/promotion.service.js';
 import { isServerDeliverable } from '../services/serverDirectory.service.js';
 import { resolveDinoCatalogDelivery } from '../services/dinoCatalogDelivery.js';
+import { resolveItemDelivery } from '../services/itemCatalogDelivery.js';
 
 function serializeCheckoutSession(session: any) {
   return {
@@ -45,8 +46,6 @@ function isCheckoutDeliverable(product: { productType?: string | null; itemBluep
   return (type === 'item' || type === 'dino') && Boolean(product.itemBlueprint);
 }
 
-const cleanBlueprint = (value: unknown) => String(value ?? '').replace(/^"+|"+$/g, '').trim();
-
 function buildCheckoutDelivery(item: any, orderId: string) {
   if (item.productType === 'dino') {
     const result = resolveDinoCatalogDelivery(item, orderId);
@@ -56,35 +55,15 @@ function buildCheckoutDelivery(item: any, orderId: string) {
     return { deliveryType: result.deliveryType, payload: result.payload };
   }
 
-  const configuredItems = Array.isArray(item.deliveryPayload?.definition?.Items)
-    ? item.deliveryPayload.definition.Items
-      .map((definition: any) => ({
-        blueprint: cleanBlueprint(definition?.Blueprint),
-        quantity: Math.max(1, Number(definition?.Amount ?? 1)) * item.quantity,
-        quality: Math.max(0, Number(definition?.Quality ?? 0)),
-        isBlueprint: Boolean(definition?.ForceBlueprint),
-      }))
-      .filter((definition: any) => definition.blueprint && Number.isSafeInteger(definition.quantity))
-    : [];
-  const items = configuredItems.length > 0
-    ? configuredItems
-    : [{
-        blueprint: item.itemBlueprint,
-        quantity: item.deliveryQuantity * item.quantity,
-        quality: item.quality,
-        isBlueprint: item.isBlueprint,
-      }];
-  return {
-    deliveryType: 'order',
-    payload: {
-      schemaVersion: 1,
-      orderId,
-      productType: 'item',
-      item: items[0],
-      items,
-      productName: item.name,
-    },
-  };
+  // Cart snapshot line: deliveryQuantity = products.quantity, quantity = units bought.
+  return resolveItemDelivery({
+    name: item.name,
+    itemBlueprint: item.itemBlueprint,
+    deliveryPayload: item.deliveryPayload,
+    quantity: item.deliveryQuantity,
+    quality: item.quality,
+    isBlueprint: item.isBlueprint,
+  }, orderId, item.quantity);
 }
 
 /**
