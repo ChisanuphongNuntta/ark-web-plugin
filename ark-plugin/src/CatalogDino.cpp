@@ -1,6 +1,8 @@
 #include "CatalogDino.h"
 
+#include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <iterator>
 
 namespace HeartShop::CatalogDino
@@ -127,11 +129,110 @@ namespace
             Cryopod = Field->get<bool>();
         }
 
+        Gender Sex = Gender::Random;
+        if (const auto Field = Dino->find("gender"); Field != Dino->end() && !Field->is_null())
+        {
+            if (!Field->is_string() || !ParseGender(Field->get<std::string>(), Sex))
+            {
+                Error = "dino.gender must be \"male\", \"female\" or \"random\"";
+                return false;
+            }
+        }
+
+        std::string Saddle;
+        if (const auto Field = Dino->find("saddleBlueprint"); Field != Dino->end() && !Field->is_null())
+        {
+            if (!Field->is_string())
+            {
+                Error = "dino.saddleBlueprint must be a string";
+                return false;
+            }
+            Saddle = Field->get<std::string>();
+        }
+
+        int Attachments[2] = {StryderAttachmentNone, StryderAttachmentNone};
+        const char* AttachmentKeys[2] = {"stryderHead", "stryderChest"};
+        const int AttachmentMax[2] = {StryderHeadMax, StryderChestMax};
+        for (int Index = 0; Index < 2; ++Index)
+        {
+            const auto Field = Dino->find(AttachmentKeys[Index]);
+            if (Field == Dino->end() || Field->is_null())
+            {
+                continue;
+            }
+            if (!Field->is_number_integer() ||
+                Field->get<long long>() < StryderAttachmentNone ||
+                Field->get<long long>() > AttachmentMax[Index])
+            {
+                Error = std::string("dino.") + AttachmentKeys[Index] + " must be an integer -1.." +
+                        std::to_string(AttachmentMax[Index]);
+                return false;
+            }
+            Attachments[Index] = static_cast<int>(Field->get<long long>());
+        }
+
         Out.Blueprint = Blueprint->get<std::string>();
         Out.Level = static_cast<int>(LevelValue);
         Out.Neutered = Neutered;
         Out.Cryopod = Cryopod;
+        Out.Sex = Sex;
+        Out.SaddleBlueprint = Saddle;
+        Out.StryderHead = Attachments[0];
+        Out.StryderChest = Attachments[1];
         return true;
+    }
+
+    bool ParseGender(const std::string& Text, Gender& Out)
+    {
+        std::string Lower(Text);
+        std::transform(Lower.begin(), Lower.end(), Lower.begin(), [](const unsigned char C) {
+            return static_cast<char>(std::tolower(C));
+        });
+        if (Lower == "random") { Out = Gender::Random; return true; }
+        if (Lower == "male") { Out = Gender::Male; return true; }
+        if (Lower == "female") { Out = Gender::Female; return true; }
+        return false;
+    }
+
+    const char* GenderName(const Gender Value)
+    {
+        switch (Value)
+        {
+            case Gender::Male: return "male";
+            case Gender::Female: return "female";
+            case Gender::Random: return "random";
+        }
+        return "random";
+    }
+
+    bool IsTekStryderBlueprint(const std::string& Blueprint)
+    {
+        // Same match as ArkShop GiveDino (class path of the Genesis 2 Tek Stryder).
+        return Blueprint.find("/Game/Genesis2/Dinos/TekStrider/TekStrider_Character_BP.TekStrider_Character_BP") !=
+               std::string::npos;
+    }
+
+    const char* StryderHeadBlueprint(const int Index)
+    {
+        switch (Index)
+        {
+            case 0: return "Blueprint'/Game/Genesis2/CoreBlueprints/Items/Saddle/PrimalItemArmor_TekStriderHarvester.PrimalItemArmor_TekStriderHarvester'";
+            case 1: return "Blueprint'/Game/Genesis2/CoreBlueprints/Items/Saddle/PrimalItemArmor_TekStriderSilenceCannon.PrimalItemArmor_TekStriderSilenceCannon'";
+            case 2: return "Blueprint'/Game/Genesis2/CoreBlueprints/Items/Saddle/PrimalItemArmor_TekStriderMachinegun.PrimalItemArmor_TekStriderMachinegun'";
+            default: return nullptr;
+        }
+    }
+
+    const char* StryderChestBlueprint(const int Index)
+    {
+        switch (Index)
+        {
+            case 0: return "Blueprint'/Game/Genesis2/CoreBlueprints/Items/Saddle/PrimalItemArmor_TekStriderShield.PrimalItemArmor_TekStriderShield'";
+            case 1: return "Blueprint'/Game/Genesis2/CoreBlueprints/Items/Saddle/PrimalItemArmor_TekStriderOnesidedShield.PrimalItemArmor_TekStriderOnesidedShield'";
+            case 2: return "Blueprint'/Game/Genesis2/CoreBlueprints/Items/Saddle/PrimalItemArmor_TekStriderLargeCannon.PrimalItemArmor_TekStriderLargeCannon'";
+            case 3: return "Blueprint'/Game/Genesis2/CoreBlueprints/Items/Saddle/PrimalItemArmor_TekStriderSaddlebags.PrimalItemArmor_TekStriderSaddlebags'";
+            default: return nullptr;
+        }
     }
 
     Outcome RunCryopodDelivery(const CryopodSteps& Steps, std::string& Error)

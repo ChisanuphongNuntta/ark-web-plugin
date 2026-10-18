@@ -66,7 +66,7 @@ function buildCheckoutDelivery(item: any, orderId: string, serverCapabilities: r
     quantity: item.deliveryQuantity,
     quality: item.quality,
     isBlueprint: item.isBlueprint,
-  }, orderId, item.quantity);
+  }, orderId, item.quantity, serverCapabilities);
 }
 
 /**

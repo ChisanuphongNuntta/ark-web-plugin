@@ -4,7 +4,9 @@
 #include "GameThreadDispatcher.h"
 #include "DinoPayload.h"
 #include "CatalogDino.h"
+#include "ItemDelivery.h"
 #include "RequestSigning.h"
+#include <algorithm>
 #include <Logger/Logger.h>
 #include <Windows.h>
 #include <filesystem>
@@ -789,8 +791,151 @@ namespace HeartShop
         }
     }
 
-    // Legacy catalog spawn: force-tamed for the buyer's team next to the buyer.
-    // Unchanged from the pre-cryopod plugin so old payloads behave identically.
+    static UClass* LoadClassFromUtf8(const std::string& Path)
+    {
+        FString Blueprint(ArkApi::Tools::Utf8Decode(Path).c_str());
+        return UVictoryCore::BPLoadClass(&Blueprint);
+    }
+
+    // True when Class is a UPrimalItem subclass, so it is safe to hand to
+    // UPrimalItem::AddNewItem / IncrementItemTemplateQuantity.
+    static bool IsItemClass(UClass* Class)
+    {
+        UClass* ItemBase = UPrimalItem::StaticClass();
+        return Class && (!ItemBase || Class->IsChildOf(ItemBase));
+    }
+
+    // Writes a blueprint variable on an actor by name. Done by hand because the
+    // SDK's UProperty::Set offsets a UObject* (pointer arithmetic in sizeof
+    // units) and checks UObject's own class instead of the actor's. Only
+    // 1-byte (bool/byte) and 4-byte (int) properties are written.
+    static bool WriteBlueprintVariable(UObject* Object, const char* Name, const int Value)
+    {
+        UProperty* Property = Object->FindProperty(FName(Name, EFindName::FNAME_Find));
+        if (!Property)
+        {
+            return false;
+        }
+        char* Address = reinterpret_cast<char*>(Object) + Property->Offset_InternalField();
+        switch (Property->ElementSizeField())
+        {
+            case 1: *reinterpret_cast<unsigned char*>(Address) = static_cast<unsigned char>(Value); return true;
+            case 4: *reinterpret_cast<int*>(Address) = Value; return true;
+            default: return false;
+        }
+    }
+
+    // ArkShop HandleStryder: swap the Tek Stryder's default head/chest attachment
+    // for the bought one. False only when an attachment existed and could not be
+    // replaced (the caller then treats the spawn as failed).
+    static bool ReplaceStryderAttachment(
+        APrimalDinoCharacter* Dino,
+        const EPrimalEquipmentType::Type Slot,
+        const char* AttachmentBlueprint,
+        const char* SetVariable,
+        const char* IndexVariable,
+        const int Index)
+    {
+        UPrimalInventoryComponent* DinoInventory = Dino->MyInventoryComponentField();
+        if (!DinoInventory || !AttachmentBlueprint)
+        {
+            return false;
+        }
+        UPrimalItem* Current = DinoInventory->GetEquippedItemOfType(Slot);
+        if (!Current)
+        {
+            // Same as ArkShop: nothing equipped in that slot, nothing to replace.
+            return true;
+        }
+        UClass* AttachmentClass = LoadClassFromUtf8(AttachmentBlueprint);
+        if (!IsItemClass(AttachmentClass))
+        {
+            Log::GetLog()->error("Could not load Tek Stryder attachment {}", AttachmentBlueprint);
+            return false;
+        }
+        Current->bForceDropDestruction() = true;
+        Current->RemoveItemFromInventory(true, false);
+        UPrimalItem* Attachment = UPrimalItem::AddNewItem(
+            AttachmentClass, DinoInventory, true, true, 1, true, 1, false, 0, false, nullptr, 0, false, false);
+        if (!Attachment)
+        {
+            return false;
+        }
+        if (!WriteBlueprintVariable(Dino, SetVariable, 1) || !WriteBlueprintVariable(Dino, IndexVariable, Index))
+        {
+            Log::GetLog()->warn(
+                "Tek Stryder attachment {} equipped but blueprint variables '{}'/'{}' were not found",
+                AttachmentBlueprint, SetVariable, IndexVariable);
+        }
+        return true;
+    }
+
+    // Optional ArkShop GiveDino extras that act on the freshly spawned actor
+    // (gender, Tek Stryder attachments). Saddles are handled by the caller
+    // (inside the cryopod, or equipped on a live tame).
+    static bool ApplyCatalogDinoExtras(APrimalDinoCharacter* Dino, const CatalogDino::Request& Request)
+    {
+        if (Request.Sex != CatalogDino::Gender::Random && Dino->bUsesGender()())
+        {
+            Dino->bIsFemale() = (Request.Sex == CatalogDino::Gender::Female);
+        }
+
+        if (CatalogDino::IsTekStryderBlueprint(Request.Blueprint))
+        {
+            if (Request.StryderHead != CatalogDino::StryderAttachmentNone &&
+                !ReplaceStryderAttachment(
+                    Dino, EPrimalEquipmentType::Hat, CatalogDino::StryderHeadBlueprint(Request.StryderHead),
+                    "set head attachment", "head attachment index", Request.StryderHead))
+            {
+                return false;
+            }
+            if (Request.StryderChest != CatalogDino::StryderAttachmentNone &&
+                !ReplaceStryderAttachment(
+                    Dino, EPrimalEquipmentType::Shirt, CatalogDino::StryderChestBlueprint(Request.StryderChest),
+                    "set chest attachment", "chest attachment index", Request.StryderChest))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Equips a saddle on a live tame (ArkShop only puts saddles in cryopods; for
+    // a live delivery the buyer gets it on the dino). Falls back to the buyer's
+    // inventory; logs when neither accepted it (the dino is still delivered).
+    static void GiveSaddleWithLiveTame(
+        AShooterPlayerController* Player,
+        APrimalDinoCharacter* Dino,
+        UClass* SaddleClass,
+        const std::string& SaddleBlueprint)
+    {
+        if (!SaddleClass)
+        {
+            return;
+        }
+        UPrimalInventoryComponent* DinoInventory =
+            (Dino && Dino->IsValidLowLevel()) ? Dino->MyInventoryComponentField() : nullptr;
+        if (DinoInventory &&
+            UPrimalItem::AddNewItem(SaddleClass, DinoInventory, true, true, 0, true, 1, false, 0, false, nullptr, 0, false, false))
+        {
+            return;
+        }
+        AShooterCharacter* Character = Player ? Player->GetPlayerCharacter() : nullptr;
+        UPrimalInventoryComponent* PlayerInventory = Character ? Character->MyInventoryComponentField() : nullptr;
+        if (PlayerInventory &&
+            UPrimalItem::AddNewItem(SaddleClass, PlayerInventory, false, false, 0, true, 1, false, 0, false, nullptr, 0, false, false))
+        {
+            Log::GetLog()->warn("Saddle {} could not be equipped on the live tame; placed in the buyer inventory", SaddleBlueprint);
+            return;
+        }
+        Log::GetLog()->critical(
+            "Saddle {} could not be equipped on the live tame nor placed in the buyer inventory (SteamID {})",
+            SaddleBlueprint, GetSteamId(Player));
+    }
+
+    // Catalog spawn: force-tamed for the buyer's team next to the buyer (the
+    // pre-cryopod call, unchanged), then the optional extras. If an extra cannot
+    // be applied the actor is destroyed and nullptr returned (nothing given).
     static APrimalDinoCharacter* SpawnCatalogDinoActor(
         AShooterPlayerController* Player,
         const CatalogDino::Request& Request)
@@ -808,14 +953,30 @@ namespace HeartShop
             Log::GetLog()->error("ARK rejected catalog dino {} level {}", Request.Blueprint, Request.Level);
             return nullptr;
         }
+        if (!ApplyCatalogDinoExtras(Dino, Request))
+        {
+            Log::GetLog()->error(
+                "Catalog dino {} extras (stryderHead={}, stryderChest={}) could not be applied; spawn removed",
+                Request.Blueprint, Request.StryderHead, Request.StryderChest);
+            if (!(Dino->Destroy(true, false) || Dino->IsPendingKillPending()))
+            {
+                // The tame survives: it is the delivery (without the extra).
+                Log::GetLog()->critical("Catalog dino {} could not be removed after a failed extra; delivered as is",
+                    Request.Blueprint);
+                return Dino;
+            }
+            return nullptr;
+        }
         return Dino;
     }
 
     // Cryopod custom data for a live dino. Mirrors ArkShop::GetDinoCustomItemData
-    // (non-modded branch, no saddle) from ASE-Plugins-master/ArkShop, which is the
-    // layout the vanilla Extinction cryopod reads back when the dino is released.
+    // (non-modded branch) from ASE-Plugins-master/ArkShop, which is the layout the
+    // vanilla Extinction cryopod reads back when the dino is released. When Saddle
+    // is given its item bytes follow the dino bytes (ByteArrays[1]), exactly like
+    // ArkShop, so the saddle comes out equipped when the pod is released.
     // No durability/cryo-sickness limits are applied.
-    static FCustomItemData BuildCryopodCustomData(APrimalDinoCharacter* Dino)
+    static FCustomItemData BuildCryopodCustomData(APrimalDinoCharacter* Dino, UPrimalItem* Saddle)
     {
         FCustomItemData Data;
 
@@ -877,6 +1038,17 @@ namespace HeartShop
             throw std::runtime_error("spawned dino produced an empty native snapshot");
         }
         Data.CustomDataBytes.ByteArrays.Add(DinoBytes);
+
+        if (Saddle)
+        {
+            FCustomItemByteArray SaddleBytes;
+            Saddle->GetItemBytes(&SaddleBytes.Bytes);
+            if (SaddleBytes.Bytes.Num() <= 0)
+            {
+                throw std::runtime_error("saddle item produced no item bytes");
+            }
+            Data.CustomDataBytes.ByteArrays.Add(SaddleBytes);
+        }
         return Data;
     }
 
@@ -1023,18 +1195,38 @@ namespace HeartShop
         Result.Level = Request.Level;
         Result.CryopodRequested = Request.Cryopod;
 
+        // Optional saddle: resolved before anything is touched so a bad blueprint
+        // fails the delivery (nothing given) instead of silently dropping it.
+        UClass* SaddleClass = nullptr;
+        if (!Request.SaddleBlueprint.empty())
+        {
+            const bool Ran = RunNativeStep("resolve saddle class", [&]() {
+                SaddleClass = LoadClassFromUtf8(Request.SaddleBlueprint);
+                return IsItemClass(SaddleClass);
+            });
+            if (!Ran || !SaddleClass)
+            {
+                Log::GetLog()->error("Could not load catalog dino saddle class {}", Request.SaddleBlueprint);
+                Result.Error = "Could not load saddle item class";
+                return Result;
+            }
+        }
+
         if (!Request.Cryopod)
         {
             try
             {
-                if (SpawnCatalogDinoActor(Player, Request))
+                if (APrimalDinoCharacter* LiveDino = SpawnCatalogDinoActor(Player, Request))
                 {
+                    GiveSaddleWithLiveTame(Player, LiveDino, SaddleClass, Request.SaddleBlueprint);
                     Log::GetLog()->info(
-                        "Spawned catalog dino {} level {} for SteamID {} (neutered={})",
+                        "Spawned catalog dino {} level {} for SteamID {} (neutered={}, gender={}, saddle={})",
                         Request.Blueprint,
                         Request.Level,
                         GetSteamId(Player),
-                        Request.Neutered ? "true" : "false");
+                        Request.Neutered ? "true" : "false",
+                        CatalogDino::GenderName(Request.Sex),
+                        Request.SaddleBlueprint.empty() ? "none" : Request.SaddleBlueprint);
                     Result.Outcome = CatalogDino::Outcome::DeliveredAsLiveTame;
                 }
                 else
@@ -1112,7 +1304,20 @@ namespace HeartShop
                 {
                     return false;
                 }
-                FCustomItemData CustomData = BuildCryopodCustomData(Dino);
+                // ArkShop GiveDino: a loose saddle item (no inventory) whose bytes
+                // ride inside the pod; unreferenced afterwards, collected by GC.
+                UPrimalItem* Saddle = nullptr;
+                if (SaddleClass)
+                {
+                    Saddle = UPrimalItem::AddNewItem(
+                        SaddleClass, nullptr, false, false, 0, false, 0, false, 0, false, nullptr, 0, false, false);
+                    if (!Saddle)
+                    {
+                        Log::GetLog()->error("Could not create saddle item {} for the cryopod", Request.SaddleBlueprint);
+                        return false;
+                    }
+                }
+                FCustomItemData CustomData = BuildCryopodCustomData(Dino, Saddle);
                 Cryopod->SetCustomItemData(&CustomData);
                 Cryopod->UpdatedItem(true);
                 return true;
@@ -1164,6 +1369,15 @@ namespace HeartShop
         };
 
         Result.Outcome = CatalogDino::RunCryopodDelivery(Steps, Result.Error);
+        if (Result.Outcome == CatalogDino::Outcome::DeliveredAsLiveTame && SaddleClass && Dino)
+        {
+            // The pod (and the saddle bytes inside it) was not delivered; the tame is
+            // alive next to the buyer, so equip the saddle on it instead.
+            RunNativeStep("equip saddle on live tame", [&]() {
+                GiveSaddleWithLiveTame(Player, Dino, SaddleClass, Request.SaddleBlueprint);
+                return true;
+            });
+        }
         switch (Result.Outcome)
         {
             case CatalogDino::Outcome::DeliveredInCryopod:
@@ -1200,6 +1414,58 @@ namespace HeartShop
                 break;
         }
         return Result;
+    }
+
+    // ArkShop ShouldPreventStoreUse equivalent, evaluated before any delivery
+    // touches the game. Returns a non-empty reason when the delivery must be
+    // DEFERRED (lease released, no attempt consumed): the buyer has no character
+    // yet, is Noglin-controlled / controlling, unconscious, or being carried.
+    // Buff classes are re-resolved per call (never cached), like the cryopod class.
+    static std::string DeliveryDeferReason(AShooterPlayerController* Player)
+    {
+        std::string Reason;
+        const bool Ran = RunNativeStep("delivery guard", [&]() {
+            AShooterCharacter* Character = Player ? Player->GetPlayerCharacter() : nullptr;
+            if (!Character || !Character->IsValidLowLevel() || Character->IsDead())
+            {
+                Reason = "player has no living character";
+                return true;
+            }
+            if (!PluginConfig || PluginConfig->GetDeferWhileNoglinControlled())
+            {
+                static const char* NoglinBuffs[] = {
+                    // controlling player (post-process), controlled human, controlled dino
+                    "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugPostProccess.Buff_BrainSlugPostProccess'",
+                    "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlug_HumanControl.Buff_BrainSlug_HumanControl'",
+                    "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugControl.Buff_BrainSlugControl'",
+                };
+                for (const char* BuffPath : NoglinBuffs)
+                {
+                    UClass* BuffClass = LoadClassFromUtf8(BuffPath);
+                    if (BuffClass && Character->HasBuff(BuffClass, true))
+                    {
+                        Reason = "player is Noglin-controlled";
+                        return true;
+                    }
+                }
+            }
+            if ((!PluginConfig || PluginConfig->GetDeferWhileUnconscious()) && !Character->IsConscious())
+            {
+                Reason = "player is unconscious";
+                return true;
+            }
+            if ((!PluginConfig || PluginConfig->GetDeferWhileCarried()) && Character->bIsCarried()())
+            {
+                Reason = "player is being carried";
+                return true;
+            }
+            return true;
+        });
+        if (!Ran)
+        {
+            return "delivery guard faulted";
+        }
+        return Reason;
     }
 
     // Interpret the structured response the backend returns from POST /deliveries/{key}/fail.
@@ -1400,51 +1666,79 @@ namespace HeartShop
                     // Action is Execute
                     bool SpawnSuccess = false;
                     // Set only when the game was NOT touched and the cause is transient
-                    // (catalog dino cryopod: inventory full). Released, not failed.
+                    // (inventory full, buyer Noglin-controlled, ...). Released, not failed.
                     bool DeferDelivery = false;
+                    // Set when the game WAS partly mutated and the rest could not be given.
+                    // The journal entry is left "mutating" (never auto-redelivered) and the
+                    // lease is released for manual reconciliation.
+                    bool UncertainMutation = false;
                     std::string ErrorMessage = "";
 
-                    if (DeliveryType == "order")
+                    // ArkShop ShouldPreventStoreUse: never deliver while the buyer is
+                    // Noglin-controlled, unconscious, carried or has no character.
+                    const std::string DeferReason = DeliveryDeferReason(TargetPC);
+                    if (!DeferReason.empty())
+                    {
+                        DeferDelivery = true;
+                        ErrorMessage = "Delivery deferred: " + DeferReason;
+                        static CatalogDino::NoticeThrottle GuardNotices(std::chrono::seconds(60));
+                        if (GuardNotices.ShouldNotify(DeliveryKey, CatalogDino::NoticeThrottle::Clock::now()))
+                        {
+                            SendMessage(TargetPC, FString(ArkApi::Tools::Utf8Decode(
+                                "A delivery is waiting: it will arrive once you are free to receive it (" +
+                                DeferReason + ").").c_str()));
+                        }
+                    }
+                    else if (DeliveryType == "order")
                     {
                         try
                         {
-                            nlohmann::json Items = nlohmann::json::array();
-                            if (Payload.contains("items") && Payload["items"].is_array())
+                            std::vector<ItemDelivery::Line> Lines;
+                            std::string ParseError;
+                            if (!ItemDelivery::ParseLines(Payload, Lines, ParseError))
                             {
-                                Items = Payload["items"];
+                                Log::GetLog()->error("Rejected item delivery payload {}: {}", DeliveryKey, ParseError);
+                                ErrorMessage = "Bundle contains an invalid item definition: " + ParseError;
                             }
-                            else if (Payload.contains("item") && Payload["item"].is_object())
+                            else
                             {
-                                Items.push_back(Payload["item"]);
+                                const ItemGiveResult Given = GiveItemsToPlayer(TargetPC, Lines);
+                                if (Given.Status == ItemGiveStatus::Delivered)
+                                {
+                                    SpawnSuccess = true;
+                                }
+                                else if (Given.Status == ItemGiveStatus::Deferred)
+                                {
+                                    DeferDelivery = true;
+                                    ErrorMessage = Given.Error;
+                                    static CatalogDino::NoticeThrottle ItemInventoryNotices(std::chrono::seconds(60));
+                                    if (Given.InventoryFull &&
+                                        ItemInventoryNotices.ShouldNotify(DeliveryKey, CatalogDino::NoticeThrottle::Clock::now()))
+                                    {
+                                        const std::string Message = "Your inventory needs " + std::to_string(Given.SlotsNeeded) +
+                                            " free slot(s) for " + Payload.value("productName", std::string("your order")) +
+                                            " (you have " + std::to_string(Given.FreeSlots) +
+                                            "). Free some space - delivery will retry automatically.";
+                                        SendMessage(TargetPC, FString(ArkApi::Tools::Utf8Decode(Message).c_str()));
+                                    }
+                                }
+                                else if (Given.Status == ItemGiveStatus::PartiallyDelivered)
+                                {
+                                    UncertainMutation = true;
+                                    ErrorMessage = Given.Error;
+                                }
+                                else
+                                {
+                                    ErrorMessage = Given.Error.empty()
+                                        ? "Game inventory mutation failed for a bundle item"
+                                        : Given.Error;
+                                }
                             }
 
-                            bool AllItemsDelivered = !Items.empty();
-                            int DeliveredQuantity = 0;
-                            for (const auto& Item : Items)
+                            if (SpawnSuccess)
                             {
-                                const std::string BlueprintStr = Item.value("blueprint", "");
-                                const int Quantity = Item.value("quantity", 1);
-                                const float Quality = Item.value("quality", 0.0f);
-                                const bool IsBlueprint = Item.value("isBlueprint", false);
-                                if (BlueprintStr.empty() || Quantity < 1)
-                                {
-                                    AllItemsDelivered = false;
-                                    ErrorMessage = "Bundle contains an invalid item definition";
-                                    break;
-                                }
-                                FString Blueprint(ArkApi::Tools::Utf8Decode(BlueprintStr).c_str());
-                                if (!GiveItemToPlayer(TargetPC, Blueprint, Quantity, Quality, IsBlueprint))
-                                {
-                                    AllItemsDelivered = false;
-                                    ErrorMessage = "Game inventory mutation failed for a bundle item";
-                                    break;
-                                }
-                                DeliveredQuantity += Quantity;
-                            }
-
-                            if (AllItemsDelivered)
-                            {
-                                SpawnSuccess = true;
+                                long long DeliveredQuantity = 0;
+                                for (const auto& Line : Lines) DeliveredQuantity += Line.Quantity;
 
                                 // Notify player
                                 std::string ProductName = Payload.value("productName", "Item");
@@ -1452,7 +1746,7 @@ namespace HeartShop
 
                                 FString Message = FString(ArkApi::Tools::Utf8Decode(MessageTemplate).c_str());
                                 FString ProductNameFS = FString(ArkApi::Tools::Utf8Decode(ProductName).c_str());
-                                FString QuantityStr = FString::FromInt(DeliveredQuantity);
+                                FString QuantityStr(std::to_wstring(DeliveredQuantity).c_str());
 
                                 Message = Message.Replace(L"{item}", *ProductNameFS, ESearchCase::IgnoreCase);
                                 Message = Message.Replace(L"{quantity}", *QuantityStr, ESearchCase::IgnoreCase);
@@ -1582,6 +1876,25 @@ namespace HeartShop
                                 "Delivery {} mutated game state but journal completion failed; backend acknowledgement suppressed",
                                 DeliveryKey);
                         }
+                    }
+                    else if (UncertainMutation)
+                    {
+                        // Part of the delivery reached the inventory. Do NOT abort the journal:
+                        // the entry stays "mutating", so every later claim of this key is
+                        // reported as UncertainPrepared and deferred (never re-given). Release
+                        // the lease without consuming an attempt; an operator reconciles it.
+                        Log::GetLog()->critical(
+                            "Delivery {} partially delivered ({}); journal left in mutating state for manual "
+                            "reconciliation, automatic redelivery blocked",
+                            DeliveryKey, ErrorMessage);
+                        SendMessage(TargetPC, FString(ArkApi::Tools::Utf8Decode(
+                            "Part of your order could not be delivered. Staff have been alerted - please contact an admin.").c_str()));
+                        Http->ReleaseDelivery(DeliveryKey, LeaseToken, [DeliveryKey](bool Success, const nlohmann::json&) {
+                            if (!Success)
+                            {
+                                Log::GetLog()->warn("Failed to release partially delivered lease {}", DeliveryKey);
+                            }
+                        });
                     }
                     else if (DeferDelivery)
                     {
@@ -1829,64 +2142,280 @@ namespace HeartShop
         return 0;
     }
 
+    // ArkShop::ApplyItemStats equivalent for one freshly created item: sets the
+    // raw ItemStatValues entry so the item shows the configured Armor /
+    // Durability / Damage. A stat the item does not use (bUsed false) is skipped.
+    static void ApplyItemStatOverrides(UPrimalItem* Item, const ItemDelivery::Line& Line)
+    {
+        if (!Item || !Line.HasStatOverrides())
+        {
+            return;
+        }
+
+        // FItemStatInfo is opaque in the SDK; size the out-buffer from the engine's
+        // struct size (ArkShop's fixed 0x24 as a floor), zeroed, 16-byte aligned.
+        static const int StatInfoSize = (std::max)(GetStructSize<FItemStatInfo>(), 0x24);
+        const auto ReadStat = [&](const EPrimalItemStat::Type Stat, const int Desired, const bool AddOne, float& Out) {
+            std::vector<unsigned char> Buffer(static_cast<std::size_t>(StatInfoSize) + 16, 0);
+            auto* Info = reinterpret_cast<FItemStatInfo*>(Buffer.data());
+            Item->GetItemStatInfo(Info, Stat);
+            if (!Info->bUsed()())
+            {
+                return false;
+            }
+            Out = ItemDelivery::StatValueFor(
+                static_cast<float>(Desired),
+                Info->InitialValueConstantField(),
+                Info->RandomizerRangeMultiplierField(),
+                Info->StateModifierScaleField(),
+                Info->bDisplayAsPercent()(),
+                AddOne);
+            return true;
+        };
+
+        bool Updated = false;
+        float Value = 0.0f;
+        if (Line.Armor > 0 && ReadStat(EPrimalItemStat::Armor, Line.Armor, false, Value))
+        {
+            Item->ItemStatValuesField()()[EPrimalItemStat::Armor] = static_cast<unsigned __int16>(Value);
+            Updated = true;
+        }
+        if (Line.Durability > 0 && ReadStat(EPrimalItemStat::MaxDurability, Line.Durability, true, Value))
+        {
+            Item->ItemStatValuesField()()[EPrimalItemStat::MaxDurability] = static_cast<unsigned __int16>(Value);
+            Item->ItemDurabilityField() = Item->GetItemStatModifier(EPrimalItemStat::MaxDurability);
+            Updated = true;
+        }
+        if (Line.Damage > 0 && ReadStat(EPrimalItemStat::WeaponDamagePercent, Line.Damage, false, Value))
+        {
+            Item->SetItemStatValues(EPrimalItemStat::WeaponDamagePercent, static_cast<int>(Value));
+            Updated = true;
+        }
+        if (Updated)
+        {
+            Item->UpdatedItem(false);
+        }
+    }
+
+    // Gives every line of an `order` payload, all-or-nothing (ArkShop
+    // Store::BuyItem semantics, see ItemDelivery.h):
+    //   1. Preflight (no mutation): inventory present, every class loads and is an
+    //      item, and the inventory has room for ALL lines at once:
+    //        slots needed = sum(PerUnit lines: quantity)
+    //                     + sum(stackable lines: ceil(quantity / max stack))
+    //        free slots   = GetMaxInventoryItems(false) - GetCurrentNumInventoryItems()
+    //                       (0 when IsAtMaxInventoryItems(); unlimited when the
+    //                       inventory ignores the item cap)
+    //      Not enough room -> Deferred, nothing given.
+    //   2. Give each line. PerUnit: AddNewItem(class, inventory, bEquipItem=false,
+    //      bDontStack=false, quality, bForceNoBlueprint=!isBlueprint, quantity 1,
+    //      bForceBlueprint=isBlueprint, ...) once per unit + stat overrides.
+    //      Stackable: IncrementItemTemplateQuantity(class, quantity, ...,
+    //      bDontExceedMaxItems=true), which tops up and splits stacks.
+    //   3. Any shortfall or native fault after the first unit was given ->
+    //      PartiallyDelivered: the caller must NOT abort the journal (a retry could
+    //      give the delivered part twice).
+    ItemGiveResult GiveItemsToPlayer(AShooterPlayerController* Player, const std::vector<ItemDelivery::Line>& Lines)
+    {
+        ItemGiveResult Result;
+        if (Lines.empty())
+        {
+            Result.Error = "payload has no items";
+            return Result;
+        }
+
+        struct ResolvedLine
+        {
+            const ItemDelivery::Line* Line = nullptr;
+            UClass* Class = nullptr;
+            int MaxStack = 1;
+            ItemDelivery::GiveMode Mode = ItemDelivery::GiveMode::PerUnit;
+        };
+        std::vector<ResolvedLine> Resolved;
+        UPrimalInventoryComponent* Inventory = nullptr;
+
+        enum class Preflight { Ready, Defer, Fail };
+        Preflight State = Preflight::Fail;
+        const bool PreflightRan = RunNativeStep("item preflight", [&]() {
+            AShooterCharacter* Character = Player ? Player->GetPlayerCharacter() : nullptr;
+            Inventory = Character ? Character->MyInventoryComponentField() : nullptr;
+            if (!Inventory || !Inventory->IsValidLowLevel())
+            {
+                Inventory = nullptr;
+                Result.Error = "Player has no inventory yet; item delivery deferred";
+                State = Preflight::Defer;
+                return true;
+            }
+
+            UWorld* World = ArkApi::GetApiUtils().GetWorld();
+            for (const auto& Line : Lines)
+            {
+                ResolvedLine Entry;
+                Entry.Line = &Line;
+                Entry.Class = LoadClassFromUtf8(Line.Blueprint);
+                if (!IsItemClass(Entry.Class))
+                {
+                    Log::GetLog()->error("Failed to load item class: {}", Line.Blueprint);
+                    Result.Error = "Failed to load item class: " + Line.Blueprint;
+                    State = Preflight::Fail;
+                    return true;
+                }
+                auto* Default = static_cast<UPrimalItem*>(Entry.Class->GetDefaultObject(true));
+                Entry.MaxStack = Default ? Default->GetMaxItemQuantity(World) : 1;
+                Entry.Mode = ItemDelivery::ChooseGiveMode(Entry.MaxStack, Line.IsBlueprint);
+                Result.SlotsNeeded += ItemDelivery::SlotsForLine(Line.Quantity, Entry.MaxStack, Line.IsBlueprint);
+                Resolved.push_back(Entry);
+            }
+
+            Result.FreeSlots = Inventory->IsAtMaxInventoryItems() && !Inventory->bIgnoreMaxInventoryItems()()
+                ? 0
+                : ItemDelivery::FreeSlots(
+                    Inventory->GetCurrentNumInventoryItems(),
+                    Inventory->GetMaxInventoryItems(false),
+                    Inventory->bIgnoreMaxInventoryItems()());
+            if (!ItemDelivery::HasRoomFor(Result.SlotsNeeded, Result.FreeSlots))
+            {
+                Result.InventoryFull = true;
+                Result.Error = "Player inventory needs " + std::to_string(Result.SlotsNeeded) +
+                    " free slot(s), has " + std::to_string(Result.FreeSlots) + "; item delivery deferred";
+                State = Preflight::Defer;
+                return true;
+            }
+            State = Preflight::Ready;
+            return true;
+        });
+
+        if (!PreflightRan)
+        {
+            Result.Error = "Item delivery preflight faulted";
+            return Result; // Failed, nothing touched
+        }
+        if (State == Preflight::Defer)
+        {
+            Result.Status = ItemGiveStatus::Deferred;
+            return Result;
+        }
+        if (State != Preflight::Ready)
+        {
+            return Result; // Failed, nothing touched
+        }
+
+        bool AnyMutation = false;
+        for (const auto& Entry : Resolved)
+        {
+            const ItemDelivery::Line& Line = *Entry.Line;
+            int Given = 0;
+            bool StepFaulted = false;
+            const bool Ran = RunNativeStep("give item", [&]() {
+                if (!Inventory->IsValidLowLevel())
+                {
+                    return false;
+                }
+                if (Entry.Mode == ItemDelivery::GiveMode::PerUnit)
+                {
+                    for (int Unit = 0; Unit < Line.Quantity; ++Unit)
+                    {
+                        UPrimalItem* Item = UPrimalItem::AddNewItem(
+                            Entry.Class,
+                            Inventory,
+                            false,              // bEquipItem
+                            false,              // bDontStack
+                            Line.Quality,       // ItemQuality
+                            !Line.IsBlueprint,  // bForceNoBlueprint
+                            1,                  // quantityOverride
+                            Line.IsBlueprint,   // bForceBlueprint
+                            0,                  // MaxItemDifficultyClamp
+                            false,              // CreateOnClient
+                            nullptr,            // ApplyItemSkin
+                            0,                  // MinRandomQuality
+                            false,              // clampStats
+                            false);             // bIgnoreAbsolueMaxInventory
+                        if (!Item)
+                        {
+                            break;
+                        }
+                        ++Given;
+                        AnyMutation = true;
+                        ApplyItemStatOverrides(Item, Line);
+                    }
+                    return true;
+                }
+
+                // Stackable: one call for the total; the engine fills existing stacks
+                // first and splits the rest into max-size stacks.
+                const int Before = Inventory->GetItemTemplateQuantity(Entry.Class, nullptr, true, false, true, false);
+                AnyMutation = true; // from here on the inventory may have changed
+                const int Returned = Inventory->IncrementItemTemplateQuantity(
+                    Entry.Class,
+                    Line.Quantity,
+                    true,   // bReplicateToClient
+                    false,  // bIsBlueprint (blueprints are always PerUnit)
+                    nullptr,
+                    nullptr,
+                    true,   // bRequireExactClassMatch (same class the count above uses)
+                    false,  // bIsCraftingResourceConsumption
+                    false,  // bIsFromUseConsumption
+                    false,  // bIsArkTributeItem
+                    true,   // ShowHUDNotification
+                    false,  // bDontRecalcSpoilingTime
+                    true);  // bDontExceedMaxItems
+                const int After = Inventory->GetItemTemplateQuantity(Entry.Class, nullptr, true, false, true, false);
+                const int Delta = After - Before;
+                // Either measurement reaching the total counts as delivered; a short
+                // count from both is a real shortfall.
+                Given = (Delta >= Line.Quantity || Returned >= Line.Quantity)
+                    ? Line.Quantity
+                    : (std::max)(0, (std::max)(Delta, Returned));
+                if (Given < Line.Quantity)
+                {
+                    Log::GetLog()->error(
+                        "IncrementItemTemplateQuantity short for {}: wanted {}, returned {}, inventory delta {}",
+                        Line.Blueprint, Line.Quantity, Returned, Delta);
+                }
+                return true;
+            });
+            if (!Ran)
+            {
+                StepFaulted = true;
+            }
+
+            Result.UnitsDelivered += Given;
+            if (StepFaulted || Given < Line.Quantity)
+            {
+                const bool Partial = AnyMutation || Given > 0;
+                Result.Status = Partial ? ItemGiveStatus::PartiallyDelivered : ItemGiveStatus::Failed;
+                Result.Error = std::string(StepFaulted ? "Native fault while giving " : "Inventory accepted only ") +
+                    (StepFaulted ? Line.Blueprint : (std::to_string(Given) + "/" + std::to_string(Line.Quantity) + " of " + Line.Blueprint));
+                Log::GetLog()->critical(
+                    "Item delivery to SteamID {} stopped: {} (partial={})",
+                    GetSteamId(Player), Result.Error, Partial ? "true" : "false");
+                return Result;
+            }
+
+            Log::GetLog()->info("Gave item {} x{} ({}, max stack {}) to player (SteamID: {})",
+                Line.Blueprint,
+                Line.Quantity,
+                Entry.Mode == ItemDelivery::GiveMode::PerUnit ? "per unit" : "stacked",
+                Entry.MaxStack,
+                GetSteamId(Player));
+        }
+
+        Result.Status = ItemGiveStatus::Delivered;
+        return Result;
+    }
+
     bool GiveItemToPlayer(AShooterPlayerController* Player, const FString& Blueprint, int Quantity, float Quality, bool IsBlueprint)
     {
-        if (!Player || !Player->GetPlayerCharacter())
-            return false;
-
-        try
+        ItemDelivery::Line Line;
+        Line.Blueprint = ArkApi::Tools::Utf8Encode(*Blueprint);
+        Line.Quantity = Quantity;
+        Line.Quality = Quality;
+        Line.IsBlueprint = IsBlueprint;
+        if (Line.Blueprint.empty() || Line.Quantity < 1)
         {
-            // BPLoadClass needs non-const pointer
-            FString MutableBlueprint = Blueprint;
-            UClass* ItemClass = UVictoryCore::BPLoadClass(&MutableBlueprint);
-            if (!ItemClass)
-            {
-                Log::GetLog()->error("Failed to load item class: {}", ArkApi::Tools::Utf8Encode(*Blueprint));
-                return false;
-            }
-
-            // Get player inventory
-            UPrimalInventoryComponent* Inventory = Player->GetPlayerCharacter()->MyInventoryComponentField();
-            if (!Inventory)
-            {
-                Log::GetLog()->error("Player has no inventory");
-                return false;
-            }
-
-            // Create item and add to inventory
-            UPrimalItem* Item = UPrimalItem::AddNewItem(
-                ItemClass,
-                Inventory,
-                IsBlueprint,
-                false,
-                Quality,
-                false,
-                Quantity,
-                false,
-                0,
-                false,
-                nullptr,
-                0,
-                false,
-                false
-            );
-
-            if (!Item)
-            {
-                Log::GetLog()->error("Failed to create item");
-                return false;
-            }
-
-            Log::GetLog()->info("Gave item {} x{} to player (SteamID: {})",
-                ArkApi::Tools::Utf8Encode(*Blueprint), Quantity, GetSteamId(Player));
-
-            return true;
-        }
-        catch (const std::exception& e)
-        {
-            Log::GetLog()->error("Exception in GiveItemToPlayer: {}", e.what());
             return false;
         }
+        return GiveItemsToPlayer(Player, {Line}).Status == ItemGiveStatus::Delivered;
     }
 
     DeliveryAction PrepareDelivery(

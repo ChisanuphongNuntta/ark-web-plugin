@@ -28,6 +28,16 @@ namespace HeartShop
         float GetStatsInterval() const { return m_StatsInterval; }
         float GetHeartbeatInterval() const { return m_HeartbeatInterval; }
 
+        // Delivery guards (ArkShop ShouldPreventStoreUse equivalents). When the
+        // buyer is in one of these states a delivery is DEFERRED: nothing is given,
+        // the lease is released and no backend attempt is consumed.
+        //   HeartShop.Delivery.DeferWhileNoglinControlled (default true)
+        //   HeartShop.Delivery.DeferWhileUnconscious      (default true)
+        //   HeartShop.Delivery.DeferWhileCarried          (default true)
+        bool GetDeferWhileNoglinControlled() const { return m_DeferWhileNoglinControlled; }
+        bool GetDeferWhileUnconscious() const { return m_DeferWhileUnconscious; }
+        bool GetDeferWhileCarried() const { return m_DeferWhileCarried; }
+
         std::string GetMessagePrefix() const;
         std::string GetMessage(const std::string& Key) const;
 
@@ -42,5 +52,8 @@ namespace HeartShop
         float m_PollInterval;
         float m_StatsInterval;
         float m_HeartbeatInterval;
+        bool m_DeferWhileNoglinControlled = true;
+        bool m_DeferWhileUnconscious = true;
+        bool m_DeferWhileCarried = true;
     };
 }

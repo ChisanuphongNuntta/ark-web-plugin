@@ -29,18 +29,61 @@ namespace HeartShop::CatalogDino
     inline constexpr const char* CryopodItemBlueprint =
         "Blueprint'/Game/Extinction/CoreBlueprints/Weapons/PrimalItem_WeaponEmptyCryopod.PrimalItem_WeaponEmptyCryopod'";
 
+    // Advertised in the heartbeat: the plugin honours the optional dino.gender,
+    // dino.saddleBlueprint, dino.stryderHead and dino.stryderChest fields
+    // (ArkShop GiveDino equivalents). The backend only sends them to servers that
+    // advertise it, so older plugins keep receiving the legacy payload.
+    inline constexpr const char* ExtrasCapability = "delivery.dino.extras.v1";
+
+    // ArkShop "Gender": applied only when the species uses gender (bUsesGender).
+    enum class Gender
+    {
+        Random, // leave the spawned dino's rolled gender alone (default)
+        Male,
+        Female
+    };
+
+    // "male" | "female" | "random" (case-insensitive). False for anything else.
+    bool ParseGender(const std::string& Text, Gender& Out);
+    const char* GenderName(Gender Value);
+
+    // Tek Stryder (Genesis 2) attachment options, ArkShop StryderHead/StryderChest.
+    // -1 = keep the default attachment. Head: 0 Harvester, 1 Silence Cannon,
+    // 2 Machine Gun. Chest: 0 Shield, 1 One-sided Shield, 2 Large Cannon,
+    // 3 Saddlebags. (Ranges match what ArkShop's HandleStryder accepts: its head
+    // check is `< 3`, so the Radar head is not offered.)
+    inline constexpr int StryderAttachmentNone = -1;
+    inline constexpr int StryderHeadMax = 2;
+    inline constexpr int StryderChestMax = 3;
+    bool IsTekStryderBlueprint(const std::string& Blueprint);
+    // Item blueprint for an attachment index, nullptr when the index is out of range.
+    const char* StryderHeadBlueprint(int Index);
+    const char* StryderChestBlueprint(int Index);
+
     struct Request
     {
         std::string Blueprint;
         int Level = 0;
         bool Neutered = false;
         bool Cryopod = false;
+        // Optional extras (absent in legacy payloads; defaults = legacy behaviour).
+        Gender Sex = Gender::Random;
+        // Saddle item blueprint: stored inside the cryopod (released with the dino)
+        // or equipped on a live spawn. Empty = no saddle.
+        std::string SaddleBlueprint;
+        int StryderHead = StryderAttachmentNone;
+        int StryderChest = StryderAttachmentNone;
     };
 
     // Validates a dino_catalog payload with exactly the guards the plugin has
     // always applied (schemaVersion 1, productType "dino", blueprint non-empty,
     // level 1..10000, forceTame == true), plus: neutered/cryopod, when present,
     // must be booleans. A missing cryopod flag means the legacy live-spawn path.
+    // Optional extras, each absent/null = legacy behaviour:
+    //   gender: "male" | "female" | "random" (case-insensitive);
+    //   saddleBlueprint: string ("" = none);
+    //   stryderHead: integer -1..2, stryderChest: integer -1..3 (Tek Stryder only).
+    // A present extra with the wrong type/value rejects the payload.
     bool ParseRequest(const nlohmann::json& Payload, Request& Out, std::string& Error);
 
     enum class Outcome

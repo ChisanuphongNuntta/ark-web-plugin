@@ -17,6 +17,10 @@
  *   payload.items (array) or payload.item (object); every entry needs a non-empty
  *   string blueprint and an integer quantity >= 1; quality (number, default 0) and
  *   isBlueprint (bool, default false) are passed to UPrimalItem::AddNewItem.
+ *   Optional armor / durability / damage (integers 1..65535, ArkShop "Armor",
+ *   "Durability", "Damage") are only emitted for a server that advertises
+ *   ITEM_STATS_CAPABILITY; the plugin applies them to non-stackable items. Absent
+ *   keys = no override, so the legacy payload is byte-identical.
  *
  * Pure module: no Prisma, no Express.
  */
@@ -24,8 +28,36 @@
 export const ITEM_DELIVERY_CAPABILITY = 'delivery.item.v1';
 export const ITEM_BUNDLE_DELIVERY_CAPABILITY = 'delivery.item.bundle.v1';
 export const ITEM_DELIVERY_TYPE = 'order';
+/** Plugin capability: per-line armor/durability/damage overrides are applied. */
+export const ITEM_STATS_CAPABILITY = 'delivery.item.stats.v1';
+export const ITEM_STAT_MAX = 65_535;
 
-export type ItemDeliveryLine = { blueprint: string; quantity: number; quality: number; isBlueprint: boolean };
+export type ItemDeliveryLine = {
+  blueprint: string;
+  quantity: number;
+  quality: number;
+  isBlueprint: boolean;
+  armor?: number;
+  durability?: number;
+  damage?: number;
+};
+
+type ItemStatOverrides = Pick<ItemDeliveryLine, 'armor' | 'durability' | 'damage'>;
+
+/** True when the target server's plugin applies item stat overrides. */
+export function serverSupportsItemStats(serverCapabilities: readonly string[] | null | undefined): boolean {
+  return Array.isArray(serverCapabilities) && serverCapabilities.includes(ITEM_STATS_CAPABILITY);
+}
+
+/** ArkShop Armor/Durability/Damage -> emitted only when a positive integer <= 65535. */
+function statOverrides(item: any): ItemStatOverrides {
+  const out: ItemStatOverrides = {};
+  for (const [source, key] of [['Armor', 'armor'], ['Durability', 'durability'], ['Damage', 'damage']] as const) {
+    const value = Number(item?.[source] ?? 0);
+    if (Number.isSafeInteger(value) && value > 0 && value <= ITEM_STAT_MAX) out[key] = value;
+  }
+  return out;
+}
 
 export type ItemDeliveryPayload = {
   schemaVersion: 1;
@@ -52,12 +84,17 @@ const cleanBlueprint = (value: unknown) => String(value ?? '').replace(/^"+|"+$/
  * Build the delivery for an item product bought `purchasedQuantity` times.
  * Definition entries with an empty blueprint or a non-integer total quantity are
  * dropped; when none remain the single-item projection is used.
+ *
+ * `serverCapabilities` is the capability manifest of the server the job is queued
+ * for; stat overrides are only included when it has ITEM_STATS_CAPABILITY.
  */
 export function resolveItemDelivery(
   product: ItemDeliveryProduct,
   orderId: string,
   purchasedQuantity: number,
+  serverCapabilities: readonly string[] | null | undefined = [],
 ): { deliveryType: typeof ITEM_DELIVERY_TYPE; payload: ItemDeliveryPayload } {
+  const withStats = serverSupportsItemStats(serverCapabilities);
   const configuredItems: ItemDeliveryLine[] = Array.isArray(product.deliveryPayload?.definition?.Items)
     ? product.deliveryPayload.definition.Items
       .map((item: any) => ({
@@ -65,6 +102,7 @@ export function resolveItemDelivery(
         quantity: Math.max(1, Number(item?.Amount ?? 1)) * purchasedQuantity,
         quality: Math.max(0, Number(item?.Quality ?? 0)),
         isBlueprint: Boolean(item?.ForceBlueprint),
+        ...(withStats ? statOverrides(item) : {}),
       }))
       .filter((item: ItemDeliveryLine) => item.blueprint && Number.isSafeInteger(item.quantity))
     : [];
@@ -111,6 +149,12 @@ export function pluginRejectsItemPayload(payload: unknown): string | null {
     }
     if (item.quality !== undefined && (typeof item.quality !== 'number' || !Number.isFinite(item.quality))) return `items[${index}].quality must be a number`;
     if (item.isBlueprint !== undefined && typeof item.isBlueprint !== 'boolean') return `items[${index}].isBlueprint must be boolean`;
+    for (const key of ['armor', 'durability', 'damage'] as const) {
+      const value = item[key];
+      if (value !== undefined && value !== null && (!Number.isSafeInteger(value) || (value as number) < 0 || (value as number) > ITEM_STAT_MAX)) {
+        return `items[${index}].${key} must be an integer 0..${ITEM_STAT_MAX}`;
+      }
+    }
   }
   return null;
 }

@@ -34,7 +34,7 @@ const buildDeliveryPayload = (
     return { deliveryType: result.deliveryType, payload: result.payload };
   }
 
-  return resolveItemDelivery(product, orderId, purchasedQuantity);
+  return resolveItemDelivery(product, orderId, purchasedQuantity, serverCapabilities);
 };
 
 export class GameShopController {

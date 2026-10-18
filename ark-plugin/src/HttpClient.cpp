@@ -1,5 +1,6 @@
 #include "HttpClient.h"
 #include "CatalogDino.h"
+#include "ItemDelivery.h"
 #include "GameThreadDispatcher.h"
 #include "RequestSigning.h"
 #include <Logger/Logger.h>
@@ -155,7 +156,12 @@ namespace
             "marketplace.asset-lock.v1",
             "marketplace.dino-native.v2",
             "delivery.dino.v2",
-            "protocol.v1"
+            "protocol.v1",
+            // Optional payload extras honoured by this plugin (ArkShop parity):
+            // per-item armor/durability/damage, and catalog dino gender / saddle /
+            // Tek Stryder attachments. The backend sends them only when advertised.
+            ItemDelivery::ItemStatsCapability,
+            CatalogDino::ExtrasCapability
         });
         // Only once the cryopod item class has resolved on this server; otherwise
         // the backend keeps sending the legacy live-spawn dino payload.

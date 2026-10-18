@@ -75,3 +75,18 @@ natives that CTest cannot exercise. Run these once per server after deploying:
 5. Fill the inventory completely and buy: chat says the inventory is full, log
    shows `deferred (no attempt consumed)`, the backend job stays pending with its
    attempt count unchanged; free a slot and the pod arrives on the next poll.
+
+## Item / dino extras smoke test (in game, after deploy)
+
+Item gives follow ArkShop `Store::BuyItem` and are all-or-nothing:
+
+1. Buy an armor piece x3: three separate items arrive (the old plugin gave one).
+2. Buy a stackable above one stack (e.g. 301 ingots at stack 300 on a server
+   with that stack size): two stacks arrive, nothing is lost.
+3. Fill the inventory so fewer free slots remain than the order needs and buy:
+   chat says how many slots are needed, log shows `deferred (no attempt
+   consumed)`, nothing was given; free the slots and the order arrives whole.
+4. While controlled by a Noglin (or unconscious / carried) run `/iris claim`:
+   delivery is deferred with a chat notice and arrives once released.
+5. On a server advertising `delivery.dino.extras.v1`, buy a dino with a saddle:
+   the saddle is equipped when the cryopod is released (or on the live tame).

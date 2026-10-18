@@ -93,6 +93,15 @@ namespace HeartShop
             m_StatsInterval = Config.value("StatsInterval", 300);
             m_HeartbeatInterval = Config.value("HeartbeatInterval", 60);
 
+            // Optional section; a missing key keeps the safe default (defer).
+            const auto Delivery = Config.value("Delivery", nlohmann::json::object());
+            if (Delivery.is_object())
+            {
+                m_DeferWhileNoglinControlled = Delivery.value("DeferWhileNoglinControlled", true);
+                m_DeferWhileUnconscious = Delivery.value("DeferWhileUnconscious", true);
+                m_DeferWhileCarried = Delivery.value("DeferWhileCarried", true);
+            }
+
             Log::GetLog()->info("Config loaded successfully");
             Log::GetLog()->info("  API URL: {}", m_ApiUrl);
             Log::GetLog()->info("  Server ID: {}", m_ServerId);

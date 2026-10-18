@@ -19,6 +19,14 @@
  * advertises the capability only after the cryopod item class loads on that
  * server; a full buyer inventory releases the lease (no attempt consumed) instead
  * of failing, and a missing cryopod class falls back to the live spawn.
+ * An ArkShop definition with PreventCryo: true never asks for a cryopod.
+ *
+ * Optional ArkShop GiveDino extras, only emitted for a server that advertises
+ * DINO_EXTRAS_CAPABILITY (each key omitted when unset, so the legacy payload is
+ * byte-identical): gender ("male" | "female"; "random" = omitted),
+ * saddleBlueprint (stored in the cryopod / equipped on a live tame),
+ * stryderHead (0..2) and stryderChest (0..3) for the Tek Stryder.
+ * GachaResources is not supported by the plugin and is never sent.
  *
  * Pure module: no Prisma, no Express.
  */
@@ -28,6 +36,10 @@ export const DINO_CATALOG_CAPABILITY = 'delivery.dino.catalog.v1';
 export const DINO_CATALOG_DELIVERY_TYPE = 'dino_catalog';
 /** Plugin capability: catalog dinos can be delivered inside a cryopod (dino.cryopod). */
 export const DINO_CRYOPOD_CAPABILITY = 'delivery.dino.cryopod.v1';
+/** Plugin capability: dino.gender / saddleBlueprint / stryderHead / stryderChest are honoured. */
+export const DINO_EXTRAS_CAPABILITY = 'delivery.dino.extras.v1';
+export const STRYDER_HEAD_MAX = 2;
+export const STRYDER_CHEST_MAX = 3;
 export const DINO_LEVEL_MIN = 1;
 export const DINO_LEVEL_MAX = 10_000;
 
@@ -36,8 +48,20 @@ export type DinoCatalogDeliveryPayload = {
   orderId: string;
   productType: 'dino';
   productName: string;
-  dino: { blueprint: string; level: number; forceTame: true; neutered: boolean; cryopod?: true };
+  dino: {
+    blueprint: string;
+    level: number;
+    forceTame: true;
+    neutered: boolean;
+    cryopod?: true;
+    gender?: 'male' | 'female';
+    saddleBlueprint?: string;
+    stryderHead?: number;
+    stryderChest?: number;
+  };
 };
+
+type DinoExtras = Pick<DinoCatalogDeliveryPayload['dino'], 'gender' | 'saddleBlueprint' | 'stryderHead' | 'stryderChest'>;
 
 export type DinoCatalogProduct = {
   name: string;
@@ -50,6 +74,35 @@ export type DinoCatalogDeliveryResult =
   | { ok: false; reason: 'level' | 'blueprint' };
 
 const cleanBlueprint = (value: unknown) => String(value ?? '').replace(/^"+|"+$/g, '').trim();
+
+/** First set value among the given keys of the spawn row and the ArkShop definition. */
+function pick(sources: any[], ...keys: string[]): unknown {
+  for (const source of sources) {
+    if (!source || typeof source !== 'object') continue;
+    for (const key of keys) if (source[key] !== undefined && source[key] !== null) return source[key];
+  }
+  return undefined;
+}
+
+function attachmentIndex(value: unknown, max: number): number | undefined {
+  if (value === undefined) return undefined;
+  const index = Number(value);
+  return Number.isSafeInteger(index) && index >= 0 && index <= max ? index : undefined;
+}
+
+/** Optional ArkShop GiveDino extras (each omitted when unset or invalid). */
+function dinoExtras(sources: any[]): DinoExtras {
+  const extras: DinoExtras = {};
+  const gender = String(pick(sources, 'gender', 'Gender') ?? '').trim().toLowerCase();
+  if (gender === 'male' || gender === 'female') extras.gender = gender;
+  const saddle = cleanBlueprint(pick(sources, 'saddleBlueprint', 'SaddleBlueprint'));
+  if (saddle) extras.saddleBlueprint = saddle;
+  const head = attachmentIndex(pick(sources, 'stryderHead', 'StryderHead'), STRYDER_HEAD_MAX);
+  if (head !== undefined) extras.stryderHead = head;
+  const chest = attachmentIndex(pick(sources, 'stryderChest', 'StryderChest'), STRYDER_CHEST_MAX);
+  if (chest !== undefined) extras.stryderChest = chest;
+  return extras;
+}
 
 /**
  * Build the delivery for a dino product. The spawn definition comes from
@@ -74,6 +127,9 @@ export function resolveDinoCatalogDelivery(
   if (!blueprint || blueprint !== product.itemBlueprint) {
     return { ok: false, reason: 'blueprint' };
   }
+  // Extras may live on the spawn row or only on the imported ArkShop definition.
+  const sources = [configured, product.deliveryPayload?.definition];
+  const preventCryo = pick(sources, 'preventCryo', 'PreventCryo') === true;
   return {
     ok: true,
     deliveryType: DINO_CATALOG_DELIVERY_TYPE,
@@ -87,7 +143,8 @@ export function resolveDinoCatalogDelivery(
         level,
         forceTame: true,
         neutered: Boolean(configured.neutered ?? configured.Neutered),
-        ...(serverSupportsDinoCryopod(serverCapabilities) ? { cryopod: true as const } : {}),
+        ...(serverSupportsDinoCryopod(serverCapabilities) && !preventCryo ? { cryopod: true as const } : {}),
+        ...(serverSupportsDinoExtras(serverCapabilities) ? dinoExtras(sources) : {}),
       },
     },
   };
@@ -96,6 +153,11 @@ export function resolveDinoCatalogDelivery(
 /** True when the target server's plugin can deliver catalog dinos in a cryopod. */
 export function serverSupportsDinoCryopod(serverCapabilities: readonly string[] | null | undefined): boolean {
   return Array.isArray(serverCapabilities) && serverCapabilities.includes(DINO_CRYOPOD_CAPABILITY);
+}
+
+/** True when the target server's plugin honours the optional dino extras. */
+export function serverSupportsDinoExtras(serverCapabilities: readonly string[] | null | undefined): boolean {
+  return Array.isArray(serverCapabilities) && serverCapabilities.includes(DINO_EXTRAS_CAPABILITY);
 }
 
 /**
@@ -114,5 +176,15 @@ export function pluginRejectsDinoPayload(payload: unknown): string | null {
   if (dino.forceTame !== true) return 'dino.forceTame must be true';
   if (dino.neutered !== undefined && typeof dino.neutered !== 'boolean') return 'dino.neutered must be boolean';
   if (dino.cryopod !== undefined && typeof dino.cryopod !== 'boolean') return 'dino.cryopod must be boolean';
+  if (dino.gender != null && (typeof dino.gender !== 'string' || !['male', 'female', 'random'].includes(dino.gender.toLowerCase()))) {
+    return 'dino.gender must be "male", "female" or "random"';
+  }
+  if (dino.saddleBlueprint != null && typeof dino.saddleBlueprint !== 'string') return 'dino.saddleBlueprint must be a string';
+  if (dino.stryderHead != null && (!Number.isInteger(dino.stryderHead) || dino.stryderHead < -1 || dino.stryderHead > STRYDER_HEAD_MAX)) {
+    return `dino.stryderHead must be an integer -1..${STRYDER_HEAD_MAX}`;
+  }
+  if (dino.stryderChest != null && (!Number.isInteger(dino.stryderChest) || dino.stryderChest < -1 || dino.stryderChest > STRYDER_CHEST_MAX)) {
+    return `dino.stryderChest must be an integer -1..${STRYDER_CHEST_MAX}`;
+  }
   return null;
 }

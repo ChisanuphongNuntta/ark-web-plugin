@@ -1,6 +1,6 @@
 {
   "HeartShop": {
-    "ApiUrl": "https://localhost/api/plugin",
+    "ApiUrl": "https://localhost:8443/api/plugin",
     "ApiKey": "your-server-hmac-secret-here",
     "KeyId": "your-server-key-id-here",
     "ServerId": 1,
@@ -10,6 +10,11 @@
     "PollInterval": 30,
     "StatsInterval": 300,
     "HeartbeatInterval": 60,
+    "Delivery": {
+      "DeferWhileNoglinControlled": true,
+      "DeferWhileUnconscious": true,
+      "DeferWhileCarried": true
+    },
     "Messages": {
       "Prefix": "[HeartShop]",
       "ClaimSuccess": "You received: {item} x{quantity}",

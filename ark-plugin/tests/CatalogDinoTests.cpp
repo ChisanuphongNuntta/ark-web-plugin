@@ -297,6 +297,79 @@ namespace
         Check(Throttle.ShouldNotify("d", T0 + seconds(200)), "fourth key evicts expired entries");
         Check(Throttle.Size() <= 3, "throttle memory is bounded");
     }
+
+    void TestGender()
+    {
+        Gender Value = Gender::Random;
+        Check(ParseGender("male", Value) && Value == Gender::Male, "male parses");
+        Check(ParseGender("FEMALE", Value) && Value == Gender::Female, "gender is case-insensitive");
+        Check(ParseGender("Random", Value) && Value == Gender::Random, "random parses");
+        Value = Gender::Male;
+        Check(!ParseGender("", Value) && Value == Gender::Male, "empty gender rejected, output untouched");
+        Check(!ParseGender("m", Value), "abbreviation rejected");
+        Check(!ParseGender("female ", Value), "trailing space rejected");
+        Check(std::string(GenderName(Gender::Female)) == "female", "gender name");
+    }
+
+    void TestExtras()
+    {
+        Request Parsed;
+        std::string Error;
+
+        // Legacy payload: every extra at its legacy default.
+        Check(ParseRequest(BasePayload(), Parsed, Error), "legacy payload parses");
+        Check(Parsed.Sex == Gender::Random, "no gender -> random (untouched)");
+        Check(Parsed.SaddleBlueprint.empty(), "no saddle");
+        Check(Parsed.StryderHead == StryderAttachmentNone && Parsed.StryderChest == StryderAttachmentNone,
+              "no stryder attachments");
+
+        auto Payload = BasePayload();
+        Payload["dino"]["cryopod"] = true;
+        Payload["dino"]["gender"] = "female";
+        Payload["dino"]["saddleBlueprint"] =
+            "Blueprint'/Game/PrimalEarth/CoreBlueprints/Items/Armor/Saddles/PrimalItemArmor_RexSaddle.PrimalItemArmor_RexSaddle'";
+        Payload["dino"]["stryderHead"] = 2;
+        Payload["dino"]["stryderChest"] = 3;
+        Check(ParseRequest(Payload, Parsed, Error), "payload with extras parses");
+        Check(Parsed.Cryopod && Parsed.Sex == Gender::Female, "gender parsed with cryopod");
+        Check(Parsed.SaddleBlueprint.find("RexSaddle") != std::string::npos, "saddle parsed");
+        Check(Parsed.StryderHead == 2 && Parsed.StryderChest == 3, "stryder attachments parsed");
+
+        // null extras behave like absent ones.
+        for (const char* Key : {"gender", "saddleBlueprint", "stryderHead", "stryderChest"})
+        {
+            auto Nulls = BasePayload();
+            Nulls["dino"][Key] = nullptr;
+            Check(ParseRequest(Nulls, Parsed, Error), "null extra accepted");
+        }
+
+        const auto Rejects = [&](const char* Key, nlohmann::json Value, const char* What) {
+            auto Bad = BasePayload();
+            Bad["dino"][Key] = Value;
+            Check(!ParseRequest(Bad, Parsed, Error), What);
+            Check(Error.find(Key) != std::string::npos, "error names the field");
+        };
+        Rejects("gender", "unknown", "unknown gender rejected");
+        Rejects("gender", true, "boolean gender rejected");
+        Rejects("saddleBlueprint", 12, "numeric saddle rejected");
+        Rejects("stryderHead", 3, "head index 3 (outside ArkShop's range) rejected");
+        Rejects("stryderHead", -2, "head index -2 rejected");
+        Rejects("stryderChest", 4, "chest index 4 rejected");
+        Rejects("stryderChest", "1", "string chest index rejected");
+
+        // Tek Stryder detection and attachment tables.
+        Check(IsTekStryderBlueprint(
+                  "Blueprint'/Game/Genesis2/Dinos/TekStrider/TekStrider_Character_BP.TekStrider_Character_BP'"),
+              "tek stryder detected");
+        Check(!IsTekStryderBlueprint(BasePayload()["dino"]["blueprint"].get<std::string>()), "rex is not a stryder");
+        for (int Index = 0; Index <= StryderHeadMax; ++Index)
+            Check(StryderHeadBlueprint(Index) != nullptr, "head attachment blueprint exists");
+        for (int Index = 0; Index <= StryderChestMax; ++Index)
+            Check(StryderChestBlueprint(Index) != nullptr, "chest attachment blueprint exists");
+        Check(StryderHeadBlueprint(StryderHeadMax + 1) == nullptr && StryderHeadBlueprint(-1) == nullptr,
+              "head out of range -> none");
+        Check(StryderChestBlueprint(StryderChestMax + 1) == nullptr, "chest out of range -> none");
+    }
 }
 
 int main()
@@ -306,6 +379,8 @@ int main()
     TestRunnerScenarios();
     TestCapabilityFlag();
     TestNoticeThrottle();
+    TestGender();
+    TestExtras();
     if (Failures != 0)
     {
         std::fprintf(stderr, "%d check(s) failed\n", Failures);

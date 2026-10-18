@@ -28,6 +28,8 @@ set(SOURCES
     src/DinoPayload.h
     src/CatalogDino.cpp
     src/CatalogDino.h
+    src/ItemDelivery.cpp
+    src/ItemDelivery.h
     src/WalletNotifications.cpp
     src/WalletNotifications.h
     src/Config.cpp
@@ -178,4 +180,18 @@ if(BUILD_TESTING)
         target_link_options(CatalogDinoTests PRIVATE /Brepro)
     endif()
     add_test(NAME CatalogDinoTests COMMAND CatalogDinoTests)
+    add_executable(ItemDeliveryTests
+        tests/ItemDeliveryTests.cpp
+        src/ItemDelivery.cpp
+        src/ItemDelivery.h
+    )
+    target_include_directories(ItemDeliveryTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/json-3.12.0/single_include
+    )
+    if(MSVC)
+        target_compile_options(ItemDeliveryTests PRIVATE /utf-8)
+        target_link_options(ItemDeliveryTests PRIVATE /Brepro)
+    endif()
+    add_test(NAME ItemDeliveryTests COMMAND ItemDeliveryTests)
 endif()
