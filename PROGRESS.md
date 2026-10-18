@@ -13,6 +13,15 @@
   - Admin rows `balanceAfter` fallback ordered by `postedAt`. CSV export uses keyset pagination with a 5s settle snapshot and adds a truncation marker row. Reconcile logs Redis-lock skips and, after 2 windows, runs without the lock (audit `ledger_reconcile_degraded`).
 - Verified: backend `tsc` + `vitest run tests/unit` (561 tests), frontend `tsc` + `eslint` (0 errors), `heart-plugin-backend:tx-check` and `heart-plugin-frontend:tx-check` Docker builds. Not deployed and no containers restarted.
 
+## Pending owner decisions — end of session 2026-10-18 23:15 (+07)
+
+- Server1: `drain_mode=false`, lifted for the in-game smoke test. The test passed: 3 items and 1 Aquatica dino (Tiktaalik) delivered. Server2 is still drained.
+- Cryopod plugin is built (HeartShop.dll SHA-256 3a22c8e9..., commit d7c7c15) but NOT deployed. It needs a Server1 restart or plugin reload. Steps are in ark-plugin/BUILD.md.
+- nginx 1.28.2 → 1.30.6: config tested OK, awaiting approval.
+- Refunds posted before 2026-10-18 sit in the `refundable` sub-account. Decide whether to move them to `available`.
+- Legacy items to fix: #212, #267 and #810 have names that don't match what they deliver. The Genesis Part 2 port 28013 appears twice.
+- Deploys cause a few seconds of plugin 502s while the gateway recreates. Consider running 2 gateway replicas.
+
 ## Item catalog + dossier art + game servers online — 2026-10-18
 
 - Items: 1,676 active (was 538), applied via `scripts/item-catalog/apply-plan.ts --apply` (backup `backups/postgres/heartshop-pre-item-catalog-20261018-152656.dump`). Legacy rows were left untouched apart from added images. 167 drafts stay off (ASA-only, platform-exclusive, mission-only, admin/debug, etc.). Icons: `frontend/public/images/catalog/ark/items` (1,501 webp).
