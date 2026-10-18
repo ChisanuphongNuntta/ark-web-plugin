@@ -89,7 +89,6 @@ body { background: radial-gradient(ellipse at 90% 0%, #17374a 0, transparent 45r
 .frozen-artwork { display:block; position:relative; overflow:hidden; isolation:isolate; background:radial-gradient(ellipse at 45% 25%,#33586b,#102637 78%); border-radius:inherit; }
 .frozen-artwork > img { width:100%; height:100%; position:relative; z-index:1; }
 .frozen-artwork::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:2; border:1px solid #cdf1ff22; background:linear-gradient(145deg,#c0efff12,transparent 35%,transparent 75%,#9bdbef18); border-radius:inherit; }
-.frozen-artwork-corner { position:absolute; right:9px; top:7px; color:#e0f8ff; z-index:3; font-size:17px; text-shadow:0 1px 3px #071725; }
 .frozen-catalog-layout { display:grid; grid-template-columns:220px minmax(0,1fr); gap:28px; align-items:start; }
 .frozen-category-list { position:sticky; top:130px; max-height:calc(100vh - 150px); overflow-y:auto; scrollbar-width:thin; }
 .frozen-category-list button { display:flex; width:100%; justify-content:space-between; gap:8px; text-align:left; padding:11px 12px; font-size:13px; border-radius:8px; color:#a2b7c7; }

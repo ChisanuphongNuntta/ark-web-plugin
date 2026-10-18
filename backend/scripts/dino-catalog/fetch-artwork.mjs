@@ -50,7 +50,10 @@ const API = 'https://ark.wiki.gg/api.php';
 const WIKI = 'https://ark.wiki.gg/wiki/';
 const USER_AGENT = 'IRIS-Catalog-Artwork/1.0 (IRIS Thailand ARK shop catalog artwork sync; admin@iris-th.cloud) node-fetch';
 const MIN_INTERVAL_MS = 600;
-const MAX_SIDE = 512;
+const dossierSet = process.argv.includes('--dossier-set');
+// --dossier-set: parchment dossier art for EVERY dino product (owner request 2026-10-18),
+// written to a separate folder/manifest so the icon set stays intact.
+const MAX_SIDE = dossierSet ? 900 : 512;
 const ASE = 'ARK: Survival Evolved';
 
 function argument(name, fallback = null) {
@@ -65,13 +68,13 @@ if (!productsPath) {
   process.exit(2);
 }
 const cacheDir = path.resolve(argument('--cache', path.join(os.tmpdir(), 'iris-dino-artwork-cache')));
-const prefer = argument('--prefer', 'icon');
+const prefer = dossierSet ? 'dossier' : argument('--prefer', 'icon');
 const dryRun = flag('--dry-run');
 const limit = Number(argument('--limit', '0')) || 0;
-const assetsDir = path.join(frontendRoot, 'public/images/catalog/ark/dinos');
-const publicPrefix = '/images/catalog/ark/dinos';
-const seedPath = path.join(repoRoot, 'backend/prisma/seed-data/dino-artwork.json');
-const attributionPath = path.join(frontendRoot, 'public/images/catalog/ark/ATTRIBUTION.md');
+const assetsDir = path.join(frontendRoot, dossierSet ? 'public/images/catalog/ark/dossiers' : 'public/images/catalog/ark/dinos');
+const publicPrefix = dossierSet ? '/images/catalog/ark/dossiers' : '/images/catalog/ark/dinos';
+const seedPath = path.join(repoRoot, dossierSet ? 'backend/prisma/seed-data/dino-dossier-artwork.json' : 'backend/prisma/seed-data/dino-artwork.json');
+const attributionPath = path.join(frontendRoot, dossierSet ? 'public/images/catalog/ark/ATTRIBUTION-dossiers.md' : 'public/images/catalog/ark/ATTRIBUTION.md');
 
 if (cacheDir.toLowerCase().startsWith(repoRoot.toLowerCase())) {
   throw new Error(`--cache must be outside the repository (${cacheDir})`);
@@ -232,7 +235,7 @@ for (const product of products) {
   if (!key) continue;
   productKeys.add(key);
   const placeholder = product.imageUrl && sharedImages.has(product.imageUrl);
-  if (product.imageUrl && !placeholder) continue;
+  if (!dossierSet && product.imageUrl && !placeholder) continue;
   addTarget(key, {
     productId: product.id,
     name: cleanProductName(product.name),
@@ -280,6 +283,20 @@ function candidatesFor(target, entity) {
     fallback.push({ title: fileTitle(`Dossier ${name}.png`), kind: 'base-dossier' });
   }
   const seen = new Set();
+  if (prefer === 'dossier' && dossierSet) {
+    // Variants (Aberrant/X/R/Tek/Abyssal) have no dossier of their own: use the base
+    // creature's dossier before falling back to any icon, so the set stays uniform.
+    const stripped = names.map((name) => name.replace(/^(Aberrant|Abyssal|Tek)\s+|^(X|R)-/i, '').trim());
+    const baseNames = [...new Set([base, entity?.VariantOf, ...stripped].filter(Boolean))].filter((name) => !names.includes(name));
+    const baseDossiers = baseNames.map((name) => ({ title: fileTitle(`Dossier ${name}.png`), kind: 'base-dossier' }));
+    const ordered = [
+      ...own.filter((c) => c.kind === 'dossier'),
+      ...baseDossiers,
+      ...own.filter((c) => c.kind !== 'dossier'),
+      ...fallback.filter((c) => c.kind === 'base-icon'),
+    ];
+    return ordered.filter((candidate) => !seen.has(candidate.title) && seen.add(candidate.title));
+  }
   return [...own, ...fallback].filter((candidate) => !seen.has(candidate.title) && seen.add(candidate.title));
 }
 
@@ -331,7 +348,7 @@ for (const { target, entity, candidates } of plan) {
     inProducts: target.productIds.length > 0,
   };
 
-  const legacy = legacyImageByBlueprint.get(target.key);
+  const legacy = dossierSet ? null : legacyImageByBlueprint.get(target.key);
   if (legacy) {
     entries[target.key] = { imageUrl: legacy, ...base, file: null, reused: 'legacy' };
     stats.reusedLegacy += 1;
@@ -416,7 +433,7 @@ const attributionRows = Object.entries(sortedEntries)
   .sort();
 const attribution = `# ARK creature artwork attribution
 
-Files in \`dinos/\` were downloaded from the [ARK Official Community Wiki](https://ark.wiki.gg/)
+Files in \`${path.basename(assetsDir)}/\` were downloaded from the [ARK Official Community Wiki](https://ark.wiki.gg/)
 by \`backend/scripts/dino-catalog/fetch-artwork.mjs\` and converted to WebP (max ${MAX_SIDE}px, quality 80).
 
 - Wiki content is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) unless noted on the file page.

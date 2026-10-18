@@ -19,7 +19,6 @@ export function ProductArtwork({product,alt,className='h-full w-full',fit='conta
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={placeholder ? 'ภาพประกอบระหว่างจัดเตรียมรูปสินค้า' : alt ?? product?.name ?? 'ภาพสินค้า'} loading="lazy" decoding="async" className={fit === 'contain' ? 'object-contain' : 'object-cover'} onError={event => { const image=event.currentTarget; if(!image.dataset.fallback){image.dataset.fallback='true';image.src='/images/products/iris-product-generic.svg';} }} />
       <span className={`frozen-artwork-placeholder ${placeholder ? 'is-visible' : ''}`}>กำลังจัดเตรียมรูป</span>
-      <span className="frozen-artwork-corner" aria-hidden="true">✧</span>
     </span>
   );
 }

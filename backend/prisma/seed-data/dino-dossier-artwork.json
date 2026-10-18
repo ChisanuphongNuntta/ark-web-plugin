@@ -1,0 +1,4406 @@
+{
+  "source": "ark.wiki.gg",
+  "license": "CC BY-NC-SA (wiki) / game art © Studio Wildcard",
+  "generatedAt": "2026-10-18T07:00:17.033Z",
+  "generator": "backend/scripts/dino-catalog/fetch-artwork.mjs",
+  "imagePolicy": "prefer=dossier; webp q80, max 900px long side, alpha kept; legacy image reused when the same blueprint already has a unique one",
+  "stats": {
+    "targets": 286,
+    "withImage": 286,
+    "downloaded": 286,
+    "reusedLegacy": 0,
+    "byKind": {
+      "dossier": 165,
+      "base-dossier": 106,
+      "icon": 15
+    },
+    "failed": 0
+  },
+  "entries": {
+    "/game/aberration/dinos/basilisk/basilisk_character_bp.basilisk_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/basilisk_character_bp.webp",
+      "name": "Basilisk",
+      "sourcePage": "https://ark.wiki.gg/wiki/Basilisk",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        108,
+        109
+      ],
+      "inProducts": true,
+      "file": "Dossier Basilisk.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Basilisk.png",
+      "kind": "dossier"
+    },
+    "/game/aberration/dinos/cavewolf/cavewolf_character_bp.cavewolf_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/cavewolf_character_bp.webp",
+      "name": "Ravager",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ravager",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        699,
+        698
+      ],
+      "inProducts": true,
+      "file": "Dossier Ravager.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ravager.png",
+      "kind": "dossier"
+    },
+    "/game/aberration/dinos/crab/crab_character_bp.crab_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/crab_character_bp.webp",
+      "name": "Karkinos",
+      "sourcePage": "https://ark.wiki.gg/wiki/Karkinos",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        513,
+        514
+      ],
+      "inProducts": true,
+      "file": "Dossier Karkinos.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Karkinos.png",
+      "kind": "dossier"
+    },
+    "/game/aberration/dinos/lamprey/lamprey_character.lamprey_character": {
+      "imageUrl": "/images/catalog/ark/dossiers/lamprey_character.webp",
+      "name": "Lamprey",
+      "sourcePage": "https://ark.wiki.gg/wiki/Lamprey",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Lamprey.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Lamprey.png",
+      "kind": "dossier"
+    },
+    "/game/aberration/dinos/lanternbird/lanternbird_character_bp.lanternbird_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/lanternbird_character_bp.webp",
+      "name": "Featherlight",
+      "sourcePage": "https://ark.wiki.gg/wiki/Featherlight",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        396,
+        395
+      ],
+      "inProducts": true,
+      "file": "Dossier Featherlight.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Featherlight.png",
+      "kind": "dossier"
+    },
+    "/game/aberration/dinos/lanterngoat/lanterngoat_character_bp.lanterngoat_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/lanterngoat_character_bp.webp",
+      "name": "Shinehorn",
+      "sourcePage": "https://ark.wiki.gg/wiki/Shinehorn",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        771,
+        772
+      ],
+      "inProducts": true,
+      "file": "Dossier Shinehorn.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Shinehorn.png",
+      "kind": "dossier"
+    },
+    "/game/aberration/dinos/lanternlizard/lanternlizard_character_bp.lanternlizard_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/lanternlizard_character_bp.webp",
+      "name": "Glowtail",
+      "sourcePage": "https://ark.wiki.gg/wiki/Glowtail",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        456,
+        457
+      ],
+      "inProducts": true,
+      "file": "Dossier Glowtail.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Glowtail.png",
+      "kind": "dossier"
+    },
+    "/game/aberration/dinos/lanternpug/lanternpug_character_bp.lanternpug_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/lanternpug_character_bp.webp",
+      "name": "Bulbdog",
+      "sourcePage": "https://ark.wiki.gg/wiki/Bulbdog",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        155,
+        154
+      ],
+      "inProducts": true,
+      "file": "Dossier Bulbdog.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Bulbdog.png",
+      "kind": "dossier"
+    },
+    "/game/aberration/dinos/molerat/molerat_character_bp.molerat_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/molerat_character_bp.webp",
+      "name": "Roll Rat",
+      "sourcePage": "https://ark.wiki.gg/wiki/Roll_Rat",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        741,
+        742
+      ],
+      "inProducts": true,
+      "file": "Dossier Roll Rat.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Roll_Rat.png",
+      "kind": "dossier"
+    },
+    "/game/aberration/dinos/rockdrake/rockdrake_character_bp.rockdrake_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/rockdrake_character_bp.webp",
+      "name": "Rock Drake",
+      "sourcePage": "https://ark.wiki.gg/wiki/Rock_Drake",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        728,
+        729
+      ],
+      "inProducts": true,
+      "file": "Dossier Rock Drake.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Rock_Drake.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/abyssal/ankylosaurus/ankylo_character_bp_abyssal.ankylo_character_bp_abyssal": {
+      "imageUrl": "/images/catalog/ark/dossiers/ankylo_character_bp_abyssal.webp",
+      "name": "Abyssal Ankylosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Abyssal_Ankylosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2000
+      ],
+      "inProducts": true,
+      "file": "Dossier Ankylosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ankylosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/abyss/dinos/abyssal/moschops/moschops_character_bp_abyssal.moschops_character_bp_abyssal": {
+      "imageUrl": "/images/catalog/ark/dossiers/moschops_character_bp_abyssal.webp",
+      "name": "Abyssal Moschops",
+      "sourcePage": "https://ark.wiki.gg/wiki/Abyssal_Moschops",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2001
+      ],
+      "inProducts": true,
+      "file": "Dossier Moschops.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Moschops.png",
+      "kind": "base-dossier"
+    },
+    "/game/abyss/dinos/abyssal/procoptodon/procoptodon_character_bp_abyssal.procoptodon_character_bp_abyssal": {
+      "imageUrl": "/images/catalog/ark/dossiers/procoptodon_character_bp_abyssal.webp",
+      "name": "Abyssal Procoptodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Abyssal_Procoptodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2002
+      ],
+      "inProducts": true,
+      "file": "Dossier Procoptodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Procoptodon.png",
+      "kind": "base-dossier"
+    },
+    "/game/abyss/dinos/abyssal/rex/rex_character_bp_abyssal.rex_character_bp_abyssal": {
+      "imageUrl": "/images/catalog/ark/dossiers/rex_character_bp_abyssal.webp",
+      "name": "Abyssal Rex",
+      "sourcePage": "https://ark.wiki.gg/wiki/Abyssal_Rex",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2006
+      ],
+      "inProducts": true,
+      "file": "Dossier Rex.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Rex.png",
+      "kind": "base-dossier"
+    },
+    "/game/abyss/dinos/abyssal/stego/stego_character_bp_abyssal.stego_character_bp_abyssal": {
+      "imageUrl": "/images/catalog/ark/dossiers/stego_character_bp_abyssal.webp",
+      "name": "Abyssal Stegosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Abyssal_Stegosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2007
+      ],
+      "inProducts": true,
+      "file": "Dossier Stegosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Stegosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/abyss/dinos/abyssal/therizinosaurus/therizino_character_bp_abyssal.therizino_character_bp_abyssal": {
+      "imageUrl": "/images/catalog/ark/dossiers/therizino_character_bp_abyssal.webp",
+      "name": "Abyssal Therizinosaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/Abyssal_Therizinosaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2008
+      ],
+      "inProducts": true,
+      "file": "Dossier Therizinosaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Therizinosaur.png",
+      "kind": "base-dossier"
+    },
+    "/game/abyss/dinos/abyssal/thylacoleo/thylacoleo_character_bp_abyssal.thylacoleo_character_bp_abyssal": {
+      "imageUrl": "/images/catalog/ark/dossiers/thylacoleo_character_bp_abyssal.webp",
+      "name": "Abyssal Thylacoleo",
+      "sourcePage": "https://ark.wiki.gg/wiki/Abyssal_Thylacoleo",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2009
+      ],
+      "inProducts": true,
+      "file": "Dossier Thylacoleo.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Thylacoleo.png",
+      "kind": "base-dossier"
+    },
+    "/game/abyss/dinos/abyssal/yutyrannus/yutyrannus_character_bp_abyssal.yutyrannus_character_bp_abyssal": {
+      "imageUrl": "/images/catalog/ark/dossiers/yutyrannus_character_bp_abyssal.webp",
+      "name": "Abyssal Yutyrannus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Abyssal_Yutyrannus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2010
+      ],
+      "inProducts": true,
+      "file": "Dossier Yutyrannus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Yutyrannus.png",
+      "kind": "base-dossier"
+    },
+    "/game/abyss/dinos/chrysaora/chrysaora_character_bp.chrysaora_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/chrysaora_character_bp.webp",
+      "name": "Chrysaora",
+      "sourcePage": "https://ark.wiki.gg/wiki/Chrysaora",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2077,
+        3432
+      ],
+      "inProducts": true,
+      "file": "Dossier Chrysaora.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Chrysaora.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/dakosaurus/dakosaurus_character_bp.dakosaurus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/dakosaurus_character_bp.webp",
+      "name": "Dakosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Dakosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2104,
+        3433
+      ],
+      "inProducts": true,
+      "file": "Dossier Dakosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dakosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/homarus/homarus_character_bp.homarus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/homarus_character_bp.webp",
+      "name": "Homarus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Homarus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3436,
+        2143
+      ],
+      "inProducts": true,
+      "file": "Dossier Homarus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Homarus.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/istiophorus/istiophorus_character_bp.istiophorus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/istiophorus_character_bp.webp",
+      "name": "Istiophorus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Istiophorus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3438,
+        2150
+      ],
+      "inProducts": true,
+      "file": "Dossier Istiophorus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Istiophorus.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/kathreptis/kathreptis_character_bp.kathreptis_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/kathreptis_character_bp.webp",
+      "name": "Kathreptis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Kathreptis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3439,
+        2152
+      ],
+      "inProducts": true,
+      "file": "Dossier Kathreptis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Kathreptis.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/malleocephalus/malleocephalus_character_bp.malleocephalus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/malleocephalus_character_bp.webp",
+      "name": "Malleocephalus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Malleocephalus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3440,
+        2171
+      ],
+      "inProducts": true,
+      "file": "Dossier Malleocephalus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Malleocephalus.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/mantisshrimp/mantisshrimp_character_bp.mantisshrimp_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/mantisshrimp_character_bp.webp",
+      "name": "Mantis Shrimp",
+      "sourcePage": "https://ark.wiki.gg/wiki/Mantis_Shrimp",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3441,
+        2177
+      ],
+      "inProducts": true,
+      "file": "Dossier Mantis Shrimp.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Mantis_Shrimp.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/monodon/monodon_character_bp.monodon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/monodon_character_bp.webp",
+      "name": "Monodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Monodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3442,
+        2184
+      ],
+      "inProducts": true,
+      "file": "Dossier Monodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Monodon.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/mudpuppy/mudpuppy_character_bp.mudpuppy_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/mudpuppy_character_bp.webp",
+      "name": "Mudpuppy",
+      "sourcePage": "https://ark.wiki.gg/wiki/Mudpuppy",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3443,
+        2185
+      ],
+      "inProducts": true,
+      "file": "Dossier Mudpuppy.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Mudpuppy.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/ocepechelon/ocepechelon_character_bp.ocepechelon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/ocepechelon_character_bp.webp",
+      "name": "Ocepechelon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ocepechelon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3444,
+        2187
+      ],
+      "inProducts": true,
+      "file": "Dossier Ocepechelon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ocepechelon.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/onchopristis/onchopristis_character_bp.onchopristis_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/onchopristis_character_bp.webp",
+      "name": "Onchopristis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Onchopristis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3445,
+        2189
+      ],
+      "inProducts": true,
+      "file": "Dossier Onchopristis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Onchopristis.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/qarmoutus/qarmoutus_character_bp.qarmoutus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/qarmoutus_character_bp.webp",
+      "name": "Qarmoutus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Qarmoutus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3446,
+        2204
+      ],
+      "inProducts": true,
+      "file": "Dossier Qarmoutus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Qarmoutus.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/riftcrawler/riftcrawler_character_bp.riftcrawler_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/riftcrawler_character_bp.webp",
+      "name": "Riftcrawler",
+      "sourcePage": "https://ark.wiki.gg/wiki/Riftcrawler",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3447,
+        2215
+      ],
+      "inProducts": true,
+      "file": "Dossier Riftcrawler.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Riftcrawler.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/seahorse/seahorse_character_bp.seahorse_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/seahorse_character_bp.webp",
+      "name": "Seahorse",
+      "sourcePage": "https://ark.wiki.gg/wiki/Seahorse",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3448,
+        2233
+      ],
+      "inProducts": true,
+      "file": "Dossier Seahorse.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Seahorse.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/stereolepis/stereolepis_character_bp.stereolepis_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/stereolepis_character_bp.webp",
+      "name": "Stereolepis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Stereolepis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3449,
+        2248
+      ],
+      "inProducts": true,
+      "file": "Dossier Stereolepis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Stereolepis.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/thunnus/thunnus_character_bp.thunnus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/thunnus_character_bp.webp",
+      "name": "Thunnus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Thunnus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3450,
+        2256
+      ],
+      "inProducts": true,
+      "file": "Dossier Thunnus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Thunnus.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/tiktaalik/tiktaalik_character_bp.tiktaalik_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/tiktaalik_character_bp.webp",
+      "name": "Tiktaalik",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tiktaalik",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3451,
+        2257
+      ],
+      "inProducts": true,
+      "file": "Dossier Tiktaalik.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Tiktaalik.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/tridacna/tridacna_character_bp.tridacna_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/tridacna_character_bp.webp",
+      "name": "Tridacna",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tridacna",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3452,
+        2261
+      ],
+      "inProducts": true,
+      "file": "Dossier Tridacna.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Tridacna.png",
+      "kind": "dossier"
+    },
+    "/game/abyss/dinos/waterwyvern/wyvern_character_bp_water.wyvern_character_bp_water": {
+      "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_water.webp",
+      "name": "Water Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Water_Wyvern",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3453,
+        2301
+      ],
+      "inProducts": true,
+      "file": "Dossier Water Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Water_Wyvern.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/desertkaiju/desertkaiju_character_bp.desertkaiju_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/desertkaiju_character_bp.webp",
+      "name": "Desert Titan",
+      "sourcePage": "https://ark.wiki.gg/wiki/Desert_Titan",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Desert Titan.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Desert_Titan.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/enforcer/enforcer_character_bp.enforcer_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/enforcer_character_bp.webp",
+      "name": "Enforcer",
+      "sourcePage": "https://ark.wiki.gg/wiki/Enforcer",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        386,
+        387
+      ],
+      "inProducts": true,
+      "file": "Dossier Enforcer.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Enforcer.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/forestkaiju/forestkaiju_character_bp.forestkaiju_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/forestkaiju_character_bp.webp",
+      "name": "Forest Titan",
+      "sourcePage": "https://ark.wiki.gg/wiki/Forest_Titan",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Forest Titan.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Forest_Titan.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/gacha/gacha_character_bp.gacha_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/gacha_character_bp.webp",
+      "name": "Gacha",
+      "sourcePage": "https://ark.wiki.gg/wiki/Gacha",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        421,
+        422,
+        420
+      ],
+      "inProducts": true,
+      "file": "Dossier Gacha.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Gacha.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/gasbag/gasbags_character_bp.gasbags_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/gasbags_character_bp.webp",
+      "name": "Gasbags",
+      "sourcePage": "https://ark.wiki.gg/wiki/Gasbags",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        438,
+        439
+      ],
+      "inProducts": true,
+      "file": "Dossier Gasbags.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Gasbags.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/icejumper/icejumper_character_bp.icejumper_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/icejumper_character_bp.webp",
+      "name": "Managarmr",
+      "sourcePage": "https://ark.wiki.gg/wiki/Managarmr",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        542,
+        543
+      ],
+      "inProducts": true,
+      "file": "Dossier Managarmr.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Managarmr.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/icekaiju/icekaiju_character_bp.icekaiju_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/icekaiju_character_bp.webp",
+      "name": "Ice Titan",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ice_Titan",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Ice Titan.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ice_Titan.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/mek/megamek_character_bp.megamek_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/megamek_character_bp.webp",
+      "name": "Mega Mek",
+      "sourcePage": "https://ark.wiki.gg/wiki/Mega_Mek",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Mega Mek.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Mega_Mek.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/mek/mek_character_bp.mek_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/mek_character_bp.webp",
+      "name": "Mek",
+      "sourcePage": "https://ark.wiki.gg/wiki/Mek",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        582,
+        583
+      ],
+      "inProducts": true,
+      "file": "Dossier Mek.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Mek.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/owl/owl_character_bp.owl_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/owl_character_bp.webp",
+      "name": "Snow Owl",
+      "sourcePage": "https://ark.wiki.gg/wiki/Snow_Owl",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        789,
+        788
+      ],
+      "inProducts": true,
+      "file": "Dossier Snow Owl.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Snow_Owl.png",
+      "kind": "dossier"
+    },
+    "/game/extinction/dinos/spindles/spindles_character_bp.spindles_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/spindles_character_bp.webp",
+      "name": "Velonasaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/Velonasaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        927,
+        928
+      ],
+      "inProducts": true,
+      "file": "Dossier Velonasaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Velonasaur.png",
+      "kind": "dossier"
+    },
+    "/game/fjordur/dinos/andrewsarchus/andrewsarchus_character_bp.andrewsarchus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/andrewsarchus_character_bp.webp",
+      "name": "Andrewsarchus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Andrewsarchus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        71,
+        72
+      ],
+      "inProducts": true,
+      "file": "Dossier Andrewsarchus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Andrewsarchus.png",
+      "kind": "dossier"
+    },
+    "/game/fjordur/dinos/desmodus/desmodus_character_bp.desmodus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/desmodus_character_bp.webp",
+      "name": "Desmodus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Desmodus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        329,
+        330
+      ],
+      "inProducts": true,
+      "file": "Dossier Desmodus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Desmodus.png",
+      "kind": "dossier"
+    },
+    "/game/fjordur/dinos/fenrir/fenrir_character_bp.fenrir_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/fenrir_character_bp.webp",
+      "name": "Fenrir",
+      "sourcePage": "https://ark.wiki.gg/wiki/Fenrir",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        397,
+        398
+      ],
+      "inProducts": true,
+      "file": "Fenrir.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Fenrir.png",
+      "kind": "icon"
+    },
+    "/game/fjordur/dinos/fjordhawk/fjordhawk_character_bp.fjordhawk_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/fjordhawk_character_bp.webp",
+      "name": "Fjordhawk",
+      "sourcePage": "https://ark.wiki.gg/wiki/Fjordhawk",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        409,
+        408
+      ],
+      "inProducts": true,
+      "file": "Dossier Fjordhawk.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Fjordhawk.png",
+      "kind": "dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/allo_character_bp_rockwell.allo_character_bp_rockwell": {
+      "imageUrl": "/images/catalog/ark/dossiers/allo_character_bp_rockwell.webp",
+      "name": "R-Allosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Allosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        692
+      ],
+      "inProducts": true,
+      "file": "Dossier Allosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Allosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/carno_character_bp_rockwell.carno_character_bp_rockwell": {
+      "imageUrl": "/images/catalog/ark/dossiers/carno_character_bp_rockwell.webp",
+      "name": "R-Carnotaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Carnotaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        704
+      ],
+      "inProducts": true,
+      "file": "Dossier Carnotaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Carnotaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/daeodon_character_bp_eden.daeodon_character_bp_eden": {
+      "imageUrl": "/images/catalog/ark/dossiers/daeodon_character_bp_eden.webp",
+      "name": "R-Daeodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Daeodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        705
+      ],
+      "inProducts": true,
+      "file": "Dossier Daeodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Daeodon.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/dilo_character_bp_rockwell.dilo_character_bp_rockwell": {
+      "imageUrl": "/images/catalog/ark/dossiers/dilo_character_bp_rockwell.webp",
+      "name": "R-Dilophosaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Dilophosaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        706
+      ],
+      "inProducts": true,
+      "file": "Dossier Dilophosaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dilophosaur.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/direwolf_character_bp_eden.direwolf_character_bp_eden": {
+      "imageUrl": "/images/catalog/ark/dossiers/direwolf_character_bp_eden.webp",
+      "name": "R-Direwolf",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Direwolf",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        707
+      ],
+      "inProducts": true,
+      "file": "Dossier Direwolf.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Direwolf.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/equus_character_bp_eden.equus_character_bp_eden": {
+      "imageUrl": "/images/catalog/ark/dossiers/equus_character_bp_eden.webp",
+      "name": "R-Equus",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Equus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        716
+      ],
+      "inProducts": true,
+      "file": "Dossier Equus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Equus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/gasbags_character_bp_eden.gasbags_character_bp_eden": {
+      "imageUrl": "/images/catalog/ark/dossiers/gasbags_character_bp_eden.webp",
+      "name": "R-Gasbags",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Gasbags",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        724
+      ],
+      "inProducts": true,
+      "file": "Dossier Gasbags.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Gasbags.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/gigant_character_bp_rockwell.gigant_character_bp_rockwell": {
+      "imageUrl": "/images/catalog/ark/dossiers/gigant_character_bp_rockwell.webp",
+      "name": "R-Giganotosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Giganotosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        725
+      ],
+      "inProducts": true,
+      "file": "Dossier Giganotosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Giganotosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/megatherium_character_bp_eden.megatherium_character_bp_eden": {
+      "imageUrl": "/images/catalog/ark/dossiers/megatherium_character_bp_eden.webp",
+      "name": "R-Megatherium",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Megatherium",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        727
+      ],
+      "inProducts": true,
+      "file": "Dossier Megatherium.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Megatherium.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/owl_character_bp_eden.owl_character_bp_eden": {
+      "imageUrl": "/images/catalog/ark/dossiers/owl_character_bp_eden.webp",
+      "name": "R-Snow Owl",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Snow_Owl",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        747
+      ],
+      "inProducts": true,
+      "file": "Dossier Snow Owl.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Snow_Owl.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/para_character_bp_eden.para_character_bp_eden": {
+      "imageUrl": "/images/catalog/ark/dossiers/para_character_bp_eden.webp",
+      "name": "R-Parasaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Parasaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        744
+      ],
+      "inProducts": true,
+      "file": "Dossier Parasaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Parasaur.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/procoptodon_character_bp_eden.procoptodon_character_bp_eden": {
+      "imageUrl": "/images/catalog/ark/dossiers/procoptodon_character_bp_eden.webp",
+      "name": "R-Procoptodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Procoptodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        745
+      ],
+      "inProducts": true,
+      "file": "Dossier Procoptodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Procoptodon.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/quetz_character_bp_rockwell.quetz_character_bp_rockwell": {
+      "imageUrl": "/images/catalog/ark/dossiers/quetz_character_bp_rockwell.webp",
+      "name": "R-Quetzal",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Quetzal",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        746
+      ],
+      "inProducts": true,
+      "file": "Dossier Quetzal.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Quetzal.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/sauropod_character_bp_rockwell.sauropod_character_bp_rockwell": {
+      "imageUrl": "/images/catalog/ark/dossiers/sauropod_character_bp_rockwell.webp",
+      "name": "R-Brontosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Brontosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        702
+      ],
+      "inProducts": true,
+      "file": "Dossier Brontosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Brontosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/spindles_character_bp_rockwell.spindles_character_bp_rockwell": {
+      "imageUrl": "/images/catalog/ark/dossiers/spindles_character_bp_rockwell.webp",
+      "name": "R-Velonasaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Velonasaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        749
+      ],
+      "inProducts": true,
+      "file": "Dossier Velonasaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Velonasaur.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/thylacoleo_character_bp_eden.thylacoleo_character_bp_eden": {
+      "imageUrl": "/images/catalog/ark/dossiers/thylacoleo_character_bp_eden.webp",
+      "name": "R-Thylacoleo",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Thylacoleo",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        748
+      ],
+      "inProducts": true,
+      "file": "Dossier Thylacoleo.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Thylacoleo.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/biomevariants/turtle_character_bp_rockwell.turtle_character_bp_rockwell": {
+      "imageUrl": "/images/catalog/ark/dossiers/turtle_character_bp_rockwell.webp",
+      "name": "R-Carbonemys",
+      "sourcePage": "https://ark.wiki.gg/wiki/R-Carbonemys",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        703
+      ],
+      "inProducts": true,
+      "file": "Dossier Carbonemys.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Carbonemys.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis2/dinos/brainslug/brainslug_character_bp.brainslug_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/brainslug_character_bp.webp",
+      "name": "Noglin",
+      "sourcePage": "https://ark.wiki.gg/wiki/Noglin",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        615,
+        614
+      ],
+      "inProducts": true,
+      "file": "Noglin.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Noglin.png",
+      "kind": "icon"
+    },
+    "/game/genesis2/dinos/lionfishlion/lionfishlion_character_bp.lionfishlion_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/lionfishlion_character_bp.webp",
+      "name": "BigAL's Meraxes TLC",
+      "sourcePage": "https://ark.wiki.gg/wiki/Mod%3ABigAL's_Meraxes_TLC",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        768,
+        769
+      ],
+      "inProducts": true,
+      "file": "Shadowmane.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Shadowmane.png",
+      "kind": "icon"
+    },
+    "/game/genesis2/dinos/milkglider/milkglider_character_bp.milkglider_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/milkglider_character_bp.webp",
+      "name": "Maewing",
+      "sourcePage": "https://ark.wiki.gg/wiki/Maewing",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        533,
+        534
+      ],
+      "inProducts": true,
+      "file": "Maewing.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Maewing.png",
+      "kind": "icon"
+    },
+    "/game/genesis2/dinos/spacedolphin/spacedolphin_character_bp.spacedolphin_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/spacedolphin_character_bp.webp",
+      "name": "Astrodelphis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Astrodelphis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        100,
+        99
+      ],
+      "inProducts": true,
+      "file": "Astrodelphis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Astrodelphis.png",
+      "kind": "icon"
+    },
+    "/game/genesis2/dinos/tekstrider/tekstrider_character_bp.tekstrider_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/tekstrider_character_bp.webp",
+      "name": "Tek Stryder",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tek_Stryder",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        2255
+      ],
+      "inProducts": true,
+      "file": "Tek Stryder.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Tek_Stryder.png",
+      "kind": "icon"
+    },
+    "/game/genesis2/dinos/tekwyvern/tekwyvern_character_bp.tekwyvern_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/tekwyvern_character_bp.webp",
+      "name": "Voidwyrm",
+      "sourcePage": "https://ark.wiki.gg/wiki/Voidwyrm",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        930,
+        931
+      ],
+      "inProducts": true,
+      "file": "Voidwyrm.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Voidwyrm.png",
+      "kind": "icon"
+    },
+    "/game/genesis/dinos/biomevariants/bogpara/bog_para_character_bp.bog_para_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bog_para_character_bp.webp",
+      "name": "X-Parasaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Parasaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        954
+      ],
+      "inProducts": true,
+      "file": "Dossier Parasaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Parasaur.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/bogparaceratherium/bog_paracer_character_bp.bog_paracer_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bog_paracer_character_bp.webp",
+      "name": "X-Paraceratherium",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Paraceratherium",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        953
+      ],
+      "inProducts": true,
+      "file": "Dossier Paraceratherium.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Paraceratherium.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/bog_raptor/bog_raptor_character_bp.bog_raptor_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bog_raptor_character_bp.webp",
+      "name": "X-Raptor",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Raptor",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        955
+      ],
+      "inProducts": true,
+      "file": "Dossier Raptor.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Raptor.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/bog_spino/bog_spino_character_bp.bog_spino_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bog_spino_character_bp.webp",
+      "name": "X-Spino",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Spino",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        959
+      ],
+      "inProducts": true,
+      "file": "Dossier Spino.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Spino.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/bog_tapejara/bog_tapejara_character_bp.bog_tapejara_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bog_tapejara_character_bp.webp",
+      "name": "X-Tapejara",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Tapejara",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        960
+      ],
+      "inProducts": true,
+      "file": "Dossier Tapejara.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Tapejara.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/lava_golem/volcano_golem_character_bp.volcano_golem_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/volcano_golem_character_bp.webp",
+      "name": "X-Rock Elemental",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Rock_Elemental",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        957
+      ],
+      "inProducts": true,
+      "file": "Dossier Rock Elemental.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Rock_Elemental.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/lunar_salmon/lunar_salmon_character_bp.lunar_salmon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/lunar_salmon_character_bp.webp",
+      "name": "X-Sabertooth Salmon",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Sabertooth_Salmon",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Sabertooth Salmon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Sabertooth_Salmon.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/lunar_salmon/rare_lunar_salmon_character_bp.rare_lunar_salmon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/rare_lunar_salmon_character_bp.webp",
+      "name": "Rare X-Sabertooth Salmon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Rare_X-Sabertooth_Salmon",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Sabertooth Salmon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Sabertooth_Salmon.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/ocean_basilosaurus/ocean_basilosaurus_character_bp.ocean_basilosaurus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/ocean_basilosaurus_character_bp.webp",
+      "name": "X-Basilosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Basilosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        947
+      ],
+      "inProducts": true,
+      "file": "Dossier Basilosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Basilosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/ocean_dolphin/ocean_dolphin_character_bp.ocean_dolphin_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/ocean_dolphin_character_bp.webp",
+      "name": "X-Ichthyosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Ichthyosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        949
+      ],
+      "inProducts": true,
+      "file": "Dossier Ichthyosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ichthyosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/ocean_dunkleosteus/ocean_dunkle_character_bp.ocean_dunkle_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/ocean_dunkle_character_bp.webp",
+      "name": "X-Dunkeosteus",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Dunkleosteus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        948
+      ],
+      "inProducts": true,
+      "file": "Dossier Dunkleosteus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dunkleosteus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/ocean_megalodon/ocean_megalodon_character_bp.ocean_megalodon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/ocean_megalodon_character_bp.webp",
+      "name": "X-Megalodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Megalodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        950
+      ],
+      "inProducts": true,
+      "file": "Dossier Megalodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Megalodon.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/ocean_mosasaurus/ocean_mosa_character_bp.ocean_mosa_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/ocean_mosa_character_bp.webp",
+      "name": "X-Mosasaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Mosasaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        951
+      ],
+      "inProducts": true,
+      "file": "Dossier Mosasaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Mosasaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/snow_argentavis/snow_argent_character_bp.snow_argent_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/snow_argent_character_bp.webp",
+      "name": "X-Argentavis",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Argentavis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        946
+      ],
+      "inProducts": true,
+      "file": "Dossier Argentavis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Argentavis.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/snow_otter/snow_otter_character_bp.snow_otter_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/snow_otter_character_bp.webp",
+      "name": "X-Otter",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Otter",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        952
+      ],
+      "inProducts": true,
+      "file": "Dossier Otter.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Otter.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/snow_saber/snow_saber_character_bp.snow_saber_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/snow_saber_character_bp.webp",
+      "name": "X-Sabertooth",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Sabertooth",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        958
+      ],
+      "inProducts": true,
+      "file": "Dossier Sabertooth.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Sabertooth.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/snow_woollyrhino/snow_rhino_character_bp.snow_rhino_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/snow_rhino_character_bp.webp",
+      "name": "X-Woolly Rhino",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Woolly_Rhino",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        962
+      ],
+      "inProducts": true,
+      "file": "Dossier Woolly Rhino.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Woolly_Rhino.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/snow_yutyrannus/snow_yutyrannus_character_bp.snow_yutyrannus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/snow_yutyrannus_character_bp.webp",
+      "name": "X-Yutyrannus",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Yutyrannus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        963
+      ],
+      "inProducts": true,
+      "file": "Dossier Yutyrannus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Yutyrannus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/volcano_allosaurus/volcano_allo_character_bp.volcano_allo_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/volcano_allo_character_bp.webp",
+      "name": "X-Allosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Allosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        944
+      ],
+      "inProducts": true,
+      "file": "Dossier Allosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Allosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/volcano_ankylosaurus/volcano_ankylo_character_bp.volcano_ankylo_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/volcano_ankylo_character_bp.webp",
+      "name": "X-Ankylosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Ankylosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        945
+      ],
+      "inProducts": true,
+      "file": "Dossier Ankylosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ankylosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/volcano_rex/volcano_rex_character_bp.volcano_rex_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/volcano_rex_character_bp.webp",
+      "name": "X-Rex",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Rex",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        956
+      ],
+      "inProducts": true,
+      "file": "Dossier Rex.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Rex.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/biomevariants/volcano_trike/volcano_trike_character_bp.volcano_trike_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/volcano_trike_character_bp.webp",
+      "name": "X-Triceratops",
+      "sourcePage": "https://ark.wiki.gg/wiki/X-Triceratops",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        961
+      ],
+      "inProducts": true,
+      "file": "Dossier Triceratops.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Triceratops.png",
+      "kind": "base-dossier"
+    },
+    "/game/genesis/dinos/bogspider/bogspider_character_bp.bogspider_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bogspider_character_bp.webp",
+      "name": "Bloodstalker",
+      "sourcePage": "https://ark.wiki.gg/wiki/Bloodstalker",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        140,
+        141
+      ],
+      "inProducts": true,
+      "file": "Bloodstalker.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Bloodstalker.png",
+      "kind": "icon"
+    },
+    "/game/genesis/dinos/cherufe/cherufe_character_bp.cherufe_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/cherufe_character_bp.webp",
+      "name": "Magmasaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/Magmasaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        536,
+        537
+      ],
+      "inProducts": true,
+      "file": "Magmasaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Magmasaur.png",
+      "kind": "icon"
+    },
+    "/game/genesis/dinos/giantturtle/giantturtle_character_bp.giantturtle_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/giantturtle_character_bp.webp",
+      "name": "Megachelon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Megachelon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        562,
+        563
+      ],
+      "inProducts": true,
+      "file": "Megachelon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Megachelon.png",
+      "kind": "icon"
+    },
+    "/game/genesis/dinos/shapeshifter/shapeshifter_large/shapeshifter_large_character_bp.shapeshifter_large_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/shapeshifter_large_character_bp.webp",
+      "name": "Ferox",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ferox_(Large)",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Ferox.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Ferox.png",
+      "kind": "icon"
+    },
+    "/game/genesis/dinos/shapeshifter/shapeshifter_small/shapeshifter_small_character_bp.shapeshifter_small_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/shapeshifter_small_character_bp.webp",
+      "name": "Ferox",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ferox",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        400,
+        399
+      ],
+      "inProducts": true,
+      "file": "Ferox.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Ferox.png",
+      "kind": "icon"
+    },
+    "/game/genesis/dinos/spacewhale/spacewhale_character_bp.spacewhale_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/spacewhale_character_bp.webp",
+      "name": "Astrocetus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Astrocetus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        95,
+        96
+      ],
+      "inProducts": true,
+      "file": "Astrocetus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Astrocetus.png",
+      "kind": "icon"
+    },
+    "/game/lostisland/dinos/amargasaurus/amargasaurus_character_bp.amargasaurus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/amargasaurus_character_bp.webp",
+      "name": "Amargasaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Amargasaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        66,
+        67
+      ],
+      "inProducts": true,
+      "file": "Dossier Amargasaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Amargasaurus.png",
+      "kind": "dossier"
+    },
+    "/game/lostisland/dinos/dinopithecus/dinopithecus_character_bp.dinopithecus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/dinopithecus_character_bp.webp",
+      "name": "Dinopithecus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Dinopithecus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        346,
+        347
+      ],
+      "inProducts": true,
+      "file": "Dossier Dinopithecus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dinopithecus.png",
+      "kind": "dossier"
+    },
+    "/game/lostisland/dinos/sinomacrops/sinomacrops_character_bp.sinomacrops_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/sinomacrops_character_bp.webp",
+      "name": "Sinomacrops",
+      "sourcePage": "https://ark.wiki.gg/wiki/Sinomacrops",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        781,
+        782
+      ],
+      "inProducts": true,
+      "file": "Dossier Sinomacrops.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Sinomacrops.png",
+      "kind": "dossier"
+    },
+    "/game/mods/astraeos/assets/coreblueprints/creatures/kraken/shark/shark_character_bp.shark_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/shark_character_bp.webp",
+      "name": "Megalodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Shark",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Megalodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Megalodon.png",
+      "kind": "dossier"
+    },
+    "/game/mods/astraeos/assets/coreblueprints/creatures/kraken/squid/squid_character_bp.squid_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/squid_character_bp.webp",
+      "name": "Tusoteuthis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Squid",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Tusoteuthis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Tusoteuthis.png",
+      "kind": "dossier"
+    },
+    "/game/mods/ragnarok/custom_assets/bosses/lifelabyrinth/bear/direbear_ll_character_bp.direbear_ll_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/direbear_ll_character_bp.webp",
+      "name": "Dire Bear",
+      "sourcePage": "https://ark.wiki.gg/wiki/Spirit_Dire_Bear",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Dire Bear.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dire_Bear.png",
+      "kind": "dossier"
+    },
+    "/game/mods/ragnarok/custom_assets/bosses/lifelabyrinth/wolf/direwolf_ll_character_bp.direwolf_ll_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/direwolf_ll_character_bp.webp",
+      "name": "Direwolf",
+      "sourcePage": "https://ark.wiki.gg/wiki/Spirit_Direwolf",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Direwolf.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Direwolf.png",
+      "kind": "dossier"
+    },
+    "/game/mods/ragnarok/custom_assets/dinos/polar_bear/polar_bear.polar_bear": {
+      "imageUrl": "/images/catalog/ark/dossiers/polar_bear.webp",
+      "name": "Dire Polar Bear",
+      "sourcePage": "https://ark.wiki.gg/wiki/Dire_Polar_Bear",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3434,
+        3435
+      ],
+      "inProducts": true,
+      "file": "Dossier Dire Bear.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dire_Bear.png",
+      "kind": "base-dossier"
+    },
+    "/game/mods/ragnarok/custom_assets/dinos/wyvern/ice_wyvern/ragnarok_wyvern_override_ice.ragnarok_wyvern_override_ice": {
+      "imageUrl": "/images/catalog/ark/dossiers/ragnarok_wyvern_override_ice.webp",
+      "name": "Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ice_Wyvern",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        487,
+        486
+      ],
+      "inProducts": true,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "dossier"
+    },
+    "/game/mods/valguero/assets/dinos/rockgolem/chalkgolem/chalkgolem_character_bp.chalkgolem_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/chalkgolem_character_bp.webp",
+      "name": "Rock Elemental",
+      "sourcePage": "https://ark.wiki.gg/wiki/Chalk_Golem",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Rock Elemental.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Rock_Elemental.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/achatina/achatina_character_bp_aberrant.achatina_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/achatina_character_bp_aberrant.webp",
+      "name": "Aberrant Achatina",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Achatina",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        7
+      ],
+      "inProducts": true,
+      "file": "Dossier Achatina.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Achatina.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/achatina/achatina_character_bp.achatina_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/achatina_character_bp.webp",
+      "name": "Achatina",
+      "sourcePage": "https://ark.wiki.gg/wiki/Achatina",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        45,
+        46
+      ],
+      "inProducts": true,
+      "file": "Dossier Achatina.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Achatina.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/allosaurus/allo_character_bp.allo_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/allo_character_bp.webp",
+      "name": "Allosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Allosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        50,
+        51
+      ],
+      "inProducts": true,
+      "file": "Dossier Allosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Allosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/anglerfish/angler_character_bp_aberrant.angler_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/angler_character_bp_aberrant.webp",
+      "name": "Aberrant Anglerfish",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Anglerfish",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        8
+      ],
+      "inProducts": true,
+      "file": "Dossier Angler.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Angler.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/anglerfish/angler_character_bp.angler_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/angler_character_bp.webp",
+      "name": "Anglerfish",
+      "sourcePage": "https://ark.wiki.gg/wiki/Anglerfish",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        74,
+        75
+      ],
+      "inProducts": true,
+      "file": "Dossier Angler.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Angler.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/ankylo/ankylo_character_bp_aberrant.ankylo_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/ankylo_character_bp_aberrant.webp",
+      "name": "Aberrant Ankylosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Ankylosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        9
+      ],
+      "inProducts": true,
+      "file": "Dossier Ankylosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ankylosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/ankylo/ankylo_character_bp.ankylo_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/ankylo_character_bp.webp",
+      "name": "Ankylosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ankylosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        77,
+        78
+      ],
+      "inProducts": true,
+      "file": "Dossier Ankylosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ankylosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/archaeopteryx/archa_character_bp.archa_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/archa_character_bp.webp",
+      "name": "Archaeopteryx",
+      "sourcePage": "https://ark.wiki.gg/wiki/Archaeopteryx",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        86,
+        85
+      ],
+      "inProducts": true,
+      "file": "Dossier Archaeopteryx.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Archaeopteryx.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/argentavis/argent_character_bp.argent_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/argent_character_bp.webp",
+      "name": "Argentavis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Argentavis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        87,
+        88
+      ],
+      "inProducts": true,
+      "file": "Dossier Argentavis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Argentavis.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/arthropluera/arthro_character_bp_aberrant.arthro_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/arthro_character_bp_aberrant.webp",
+      "name": "Aberrant Arthropluera",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Arthropluera",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        11
+      ],
+      "inProducts": true,
+      "file": "Dossier Arthropluera.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Arthropluera.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/arthropluera/arthro_character_bp.arthro_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/arthro_character_bp.webp",
+      "name": "Arthropluera",
+      "sourcePage": "https://ark.wiki.gg/wiki/Arthropluera",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        91,
+        92
+      ],
+      "inProducts": true,
+      "file": "Dossier Arthropluera.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Arthropluera.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/baryonyx/baryonyx_character_bp_aberrant.baryonyx_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/baryonyx_character_bp_aberrant.webp",
+      "name": "Aberrant Baryonyx",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Baryonyx",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        12
+      ],
+      "inProducts": true,
+      "file": "Dossier Baryonyx.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Baryonyx.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/baryonyx/baryonyx_character_bp.baryonyx_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/baryonyx_character_bp.webp",
+      "name": "Baryonyx",
+      "sourcePage": "https://ark.wiki.gg/wiki/Baryonyx",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        104,
+        105
+      ],
+      "inProducts": true,
+      "file": "Dossier Baryonyx.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Baryonyx.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/basilosaurus/basilosaurus_character_bp.basilosaurus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/basilosaurus_character_bp.webp",
+      "name": "Basilosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Basilosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        112,
+        113
+      ],
+      "inProducts": true,
+      "file": "Dossier Basilosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Basilosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/bat/bat_character_bp.bat_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bat_character_bp.webp",
+      "name": "Onyc",
+      "sourcePage": "https://ark.wiki.gg/wiki/Onyc",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Onyc.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Onyc.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/beaver/beaver_character_bp.beaver_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/beaver_character_bp.webp",
+      "name": "Castoroides",
+      "sourcePage": "https://ark.wiki.gg/wiki/Castoroides",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        176,
+        177
+      ],
+      "inProducts": true,
+      "file": "Dossier Castoroides.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Castoroides.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/bee/bee_character_bp.bee_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bee_character_bp.webp",
+      "name": "Giant Bee",
+      "sourcePage": "https://ark.wiki.gg/wiki/Giant_Bee",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Giant Bee.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Giant_Bee.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/bee/bee_queen_character_bp.bee_queen_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bee_queen_character_bp.webp",
+      "name": "Giant Queen Bee",
+      "sourcePage": "https://ark.wiki.gg/wiki/Giant_Queen_Bee",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        445,
+        446
+      ],
+      "inProducts": true,
+      "file": "Dossier Giant Bee.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Giant_Bee.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/bigfoot/bigfoot_character_bp_aberrant.bigfoot_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/bigfoot_character_bp_aberrant.webp",
+      "name": "Aberrant Gigantopithecus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Gigantopithecus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        26
+      ],
+      "inProducts": true,
+      "file": "Dossier Gigantopithecus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Gigantopithecus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/bigfoot/bigfoot_character_bp.bigfoot_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bigfoot_character_bp.webp",
+      "name": "Gigantopithecus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Gigantopithecus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        450,
+        451
+      ],
+      "inProducts": true,
+      "file": "Dossier Gigantopithecus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Gigantopithecus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/boafrill/boafrill_character_bp_aberrant.boafrill_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/boafrill_character_bp_aberrant.webp",
+      "name": "Aberrant Titanoboa",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Titanoboa",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        43
+      ],
+      "inProducts": true,
+      "file": "Dossier Titanoboa.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Titanoboa.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/boafrill/boafrill_character_bp.boafrill_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/boafrill_character_bp.webp",
+      "name": "Titanoboa",
+      "sourcePage": "https://ark.wiki.gg/wiki/Titanoboa",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        893,
+        892
+      ],
+      "inProducts": true,
+      "file": "Dossier Titanoboa.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Titanoboa.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/carcharodontosaurus/carcha_character_bp.carcha_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/carcha_character_bp.webp",
+      "name": "Carcharodontosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Carcharodontosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        171,
+        172
+      ],
+      "inProducts": true,
+      "file": "Dossier Carcharodontosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Carcharodontosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/carno/carno_character_bp_aberrant.carno_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/carno_character_bp_aberrant.webp",
+      "name": "Aberrant Carnotaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Carnotaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        15
+      ],
+      "inProducts": true,
+      "file": "Dossier Carnotaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Carnotaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/carno/carno_character_bp.carno_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/carno_character_bp.webp",
+      "name": "Carnotaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Carnotaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        174,
+        175
+      ],
+      "inProducts": true,
+      "file": "Dossier Carnotaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Carnotaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/chalicotherium/chalico_character_bp.chalico_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/chalico_character_bp.webp",
+      "name": "Chalicotherium",
+      "sourcePage": "https://ark.wiki.gg/wiki/Chalicotherium",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        183,
+        182
+      ],
+      "inProducts": true,
+      "file": "Dossier Chalicotherium.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Chalicotherium.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/coelacanth/coel_character_bp_aberrant.coel_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/coel_character_bp_aberrant.webp",
+      "name": "Aberrant Coelacanth",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Coelacanth",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Coelacanth.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Coelacanth.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/coelacanth/coel_character_bp.coel_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/coel_character_bp.webp",
+      "name": "Coelacanth",
+      "sourcePage": "https://ark.wiki.gg/wiki/Coelacanth",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Coelacanth.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Coelacanth.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/compy/compy_character_bp.compy_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/compy_character_bp.webp",
+      "name": "Compy",
+      "sourcePage": "https://ark.wiki.gg/wiki/Compy",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        302,
+        303
+      ],
+      "inProducts": true,
+      "file": "Dossier Compy.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Compy.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/crystalwyvern/crystalwyvern_character_bp_blood.crystalwyvern_character_bp_blood": {
+      "imageUrl": "/images/catalog/ark/dossiers/crystalwyvern_character_bp_blood.webp",
+      "name": "Blood Crystal Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Blood_Crystal_Wyvern",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        139,
+        138
+      ],
+      "inProducts": true,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/crystalwyvern/crystalwyvern_character_bp.crystalwyvern_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/crystalwyvern_character_bp.webp",
+      "name": "Crystal Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Crystal_Wyvern",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/crystalwyvern/crystalwyvern_character_bp_ember.crystalwyvern_character_bp_ember": {
+      "imageUrl": "/images/catalog/ark/dossiers/crystalwyvern_character_bp_ember.webp",
+      "name": "Ember Crystal Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ember_Crystal_Wyvern",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        382,
+        383
+      ],
+      "inProducts": true,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/crystalwyvern/crystalwyvern_character_bp_ws.crystalwyvern_character_bp_ws": {
+      "imageUrl": "/images/catalog/ark/dossiers/crystalwyvern_character_bp_ws.webp",
+      "name": "Tropical Crystal Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tropical_Crystal_Wyvern",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        906,
+        907
+      ],
+      "inProducts": true,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/daeodon/daeodon_character_bp.daeodon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/daeodon_character_bp.webp",
+      "name": "Daeodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Daeodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        320,
+        319
+      ],
+      "inProducts": true,
+      "file": "Dossier Daeodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Daeodon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/dilo/dilo_character_bp.dilo_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/dilo_character_bp.webp",
+      "name": "Dilophosaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/Dilophosaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        332,
+        333
+      ],
+      "inProducts": true,
+      "file": "Dossier Dilophosaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dilophosaur.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/dimetrodon/dimetro_character_bp_aberrant.dimetro_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/dimetro_character_bp_aberrant.webp",
+      "name": "Aberrant Dimetrodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Dimetrodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        16
+      ],
+      "inProducts": true,
+      "file": "Dossier Dimetrodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dimetrodon.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/dimetrodon/dimetro_character_bp.dimetro_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/dimetro_character_bp.webp",
+      "name": "Dimetrodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Dimetrodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        334,
+        335
+      ],
+      "inProducts": true,
+      "file": "Dossier Dimetrodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dimetrodon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/dimorphodon/dimorph_character_bp_aberrant.dimorph_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/dimorph_character_bp_aberrant.webp",
+      "name": "Aberrant Dimorphodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Dimorphodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        17
+      ],
+      "inProducts": true,
+      "file": "Dossier Dimorphodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dimorphodon.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/dimorphodon/dimorph_character_bp.dimorph_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/dimorph_character_bp.webp",
+      "name": "Dimorphodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Dimorphodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        336,
+        337
+      ],
+      "inProducts": true,
+      "file": "Dossier Dimorphodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dimorphodon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/diplocaulus/diplocaulus_character_bp_aberrant.diplocaulus_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/diplocaulus_character_bp_aberrant.webp",
+      "name": "Aberrant Diplocaulus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Diplocaulus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        18
+      ],
+      "inProducts": true,
+      "file": "Dossier Diplocaulus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Diplocaulus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/diplocaulus/diplocaulus_character_bp.diplocaulus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/diplocaulus_character_bp.webp",
+      "name": "Diplocaulus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Diplocaulus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        350,
+        351
+      ],
+      "inProducts": true,
+      "file": "Dossier Diplocaulus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Diplocaulus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/diplodocus/diplodocus_character_bp_aberrant.diplodocus_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/diplodocus_character_bp_aberrant.webp",
+      "name": "Aberrant Diplodocus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Diplodocus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        19
+      ],
+      "inProducts": true,
+      "file": "Dossier Diplodocus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Diplodocus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/diplodocus/diplodocus_character_bp.diplodocus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/diplodocus_character_bp.webp",
+      "name": "Diplodocus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Diplodocus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        353,
+        352
+      ],
+      "inProducts": true,
+      "file": "Dossier Diplodocus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Diplodocus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/direbear/direbear_character_bp_aberrant.direbear_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/direbear_character_bp_aberrant.webp",
+      "name": "Aberrant Dire Bear",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Dire_Bear",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        20
+      ],
+      "inProducts": true,
+      "file": "Dossier Dire Bear.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dire_Bear.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/direbear/direbear_character_bp.direbear_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/direbear_character_bp.webp",
+      "name": "Dire Bear",
+      "sourcePage": "https://ark.wiki.gg/wiki/Dire_Bear",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        356,
+        355
+      ],
+      "inProducts": true,
+      "file": "Dossier Dire Bear.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dire_Bear.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/direwolf/direwolf_character_bp.direwolf_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/direwolf_character_bp.webp",
+      "name": "Direwolf",
+      "sourcePage": "https://ark.wiki.gg/wiki/Direwolf",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        359,
+        358
+      ],
+      "inProducts": true,
+      "file": "Dossier Direwolf.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Direwolf.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/dodo/dodo_character_bp_aberrant.dodo_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/dodo_character_bp_aberrant.webp",
+      "name": "Aberrant Dodo",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Dodo",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        21
+      ],
+      "inProducts": true,
+      "file": "Dossier Dodo.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dodo.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/dodo/dodo_character_bp.dodo_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/dodo_character_bp.webp",
+      "name": "Dodo",
+      "sourcePage": "https://ark.wiki.gg/wiki/Dodo",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        362,
+        361
+      ],
+      "inProducts": true,
+      "file": "Dossier Dodo.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dodo.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/dodorex/dodorex_character_bp.dodorex_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/dodorex_character_bp.webp",
+      "name": "DodoRex",
+      "sourcePage": "https://ark.wiki.gg/wiki/DodoRex",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dodorex.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dodorex.png",
+      "kind": "icon"
+    },
+    "/game/primalearth/dinos/dodo/zombiedodo_character_bp.zombiedodo_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/zombiedodo_character_bp.webp",
+      "name": "Zomdodo",
+      "sourcePage": "https://ark.wiki.gg/wiki/Zomdodo",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Zomdodos.jpg",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Zomdodos.jpg",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/doedicurus/doed_character_bp_aberrant.doed_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/doed_character_bp_aberrant.webp",
+      "name": "Aberrant Doedicurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Doedicurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        22
+      ],
+      "inProducts": true,
+      "file": "Dossier Doedicurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Doedicurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/doedicurus/doed_character_bp.doed_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/doed_character_bp.webp",
+      "name": "Doedicurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Doedicurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        365,
+        366
+      ],
+      "inProducts": true,
+      "file": "Dossier Doedicurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Doedicurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/dolphin/dolphin_character_bp.dolphin_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/dolphin_character_bp.webp",
+      "name": "Ichthyosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ichthyosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        493,
+        492
+      ],
+      "inProducts": true,
+      "file": "Dossier Ichthyosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ichthyosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/dungbeetle/dungbeetle_character_bp_aberrant.dungbeetle_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/dungbeetle_character_bp_aberrant.webp",
+      "name": "Aberrant Dung Beetle",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Dung_Beetle",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        23
+      ],
+      "inProducts": true,
+      "file": "Dossier Dung Beetle.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dung_Beetle.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/dungbeetle/dungbeetle_character_bp.dungbeetle_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/dungbeetle_character_bp.webp",
+      "name": "Dung Beetle",
+      "sourcePage": "https://ark.wiki.gg/wiki/Dung_Beetle",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        368,
+        369
+      ],
+      "inProducts": true,
+      "file": "Dossier Dung Beetle.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dung_Beetle.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/dunkleosteus/dunkle_character_bp.dunkle_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/dunkle_character_bp.webp",
+      "name": "Dunkleosteus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Dunkleosteus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        370,
+        371
+      ],
+      "inProducts": true,
+      "file": "Dossier Dunkleosteus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Dunkleosteus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/eel/eel_character_bp_aberrant.eel_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/eel_character_bp_aberrant.webp",
+      "name": "Aberrant Electrophorus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Electrophorus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        24
+      ],
+      "inProducts": true,
+      "file": "Dossier Electrophorus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Electrophorus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/eel/eel_character_bp.eel_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/eel_character_bp.webp",
+      "name": "Electrophorus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Electrophorus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        380,
+        379
+      ],
+      "inProducts": true,
+      "file": "Dossier Electrophorus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Electrophorus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/equus/equus_character_bp_aberrant.equus_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/equus_character_bp_aberrant.webp",
+      "name": "Aberrant Equus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Equus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        25
+      ],
+      "inProducts": true,
+      "file": "Dossier Equus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Equus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/equus/equus_character_bp.equus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/equus_character_bp.webp",
+      "name": "Equus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Equus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        389,
+        388
+      ],
+      "inProducts": true,
+      "file": "Dossier Equus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Equus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/equus/equus_character_bp_unicorn.equus_character_bp_unicorn": {
+      "imageUrl": "/images/catalog/ark/dossiers/equus_character_bp_unicorn.webp",
+      "name": "Unicorn",
+      "sourcePage": "https://ark.wiki.gg/wiki/Unicorn",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        920,
+        921
+      ],
+      "inProducts": true,
+      "file": "Dossier Equus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Equus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/gallimimus/galli_character_bp.galli_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/galli_character_bp.webp",
+      "name": "Gallimimus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Gallimimus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        425,
+        424
+      ],
+      "inProducts": true,
+      "file": "Dossier Gallimimus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Gallimimus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/giganotosaurus/gigant_character_bp.gigant_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/gigant_character_bp.webp",
+      "name": "Giganotosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Giganotosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        447,
+        448
+      ],
+      "inProducts": true,
+      "file": "Dossier Giganotosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Giganotosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/griffin/griffin_character_bp.griffin_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/griffin_character_bp.webp",
+      "name": "Griffin",
+      "sourcePage": "https://ark.wiki.gg/wiki/Griffin",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        463,
+        462
+      ],
+      "inProducts": true,
+      "file": "Dossier Griffin.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Griffin.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/hesperornis/hesperornis_character_bp.hesperornis_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/hesperornis_character_bp.webp",
+      "name": "Hesperornis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Hesperornis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        474,
+        473
+      ],
+      "inProducts": true,
+      "file": "Dossier Hesperornis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Hesperornis.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/hyaenodon/hyaenodon_character_bp.hyaenodon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/hyaenodon_character_bp.webp",
+      "name": "Hyaenodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Hyaenodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        483,
+        482
+      ],
+      "inProducts": true,
+      "file": "Dossier Hyaenodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Hyaenodon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/icegolem/icegolem_character_bp.icegolem_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/icegolem_character_bp.webp",
+      "name": "Rock Elemental",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ice_Golem",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        3437,
+        2146
+      ],
+      "inProducts": true,
+      "file": "Dossier Rock Elemental.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Rock_Elemental.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/ichthyornis/ichthyornis_character_bp.ichthyornis_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/ichthyornis_character_bp.webp",
+      "name": "Ichthyornis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ichthyornis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        490,
+        491
+      ],
+      "inProducts": true,
+      "file": "Dossier Ichthyornis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ichthyornis.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/iguanodon/iguanodon_character_bp_aberrant.iguanodon_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/iguanodon_character_bp_aberrant.webp",
+      "name": "Aberrant Iguanodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Iguanodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        27
+      ],
+      "inProducts": true,
+      "file": "Dossier Iguanodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Iguanodon.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/iguanodon/iguanodon_character_bp.iguanodon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/iguanodon_character_bp.webp",
+      "name": "Iguanodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Iguanodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        496,
+        495
+      ],
+      "inProducts": true,
+      "file": "Dossier Iguanodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Iguanodon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/kairuku/kairuku_character_bp.kairuku_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/kairuku_character_bp.webp",
+      "name": "Kairuku",
+      "sourcePage": "https://ark.wiki.gg/wiki/Kairuku",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        508,
+        509
+      ],
+      "inProducts": true,
+      "file": "Dossier Kairuku.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Kairuku.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/kaprosuchus/kaprosuchus_character_bp.kaprosuchus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/kaprosuchus_character_bp.webp",
+      "name": "Kaprosuchus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Kaprosuchus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        510,
+        511
+      ],
+      "inProducts": true,
+      "file": "Dossier Kaprosuchus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Kaprosuchus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/kentrosaurus/kentro_character_bp.kentro_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/kentro_character_bp.webp",
+      "name": "Kentrosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Kentrosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        517,
+        516
+      ],
+      "inProducts": true,
+      "file": "Dossier Kentrosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Kentrosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/leech/leech_character_diseased.leech_character_diseased": {
+      "imageUrl": "/images/catalog/ark/dossiers/leech_character_diseased.webp",
+      "name": "Leech",
+      "sourcePage": "https://ark.wiki.gg/wiki/Diseased_Leech",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Leech.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Leech.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/leech/leech_character.leech_character": {
+      "imageUrl": "/images/catalog/ark/dossiers/leech_character.webp",
+      "name": "Leech",
+      "sourcePage": "https://ark.wiki.gg/wiki/Leech",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Leech.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Leech.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/liopleurodon/liopleurodon_character_bp.liopleurodon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/liopleurodon_character_bp.webp",
+      "name": "Liopleurodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Liopleurodon",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Liopleurodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Liopleurodon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/lystrosaurus/lystro_character_bp_aberrant.lystro_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/lystro_character_bp_aberrant.webp",
+      "name": "Aberrant Lystrosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Lystrosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        28
+      ],
+      "inProducts": true,
+      "file": "Dossier Lystrosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Lystrosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/lystrosaurus/lystro_character_bp.lystro_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/lystro_character_bp.webp",
+      "name": "Lystrosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Lystrosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        532,
+        531
+      ],
+      "inProducts": true,
+      "file": "Dossier Lystrosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Lystrosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/mammoth/mammoth_character_bp.mammoth_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/mammoth_character_bp.webp",
+      "name": "Mammoth",
+      "sourcePage": "https://ark.wiki.gg/wiki/Mammoth",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        540,
+        539
+      ],
+      "inProducts": true,
+      "file": "Dossier Mammoth.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Mammoth.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/manta/manta_character_bp_aberrant.manta_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/manta_character_bp_aberrant.webp",
+      "name": "Aberrant Manta",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Manta",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        29
+      ],
+      "inProducts": true,
+      "file": "Dossier Manta.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Manta.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/manta/manta_character_bp.manta_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/manta_character_bp.webp",
+      "name": "Manta",
+      "sourcePage": "https://ark.wiki.gg/wiki/Manta",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        545,
+        546
+      ],
+      "inProducts": true,
+      "file": "Dossier Manta.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Manta.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/megalania/megalania_character_bp_aberrant.megalania_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/megalania_character_bp_aberrant.webp",
+      "name": "Aberrant Megalania",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Megalania",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        30
+      ],
+      "inProducts": true,
+      "file": "Dossier Megalania.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Megalania.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/megalania/megalania_character_bp.megalania_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/megalania_character_bp.webp",
+      "name": "Megalania",
+      "sourcePage": "https://ark.wiki.gg/wiki/Megalania",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        565,
+        566
+      ],
+      "inProducts": true,
+      "file": "Dossier Megalania.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Megalania.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/megalodon/megalodon_character_bp.megalodon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/megalodon_character_bp.webp",
+      "name": "Megalodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Megalodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        571,
+        572
+      ],
+      "inProducts": true,
+      "file": "Dossier Megalodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Megalodon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/megalosaurus/megalosaurus_character_bp_aberrant.megalosaurus_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/megalosaurus_character_bp_aberrant.webp",
+      "name": "Aberrant Megalosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Megalosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        31
+      ],
+      "inProducts": true,
+      "file": "Dossier Megalosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Megalosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/megalosaurus/megalosaurus_character_bp.megalosaurus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/megalosaurus_character_bp.webp",
+      "name": "Megalosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Megalosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        576,
+        577
+      ],
+      "inProducts": true,
+      "file": "Dossier Megalosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Megalosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/megatherium/megatherium_character_bp.megatherium_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/megatherium_character_bp.webp",
+      "name": "Megatherium",
+      "sourcePage": "https://ark.wiki.gg/wiki/Megatherium",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        579,
+        580
+      ],
+      "inProducts": true,
+      "file": "Dossier Megatherium.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Megatherium.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/microraptor/microraptor_character_bp.microraptor_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/microraptor_character_bp.webp",
+      "name": "Microraptor",
+      "sourcePage": "https://ark.wiki.gg/wiki/Microraptor",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        589,
+        590
+      ],
+      "inProducts": true,
+      "file": "Dossier Microraptor.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Microraptor.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/monkey/monkey_character_bp.monkey_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/monkey_character_bp.webp",
+      "name": "Mesopithecus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Mesopithecus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        585,
+        584
+      ],
+      "inProducts": true,
+      "file": "Dossier Mesopithecus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Mesopithecus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/mosasaurus/mosa_character_bp.mosa_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/mosa_character_bp.webp",
+      "name": "Mosasaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Mosasaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        602,
+        603
+      ],
+      "inProducts": true,
+      "file": "Dossier Mosasaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Mosasaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/moschops/moschops_character_bp_aberrant.moschops_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/moschops_character_bp_aberrant.webp",
+      "name": "Aberrant Moschops",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Moschops",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        32
+      ],
+      "inProducts": true,
+      "file": "Dossier Moschops.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Moschops.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/moschops/moschops_character_bp.moschops_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/moschops_character_bp.webp",
+      "name": "Moschops",
+      "sourcePage": "https://ark.wiki.gg/wiki/Moschops",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        605,
+        606
+      ],
+      "inProducts": true,
+      "file": "Dossier Moschops.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Moschops.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/otter/otter_character_bp_aberrant.otter_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/otter_character_bp_aberrant.webp",
+      "name": "Aberrant Otter",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Otter",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        33
+      ],
+      "inProducts": true,
+      "file": "Dossier Otter.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Otter.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/otter/otter_character_bp.otter_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/otter_character_bp.webp",
+      "name": "Otter",
+      "sourcePage": "https://ark.wiki.gg/wiki/Otter",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        622,
+        623
+      ],
+      "inProducts": true,
+      "file": "Dossier Otter.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Otter.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/oviraptor/oviraptor_character_bp_aberrant.oviraptor_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/oviraptor_character_bp_aberrant.webp",
+      "name": "Aberrant Oviraptor",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Oviraptor",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        1995
+      ],
+      "inProducts": true,
+      "file": "Dossier Oviraptor.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Oviraptor.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/oviraptor/oviraptor_character_bp.oviraptor_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/oviraptor_character_bp.webp",
+      "name": "Oviraptor",
+      "sourcePage": "https://ark.wiki.gg/wiki/Oviraptor",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        626,
+        625
+      ],
+      "inProducts": true,
+      "file": "Dossier Oviraptor.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Oviraptor.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/pachy/pachy_character_bp.pachy_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/pachy_character_bp.webp",
+      "name": "Pachy",
+      "sourcePage": "https://ark.wiki.gg/wiki/Pachy",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        629,
+        630
+      ],
+      "inProducts": true,
+      "file": "Dossier Pachy.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Pachy.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/pachyrhinosaurus/pachyrhino_character_bp.pachyrhino_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/pachyrhino_character_bp.webp",
+      "name": "Pachyrhinosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Pachyrhinosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        631,
+        632
+      ],
+      "inProducts": true,
+      "file": "Dossier Pachyrhinosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Pachyrhinosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/para/bionicpara_character_bp.bionicpara_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bionicpara_character_bp.webp",
+      "name": "Tek Parasaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tek_Parasaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        846
+      ],
+      "inProducts": true,
+      "file": "Dossier Parasaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Parasaur.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/paraceratherium/paracer_character_bp_aberrant.paracer_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/paracer_character_bp_aberrant.webp",
+      "name": "Aberrant Paraceratherium",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Paraceratherium",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        35
+      ],
+      "inProducts": true,
+      "file": "Dossier Paraceratherium.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Paraceratherium.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/paraceratherium/paracer_character_bp.paracer_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/paracer_character_bp.webp",
+      "name": "Paraceratherium",
+      "sourcePage": "https://ark.wiki.gg/wiki/Paraceratherium",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        636,
+        637
+      ],
+      "inProducts": true,
+      "file": "Dossier Paraceratherium.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Paraceratherium.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/para/para_character_bp_aberrant.para_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/para_character_bp_aberrant.webp",
+      "name": "Aberrant Parasaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Parasaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        36
+      ],
+      "inProducts": true,
+      "file": "Dossier Parasaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Parasaur.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/para/para_character_bp.para_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/para_character_bp.webp",
+      "name": "Parasaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/Parasaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        641,
+        640
+      ],
+      "inProducts": true,
+      "file": "Dossier Parasaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Parasaur.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/pegomastax/pegomastax_character_bp.pegomastax_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/pegomastax_character_bp.webp",
+      "name": "Pegomastax",
+      "sourcePage": "https://ark.wiki.gg/wiki/Pegomastax",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        644,
+        643
+      ],
+      "inProducts": true,
+      "file": "Dossier Pegomastax.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Pegomastax.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/pelagornis/pela_character_bp.pela_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/pela_character_bp.webp",
+      "name": "Pelagornis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Pelagornis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        646,
+        645
+      ],
+      "inProducts": true,
+      "file": "Dossier Pelagornis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Pelagornis.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/phiomia/phiomia_character_bp.phiomia_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/phiomia_character_bp.webp",
+      "name": "Phiomia",
+      "sourcePage": "https://ark.wiki.gg/wiki/Phiomia",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        648,
+        649
+      ],
+      "inProducts": true,
+      "file": "Dossier Phiomia.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Phiomia.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/piranha/piranha_character_bp_aberrant.piranha_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/piranha_character_bp_aberrant.webp",
+      "name": "Aberrant Piranha",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Piranha",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Piranha.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Piranha.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/piranha/piranha_character_bp.piranha_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/piranha_character_bp.webp",
+      "name": "Piranha",
+      "sourcePage": "https://ark.wiki.gg/wiki/Piranha",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Piranha.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Piranha.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/plesiosaur/plesiosaur_character_bp.plesiosaur_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/plesiosaur_character_bp.webp",
+      "name": "Plesiosaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/Plesiosaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        665,
+        666
+      ],
+      "inProducts": true,
+      "file": "Dossier Plesiosaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Plesiosaur.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/procoptodon/procoptodon_character_bp.procoptodon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/procoptodon_character_bp.webp",
+      "name": "Procoptodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Procoptodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        674,
+        675
+      ],
+      "inProducts": true,
+      "file": "Dossier Procoptodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Procoptodon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/ptero/ptero_character_bp.ptero_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/ptero_character_bp.webp",
+      "name": "Pteranodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Pteranodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        678,
+        679
+      ],
+      "inProducts": true,
+      "file": "Dossier Pteranodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Pteranodon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/purlovia/purlovia_character_bp_aberrant.purlovia_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/purlovia_character_bp_aberrant.webp",
+      "name": "Aberrant Purlovia",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Purlovia",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        38
+      ],
+      "inProducts": true,
+      "file": "Dossier Purlovia.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Purlovia.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/purlovia/purlovia_character_bp.purlovia_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/purlovia_character_bp.webp",
+      "name": "Purlovia",
+      "sourcePage": "https://ark.wiki.gg/wiki/Purlovia",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        685,
+        686
+      ],
+      "inProducts": true,
+      "file": "Dossier Purlovia.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Purlovia.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/quetzalcoatlus/bionicquetz_character_bp.bionicquetz_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bionicquetz_character_bp.webp",
+      "name": "Tek Quetzal",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tek_Quetzal",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        849
+      ],
+      "inProducts": true,
+      "file": "Dossier Quetzal.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Quetzal.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/quetzalcoatlus/quetz_character_bp.quetz_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/quetz_character_bp.webp",
+      "name": "Quetzal",
+      "sourcePage": "https://ark.wiki.gg/wiki/Quetzal",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        688,
+        689
+      ],
+      "inProducts": true,
+      "file": "Dossier Quetzal.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Quetzal.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/raptor/bionicraptor_character_bp.bionicraptor_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bionicraptor_character_bp.webp",
+      "name": "Tek Raptor",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tek_Raptor",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        853
+      ],
+      "inProducts": true,
+      "file": "Dossier Raptor.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Raptor.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/raptor/raptor_character_bp_aberrant.raptor_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/raptor_character_bp_aberrant.webp",
+      "name": "Aberrant Raptor",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Raptor",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        39
+      ],
+      "inProducts": true,
+      "file": "Dossier Raptor.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Raptor.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/raptor/raptor_character_bp.raptor_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/raptor_character_bp.webp",
+      "name": "Raptor",
+      "sourcePage": "https://ark.wiki.gg/wiki/Raptor",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        693,
+        694
+      ],
+      "inProducts": true,
+      "file": "Dossier Raptor.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Raptor.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/raptor/uberraptor/deinonychus_character_bp.deinonychus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/deinonychus_character_bp.webp",
+      "name": "Deinonychus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Deinonychus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        323,
+        324
+      ],
+      "inProducts": true,
+      "file": "Dossier Deinonychus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Deinonychus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/rex/bionicrex_character_bp.bionicrex_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bionicrex_character_bp.webp",
+      "name": "Tek Rex",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tek_Rex",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        855
+      ],
+      "inProducts": true,
+      "file": "Dossier Rex.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Rex.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/rex/rex_character_bp.rex_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/rex_character_bp.webp",
+      "name": "Rex",
+      "sourcePage": "https://ark.wiki.gg/wiki/Rex",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        718,
+        719
+      ],
+      "inProducts": true,
+      "file": "Dossier Rex.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Rex.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/saber/saber_character_bp.saber_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/saber_character_bp.webp",
+      "name": "Sabertooth",
+      "sourcePage": "https://ark.wiki.gg/wiki/Sabertooth",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        750,
+        751
+      ],
+      "inProducts": true,
+      "file": "Dossier Sabertooth.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Sabertooth.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/salmon/salmon_character_aberrant.salmon_character_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/salmon_character_aberrant.webp",
+      "name": "Aberrant Salmon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Salmon",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Aberrant Sabertooth Salmon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Aberrant_Sabertooth_Salmon.png",
+      "kind": "icon"
+    },
+    "/game/primalearth/dinos/salmon/salmon_character_bp.salmon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/salmon_character_bp.webp",
+      "name": "Sabertooth Salmon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Sabertooth_Salmon",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Sabertooth Salmon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Sabertooth_Salmon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/sarco/sarco_character_bp_aberrant.sarco_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/sarco_character_bp_aberrant.webp",
+      "name": "Aberrant Sarco",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Sarco",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        40
+      ],
+      "inProducts": true,
+      "file": "Dossier Sarco.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Sarco.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/sarco/sarco_character_bp.sarco_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/sarco_character_bp.webp",
+      "name": "Sarco",
+      "sourcePage": "https://ark.wiki.gg/wiki/Sarco",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        757,
+        758
+      ],
+      "inProducts": true,
+      "file": "Dossier Sarco.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Sarco.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/sauropod/sauropod_character_bp.sauropod_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/sauropod_character_bp.webp",
+      "name": "Brontosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Brontosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        150,
+        151
+      ],
+      "inProducts": true,
+      "file": "Dossier Brontosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Brontosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/scorpion/scorpion_character_bp_aberrant.scorpion_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/scorpion_character_bp_aberrant.webp",
+      "name": "Aberrant Pulmonoscorpius",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Pulmonoscorpius",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        37
+      ],
+      "inProducts": true,
+      "file": "Dossier Pulmonoscorpius.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Pulmonoscorpius.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/scorpion/scorpion_character_bp.scorpion_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/scorpion_character_bp.webp",
+      "name": "Pulmonoscorpius",
+      "sourcePage": "https://ark.wiki.gg/wiki/Pulmonoscorpius",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        682,
+        681
+      ],
+      "inProducts": true,
+      "file": "Dossier Pulmonoscorpius.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Pulmonoscorpius.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/sheep/sheep_character_bp_aberrant.sheep_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/sheep_character_bp_aberrant.webp",
+      "name": "Aberrant Ovis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Ovis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        34
+      ],
+      "inProducts": true,
+      "file": "Dossier Ovis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ovis.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/sheep/sheep_character_bp.sheep_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/sheep_character_bp.webp",
+      "name": "Ovis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Ovis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        628,
+        627
+      ],
+      "inProducts": true,
+      "file": "Dossier Ovis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Ovis.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/spider-small/spiders_character_bp_aberrant.spiders_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/spiders_character_bp_aberrant.webp",
+      "name": "Aberrant Araneo",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Araneo",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        10
+      ],
+      "inProducts": true,
+      "file": "Dossier Araneo.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Araneo.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/spider-small/spiders_character_bp.spiders_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/spiders_character_bp.webp",
+      "name": "Araneo",
+      "sourcePage": "https://ark.wiki.gg/wiki/Araneo",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        80,
+        81
+      ],
+      "inProducts": true,
+      "file": "Dossier Araneo.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Araneo.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/spino/spino_character_bp_aberrant.spino_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/spino_character_bp_aberrant.webp",
+      "name": "Aberrant Spino",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Spino",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        41
+      ],
+      "inProducts": true,
+      "file": "Dossier Spino.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Spino.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/spino/spino_character_bp.spino_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/spino_character_bp.webp",
+      "name": "Spino",
+      "sourcePage": "https://ark.wiki.gg/wiki/Spino",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        795,
+        794
+      ],
+      "inProducts": true,
+      "file": "Dossier Spino.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Spino.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/stag/stag_character_bp.stag_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/stag_character_bp.webp",
+      "name": "Megaloceros",
+      "sourcePage": "https://ark.wiki.gg/wiki/Megaloceros",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        568,
+        569
+      ],
+      "inProducts": true,
+      "file": "Dossier Megaloceros.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Megaloceros.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/stego/bionicstego_character_bp.bionicstego_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bionicstego_character_bp.webp",
+      "name": "Tek Stegosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tek_Stegosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        863
+      ],
+      "inProducts": true,
+      "file": "Dossier Stegosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Stegosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/stego/stego_character_bp_aberrant.stego_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/stego_character_bp_aberrant.webp",
+      "name": "Aberrant Stegosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Stegosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        42
+      ],
+      "inProducts": true,
+      "file": "Dossier Stegosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Stegosaurus.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/stego/stego_character_bp.stego_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/stego_character_bp.webp",
+      "name": "Stegosaurus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Stegosaurus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        798,
+        799
+      ],
+      "inProducts": true,
+      "file": "Dossier Stegosaurus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Stegosaurus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/tapejara/tapejara_character_bp.tapejara_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/tapejara_character_bp.webp",
+      "name": "Tapejara",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tapejara",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        807,
+        808
+      ],
+      "inProducts": true,
+      "file": "Dossier Tapejara.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Tapejara.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/terrorbird/terrorbird_character_bp.terrorbird_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/terrorbird_character_bp.webp",
+      "name": "Terror Bird",
+      "sourcePage": "https://ark.wiki.gg/wiki/Terror_Bird",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        879,
+        878
+      ],
+      "inProducts": true,
+      "file": "Dossier Terror Bird.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Terror_Bird.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/therizinosaurus/therizino_character_bp.therizino_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/therizino_character_bp.webp",
+      "name": "Therizinosaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/Therizinosaur",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        881,
+        882
+      ],
+      "inProducts": true,
+      "file": "Dossier Therizinosaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Therizinosaur.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/thylacoleo/thylacoleo_character_bp.thylacoleo_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/thylacoleo_character_bp.webp",
+      "name": "Thylacoleo",
+      "sourcePage": "https://ark.wiki.gg/wiki/Thylacoleo",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        889,
+        890
+      ],
+      "inProducts": true,
+      "file": "Dossier Thylacoleo.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Thylacoleo.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/titanosaur/titanosaur_character_bp.titanosaur_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/titanosaur_character_bp.webp",
+      "name": "Titanosaur",
+      "sourcePage": "https://ark.wiki.gg/wiki/Titanosaur",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Titanosaur.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Titanosaur.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/toad/toad_character_bp_aberrant.toad_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/toad_character_bp_aberrant.webp",
+      "name": "Aberrant Beelzebufo",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Beelzebufo",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        13
+      ],
+      "inProducts": true,
+      "file": "Dossier Beelzebufo.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Beelzebufo.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/toad/toad_character_bp.toad_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/toad_character_bp.webp",
+      "name": "Beelzebufo",
+      "sourcePage": "https://ark.wiki.gg/wiki/Beelzebufo",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        117,
+        118
+      ],
+      "inProducts": true,
+      "file": "Dossier Beelzebufo.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Beelzebufo.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/trike/bionictrike_character_bp.bionictrike_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/bionictrike_character_bp.webp",
+      "name": "Tek Triceratops",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tek_Triceratops",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        872
+      ],
+      "inProducts": true,
+      "file": "Dossier Triceratops.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Triceratops.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/trike/trike_character_bp_aberrant.trike_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/trike_character_bp_aberrant.webp",
+      "name": "Aberrant Triceratops",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Triceratops",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        44
+      ],
+      "inProducts": true,
+      "file": "Dossier Triceratops.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Triceratops.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/trike/trike_character_bp.trike_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/trike_character_bp.webp",
+      "name": "Triceratops",
+      "sourcePage": "https://ark.wiki.gg/wiki/Triceratops",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        896,
+        897
+      ],
+      "inProducts": true,
+      "file": "Dossier Triceratops.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Triceratops.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/trilobite/trilobite_character_aberrant.trilobite_character_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/trilobite_character_aberrant.webp",
+      "name": "Aberrant Trilobite",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Trilobite",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Trilobite.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Trilobite.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/trilobite/trilobite_character.trilobite_character": {
+      "imageUrl": "/images/catalog/ark/dossiers/trilobite_character.webp",
+      "name": "Trilobite",
+      "sourcePage": "https://ark.wiki.gg/wiki/Trilobite",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Trilobite.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Trilobite.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/troodon/troodon_character_bp.troodon_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/troodon_character_bp.webp",
+      "name": "Troodon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Troodon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        902,
+        901
+      ],
+      "inProducts": true,
+      "file": "Dossier Troodon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Troodon.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/tropeognathus/tropeognathus_character_bp.tropeognathus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/tropeognathus_character_bp.webp",
+      "name": "Tropeognathus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tropeognathus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        904,
+        903
+      ],
+      "inProducts": true,
+      "file": "Dossier Tropeognathus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Tropeognathus.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/turtle/turtle_character_bp_aberrant.turtle_character_bp_aberrant": {
+      "imageUrl": "/images/catalog/ark/dossiers/turtle_character_bp_aberrant.webp",
+      "name": "Aberrant Carbonemys",
+      "sourcePage": "https://ark.wiki.gg/wiki/Aberrant_Carbonemys",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        14
+      ],
+      "inProducts": true,
+      "file": "Dossier Carbonemys.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Carbonemys.png",
+      "kind": "base-dossier"
+    },
+    "/game/primalearth/dinos/turtle/turtle_character_bp.turtle_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/turtle_character_bp.webp",
+      "name": "Carbonemys",
+      "sourcePage": "https://ark.wiki.gg/wiki/Carbonemys",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        168,
+        169
+      ],
+      "inProducts": true,
+      "file": "Dossier Carbonemys.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Carbonemys.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/tusoteuthis/tusoteuthis_character_bp.tusoteuthis_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/tusoteuthis_character_bp.webp",
+      "name": "Tusoteuthis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Tusoteuthis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        912,
+        913
+      ],
+      "inProducts": true,
+      "file": "Dossier Tusoteuthis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Tusoteuthis.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/woollyrhino/rhino_character_bp.rhino_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/rhino_character_bp.webp",
+      "name": "Woolly Rhino",
+      "sourcePage": "https://ark.wiki.gg/wiki/Woolly_Rhino",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        939,
+        940
+      ],
+      "inProducts": true,
+      "file": "Dossier Woolly Rhino.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Woolly_Rhino.png",
+      "kind": "dossier"
+    },
+    "/game/primalearth/dinos/yutyrannus/yutyrannus_character_bp.yutyrannus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/yutyrannus_character_bp.webp",
+      "name": "Yutyrannus",
+      "sourcePage": "https://ark.wiki.gg/wiki/Yutyrannus",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        964,
+        965
+      ],
+      "inProducts": true,
+      "file": "Dossier Yutyrannus.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Yutyrannus.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/camelsaurus/camelsaurus_character_bp.camelsaurus_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/camelsaurus_character_bp.webp",
+      "name": "Morellatops",
+      "sourcePage": "https://ark.wiki.gg/wiki/Morellatops",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        596,
+        597
+      ],
+      "inProducts": true,
+      "file": "Dossier Morellatops.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Morellatops.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/jerboa/jerboa_character_bp.jerboa_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/jerboa_character_bp.webp",
+      "name": "Jerboa",
+      "sourcePage": "https://ark.wiki.gg/wiki/Jerboa",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        504,
+        505
+      ],
+      "inProducts": true,
+      "file": "Dossier Jerboa.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Jerboa.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/mantis/mantis_character_bp.mantis_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/mantis_character_bp.webp",
+      "name": "Mantis",
+      "sourcePage": "https://ark.wiki.gg/wiki/Mantis",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        554,
+        555
+      ],
+      "inProducts": true,
+      "file": "Dossier Mantis.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Mantis.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/moth/moth_character_bp.moth_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/moth_character_bp.webp",
+      "name": "Lymantria",
+      "sourcePage": "https://ark.wiki.gg/wiki/Lymantria",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        528,
+        529
+      ],
+      "inProducts": true,
+      "file": "Dossier Lymantria.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Lymantria.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/phoenix/phoenix_character_bp.phoenix_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/phoenix_character_bp.webp",
+      "name": "Phoenix",
+      "sourcePage": "https://ark.wiki.gg/wiki/Phoenix",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        651,
+        652
+      ],
+      "inProducts": true,
+      "file": "Dossier Phoenix.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Phoenix.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/rockgolem/rockgolem_character_bp.rockgolem_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/rockgolem_character_bp.webp",
+      "name": "Rock Elemental",
+      "sourcePage": "https://ark.wiki.gg/wiki/Rock_Elemental",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        733,
+        734
+      ],
+      "inProducts": true,
+      "file": "Dossier Rock Elemental.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Rock_Elemental.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/spineylizard/spineylizard_character_bp.spineylizard_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/spineylizard_character_bp.webp",
+      "name": "Thorny Dragon",
+      "sourcePage": "https://ark.wiki.gg/wiki/Thorny_Dragon",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        886,
+        885
+      ],
+      "inProducts": true,
+      "file": "Dossier Thorny Dragon.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Thorny_Dragon.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/vulture/vulture_character_bp.vulture_character_bp": {
+      "imageUrl": "/images/catalog/ark/dossiers/vulture_character_bp.webp",
+      "name": "Vulture",
+      "sourcePage": "https://ark.wiki.gg/wiki/Vulture",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        932,
+        933
+      ],
+      "inProducts": true,
+      "file": "Dossier Vulture.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Vulture.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_fire.wyvern_character_bp_fire": {
+      "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_fire.webp",
+      "name": "Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Fire_Wyvern",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        404,
+        403
+      ],
+      "inProducts": true,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_lightning.wyvern_character_bp_lightning": {
+      "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_lightning.webp",
+      "name": "Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Lightning_Wyvern",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        524,
+        523
+      ],
+      "inProducts": true,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_poison.wyvern_character_bp_poison": {
+      "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_poison.webp",
+      "name": "Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Poison_Wyvern",
+      "reasons": [
+        "missing-image"
+      ],
+      "productIds": [
+        670,
+        671
+      ],
+      "inProducts": true,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "dossier"
+    },
+    "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_zombiebase.wyvern_character_bp_zombiebase": {
+      "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_zombiebase.webp",
+      "name": "Zombie Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Zombie_Wyvern",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "base-dossier"
+    },
+    "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_zombiefire.wyvern_character_bp_zombiefire": {
+      "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_zombiefire.webp",
+      "name": "Zombie Fire Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Zombie_Fire_Wyvern",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "base-dossier"
+    },
+    "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_zombielightning.wyvern_character_bp_zombielightning": {
+      "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_zombielightning.webp",
+      "name": "Zombie Lightning Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Zombie_Lightning_Wyvern",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "base-dossier"
+    },
+    "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_zombiepoison.wyvern_character_bp_zombiepoison": {
+      "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_zombiepoison.webp",
+      "name": "Zombie Poison Wyvern",
+      "sourcePage": "https://ark.wiki.gg/wiki/Zombie_Poison_Wyvern",
+      "reasons": [
+        "wiki-tameable-not-in-products"
+      ],
+      "productIds": [],
+      "inProducts": false,
+      "file": "Dossier Wyvern.png",
+      "fileUrl": "https://ark.wiki.gg/wiki/File:Dossier_Wyvern.png",
+      "kind": "base-dossier"
+    }
+  },
+  "failures": []
+}
