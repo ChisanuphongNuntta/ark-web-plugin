@@ -10,9 +10,15 @@ import serverQueryService from '../services/serverQuery.service.js';
 
 export let io: Server;
 
+/** How often a socket in the 'admin' room re-checks its session + role (demotion, revoke, ban). */
+export const ADMIN_SOCKET_RECHECK_MS = 60_000;
+
 interface AuthenticatedSocket extends Socket {
   userId?: string;
   isAdmin?: boolean;
+  canJoinAdminRoom?: boolean;
+  sessionId?: string;
+  authToken?: string;
   userName?: string;
   userAvatar?: string;
 }
@@ -65,6 +71,9 @@ export async function setupSocketIO(httpServer: HttpServer): Promise<Server> {
           socket.userName = identity.userName;
           socket.userAvatar = identity.userAvatar;
           socket.isAdmin = identity.isAdmin;
+          socket.canJoinAdminRoom = identity.canJoinAdminRoom;
+          socket.sessionId = identity.sessionId;
+          socket.authToken = found.token;
           return next();
         }
       } catch (error) {
@@ -79,6 +88,7 @@ export async function setupSocketIO(httpServer: HttpServer): Promise<Server> {
     // No (valid) token - guest (read-only, public rooms only)
     socket.userId = undefined;
     socket.isAdmin = false;
+    socket.canJoinAdminRoom = false;
     socket.userName = 'Guest';
     next();
   });
@@ -92,7 +102,29 @@ export async function setupSocketIO(httpServer: HttpServer): Promise<Server> {
 
     // Private realtime rooms (wallet / order / delivery events for this user only).
     if (socket.userId) socket.join(RealtimeRooms.user(socket.userId));
-    if (socket.isAdmin) socket.join(RealtimeRooms.admin);
+    if (socket.sessionId) socket.join(RealtimeRooms.session(socket.sessionId));
+    // Admin feed (every transaction, ledger mismatches): role ADMIN|ROOT only, the same rule as
+    // the REST admin pages. Membership is re-checked periodically so a demotion, ban, logout or
+    // session revoke that happens while connected removes the socket (logout/revoke/role change
+    // also act immediately through realtime/sessionControl.ts).
+    let adminRecheck: NodeJS.Timeout | undefined;
+    if (socket.canJoinAdminRoom) {
+      socket.join(RealtimeRooms.admin);
+      adminRecheck = setInterval(async () => {
+        try {
+          const identity = socket.authToken ? await verifySocketToken(socket.authToken) : null;
+          if (!identity) {
+            socket.disconnect(true);
+          } else if (!identity.canJoinAdminRoom) {
+            socket.leave(RealtimeRooms.admin);
+            clearInterval(adminRecheck);
+          }
+        } catch (error) {
+          console.error('admin socket re-check failed:', error);
+        }
+      }, ADMIN_SOCKET_RECHECK_MS);
+      adminRecheck.unref?.();
+    }
 
     // Public live server status. Joining sends the current snapshot immediately.
     socket.on(RealtimeClientEvents.serversSubscribe, async () => {
@@ -111,6 +143,7 @@ export async function setupSocketIO(httpServer: HttpServer): Promise<Server> {
     chatHandler(io, socket);
 
     socket.on('disconnect', (reason) => {
+      if (adminRecheck) clearInterval(adminRecheck);
       console.log(`Socket disconnected: ${socket.id} (Reason: ${reason})`);
     });
   });

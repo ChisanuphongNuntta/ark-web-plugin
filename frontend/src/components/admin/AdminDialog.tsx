@@ -36,10 +36,13 @@ export interface AdminDialogProps {
   initialFocusRef?: React.RefObject<HTMLElement | null>;
   /** 'alertdialog' for confirmations. */
   role?: 'dialog' | 'alertdialog';
+  /** 'center' (default) modal, or 'right' = full-height side drawer (row details). */
+  placement?: 'center' | 'right';
   className?: string;
 }
 
 const sizeClass = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl' } as const;
+const drawerSizeClass = { sm: 'sm:max-w-md', md: 'sm:max-w-xl', lg: 'sm:max-w-3xl' } as const;
 
 /**
  * Themed modal: portal to <body>, Escape to close, focus trapped inside,
@@ -57,8 +60,10 @@ export function AdminDialog({
   busy = false,
   initialFocusRef,
   role = 'dialog',
+  placement = 'center',
   className,
 }: AdminDialogProps) {
+  const drawer = placement === 'right';
   const isClient = useIsClient();
   const panelRef = React.useRef<HTMLDivElement>(null);
   const bodyRef = React.useRef<HTMLDivElement>(null);
@@ -131,7 +136,12 @@ export function AdminDialog({
   if (!open || !isClient) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto p-4">
+    <div
+      className={cn(
+        'fixed inset-0 z-[200] flex',
+        drawer ? 'items-stretch justify-end' : 'items-center justify-center overflow-y-auto p-4',
+      )}
+    >
       <div
         className="fixed inset-0 bg-[#020c18b3] backdrop-blur-[5px]"
         aria-hidden="true"
@@ -147,8 +157,11 @@ export function AdminDialog({
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
         className={cn(
-          'relative z-10 flex max-h-[calc(100dvh-2rem)] w-full flex-col overflow-hidden rounded-[20px] border border-[color:var(--line)] bg-[var(--surface-1)] text-iris-pearl shadow-[0_24px_60px_rgba(0,0,0,0.45)] focus:outline-none',
-          sizeClass[size],
+          'relative z-10 flex w-full flex-col overflow-hidden border border-[color:var(--line)] text-iris-pearl shadow-[0_24px_60px_rgba(0,0,0,0.45)] focus:outline-none',
+          drawer
+            ? 'h-[100dvh] max-h-[100dvh] rounded-none border-y-0 border-r-0 bg-[var(--surface-2)] sm:rounded-l-[20px]'
+            : 'max-h-[calc(100dvh-2rem)] rounded-[20px] bg-[var(--surface-1)]',
+          drawer ? drawerSizeClass[size] : sizeClass[size],
           className,
         )}
       >

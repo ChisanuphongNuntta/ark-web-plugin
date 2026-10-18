@@ -92,7 +92,7 @@ describe('Payment sandbox', () => {
     const result = await paymentService.processWebhook('sandbox', payload, sign(payload));
 
     expect(result).toMatchObject({ accepted: true, credited: true, points: '110' });
-    expect(walletService.creditUser).toHaveBeenCalledWith('u1', 110n, 'payment:pi-1:credit', 'payment_topup', 'pi-1', db);
+    expect(walletService.creditUser).toHaveBeenCalledWith('u1', 110n, 'payment:pi-1:credit', 'payment_topup', 'pi-1', db, { referenceType: 'payment_intent' });
     expect(db.paymentIntent.update).toHaveBeenCalledWith({
       where: { id: 'pi-1' }, data: expect.objectContaining({ status: 'completed' }),
     });

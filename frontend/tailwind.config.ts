@@ -23,6 +23,9 @@ const config: Config = {
           slate: 'rgb(var(--iris-slate) / <alpha-value>)',                                   // Iris Slate     #151226
           violet: 'rgb(var(--iris-violet) / <alpha-value>)',                                  // Frozen Midnight Violet #0D091A
           magenta: 'rgb(var(--iris-magenta) / <alpha-value>)',                                 // Glowing Magenta #E83D84
+          // Semantic money colours (ledger amounts): credit = money in, debit = money out
+          credit: 'rgb(var(--iris-credit) / <alpha-value>)',
+          debit: 'rgb(var(--iris-debit) / <alpha-value>)',
           // Canonical brand-name aliases (same tokens, descriptive names)
           obsidian: 'rgb(var(--iris-ink) / <alpha-value>)',
           'deep-river': 'rgb(var(--iris-river) / <alpha-value>)',

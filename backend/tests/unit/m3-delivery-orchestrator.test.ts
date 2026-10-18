@@ -190,11 +190,11 @@ describe('M3 Delivery Orchestrator (§18) — idempotent complete / retry / dead
   });
 
   describe('releaseDelivery (player offline)', () => {
-    it('returns the job to pending and order delivering -> queued without consuming an attempt', async () => {
+    it('returns the job to pending with a backoff, undoes the claim attempt, and moves order delivering -> queued', async () => {
       db.deliveryJob.findUnique.mockResolvedValueOnce({
-        id: 'job-1', status: 'leased', leaseToken: 'lease-abc', deliveryType: 'order', referenceId: 'order-1',
+        id: 'job-1', status: 'leased', leaseToken: 'lease-abc', deliveryType: 'order', referenceId: 'order-1', attempts: 3,
       });
-      db.deliveryJob.update.mockResolvedValueOnce({});
+      db.deliveryJob.updateMany.mockResolvedValueOnce({ count: 1 });
       db.order.findUnique.mockResolvedValueOnce({ id: 'order-1', status: 'delivering' });
       db.order.update.mockResolvedValueOnce({});
       db.fulfillment.updateMany.mockResolvedValueOnce({});
@@ -205,11 +205,13 @@ describe('M3 Delivery Orchestrator (§18) — idempotent complete / retry / dead
 
       await plugin.releaseDelivery(req, res, next);
 
-      expect(db.deliveryJob.update).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({ status: 'pending', leaseToken: null }),
-      }));
+      expect(next).not.toHaveBeenCalled();
+      expect(db.deliveryJob.updateMany).toHaveBeenCalledWith({
+        where: { id: 'job-1', status: 'leased', leaseToken: 'lease-abc' },
+        data: expect.objectContaining({ status: 'pending', leaseToken: null, attempts: 2, nextRetryAt: expect.any(Date) }),
+      });
       expect(db.order.update).toHaveBeenCalledWith({ where: { id: 'order-1' }, data: { status: 'queued' } });
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, attempts: 2 }));
     });
   });
 

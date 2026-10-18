@@ -102,7 +102,7 @@ describe('socket authentication', () => {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     db.userSession.findUnique.mockResolvedValueOnce({ userId: 'u1', isActive: true, expiresAt: new Date(Date.now() + 60_000) });
     db.user.findUnique.mockResolvedValueOnce({ id: 'u1', discordUsername: 'Heart', discordAvatar: null, isBanned: false, isAdmin: false, role: 'root' });
-    await expect(verifySocketToken(token)).resolves.toEqual({ userId: 'u1', userName: 'Heart', userAvatar: undefined, isAdmin: true });
+    await expect(verifySocketToken(token)).resolves.toEqual({ userId: 'u1', userName: 'Heart', userAvatar: undefined, isAdmin: true, canJoinAdminRoom: true });
     expect(db.userSession.findUnique).toHaveBeenCalledWith({ where: { token: tokenHash } });
 
     db.userSession.findUnique.mockResolvedValueOnce({ userId: 'u1', isActive: false, expiresAt: new Date(Date.now() + 60_000) });
@@ -112,6 +112,14 @@ describe('socket authentication', () => {
     db.userSession.findUnique.mockResolvedValueOnce({ userId: 'u1', isActive: true, expiresAt: new Date(Date.now() + 60_000) });
     db.user.findUnique.mockResolvedValueOnce({ id: 'u1', isBanned: true, role: 'user' });
     await expect(verifySocketToken(token)).resolves.toBeNull();
+
+    // Legacy isAdmin flag (role user/server_admin): chat moderator, but NOT the admin room, the
+    // same rule as REST requireWebsiteAdmin (role ADMIN|ROOT).
+    db.userSession.findUnique.mockResolvedValueOnce({ id: 's-9', userId: 'u1', isActive: true, expiresAt: new Date(Date.now() + 60_000) });
+    db.user.findUnique.mockResolvedValueOnce({ id: 'u1', discordUsername: 'Mod', discordAvatar: null, isBanned: false, isAdmin: true, role: 'server_admin' });
+    await expect(verifySocketToken(token)).resolves.toEqual({
+      userId: 'u1', userName: 'Mod', userAvatar: undefined, isAdmin: true, canJoinAdminRoom: false, sessionId: 's-9',
+    });
 
     await expect(verifySocketToken('not-a-jwt')).resolves.toBeNull();
     await expect(verifySocketToken(jwt.sign({ userId: 'u1' }, 'another-secret-another-secret-another-secret'))).resolves.toBeNull();

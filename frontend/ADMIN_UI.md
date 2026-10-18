@@ -309,7 +309,7 @@ Pass `undefined` while loading, so a `?page=3` in the URL isn't clamped to 1 bef
 | `StatusBadge` `{tone: 'success'\|'warning'\|'danger'\|'neutral'\|'info', dot?}` | row status pill |
 | `AdminButton` `{variant: 'primary'\|'secondary'\|'danger'\|'ghost', size: 'sm'\|'md', loading?, icon?}` | buttons |
 | `AdminIconButton` `{'aria-label' (required), tone?}` | 40 px row-action icon button |
-| `AdminDialog` `{open, onClose, title, description?, footer?, size?, busy?, initialFocusRef?, role?}` | themed modal for forms (portal, Escape, focus trap, focus restore, scroll lock) |
+| `AdminDialog` `{open, onClose, title, description?, footer?, size?, busy?, initialFocusRef?, role?, placement?}` | themed modal for forms (portal, Escape, focus trap, focus restore, scroll lock). `placement="right"` = full-height side drawer for row details (used by /admin/transactions) |
 | `ConfirmDialog` `{open, onClose, onConfirm (may be async), title, description?, confirmText?, cancelText?, tone?, confirmPhrase?, loading?}` | destructive confirmation |
 | `SegmentedTabs` `{value, onChange, options: {value,label,count?}[], 'aria-label'}` | single-choice filter (radiogroup, arrow keys) |
 | `Pagination` `{page, pageSize, total, onPageChange, onPageSizeChange, isBusy?, isUnknown?, pageSizeOptions?, hidePageSize?}` | footer: range label, rows-per-page, first/prev/numbers/next/last; collapses to `หน้า 2/5` on mobile |
@@ -354,3 +354,16 @@ npx eslint src/components/admin src/hooks/usePaginatedQuery.ts src/lib/api.ts
 ```
 
 (Never run `next build` or `next dev` on the F: drive. See PROGRESS.md.)
+
+---
+
+## 7. Money / ledger pages (/admin/transactions)
+
+- Amounts are decimal **strings** from the API. Format with `formatIc` (`@/lib/adminTransactionsMath`); never
+  `Number()` them. Signed amounts use `<TransactionAmount>` (`text-iris-credit` = money in,
+  `text-iris-debit` = money out, mono digits, `sr-only` "เข้า/ออก" so colour is never the only signal).
+- Times are shown in Bangkok time (`formatBangkokDateTime`). Date filters keep Bangkok days (`YYYY-MM-DD`)
+  in the URL; `adminTransactionsApi` converts them to ISO instants at 00:00 / 23:59:59.999 +07:00.
+- Building blocks: `src/components/admin/transactions/*` (`TransactionBits`, `TransactionDetailDrawer`,
+  `RecentTransactionsPanel`, `LedgerMismatchBanner`). Helper tests:
+  `node --no-warnings --test src/lib/adminTransactionsMath.test.mts`.

@@ -10,6 +10,9 @@
  *   catalog:updated  -> product lists
  *   servers:status   -> live server status cache (room 'servers')
  *   admin:*          -> admin slip / delivery queues (staff sockets only)
+ *   admin:ledger:mismatch -> persistent warning banner on admin pages
+ *   (admin:transaction is consumed by /admin/transactions and the dashboard's
+ *    latest-transactions panel directly; it does not trigger the admin:* refetch)
  *
  * The polling fallbacks live in lib/realtime/queryKeys.ts
  * (applyRealtimeFallbackDefaults).
@@ -20,6 +23,7 @@ import { ensureSocket, getSocket, onSocketEvent, reauthenticateSocket, useSocket
 import { useAuthStore } from '@/lib/store';
 import {
   REALTIME_EVENTS,
+  type AdminLedgerMismatchEvent,
   type CatalogUpdatedEvent,
   type DeliveryUpdatedEvent,
   type OrderUpdatedEvent,
@@ -36,6 +40,7 @@ import {
 import { applyWalletBalance, invalidateWalletQueries, syncWalletNow } from '@/lib/realtime/walletSync';
 import { applyServersStatusEvent } from '@/lib/realtime/serverStatus';
 import { pushToast } from '@/lib/realtime/toastStore';
+import { useLedgerAlert } from '@/lib/realtime/ledgerAlertStore';
 import { RealtimeToaster } from './RealtimeToaster';
 
 const LEGACY_SERVER_REFRESH_MS = 30_000;
@@ -93,8 +98,8 @@ function orderToast(event: OrderUpdatedEvent) {
       pushToast({ tone: 'error', title: 'ส่งของไม่สำเร็จ', description: 'ดูรายละเอียดหรือติดต่อทีมงานจากหน้าคำสั่งซื้อ', href, dedupeKey: `failed:${event.orderId}`, once: true });
       break;
     case 'refunded':
-      // Refunds credit the refundable sub-account, not the spendable balance in the navbar pill.
-      pushToast({ tone: 'info', title: 'คืนเหรียญเข้ายอดที่ขอคืนได้แล้ว', description: 'ดูรายละเอียดได้ที่หน้าคำสั่งซื้อ', href, dedupeKey: `refunded:${event.orderId}`, once: true });
+      // Refunds credit the spendable `available` balance (refund policy 2026-10).
+      pushToast({ tone: 'info', title: 'คืนเหรียญเข้ายอดใช้ได้แล้ว', description: 'ดูรายละเอียดได้ที่หน้าคำสั่งซื้อ', href, dedupeKey: `refunded:${event.orderId}`, once: true });
       break;
     case 'cancelled':
       pushToast({ tone: 'warning', title: 'คำสั่งซื้อถูกยกเลิก', href, dedupeKey: `cancelled:${event.orderId}`, once: true });
@@ -138,8 +143,8 @@ function walletToast(event: WalletUpdatedEvent) {
       break;
     default:
       // purchase / transfer: the buyer already sees the result on screen.
-      // refund: goes to the refundable sub-account (balance here is unchanged); the
-      // order:updated 'refunded' toast covers it.
+      // refund: credits `available` (the navbar pill updates from this event); the
+      // order:updated 'refunded' toast covers the message.
       break;
   }
 }
@@ -187,6 +192,9 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         void queryClient.invalidateQueries({ predicate: isOrderQuery });
         deliveryToast(event);
       }),
+      onSocketEvent<AdminLedgerMismatchEvent>(REALTIME_EVENTS.adminLedgerMismatch, (event) => {
+        useLedgerAlert.getState().report(event);
+      }),
       onSocketEvent<CatalogUpdatedEvent>(REALTIME_EVENTS.catalogUpdated, () => {
         void queryClient.invalidateQueries({ predicate: isCatalogQuery });
       }),
@@ -204,6 +212,9 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     const socket = getSocket();
     const onAdminEvent = (event: string) => {
       if (!event.startsWith('admin:')) return;
+      // One per ledger posting (high volume) / reconcile alert: handled by their own listeners,
+      // never a reason to refetch every admin queue.
+      if (event === REALTIME_EVENTS.adminTransaction || event === REALTIME_EVENTS.adminLedgerMismatch) return;
       void queryClient.invalidateQueries({ predicate: isAdminOpsQuery });
     };
     socket?.onAny(onAdminEvent);

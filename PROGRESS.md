@@ -1,5 +1,18 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## Admin "every transaction" + review fixes — 2026-10-18 (uncommitted)
+
+- Contract: `backend/contracts/admin-transactions-2026-10.md` (list/detail/summary/CSV export/reconcile, `admin:transaction`, `admin:ledger:mismatch`). UI: `/admin/transactions` + `/admin/transactions/reconcile`.
+- Ledger convergence verified: the only `User.pointsBalance` write in `backend/src` is the projection inside `walletService.post` (POST /orders, dino P2P, admin adjust/refund and rewards all post through the ledger; `tests/unit/ledger-convergence.test.ts` scans the source).
+- Review fixes applied:
+  - Stripe `verify-session` credits only a `stripe` intent the caller owns, validates the session like the webhook, uses the webhook's key `payment:<intentId>:credit`, and gates on a conditional `pending|processing -> completed` flip. The no-intent branch, which minted IC, is gone (now 404).
+  - `POST /admin/users/:id/points`: caller keys are namespaced `admin:adjust:<adminId>:<key>`. A replay returns the original posting with `replayed: true` and writes no second audit row; a P2002/P2034 race gets the same answer.
+  - **Refund policy:** order refunds now credit `available`, the same as dino refunds. Legacy refunds left in `refundable` show as `refundableAfter` on admin rows and as `refundableBalances` in reconcile. Moving them is an admin decision (open).
+  - Socket room `admin` is now role admin|root only (it no longer accepts the legacy `isAdmin` flag). Membership is re-checked every 60s. Logout or revoke disconnects that session's sockets, a demotion leaves the room, and a ban disconnects the user.
+  - Delivery: a release no longer counts as an attempt. Release backoff runs 30s up to 5 min. The streak is incremented only after the release wins. Visibility comes from a DB probe marker (not Redis). An expired lease with no attempts left is dead-lettered (order -> failed / escrow refund).
+  - Admin rows `balanceAfter` fallback ordered by `postedAt`. CSV export uses keyset pagination with a 5s settle snapshot and adds a truncation marker row. Reconcile logs Redis-lock skips and, after 2 windows, runs without the lock (audit `ledger_reconcile_degraded`).
+- Verified: backend `tsc` + `vitest run tests/unit` (561 tests), frontend `tsc` + `eslint` (0 errors), `heart-plugin-backend:tx-check` and `heart-plugin-frontend:tx-check` Docker builds. Not deployed and no containers restarted.
+
 ## Item catalog + dossier art + game servers online — 2026-10-18
 
 - Items: 1,676 active (was 538), applied via `scripts/item-catalog/apply-plan.ts --apply` (backup `backups/postgres/heartshop-pre-item-catalog-20261018-152656.dump`). Legacy rows were left untouched apart from added images. 167 drafts stay off (ASA-only, platform-exclusive, mission-only, admin/debug, etc.). Icons: `frontend/public/images/catalog/ark/items` (1,501 webp).
@@ -138,5 +151,5 @@ Backend: POST /cart/sync (bulk, server-authoritative), Order state machine (draf
 - **REAL bugs (gate the prod `next build`): `react-hooks/rules-of-hooks` — conditional `React.useId()` in `frontend/src/components/ui/Input.tsx:33` and `Select.tsx:29`.** Frontend-owned; fix to unblock `frontend/Dockerfile.prod`.
 - 21× `react/no-unescaped-entities` (cosmetic) in admin/chat-ranks, admin/servers, admin/products, components/ApiKeyManager — also gate `next build`.
 - **M5 (P2P Escrow):** `/sell` is create-then-destroy (CRITICAL — crash window leaves a live dino + a sellable listing); `prepare-lock`/`confirm-lock` exist in contract but are dead scaffolding.
-- **M5 ledger convergence:** 4 money paths still write `pointsBalance` directly bypassing the ledger — `order.controller` (POST /orders), `dino-market` P2P, `admin` credit/refund, `user` rewards. Converge onto `walletService.post` to keep the wallet invariant globally true.
+- ~~**M5 ledger convergence:** 4 money paths wrote `pointsBalance` directly~~ — RESOLVED (verified 2026-10-18): all post through `walletService.post`; the projection write inside `post` is the only `pointsBalance` writer.
 - Frontend cart→checkout depends on syncing local Zustand lines to the server cart (`/cart/sync` being added in M3) before `/checkout/session`.

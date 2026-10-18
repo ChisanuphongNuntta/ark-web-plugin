@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronRight, Snowflake } from 'lucide-react';
+import { useAuthStore, type UserRole } from '@/lib/store';
+import { LedgerMismatchBanner } from '@/components/admin/transactions/LedgerMismatchBanner';
 
 const titles: Record<string, string> = {
   shop: 'ร้านค้า',
@@ -35,12 +37,16 @@ const titles: Record<string, string> = {
   'api-keys': 'การเชื่อมต่อ',
   system: 'ระบบ',
   'api-key': 'API Key',
+  transactions: 'ธุรกรรม',
+  reconcile: 'ตรวจสอบยอดบัญชี',
   callback: 'เข้าสู่ระบบ',
   'link-steam': 'เชื่อม Steam',
 };
 
-const adminLinks = [
+/** [href, label, roles?] — roles limits who sees the link (the page itself still checks). */
+const adminLinks: [string, string, UserRole[]?][] = [
   ['/admin', 'ภาพรวม'],
+  ['/admin/transactions', 'ธุรกรรม', ['admin', 'root']],
   ['/admin/products', 'สินค้า'],
   ['/admin/categories', 'หมวดหมู่'],
   ['/admin/users', 'ผู้ใช้'],
@@ -52,14 +58,14 @@ const adminLinks = [
   ['/admin/system/api-key', 'ระบบ'],
 ];
 
-const accountLinks = [
+const accountLinks: [string, string][] = [
   ['/profile', 'บัญชีของฉัน'],
   ['/topup', 'เติมเหรียญ'],
   ['/orders', 'คำสั่งซื้อ'],
   ['/profile/data', 'ข้อมูลส่วนบุคคล'],
 ];
 
-const marketLinks = [
+const marketLinks: [string, string][] = [
   ['/market', 'ตลาดทั้งหมด'],
   ['/market/my-listings', 'รายการขายของฉัน'],
   ['/market/my-purchases', 'รายการซื้อของฉัน'],
@@ -70,7 +76,15 @@ export function FrozenPageFrame({ children }: { children: React.ReactNode }) {
   const parts = pathname.split('/').filter(Boolean);
   const section = parts[0] || 'home';
   const isAccount = ['profile', 'orders', 'topup'].includes(section);
-  const links = section === 'admin' ? adminLinks : isAccount ? accountLinks : section === 'market' ? marketLinks : [];
+  const role = useAuthStore((state) => state.user?.role ?? 'user');
+  const links: [string, string][] =
+    section === 'admin'
+      ? adminLinks.filter(([, , roles]) => !roles || roles.includes(role)).map(([href, label]): [string, string] => [href, label])
+      : isAccount
+        ? accountLinks
+        : section === 'market'
+          ? marketLinks
+          : [];
 
   // Custom breadcrumb segments for unified account section
   const breadcrumbSegments = (() => {
@@ -122,12 +136,17 @@ export function FrozenPageFrame({ children }: { children: React.ReactNode }) {
       {links.length > 0 && (
         <nav className="page-shell frozen-section-nav" aria-label="เมนูในส่วนนี้">
           {links.map(([href, label]) => (
-            <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined}>
+            <Link
+              key={href}
+              href={href}
+              aria-current={pathname === href || (href !== '/admin' && pathname.startsWith(`${href}/`)) ? 'page' : undefined}
+            >
               {label}
             </Link>
           ))}
         </nav>
       )}
+      {section === 'admin' && <LedgerMismatchBanner />}
       {children}
     </div>
   );

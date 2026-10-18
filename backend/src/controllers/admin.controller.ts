@@ -8,10 +8,16 @@ import prisma from '../config/database.js';
 import { AuthRequest, UserRole } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import { ServerAdminService } from '../services/serverAdmin.service.js';
-import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
+import walletService, {
+  userAccountKey,
+  SYSTEM_ACCOUNTS,
+  walletRequestHashFor,
+  type PostLedgerTransactionInput,
+} from '../services/wallet.service.js';
 import { isRefundable } from '../services/orderState.js';
 import { afterCommit } from '../realtime/afterCommit.js';
 import { emitCatalogUpdated, emitOrderUpdated } from '../realtime/emit.js';
+import { disconnectUserSockets, revokeAdminRoom } from '../realtime/sessionControl.js';
 import pluginCredentialService from '../services/pluginCredential.service.js';
 import archiver from 'archiver';
 import { normalizeBlueprintPath } from '../utils/blueprint.js';
@@ -417,6 +423,8 @@ export class AdminController {
           ...(req.user!.role === UserRole.ROOT && typeof isAdmin === 'boolean' && { isAdmin }),
         },
       });
+      // A banned user's open sockets (user room, admin room) are closed right away.
+      if (isBanned === true) disconnectUserSockets(targetUserId);
 
       res.json({ user });
     } catch (error) {
@@ -424,16 +432,31 @@ export class AdminController {
     }
   };
 
+  // POST /admin/users/:id/points { amount, reason, idempotencyKey? } — manual credit/debit.
+  //
+  // Flows through the IRIS Wallet double-entry ledger only (walletService.post is the single
+  // writer; User.pointsBalance is its read-only projection). A positive amount mints from system
+  // issuance into the user's available balance; a negative amount burns back to issuance and is
+  // refused (409) when the available balance is insufficient. A reason is mandatory, the acting
+  // admin is recorded as the ledger transaction's createdBy, and every attempt (success or
+  // failure) is written to the audit log as `points_adjust`.
   adjustPoints = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { amount, reason, idempotencyKey } = req.body;
+      const { amount, idempotencyKey } = req.body ?? {};
       const targetUserId = req.params.id;
 
-      if (typeof amount !== 'number' || !Number.isInteger(amount)) {
+      if (typeof amount !== 'number' || !Number.isSafeInteger(amount)) {
         throw new AppError('Amount is required', 400);
       }
       if (amount === 0) {
         throw new AppError('Amount must be non-zero', 400);
+      }
+      const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+      if (reason.length < 3 || reason.length > 500) {
+        throw new AppError('Reason is required (3-500 characters)', 400);
+      }
+      if (idempotencyKey !== undefined && (typeof idempotencyKey !== 'string' || idempotencyKey.trim().length > 200)) {
+        throw new AppError('idempotencyKey must be a string of at most 200 characters', 400);
       }
 
       // Check access for server admin
@@ -448,38 +471,111 @@ export class AdminController {
         throw new AppError('You do not have permission to adjust points for this user', 403);
       }
 
-      // Manual admin adjustment flows through the IRIS Wallet double-entry ledger
-      // (the single source of truth). A positive amount mints from the system issuance
-      // account into the user's available balance; a negative amount burns back to
-      // issuance. User.pointsBalance is kept in sync as a read-only projection inside
-      // walletService.post — no legacy PointTransaction dual-write. The reason and the
-      // acting admin are recorded on the ledger transaction itself (audit trail per §15).
-      // Callers may pass an idempotencyKey to make admin tooling safe against retries.
+      const before = await prisma.user.findUnique({
+        where: { id: targetUserId },
+        select: { pointsBalance: true },
+      });
+      if (!before) throw new AppError('User not found', 404);
+
       const amountBig = BigInt(amount);
-      await prisma.$transaction(async (tx) => {
-        await walletService.ensureUserAccounts(targetUserId, tx);
-        await walletService.post({
-          idempotencyKey: idempotencyKey?.trim() || `admin:adjust:${crypto.randomUUID()}`,
-          type: 'admin_adjustment',
-          referenceType: 'admin',
-          referenceId: targetUserId,
-          description: reason || `Admin adjustment by ${req.user!.discordId}`,
-          createdBy: req.user!.id,
-          entries: [
-            { accountKey: userAccountKey(targetUserId, 'available'), amount: amountBig },
-            { accountKey: SYSTEM_ACCOUNTS.issuance, amount: -amountBig },
-          ],
-        }, tx);
-      }, { isolationLevel: 'Serializable' });
+      // Idempotency keys are global across the ledger, so a client-supplied key is always
+      // namespaced to this endpoint and the acting admin. It can never collide with a system
+      // flow's key (payment:<id>:credit, order:refund:<id>, dino:escrow:...).
+      const clientKey = typeof idempotencyKey === 'string' ? idempotencyKey.trim() : '';
+      const ledgerKey = clientKey
+        ? `admin:adjust:${req.user!.id}:${clientKey}`
+        : `admin:adjust:${crypto.randomUUID()}`;
+      const postingInput: PostLedgerTransactionInput = {
+        idempotencyKey: ledgerKey,
+        type: 'admin_adjustment',
+        referenceType: 'admin_adjustment',
+        referenceId: targetUserId,
+        description: reason,
+        metadata: { direction: amount > 0 ? 'credit' : 'debit', actorRole: req.user!.role },
+        createdBy: req.user!.id,
+        entries: [
+          { accountKey: userAccountKey(targetUserId, 'available'), amount: amountBig },
+          { accountKey: SYSTEM_ACCOUNTS.issuance, amount: -amountBig },
+        ],
+      };
+
+      // Replay of a client key (sequential retry, or the loser of a concurrent double-click):
+      // return the original posting, write no second success audit row.
+      const replayOf = async () => {
+        if (!clientKey) return null;
+        const existing = await prisma.ledgerTransaction.findUnique({
+          where: { idempotencyKey: ledgerKey },
+          select: { id: true, requestHash: true },
+        });
+        if (!existing) return null;
+        const sortedEntries = [...postingInput.entries].sort((a, b) => a.accountKey.localeCompare(b.accountKey));
+        if (existing.requestHash !== walletRequestHashFor(postingInput, sortedEntries)) {
+          throw new AppError('Idempotency key was already used for a different adjustment', 409);
+        }
+        const current = await prisma.user.findUnique({ where: { id: targetUserId }, select: { pointsBalance: true } });
+        return { transactionId: existing.id, newBalance: Number(current?.pointsBalance ?? 0n) };
+      };
+      const replayed = await replayOf();
+      if (replayed) {
+        res.json({ success: true, replayed: true, ...replayed });
+        return;
+      }
+
+      let posted: { id: string };
+      try {
+        posted = await prisma.$transaction(async (tx) => {
+          await walletService.ensureUserAccounts(targetUserId, tx);
+          return walletService.post(postingInput, tx);
+        }, { isolationLevel: 'Serializable' });
+      } catch (error) {
+        // A concurrent request with the same client key committed first (unique violation or
+        // serialization abort): answer with that posting instead of a 500 + failure audit.
+        const code = (error as { code?: string }).code;
+        if (clientKey && (code === 'P2002' || code === 'P2034')) {
+          const raced = await replayOf();
+          if (raced) {
+            res.json({ success: true, replayed: true, ...raced });
+            return;
+          }
+        }
+        await auditService.log({
+          userId: req.user!.id,
+          action: 'points_adjust',
+          resource: 'points',
+          resourceId: targetUserId,
+          oldValue: { pointsBalance: before.pointsBalance.toString() },
+          newValue: { amount: String(amount), reason },
+          metadata: { idempotencyKey: ledgerKey },
+          status: 'failure',
+          errorMessage: error instanceof Error ? error.message : String(error),
+        }, req);
+        throw error;
+      }
 
       const updated = await prisma.user.findUnique({
         where: { id: targetUserId },
         select: { pointsBalance: true },
       });
 
+      await auditService.log({
+        userId: req.user!.id,
+        action: 'points_adjust',
+        resource: 'points',
+        resourceId: targetUserId,
+        oldValue: { pointsBalance: before.pointsBalance.toString() },
+        newValue: {
+          pointsBalance: (updated?.pointsBalance ?? 0n).toString(),
+          amount: String(amount),
+          reason,
+          ledgerTransactionId: posted?.id ?? null,
+        },
+        metadata: { idempotencyKey: ledgerKey },
+      }, req);
+
       res.json({
         success: true,
         newBalance: Number(updated?.pointsBalance ?? 0n),
+        transactionId: posted?.id ?? null,
       });
     } catch (error) {
       next(error);
@@ -653,8 +749,9 @@ export class AdminController {
       }
 
       // Reverse the purchase through the IRIS Wallet double-entry ledger: platform
-      // revenue refunds the buyer's refundable balance (§15 — refunds land in the
-      // refundable sub-account, not directly spendable). The ledger is the single source
+      // revenue refunds the buyer's AVAILABLE balance (refund policy 2026-10: the money is
+      // spendable again and visible in the customer balance, the same as dino escrow refunds;
+      // nothing in the system spends `refundable`). The ledger is the single source
       // of truth and original entries are never mutated — we post a new, balanced,
       // idempotent reversal. No legacy PointTransaction dual-write.
       //
@@ -688,10 +785,26 @@ export class AdminController {
           createdBy: req.user!.id,
           entries: [
             { accountKey: SYSTEM_ACCOUNTS.revenue, amount: -BigInt(order.totalPrice) },
-            { accountKey: userAccountKey(order.userId, 'refundable'), amount: BigInt(order.totalPrice) },
+            { accountKey: userAccountKey(order.userId, 'available'), amount: BigInt(order.totalPrice) },
           ],
         }, tx);
       }, { isolationLevel: 'Serializable' });
+
+      // Admin-initiated money movement: audited alongside the ledger row (createdBy above).
+      await auditService.log({
+        userId: req.user!.id,
+        action: 'order_refund',
+        resource: 'order',
+        resourceId: order.id,
+        oldValue: { status: order.status },
+        newValue: {
+          status: 'refunded',
+          amount: String(order.totalPrice),
+          customerUserId: order.userId,
+          reason: reason ? String(reason).slice(0, 240) : null,
+        },
+        metadata: { idempotencyKey: `order:refund:${order.id}` },
+      }, req);
 
       res.json({ success: true, refundedAmount: order.totalPrice });
     } catch (error) {
@@ -1297,6 +1410,8 @@ export class AdminController {
           isAdmin: role !== 'user',
         },
       });
+      // Demoted below ADMIN|ROOT: leave the admin realtime room now, not at next reconnect.
+      if (role !== 'admin' && role !== 'root') revokeAdminRoom(targetUserId);
 
       res.json({
         success: true,
@@ -1584,6 +1699,12 @@ export class AdminController {
             'bank_slip_approval',
             intent.id,
             tx,
+            // Replay-safe: guarded by the conditional status flip above.
+            {
+              referenceType: 'slip',
+              description: `Bank slip top-up approved: ${notes}`.slice(0, 300),
+              createdBy: req.user!.id,
+            },
           );
         }, { isolationLevel: 'Serializable' });
 
@@ -1620,6 +1741,7 @@ export class AdminController {
           'bank_slip_approval_demo',
           id,
           tx,
+          { referenceType: 'slip', createdBy: req.user!.id },
         );
       });
 

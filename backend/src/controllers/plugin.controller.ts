@@ -12,6 +12,7 @@ import {
 import { canTransition } from '../services/orderState.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
 import serverQueryService from '../services/serverQuery.service.js';
+import { releaseBackoffMs, releaseStreaks } from '../services/deliveryRelease.service.js';
 import { afterCommit } from '../realtime/afterCommit.js';
 import {
   ORDER_BACKED_DELIVERY_TYPES,
@@ -28,11 +29,14 @@ const dinoFeeSplit = (price: number) => {
 // Move an order's state-machine status forward only when the transition is legal. Used by
 // the delivery orchestrator so a duplicate / out-of-order plugin callback can never drag an
 // order backwards (e.g. delivered -> delivering). Returns silently on illegal/no-op moves.
+// `silent` skips the order:updated emit for moves the buyer must not see (a probe claim of a
+// job whose player is still offline, and the release that follows it).
 async function advanceOrder(
   client: any,
   orderId: string,
   to: string,
   extra: Record<string, unknown> = {},
+  options: { silent?: boolean } = {},
 ) {
   const order = await client.order.findUnique({ where: { id: orderId } });
   if (!order) return;
@@ -40,7 +44,7 @@ async function advanceOrder(
   if (!canTransition(order.status, to)) return;
   await client.order.update({ where: { id: orderId }, data: { status: to, ...extra } });
   // Realtime: after the caller's transaction commits (immediately when client is prisma).
-  afterCommit(() => emitOrderUpdated(order.userId, orderId, to));
+  if (!options.silent) afterCommit(() => emitOrderUpdated(order.userId, orderId, to));
 }
 
 // Realtime delivery:updated for the job's owner, after the enclosing transaction commits.
@@ -329,6 +333,35 @@ export class PluginController {
     }
   };
 
+  // Player came online on `serverId`: clear the release backoff (and streak) of their pending
+  // jobs whose last claim ended in an offline release. Failure backoffs are left untouched
+  // (complete/fail clear the streak, so only release-backed jobs have one). Never throws.
+  async resetOfflineBackoff(serverId: number, steamId: string): Promise<number> {
+    try {
+      const waiting = await prisma.deliveryJob.findMany({
+        where: { serverId, playerSteamId: steamId, status: 'pending', nextRetryAt: { gt: new Date() } },
+        select: { id: true, error: true },
+        take: 100,
+      });
+      if (waiting.length === 0) return 0;
+      const streaks = await releaseStreaks.getMany(waiting.map((job) => job.id));
+      // Redis unreadable: fall back to "no recorded failure" (a failure backoff is kept).
+      const released = streaks.known === false
+        ? waiting.filter((job) => !job.error).map((job) => job.id)
+        : waiting.map((job) => job.id).filter((id) => (streaks.get(id) ?? 0) > 0);
+      if (released.length === 0) return 0;
+      await prisma.deliveryJob.updateMany({
+        where: { id: { in: released }, status: 'pending' },
+        data: { nextRetryAt: null },
+      });
+      await releaseStreaks.clear(released);
+      return released.length;
+    } catch (error) {
+      console.error('[delivery] offline backoff reset failed:', error);
+      return 0;
+    }
+  }
+
   // Get player by Steam ID
   getPlayerBySteamId = async (req: PluginRequest, res: Response, next: NextFunction) => {
     try {
@@ -347,6 +380,10 @@ export class PluginController {
       if (!user) {
         return res.status(404).json({ error: 'Player not found' });
       }
+
+      // The plugin calls this on player login: deliveries released while they were offline
+      // become claimable now instead of waiting out their release backoff.
+      if (req.serverId) await this.resetOfflineBackoff(req.serverId, steamId);
 
       // Get pending orders for this player on this server
       const pendingOrders = await prisma.order.count({
@@ -429,8 +466,31 @@ export class PluginController {
 
       const leaseExpiresAt = new Date(now.getTime() + LEASE_DURATION_MS);
       const claimed = [];
+      // A job whose previous claim ended in a release (player offline) is re-claimed as a silent
+      // probe: the buyer already sees "pending"; flashing "leased" for a lease that is about to
+      // be released again every cycle is noise. A probe that completes/fails emits as usual.
+      const releaseStreakByJob = await releaseStreaks.getMany(jobs.map((job) => job.id));
+      const streaksKnown = releaseStreakByJob.known !== false;
 
       for (const job of jobs) {
+        // Attempt accounting: every claim counts as an attempt unless it ends in a release
+        // (releaseDelivery undoes its increment). A lease that EXPIRED (plugin crashed, or a
+        // poison payload kills it before complete/fail/release) keeps its attempt. Once the
+        // attempts are used up, an expired lease is dead-lettered here instead of being
+        // re-claimed forever: the same outcome as failDelivery at the limit.
+        if (job.status === 'leased' && (job.attempts ?? 0) >= (job.maxAttempts ?? DEFAULT_MAX_ATTEMPTS)) {
+          await this.deadLetterExpiredLease(job);
+          continue;
+        }
+
+        // A job whose previous claim ended in a release (player offline) is re-claimed as a
+        // silent probe. Source: the Redis release streak; when Redis is unreadable, the DB (a
+        // pending job with a backoff stamp was released or failed before). A probe lease keeps
+        // its nextRetryAt stamp as the DB marker releaseDelivery reads.
+        const probe = job.status === 'pending' && (streaksKnown
+          ? (releaseStreakByJob.get(job.id) ?? 0) > 0
+          : job.nextRetryAt != null);
+
         const leaseToken = crypto.randomUUID();
         // Conditional update guards against two plugins racing for the same job: only the
         // claimant whose update matches the pre-claim status wins (count === 1).
@@ -445,7 +505,7 @@ export class PluginController {
             leaseToken,
             leaseExpiresAt,
             attempts: { increment: 1 },
-            nextRetryAt: null,
+            nextRetryAt: probe ? (job.nextRetryAt ?? now) : null,
           },
         });
         if (updateRes.count !== 1) continue; // lost the race; skip
@@ -454,9 +514,9 @@ export class PluginController {
 
         // Bind order/fulfillment state: queued -> delivering (claimed). Illegal/no-op moves
         // are ignored by advanceOrder so a re-lease of an already-delivering job is safe.
-        notifyDelivery(updated, 'leased');
+        if (!probe) notifyDelivery(updated, 'leased');
         if (ORDER_BACKED_DELIVERY_TYPES.has(updated.deliveryType)) {
-          await advanceOrder(prisma, updated.referenceId, 'delivering');
+          await advanceOrder(prisma, updated.referenceId, 'delivering', {}, { silent: probe });
           await prisma.fulfillment.updateMany({
             where: { orderId: updated.referenceId },
             data: { status: 'claimed', claimedAt: now, attempts: updated.attempts },
@@ -598,6 +658,9 @@ export class PluginController {
         });
       }
 
+      // The player was online for this claim: end any offline-release streak.
+      await releaseStreaks.clear([job.id]);
+
       res.json({
         success: true,
         message: 'Delivery completed successfully',
@@ -671,39 +734,16 @@ export class PluginController {
               data: { status: 'queued', attempts: updated.attempts, lastError: errorMessage },
             });
           } else {
-            await advanceOrder(tx, job.referenceId, 'failed', {
-              deliveryAttempts: updated.attempts,
-              lastError: errorMessage,
-            });
-            await tx.fulfillment.updateMany({
-              where: { orderId: job.referenceId },
-              data: { status: 'failed', failedAt: new Date(), attempts: updated.attempts, lastError: errorMessage },
-            });
+            await this.applyDeadLetterOutcome(tx, job, updated.attempts, errorMessage, 'throw');
           }
-        } else if (job.deliveryType === 'dino_marketplace' && !decision.retry) {
-          const listing = await tx.dinoListing.findUniqueOrThrow({ where: { id: job.referenceId } });
-          if (!listing.buyerId || listing.deliveryStatus !== 'pending') {
-            throw new AppError('Dino listing is not refundable from escrow', 409);
-          }
-          await tx.dinoListing.update({
-            where: { id: listing.id },
-            data: { deliveryStatus: 'failed' },
-          });
-          await walletService.ensureUserAccounts(listing.buyerId, tx);
-          await walletService.post({
-            idempotencyKey: `dino:escrow:refund:${listing.id}`,
-            type: 'dino_escrow_refund',
-            referenceType: 'dino_listing',
-            referenceId: listing.id,
-            description: `Escrow refund after failed dino delivery: ${listing.species} Lv.${listing.level}`,
-            entries: [
-              { accountKey: SYSTEM_ACCOUNTS.clearing, amount: -BigInt(listing.price) },
-              { accountKey: userAccountKey(listing.buyerId, 'available'), amount: BigInt(listing.price) },
-            ],
-          }, tx);
+        } else if (!decision.retry) {
+          await this.applyDeadLetterOutcome(tx, job, updated.attempts, errorMessage, 'throw');
         }
         return updated;
       }, { isolationLevel: 'Serializable' });
+
+      // A real attempt was made: end any offline-release streak (failure backoff takes over).
+      await releaseStreaks.clear([job.id]);
 
       res.json({
         success: true,
@@ -718,7 +758,96 @@ export class PluginController {
     }
   };
 
-  // Release delivery lease back to the queue (CR-PLUGIN-002)
+  // Side effects of a job reaching the dead-letter queue, shared by failDelivery (attempt limit)
+  // and claimDeliveries (expired lease with no attempts left): order -> failed (refundable) for
+  // order-backed jobs, escrow refund to the buyer for dino marketplace jobs.
+  // `onUnrefundable`: failDelivery answers 409 (existing contract); the claim path dead-letters
+  // anyway and logs, so one bad listing cannot wedge every claim cycle.
+  private async applyDeadLetterOutcome(
+    tx: any,
+    job: { id: string; deliveryType: string; referenceId: string },
+    attempts: number,
+    errorMessage: string,
+    onUnrefundable: 'throw' | 'skip',
+  ) {
+    if (ORDER_BACKED_DELIVERY_TYPES.has(job.deliveryType)) {
+      await advanceOrder(tx, job.referenceId, 'failed', {
+        deliveryAttempts: attempts,
+        lastError: errorMessage,
+      });
+      await tx.fulfillment.updateMany({
+        where: { orderId: job.referenceId },
+        data: { status: 'failed', failedAt: new Date(), attempts, lastError: errorMessage },
+      });
+      return;
+    }
+    if (job.deliveryType !== 'dino_marketplace') return;
+    const listing = await tx.dinoListing.findUniqueOrThrow({ where: { id: job.referenceId } });
+    if (!listing.buyerId || listing.deliveryStatus !== 'pending') {
+      if (onUnrefundable === 'throw') throw new AppError('Dino listing is not refundable from escrow', 409);
+      console.error(`[delivery] dead-lettered dino job ${job.id}: listing ${listing.id} is not refundable from escrow (deliveryStatus=${listing.deliveryStatus})`);
+      return;
+    }
+    await tx.dinoListing.update({
+      where: { id: listing.id },
+      data: { deliveryStatus: 'failed' },
+    });
+    await walletService.ensureUserAccounts(listing.buyerId, tx);
+    await walletService.post({
+      idempotencyKey: `dino:escrow:refund:${listing.id}`,
+      type: 'dino_escrow_refund',
+      referenceType: 'dino_listing',
+      referenceId: listing.id,
+      description: `Escrow refund after failed dino delivery: ${listing.species} Lv.${listing.level}`,
+      entries: [
+        { accountKey: SYSTEM_ACCOUNTS.clearing, amount: -BigInt(listing.price) },
+        { accountKey: userAccountKey(listing.buyerId, 'available'), amount: BigInt(listing.price) },
+      ],
+    }, tx);
+  }
+
+  // An expired lease whose attempts are used up: dead-letter it (never re-claim). Conditional on
+  // the expired lease we read, so a plugin that completes/fails/releases it concurrently wins.
+  // Never throws into the claim loop.
+  async deadLetterExpiredLease(job: {
+    id: string; deliveryType: string; referenceId: string; serverId: number;
+    leaseToken: string | null; attempts: number;
+  }): Promise<boolean> {
+    const errorMessage = `Lease expired with no complete/fail/release after ${job.attempts} attempt(s) (plugin crash or poison payload)`;
+    try {
+      const deadLettered = await prisma.$transaction(async (tx) => {
+        const changed = await tx.deliveryJob.updateMany({
+          where: { id: job.id, status: 'leased', leaseToken: job.leaseToken, leaseExpiresAt: { lt: new Date() } },
+          data: { status: 'dead_letter', error: errorMessage, leaseToken: null, leaseExpiresAt: null, nextRetryAt: null },
+        });
+        if (changed.count !== 1) return false;
+        notifyDelivery(job, 'dead_letter');
+        afterCommit(() => emitAdminDeliveryFailed(job.id, job.deliveryType, job.serverId));
+        await this.applyDeadLetterOutcome(tx, job, job.attempts, errorMessage, 'skip');
+        return true;
+      }, { isolationLevel: 'Serializable' });
+      if (deadLettered) await releaseStreaks.clear([job.id]);
+      return deadLettered;
+    } catch (error) {
+      console.error(`[delivery] dead-letter of expired lease ${job.id} failed:`, error);
+      return false;
+    }
+  }
+
+  // Release delivery lease back to the queue (CR-PLUGIN-002).
+  //
+  // The plugin releases when the buyer is offline or the delivery was deferred locally (nothing
+  // was delivered). A release:
+  //   - does NOT consume an attempt: the claim's attempts increment is undone, so a long
+  //     offline streak can never dead-letter the job on its first real failure;
+  //   - applies a small backoff that grows with consecutive releases (30s -> 5 min cap, see
+  //     deliveryRelease.service) instead of re-claiming every cycle; the streak resets when a
+  //     claim completes/fails or the player logs in;
+  //   - emits delivery:updated / order:updated only when the buyer-visible status changes, i.e.
+  //     when the lease it ends was a visible claim. A silent probe claim (re-claim after a
+  //     release) leaves nextRetryAt stamped on the leased job; that DB marker, not Redis,
+  //     decides, so a Redis outage cannot bring back the every-30s re-emit;
+  //   - increments the release streak only after its conditional update wins.
   releaseDelivery = async (req: PluginRequest, res: Response, next: NextFunction) => {
     try {
       const { deliveryKey } = req.params;
@@ -745,30 +874,48 @@ export class PluginController {
         throw new AppError('Invalid lease token', 400);
       }
 
-      // Release does NOT consume an attempt or apply backoff — the player simply went
-      // offline mid-delivery, so the job is immediately re-claimable by another lease.
-      await prisma.deliveryJob.update({
-        where: { id: deliveryKey },
+      const prior = await releaseStreaks.getMany([job.id]);
+      const streak = (prior.get(job.id) ?? 0) + 1;
+      const retryInMs = releaseBackoffMs(streak);
+      const nextRetryAt = new Date(Date.now() + retryInMs);
+      const attempts = Math.max(0, (job.attempts ?? 0) - 1);
+
+      // Conditional on the lease we are releasing: a concurrent re-claim (expired lease) or
+      // complete/fail changes the token, so this can never clobber someone else's lease.
+      const released = await prisma.deliveryJob.updateMany({
+        where: { id: deliveryKey, status: 'leased', leaseToken },
         data: {
           status: 'pending',
           leaseToken: null,
           leaseExpiresAt: null,
-          nextRetryAt: null,
+          nextRetryAt,
+          attempts,
         },
       });
+      if (released.count !== 1) {
+        throw new AppError('Delivery lease changed concurrently', 409);
+      }
+      await releaseStreaks.increment(job.id);
 
-      notifyDelivery(job, 'pending');
+      const visibleChange = job.nextRetryAt == null;
+      if (visibleChange) notifyDelivery(job, 'pending');
 
-      // Bind order/fulfillment back: delivering -> queued (re-claimable).
+      // Bind order/fulfillment back: delivering -> queued (re-claimable after the backoff).
       if (ORDER_BACKED_DELIVERY_TYPES.has(job.deliveryType)) {
-        await advanceOrder(prisma, job.referenceId, 'queued');
+        await advanceOrder(prisma, job.referenceId, 'queued', {}, { silent: !visibleChange });
         await prisma.fulfillment.updateMany({
           where: { orderId: job.referenceId },
-          data: { status: 'queued' },
+          data: { status: 'queued', attempts },
         });
       }
 
-      res.json({ success: true, message: 'Lease released successfully' });
+      res.json({
+        success: true,
+        message: 'Lease released successfully',
+        attempts,
+        nextRetryAt: nextRetryAt.toISOString(),
+        retryInMs,
+      });
     } catch (error) {
       next(error);
     }

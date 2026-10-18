@@ -273,7 +273,8 @@ export class OrderController {
   // POST /orders/:id/refund — refund a delivered or failed order back to the user's wallet.
   //
   // Money flows through the IRIS Wallet double-entry ledger ONLY (§14): platform revenue ->
-  // the buyer's `refundable` account. pointsBalance is never touched directly — it is the
+  // the buyer's `available` account (refund policy 2026-10: refunded IC is spendable again and
+  // shows in the customer balance, the same as dino escrow refunds). pointsBalance is never touched directly — it is the
   // read-only projection maintained inside walletService.post. The refund is zero-sum
   // (revenue debit == refundable credit). The order transitions delivered|failed -> refunded
   // guarded by the state machine, and the ledger idempotency key prevents double-refund.
@@ -320,10 +321,13 @@ export class OrderController {
           type: 'order_refund',
           referenceType: 'order',
           referenceId: order.id,
-          description: reason ? `Refund: ${reason}` : `Refund for order ${order.id}`,
+          description: reason ? `Refund: ${String(reason).slice(0, 240)}` : `Refund for order ${order.id}`,
+          // Who asked for the refund (the buyer for a failed delivery, or an admin). Replay-safe:
+          // the status re-read above stops a second refund before it reaches the ledger.
+          createdBy: req.user!.id,
           entries: [
             { accountKey: SYSTEM_ACCOUNTS.revenue, amount: -refundAmount },
-            { accountKey: userAccountKey(order.userId, 'refundable'), amount: refundAmount },
+            { accountKey: userAccountKey(order.userId, 'available'), amount: refundAmount },
           ],
         }, tx);
 

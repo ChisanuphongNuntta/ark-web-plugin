@@ -92,6 +92,7 @@ export class PaymentService {
               'payment_topup_sandbox',
               intent.id,
               tx,
+              { referenceType: 'payment_intent' },
             );
             await tx.paymentIntent.update({
               where: { id: intent.id },
@@ -117,60 +118,55 @@ export class PaymentService {
     }
   }
 
+  /**
+   * Success-page sync for a Stripe Checkout Session. Credits ONLY a PaymentIntent the caller
+   * owns (provider 'stripe'), after validating the session the same way the webhook parser
+   * does. The credit uses the SAME idempotency key and request shape as the webhook
+   * (`payment:<intent.id>:credit`, type payment_topup) and is gated on a conditional
+   * pending|processing -> completed flip inside the credit transaction, so the webhook and
+   * this path can never both credit one payment, and refunded/failed/expired intents are
+   * never re-credited.
+   */
   async verifyStripeSession(userId: string, sessionId: string) {
     if (!sessionId?.trim()) throw new AppError('sessionId is required', 400);
     const secretKey = process.env.STRIPE_SECRET_KEY || '';
     if (!secretKey) throw new AppError('Stripe sandbox key is not configured', 503);
 
+    // Only sessions created through createIntent can be credited: look the intent up first,
+    // scoped to the caller and the stripe provider. There is no "unknown session" credit path.
+    const intent = await prisma.paymentIntent.findFirst({
+      where: { provider: 'stripe', providerIntentId: sessionId, userId },
+    });
+    if (!intent) throw new AppError('Payment intent not found', 404);
+
     const stripe = new Stripe(secretKey);
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    if (!session) throw new AppError('Stripe session not found', 404);
+    if (!session || session.id !== intent.providerIntentId) throw new AppError('Stripe session not found', 404);
 
-    if (session.payment_status !== 'paid' && session.status !== 'complete') {
+    if (session.payment_status !== 'paid') {
       return { success: false, status: session.status, paymentStatus: session.payment_status, message: 'Payment has not been completed on Stripe' };
     }
-
-    let intent = await prisma.paymentIntent.findFirst({
-      where: {
-        OR: [
-          { providerIntentId: session.id },
-          { reference: session.client_reference_id || '' },
-          { reference: (session.metadata as any)?.iris_reference || '' },
-        ],
-      },
-    });
-
-    if (!intent) {
-      const amountCents = session.amount_total || 29900;
-      const points = BigInt(Math.round((amountCents / 100) * 3.5));
-      await prisma.$transaction(async (tx) => {
-        await walletService.creditUser(
-          userId,
-          points,
-          `stripe:${session.id}:credit`,
-          'stripe_topup',
-          session.id,
-          tx,
-        );
-      });
-      return { success: true, credited: true, points: points.toString(), sessionId: session.id };
+    if (
+      session.livemode ||
+      session.mode !== 'payment' ||
+      session.currency !== 'thb' ||
+      !Number.isSafeInteger(session.amount_total) ||
+      BigInt(session.amount_total!) !== asCents(intent.amountThb) ||
+      session.client_reference_id !== intent.reference
+    ) {
+      throw new AppError('Invalid Stripe payment details', 400);
     }
 
     if (intent.status === PaymentIntentStatus.completed) {
-      return { success: true, alreadyCredited: true, points: intent.pointsAmount.toString() };
+      return { success: true, alreadyCredited: true, points: intent.pointsAmount.toString(), intentId: intent.id };
+    }
+    if (intent.status !== PaymentIntentStatus.pending && intent.status !== PaymentIntentStatus.processing) {
+      throw new AppError(`Payment intent is ${intent.status}`, 409);
     }
 
-    await prisma.$transaction(async (tx) => {
-      await walletService.creditUser(
-        intent.userId,
-        intent.pointsAmount,
-        `stripe:${session.id}:credit`,
-        'stripe_topup',
-        intent.id,
-        tx,
-      );
-      await tx.paymentIntent.update({
-        where: { id: intent.id },
+    const credit = () => prisma.$transaction(async (tx) => {
+      const flipped = await tx.paymentIntent.updateMany({
+        where: { id: intent.id, status: { in: [PaymentIntentStatus.pending, PaymentIntentStatus.processing] } },
         data: {
           status: PaymentIntentStatus.completed,
           completedAt: new Date(),
@@ -181,14 +177,41 @@ export class PaymentService {
           },
         },
       });
-    });
+      if (flipped.count !== 1) return false;
+      await walletService.creditUser(
+        intent.userId,
+        intent.pointsAmount,
+        `payment:${intent.id}:credit`,
+        'payment_topup',
+        intent.id,
+        tx,
+        // Must stay byte-identical to processWebhook's credit so a concurrent webhook posting
+        // under the same key replays instead of 409-ing.
+        { referenceType: 'payment_intent' },
+      );
+      return true;
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-    return {
-      success: true,
-      credited: true,
-      points: intent.pointsAmount.toString(),
-      intentId: intent.id,
-    };
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const credited = await credit();
+        if (credited) return { success: true, credited: true, points: intent.pointsAmount.toString(), intentId: intent.id };
+        break;
+      } catch (error) {
+        const code = (error as { code?: string }).code;
+        // P2034: serialization conflict (likely with the webhook). P2002: the webhook committed
+        // the same ledger key first. Either way re-read the intent below / retry.
+        if ((code === 'P2034' || code === 'P2002') && attempt < 3) continue;
+        if (code !== 'P2034' && code !== 'P2002') throw error;
+        break;
+      }
+    }
+
+    const current = await prisma.paymentIntent.findUnique({ where: { id: intent.id } });
+    if (current?.status === PaymentIntentStatus.completed) {
+      return { success: true, alreadyCredited: true, points: intent.pointsAmount.toString(), intentId: intent.id };
+    }
+    throw new AppError(`Payment intent is ${current?.status ?? 'missing'}`, 409);
   }
 
   async getIntent(userId: string, intentId: string) {
@@ -317,6 +340,9 @@ export class PaymentService {
               'payment_topup',
               intent.id,
               tx,
+              // Replay-safe: the intent is claimed pending -> processing before this and
+              // completed in the same transaction.
+              { referenceType: 'payment_intent' },
             );
             await tx.paymentIntent.update({
               where: { id: intent.id },

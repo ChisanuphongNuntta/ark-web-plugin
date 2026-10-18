@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -19,6 +19,7 @@ import {
   Loader2,
   Package,
   Receipt,
+  ReceiptText,
   Server,
   Settings,
   Shield,
@@ -44,6 +45,7 @@ import {
   StatusBadge,
   adminInputClass,
 } from '@/components/admin';
+import { RecentTransactionsPanel } from '@/components/admin/transactions/RecentTransactionsPanel';
 
 type DashboardTab = 'analytics' | 'slips' | 'strategy' | 'clusters';
 type Feedback = { title: string; desc: string; type: 'success' | 'error' };
@@ -330,11 +332,22 @@ export default function AdminDashboardPage() {
     canManageApiKeys,
     canManageServers,
     canManageChatRanks,
+    isAdmin,
     isRoot,
   } = usePermissions();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('analytics');
+
+  // Deep link `/admin?tab=slips` (e.g. a slip transaction's reference link on /admin/transactions).
+  // Read once after mount: the SSR render and the first client render must match.
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab === 'slips' || tab === 'strategy' || tab === 'clusters') {
+      const id = window.setTimeout(() => setActiveTab(tab), 0);
+      return () => window.clearTimeout(id);
+    }
+  }, []);
 
   // Slip review state
   const [selectedSlip, setSelectedSlip] = useState<SlipTopupSubmission | null>(null);
@@ -562,6 +575,8 @@ export default function AdminDashboardPage() {
             />
           </div>
 
+          {isAdmin && <RecentTransactionsPanel />}
+
           <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
             <AdminPanel
               className="lg:col-span-7"
@@ -786,6 +801,9 @@ export default function AdminDashboardPage() {
 
           <AdminPanel title="ทางลัดการจัดการ" description="ไปยังหน้าจัดการที่ใช้บ่อย">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {isAdmin && (
+                <ShortcutCard href="/admin/transactions" icon={<ReceiptText />} title="ธุรกรรมทั้งหมด" desc="ทุกการเคลื่อนไหวของเหรียญแบบเรียลไทม์" />
+              )}
               {canManageProducts && (
                 <ShortcutCard href="/admin/products" icon={<Package />} title="จัดการสินค้า" desc="เพิ่ม แก้ไข กำหนดราคาไอเทมและไดโน" />
               )}

@@ -32,6 +32,7 @@ import { startDiscordBot, registerCommands, sendToDiscord } from './discord/bot.
 import { startDiscordRelaySubscriber } from './discord/relay.js';
 import { getServiceRole, servesPlugin, servesWeb } from './config/serviceRole.js';
 import serverQueryService from './services/serverQuery.service.js';
+import { ledgerReconcileScheduler } from './services/ledgerReconcile.service.js';
 
 dotenv.config();
 
@@ -167,10 +168,14 @@ async function startServer() {
 
       // Live A2S server status poller. Web process only; a Redis lock keeps it to one replica.
       serverQueryService.start();
+      // Ledger reconciliation every 15 min (Redis lock: one replica per window). Emits
+      // admin:ledger:mismatch to room admin when cached balances drift from the ledger.
+      ledgerReconcileScheduler.start();
       // Release the poller lock on shutdown so the next instance takes over immediately, then
       // re-raise the signal for the default exit (listeners are one-shot).
       for (const signal of ['SIGTERM', 'SIGINT'] as const) {
         process.once(signal, () => {
+          ledgerReconcileScheduler.stop();
           void serverQueryService.stop().finally(() => process.kill(process.pid, signal));
         });
       }

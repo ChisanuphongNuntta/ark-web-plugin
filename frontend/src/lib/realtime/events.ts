@@ -10,6 +10,10 @@ export const REALTIME_EVENTS = {
   deliveryUpdated: 'delivery:updated',
   serversStatus: 'servers:status',
   catalogUpdated: 'catalog:updated',
+  /** Room 'admin': one per posted ledger transaction (emitted after commit by walletService.post). */
+  adminTransaction: 'admin:transaction',
+  /** Room 'admin': the scheduled ledger reconcile found mismatches. */
+  adminLedgerMismatch: 'admin:ledger:mismatch',
 } as const;
 
 /** Client -> server: join / leave the public `servers` room. */
@@ -65,5 +69,30 @@ export interface CatalogUpdatedEvent {
 
 export interface AdminEvent {
   at?: string;
+  [key: string]: unknown;
+}
+
+/** 'admin:transaction' — see backend/contracts/admin-transactions-2026-10.md. */
+export interface AdminTransactionEvent {
+  id: string;
+  type?: string | null;
+  typeLabelTh?: string | null;
+  /** Signed IC amount for the customer side (decimal string). */
+  amount?: string | number | null;
+  user?: { id?: string | null; name?: string | null } | null;
+  referenceType?: string | null;
+  referenceId?: string | null;
+  createdAt?: string | null;
+}
+
+/** 'admin:ledger:mismatch' (room admin) — the scheduled reconcile found drift. */
+export interface AdminLedgerMismatchEvent {
+  at?: string;
+  checkedAccounts?: number;
+  mismatchCount?: number;
+  legacyPointsMismatchCount?: number;
+  unbalancedTransactionCount?: number;
+  /** First few account mismatches (amounts as strings). */
+  sample?: unknown[];
   [key: string]: unknown;
 }

@@ -2,6 +2,8 @@
 
 export const RealtimeRooms = {
   user: (userId: string) => `user:${userId}`,
+  /** Every socket authenticated by one UserSession (so a logout/revoke can disconnect them). */
+  session: (sessionId: string) => `session:${sessionId}`,
   admin: 'admin',
   servers: 'servers',
 } as const;
@@ -14,6 +16,8 @@ export const RealtimeEvents = {
   catalogUpdated: 'catalog:updated',
   adminSlipCreated: 'admin:slip:created',
   adminDeliveryFailed: 'admin:delivery:failed',
+  adminTransaction: 'admin:transaction',
+  adminLedgerMismatch: 'admin:ledger:mismatch',
 } as const;
 
 // Client -> server
@@ -92,4 +96,28 @@ export interface AdminDeliveryFailedEvent {
   deliveryType: string;
   serverId: number;
   at: string;
+}
+
+/** One per posted ledger transaction (contracts/admin-transactions-2026-10.md). */
+export interface AdminTransactionEvent {
+  id: string;
+  type: string;
+  typeLabelTh: string;
+  /** Signed IC (bigint string) for the customer side; null for system-only transactions. */
+  amount: string | null;
+  user: { id: string; name: string | null } | null;
+  referenceType: string | null;
+  referenceId: string | null;
+  createdAt: string;
+}
+
+/** Scheduled reconciliation found drift between cached balances and the ledger. */
+export interface AdminLedgerMismatchEvent {
+  at: string;
+  checkedAccounts: number;
+  mismatchCount: number;
+  legacyPointsMismatchCount: number;
+  unbalancedTransactionCount: number;
+  /** First few account mismatches (amounts as bigint strings). */
+  sample: Array<{ accountId: string; userId: string | null; cachedBalance: string; ledgerSum: string }>;
 }

@@ -123,7 +123,7 @@ function toPageRequest(req: AdminListRequest): PageRequest {
   };
 }
 
-interface FetchPageOptions<T> {
+export interface FetchPageOptions<T> {
   signal?: AbortSignal;
   /** Also send `limit` (endpoints that historically used page/limit). */
   legacyLimit?: boolean;
@@ -139,7 +139,7 @@ interface FetchPageOptions<T> {
   mapOutgoing?: (request: PageRequest) => PageRequest;
 }
 
-async function fetchAdminPage<T>(
+export async function fetchAdminPage<T>(
   url: string,
   itemsKey: string,
   req: AdminListRequest,

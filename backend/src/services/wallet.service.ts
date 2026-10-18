@@ -3,7 +3,8 @@ import { createHash } from 'node:crypto';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import { afterCommit } from '../realtime/afterCommit.js';
-import { emitWalletUpdated, walletReasonFor } from '../realtime/emit.js';
+import { emitAdminTransaction, emitWalletUpdated, walletReasonFor } from '../realtime/emit.js';
+import { customerSideOf } from './ledgerTypes.js';
 
 export const SYSTEM_ACCOUNTS = {
   issuance: 'system:issuance:IC',
@@ -210,9 +211,10 @@ export class WalletService {
         }
       }
 
+      const postedAt = new Date();
       await tx.ledgerTransaction.update({
         where: { id: transaction.id },
-        data: { postedAt: new Date() },
+        data: { postedAt },
       });
 
       // Realtime: every user whose account moved gets wallet:updated, but only once the
@@ -223,6 +225,22 @@ export class WalletService {
         const reason = walletReasonFor(input.type);
         afterCommit(() => emitWalletUpdated(touchedUserIds, reason));
       }
+
+      // Admin feed: exactly one admin:transaction per posted ledger transaction, after commit.
+      // This is the single place every money movement passes through, so admins see all of them.
+      const customer = customerSideOf(entries.map((entry) => {
+        const account = byKey.get(entry.accountKey)!;
+        return { amount: entry.amount, userId: account.userId, accountType: account.type };
+      }));
+      afterCommit(() => emitAdminTransaction({
+        id: transaction.id,
+        type: input.type,
+        referenceType: input.referenceType ?? null,
+        referenceId: input.referenceId ?? null,
+        customerUserId: customer.userId,
+        customerAmount: customer.amount,
+        postedAt,
+      }));
 
       const posted = await tx.ledgerTransaction.findUniqueOrThrow({
         where: { id: transaction.id },
@@ -259,6 +277,11 @@ export class WalletService {
     throw new AppError('Wallet transaction could not be serialized', 409);
   }
 
+  // Mint `amount` from system issuance into the user's available balance.
+  // `options.referenceType` defaults to the historical 'external'. The request hash covers
+  // referenceType/description/metadata/createdBy, so only pass them on paths whose replay is
+  // already guarded by a state flip (or whose key is new) — otherwise a retry posted before and
+  // after a deploy would hash differently and 409.
   async creditUser(
     userId: string,
     amount: bigint,
@@ -266,14 +289,18 @@ export class WalletService {
     type: string,
     referenceId?: string,
     client?: Prisma.TransactionClient,
+    options: { referenceType?: string; description?: string; metadata?: Prisma.InputJsonValue; createdBy?: string } = {},
   ) {
     if (amount <= 0n) throw new AppError('Credit amount must be positive', 400);
     await this.ensureUserAccounts(userId, client ?? prisma);
     return this.post({
       idempotencyKey,
       type,
-      referenceType: referenceId ? 'external' : undefined,
+      referenceType: referenceId ? (options.referenceType ?? 'external') : undefined,
       referenceId,
+      description: options.description,
+      metadata: options.metadata,
+      createdBy: options.createdBy,
       entries: [
         { accountKey: SYSTEM_ACCOUNTS.issuance, amount: -amount },
         { accountKey: userAccountKey(userId, 'available'), amount },

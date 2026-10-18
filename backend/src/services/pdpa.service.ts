@@ -2,6 +2,7 @@ import { Request } from 'express';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import auditService, { AuditActions, AuditResources } from './audit.service.js';
+import { disconnectUserSockets } from '../realtime/sessionControl.js';
 
 // Consent Types
 export const ConsentTypes = {
@@ -336,6 +337,7 @@ class PDPAService {
         isBanned: true, // Prevent re-login
       },
     });
+    disconnectUserSockets(userId);
 
     // Delete player stats
     await prisma.playerStats.deleteMany({

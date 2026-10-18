@@ -33,6 +33,8 @@ export async function claimLegacySteamBalance(
     'legacy_balance_claim',
     claim.id,
     tx,
+    // Replay-safe: the claim row is reserved pending -> claimed above in the same transaction.
+    { referenceType: 'legacy_balance_claim', description: 'Legacy ArkShop balance claim' },
   );
   return claim.amount;
 }

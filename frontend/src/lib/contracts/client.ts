@@ -344,7 +344,7 @@ export const orderContractApi = {
    * POST /orders/{id}/refund { reason? } -> RefundResponse.
    *
    * Only valid for delivered|failed orders (else the backend returns 409).
-   * Funds land in the wallet `refundable` account, NOT `available`. The
+   * Funds land in the wallet `available` account (refund policy 2026-10). The
    * `refundedAmount` is backend-authoritative — never computed client-side.
    * Idempotent: a repeated call returns `alreadyRefunded: true`.
    *

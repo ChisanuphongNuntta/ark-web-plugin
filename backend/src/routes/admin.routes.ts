@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { AdminController } from '../controllers/admin.controller.js';
 import adminConsoleController from '../controllers/adminConsole.controller.js';
 import siteController from '../controllers/site.controller.js';
+import adminTransactionsController from '../controllers/adminTransactions.controller.js';
+import rateLimit from 'express-rate-limit';
 import {
   authenticate,
   requireAdmin,
@@ -12,6 +14,16 @@ import {
 
 const router = Router();
 const adminController = new AdminController();
+
+// CSV export reads up to 50k ledger rows; keep it to a handful per admin per 10 minutes.
+const transactionExportLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => req.user?.id || req.ip || 'unknown',
+  message: { error: 'ส่งออกไฟล์บ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่' },
+});
 
 // All routes require authentication first
 router.use(authenticate as any);
@@ -59,6 +71,12 @@ router.get('/audit-logs', requireWebsiteAdmin as any, adminConsoleController.get
 
 // P2P dino market listings, read-only (UI redesign 2026-10)
 router.get('/market/listings', requireWebsiteAdmin as any, adminConsoleController.getMarketListings as any);
+
+// Transactions: every ledger posting (admin transactions 2026-10). Static paths before /:id.
+router.get('/transactions', requireWebsiteAdmin as any, adminTransactionsController.list as any);
+router.get('/transactions/summary', requireWebsiteAdmin as any, adminTransactionsController.summary as any);
+router.get('/transactions/export.csv', requireWebsiteAdmin as any, transactionExportLimiter, adminTransactionsController.exportCsv as any);
+router.get('/transactions/:id', requireWebsiteAdmin as any, adminTransactionsController.detail as any);
 
 // Bank slip topups management
 router.get('/payments/pending-slips', requireAdmin as any, adminController.getPendingSlips as any);
@@ -111,6 +129,9 @@ router.get('/chat-ranks', requireRoot as any, adminController.getChatRanks as an
 router.post('/chat-ranks', requireRoot as any, adminController.createChatRank as any);
 router.put('/chat-ranks/:id', requireRoot as any, adminController.updateChatRank as any);
 router.delete('/chat-ranks/:id', requireRoot as any, adminController.deleteChatRank as any);
+
+// Ledger reconciliation (Root only)
+router.get('/ledger/reconcile', requireRoot as any, adminTransactionsController.reconcile as any);
 
 // Role management (Root only)
 router.put('/users/:id/role', requireRoot as any, adminController.updateUserRole as any);

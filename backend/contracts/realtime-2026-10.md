@@ -24,10 +24,16 @@ banned — identical to REST.
 | Token                                    | Result                                                    |
 |------------------------------------------|-----------------------------------------------------------|
 | none                                     | guest: public rooms only                                  |
-| valid                                    | joins `user:<userId>`; admins (`isAdmin` or role `admin`/`root`, same as `requireAdmin`) also join `admin` |
+| valid                                    | joins `user:<userId>` and `session:<sessionId>`; role `admin`/`root` (same rule as REST `requireWebsiteAdmin`; the legacy `isAdmin` flag alone does **not** qualify) also joins `admin` |
 | invalid/revoked via `auth.token`/Bearer  | connection refused (`connect_error: Authentication error`) |
 | invalid/expired **cookie**               | downgraded to guest (logged-out browsers keep chat/servers) |
 | cookie from an untrusted **Origin**      | ignored -> guest. Trusted = no Origin header, `FRONTEND_URL`, comma-separated `SOCKET_ALLOWED_ORIGINS`, or same-origin (Origin host == forwarded `Host`). CORS does not cover websocket upgrades, so this stops sibling same-site origins riding the SameSite=Lax cookie. |
+
+Admin room lifecycle (2026-10-18): a socket in `admin` re-verifies its session + role every 60 s
+and leaves the room (role no longer admin/root) or is disconnected (session revoked/expired, user
+banned). Logout and session revoke disconnect that session's sockets at once (`session:<id>`); a
+role change away from admin/root removes the user's sockets from `admin` at once; a ban or PDPA
+delete disconnects the user's sockets.
 
 Socket payloads are untrusted: chat handlers accept `serverId` only as a positive safe integer
 (anything else = global room) and never throw on missing/null payloads; the backend also logs
@@ -41,7 +47,7 @@ Rooms are fixed at connect time. After login/logout the client must reconnect
 | Room            | Who                                   | Events                                   |
 |-----------------|---------------------------------------|------------------------------------------|
 | `user:<userId>` | the authenticated user's own sockets  | `wallet:updated`, `order:updated`, `delivery:updated` |
-| `admin`         | admin sockets                          | `admin:slip:created`, `admin:delivery:failed` |
+| `admin`         | admin sockets                          | `admin:slip:created`, `admin:delivery:failed`, `admin:transaction`, `admin:ledger:mismatch` |
 | `servers`       | anyone after `servers:subscribe`       | `servers:status`                          |
 | (broadcast)     | every socket                          | `catalog:updated`                         |
 | `chat:*`        | unchanged                              | chat events                              |
@@ -109,6 +115,16 @@ retry (`queued`), legacy `/plugin/orders/:id/delivered|failed`.
 Emitted on plugin claim (`leased`), complete (`completed`), fail (`pending` retry or `dead_letter`),
 release (`pending`) and admin retry (`pending`).
 
+Release rule (2026-10-18): only the buyer-visible change is emitted. The first release of a
+"player offline" streak emits `pending`; while the player stays offline the plugin's re-claims are
+silent probes (no `leased`) and their releases are silent too (no `pending`, no `order:updated`).
+A probe lease keeps `nextRetryAt` stamped in the DB, and the release reads that marker (not Redis)
+to decide visibility, so the rule holds during a Redis outage. An expired lease with no attempts
+left is dead-lettered by the claim loop and emits `dead_letter`.
+A probe that completes or fails emits as usual. Release backoff: 30s, 60s, 120s, 240s, then 5 min,
+reset when the player logs in (`GET /api/plugin/player/:steamId`). Releases do not consume an
+attempt.
+
 ### `servers:status` -> room `servers`
 
 ```ts
@@ -148,7 +164,16 @@ queries.
 ```ts
 'admin:slip:created'     { intentId: string; at: string }                                  // new bank slip submitted
 'admin:delivery:failed'  { deliveryId: string; deliveryType: string; serverId: number; at: string } // job dead-lettered
+'admin:transaction'      { id; type; typeLabelTh; amount: string|null; user: {id,name}|null;
+                           referenceType; referenceId; createdAt }                       // every ledger posting
+'admin:ledger:mismatch'  { at; checkedAccounts; mismatchCount; legacyPointsMismatchCount;
+                           unbalancedTransactionCount; sample[] }                       // scheduled reconcile drift
 ```
+
+`admin:transaction` is emitted from `walletService.post` only (one place), after the enclosing
+transaction commits, exactly once per newly posted ledger transaction (idempotent replays and
+rolled-back transactions emit nothing). Shapes and semantics:
+`contracts/admin-transactions-2026-10.md`.
 
 ## 3. REST
 

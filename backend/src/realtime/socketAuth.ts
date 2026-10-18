@@ -12,8 +12,19 @@ export interface SocketIdentity {
   userId: string;
   userName: string;
   userAvatar?: string;
+  /** Legacy admin flag (isAdmin || role admin|root) — chat moderation only. */
   isAdmin: boolean;
+  /**
+   * May join the 'admin' realtime room (admin:transaction, admin:ledger:mismatch, ...). Same
+   * rule as REST requireWebsiteAdmin: role ADMIN or ROOT only — never the legacy isAdmin flag.
+   */
+  canJoinAdminRoom: boolean;
+  /** The UserSession this socket authenticated with. */
+  sessionId?: string;
 }
+
+/** requireWebsiteAdmin's rule (middlewares/auth.ts). */
+export const isWebsiteAdminRole = (role: unknown): boolean => role === 'admin' || role === 'root';
 
 export interface HandshakeLike {
   auth?: Record<string, unknown> | undefined;
@@ -87,6 +98,8 @@ export async function verifySocketToken(token: string): Promise<SocketIdentity |
     userAvatar: user.discordAvatar || undefined,
     // Same rule as middlewares/auth.ts requireAdmin.
     isAdmin: Boolean(user.isAdmin) || role === 'admin' || role === 'root',
+    canJoinAdminRoom: isWebsiteAdminRole(role),
+    ...(session.id ? { sessionId: String(session.id) } : {}),
   };
 }
 

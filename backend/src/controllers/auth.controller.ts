@@ -7,6 +7,7 @@ import { AppError } from '../middlewares/errorHandler.js';
 import { AuthRequest } from '../middlewares/auth.js';
 import auditService, { AuditActions, AuditResources } from '../services/audit.service.js';
 import securityService from '../services/security.service.js';
+import { disconnectSessionSockets } from '../realtime/sessionControl.js';
 
 // Proof-of-control validation for account linking.
 // IRIS ID rule: an account is linked ONLY when the caller proves control of the provider
@@ -455,10 +456,13 @@ export class AuthController {
     const token = req.cookies.token || req.headers.authorization?.replace('Bearer ', '');
     if (token) {
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const session = await prisma.userSession.findUnique({ where: { token: tokenHash }, select: { id: true } });
       await prisma.userSession.updateMany({
         where: { token: tokenHash },
         data: { isActive: false },
       });
+      // Sockets opened with this session (incl. the admin room) must not outlive it.
+      disconnectSessionSockets(session?.id);
     }
 
     res.clearCookie('token');
@@ -591,6 +595,7 @@ export class AuthController {
         where: { id },
         data: { isActive: false },
       });
+      disconnectSessionSockets(id);
       res.json({ success: true, message: 'Session revoked successfully' });
     } catch (error) { next(error); }
   };

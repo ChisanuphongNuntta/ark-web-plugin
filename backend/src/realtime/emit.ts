@@ -1,9 +1,12 @@
 import prisma from '../config/database.js';
 import { getRealtimeServer } from './io.js';
+import { ledgerTypeLabelTh, normalizeReferenceType } from '../services/ledgerTypes.js';
 import {
   RealtimeEvents,
   RealtimeRooms,
   type AdminDeliveryFailedEvent,
+  type AdminLedgerMismatchEvent,
+  type AdminTransactionEvent,
   type AdminSlipCreatedEvent,
   type CatalogUpdatedEvent,
   type DeliveryUpdatedEvent,
@@ -159,4 +162,50 @@ export function emitAdminSlipCreated(intentId: string): void {
 export function emitAdminDeliveryFailed(deliveryId: string, deliveryType: string, serverId: number): void {
   const payload: AdminDeliveryFailedEvent = { deliveryId, deliveryType, serverId, at: now() };
   emitTo(RealtimeRooms.admin, RealtimeEvents.adminDeliveryFailed, payload);
+}
+
+export interface AdminTransactionPosted {
+  id: string;
+  type: string;
+  referenceType?: string | null;
+  referenceId?: string | null;
+  customerUserId: string | null;
+  customerAmount: bigint | null;
+  postedAt: Date;
+}
+
+/**
+ * admin:transaction -> room admin. Called once per posted ledger transaction from
+ * walletService.post, wrapped in afterCommit by the caller. Admin-only room, so the customer's
+ * display name is included (no steam id, no metadata).
+ */
+export async function emitAdminTransaction(posted: AdminTransactionPosted): Promise<void> {
+  if (!getRealtimeServer()) return;
+  try {
+    let user: AdminTransactionEvent['user'] = null;
+    if (posted.customerUserId) {
+      const row = await prisma.user.findUnique({
+        where: { id: posted.customerUserId },
+        select: { id: true, discordUsername: true },
+      });
+      user = { id: posted.customerUserId, name: row?.discordUsername ?? null };
+    }
+    const payload: AdminTransactionEvent = {
+      id: posted.id,
+      type: posted.type,
+      typeLabelTh: ledgerTypeLabelTh(posted.type),
+      amount: posted.customerAmount === null ? null : posted.customerAmount.toString(),
+      user,
+      referenceType: normalizeReferenceType(posted.type, posted.referenceType, posted.referenceId),
+      referenceId: posted.referenceId ?? null,
+      createdAt: posted.postedAt.toISOString(),
+    };
+    emitTo(RealtimeRooms.admin, RealtimeEvents.adminTransaction, payload);
+  } catch (error) {
+    console.error('[realtime] admin:transaction failed:', error);
+  }
+}
+
+export function emitAdminLedgerMismatch(payload: AdminLedgerMismatchEvent): void {
+  emitTo(RealtimeRooms.admin, RealtimeEvents.adminLedgerMismatch, payload);
 }

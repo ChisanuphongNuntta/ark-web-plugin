@@ -69,6 +69,8 @@ export class ServerAdminService {
 
     if (search) {
       where.OR = [
+        // Exact user id: target of the ledger's referenceLink (/admin/users?q=<userId>).
+        { id: search },
         { discordUsername: { contains: search, mode: 'insensitive' } },
         { steamId: { contains: search } },
         { discordId: { contains: search } },
@@ -130,6 +132,8 @@ export class ServerAdminService {
 
     if (search) {
       where.OR = [
+        // Exact user id: target of the ledger's referenceLink (/admin/users?q=<userId>).
+        { id: search },
         { discordUsername: { contains: search, mode: 'insensitive' } },
         { steamId: { contains: search } },
         { apiKeyServerName: { contains: search, mode: 'insensitive' } },

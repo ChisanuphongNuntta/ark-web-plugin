@@ -249,7 +249,7 @@ export interface OrderDetailResponse {
 
 /**
  * POST /orders/{id}/refund response. `refundedAmount` is a backend decimal
- * string; funds land in the wallet `refundable` account, NOT `available`.
+ * string; funds land in the wallet `available` account (refund policy 2026-10).
  * Idempotent: a second call returns `alreadyRefunded: true` with the same
  * amount. The frontend never computes the refund amount.
  */

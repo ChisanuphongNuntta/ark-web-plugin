@@ -46,6 +46,10 @@
   --color-iris-slate: #151226;
   --color-glowing-magenta: #E83D84;
 
+  /* --- Semantic money tokens (ledger amounts: money in / money out) --- */
+  --iris-credit: 167 243 208; /* soft mint, same family as StatusBadge success */
+  --iris-debit: 254 205 211;  /* soft rose, same family as StatusBadge danger  */
+
   /* --- Semantic surface / line / focus tokens --- */
   --surface-1: rgba(12, 22, 31, 0.72);
   --surface-2: rgba(16, 31, 41, 0.88);

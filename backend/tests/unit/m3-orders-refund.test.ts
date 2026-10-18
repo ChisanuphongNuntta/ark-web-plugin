@@ -103,9 +103,11 @@ describe('M3 Orders — list / detail with timeline / refund', () => {
       const sum = entries.reduce((acc: bigint, e: any) => acc + e.amount, 0n);
       expect(sum).toBe(0n); // zero-sum double entry
       const revenue = entries.find((e: any) => e.accountKey === 'system:revenue:IC');
-      const refundable = entries.find((e: any) => e.accountKey === 'user:u1:refundable:IC');
+      // Refund policy 2026-10: refunds credit the spendable `available` account.
+      const available = entries.find((e: any) => e.accountKey === 'user:u1:available:IC');
       expect(revenue.amount).toBe(-500n);
-      expect(refundable.amount).toBe(500n);
+      expect(available.amount).toBe(500n);
+      expect(entries.some((e: any) => e.accountKey === 'user:u1:refundable:IC')).toBe(false);
 
       // Order transitioned to refunded; pointsBalance is NEVER touched directly here.
       expect(tx.order.update).toHaveBeenCalledWith({

@@ -162,9 +162,10 @@ export class UserController {
         await walletService.post({
           idempotencyKey: `earn:playtime:${user.id}:${crypto.randomUUID()}`,
           type: 'earn_playtime',
-          referenceType: 'gameplay',
+          referenceType: 'reward',
           referenceId: user.id,
           description: 'Claimed gameplay points',
+          metadata: { claimDetails },
           entries: [
             { accountKey: SYSTEM_ACCOUNTS.issuance, amount: -BigInt(totalPointsEarned) },
             { accountKey: userAccountKey(user.id, 'available'), amount: BigInt(totalPointsEarned) },

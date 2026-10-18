@@ -6,6 +6,7 @@ import { AdminController } from '../../src/controllers/admin.controller.js';
 import { UserController } from '../../src/controllers/user.controller.js';
 import { PluginController } from '../../src/controllers/plugin.controller.js';
 import walletService from '../../src/services/wallet.service.js';
+import auditService from '../../src/services/audit.service.js';
 
 // The IRIS Wallet double-entry ledger is the single source of truth. These tests prove
 // that the four controllers migrated away from the legacy dual-write (mutating
@@ -263,7 +264,10 @@ describe('Wallet ledger migration — controllers post to the double-entry ledge
   describe('AdminController.adjustPoints (manual credit/debit)', () => {
     it('positive amount mints from issuance into the user available balance', async () => {
       db.$transaction.mockImplementationOnce((cb: any) => cb({}));
-      db.user.findUnique.mockResolvedValueOnce({ pointsBalance: 1500n });
+      db.user.findUnique
+        .mockResolvedValueOnce({ pointsBalance: 1000n })  // before
+        .mockResolvedValueOnce({ pointsBalance: 1500n }); // after (projection)
+      post.mockResolvedValueOnce({ id: 'ltx-1' } as any);
 
       const req: any = { user: { id: 'admin1', discordId: 'admin-d', role: 'root' }, params: { id: 'u1' }, body: { amount: 500, reason: 'goodwill' } };
       const res = mockRes();
@@ -274,20 +278,32 @@ describe('Wallet ledger migration — controllers post to the double-entry ledge
       expect(next).not.toHaveBeenCalled();
       expect(post).toHaveBeenCalledTimes(1);
       const [input] = post.mock.calls[0];
-      expect(input).toMatchObject({ type: 'admin_adjustment', referenceId: 'u1', createdBy: 'admin1', description: 'goodwill' });
+      expect(input).toMatchObject({
+        type: 'admin_adjustment', referenceType: 'admin_adjustment', referenceId: 'u1', createdBy: 'admin1', description: 'goodwill',
+      });
       expect(entriesNet(input.entries)).toBe(0n);
       expect(input.entries).toEqual(expect.arrayContaining([
         { accountKey: 'user:u1:available:IC', amount: 500n },
         { accountKey: 'system:issuance:IC', amount: -500n },
       ]));
-      expect(res.json).toHaveBeenCalledWith({ success: true, newBalance: 1500 });
+      expect(res.json).toHaveBeenCalledWith({ success: true, newBalance: 1500, transactionId: 'ltx-1' });
+      // Audited with actor, before/after balance, reason and the ledger transaction id.
+      expect(auditService.log).toHaveBeenCalledWith(expect.objectContaining({
+        userId: 'admin1',
+        action: 'points_adjust',
+        resourceId: 'u1',
+        oldValue: { pointsBalance: '1000' },
+        newValue: expect.objectContaining({ pointsBalance: '1500', amount: '500', reason: 'goodwill', ledgerTransactionId: 'ltx-1' }),
+      }), req);
     });
 
     it('negative amount burns from the user available balance back to issuance', async () => {
       db.$transaction.mockImplementationOnce((cb: any) => cb({}));
-      db.user.findUnique.mockResolvedValueOnce({ pointsBalance: 700n });
+      db.user.findUnique
+        .mockResolvedValueOnce({ pointsBalance: 1000n })
+        .mockResolvedValueOnce({ pointsBalance: 700n });
 
-      const req: any = { user: { id: 'admin1', discordId: 'admin-d', role: 'root' }, params: { id: 'u1' }, body: { amount: -300 } };
+      const req: any = { user: { id: 'admin1', discordId: 'admin-d', role: 'root' }, params: { id: 'u1' }, body: { amount: -300, reason: 'chargeback' } };
       const res = mockRes();
       const next = vi.fn();
 
@@ -304,15 +320,48 @@ describe('Wallet ledger migration — controllers post to the double-entry ledge
 
     it('honours a caller-supplied idempotencyKey for retry-safe admin tooling', async () => {
       db.$transaction.mockImplementationOnce((cb: any) => cb({}));
-      db.user.findUnique.mockResolvedValueOnce({ pointsBalance: 100n });
+      db.user.findUnique
+        .mockResolvedValueOnce({ pointsBalance: 0n })
+        .mockResolvedValueOnce({ pointsBalance: 100n });
 
-      const req: any = { user: { id: 'admin1', discordId: 'admin-d', role: 'root' }, params: { id: 'u1' }, body: { amount: 100, idempotencyKey: 'manual-credit-42' } };
+      const req: any = { user: { id: 'admin1', discordId: 'admin-d', role: 'root' }, params: { id: 'u1' }, body: { amount: 100, reason: 'event prize', idempotencyKey: 'manual-credit-42' } };
       const res = mockRes();
       const next = vi.fn();
 
       await adminController.adjustPoints(req, res, next);
 
-      expect(post.mock.calls[0][0]).toMatchObject({ idempotencyKey: 'manual-credit-42' });
+      // Namespaced to the endpoint + acting admin: a client key can never collide with a
+      // system flow's key (payment:<id>:credit, order:refund:<id>, ...).
+      expect(post.mock.calls[0][0]).toMatchObject({ idempotencyKey: 'admin:adjust:admin1:manual-credit-42' });
+    });
+
+    it('requires a reason (3-500 chars) before touching the ledger', async () => {
+      for (const reason of [undefined, '', '  ', 'ab', 'x'.repeat(501), 42]) {
+        const req: any = { user: { id: 'admin1', discordId: 'admin-d', role: 'root' }, params: { id: 'u1' }, body: { amount: 100, reason } };
+        const res = mockRes();
+        const next = vi.fn();
+        await adminController.adjustPoints(req, res, next);
+        expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400 }));
+      }
+      expect(post).not.toHaveBeenCalled();
+      expect(db.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('audits a failed debit (e.g. insufficient balance) and does not report success', async () => {
+      db.user.findUnique.mockResolvedValueOnce({ pointsBalance: 10n });
+      db.$transaction.mockImplementationOnce((cb: any) => cb({}));
+      post.mockRejectedValueOnce(Object.assign(new Error('Insufficient or unavailable wallet balance'), { statusCode: 409 }));
+
+      const req: any = { user: { id: 'admin1', discordId: 'admin-d', role: 'root' }, params: { id: 'u1' }, body: { amount: -500, reason: 'clawback' } };
+      const res = mockRes();
+      const next = vi.fn();
+      await adminController.adjustPoints(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 409 }));
+      expect(res.json).not.toHaveBeenCalled();
+      expect(auditService.log).toHaveBeenCalledWith(expect.objectContaining({
+        action: 'points_adjust', status: 'failure', resourceId: 'u1',
+      }), req);
     });
 
     it('rejects a zero adjustment before posting', async () => {
@@ -328,7 +377,7 @@ describe('Wallet ledger migration — controllers post to the double-entry ledge
   });
 
   describe('AdminController.refundOrder', () => {
-    it('refunds platform revenue -> buyer refundable (matches OrderController refund path)', async () => {
+    it('refunds platform revenue -> buyer available (matches OrderController refund path)', async () => {
       db.order.findUnique.mockResolvedValueOnce({ id: 'o9', userId: 'u1', totalPrice: 250, status: 'delivered', user: { id: 'u1' } });
 
       const tx: any = {
@@ -354,7 +403,7 @@ describe('Wallet ledger migration — controllers post to the double-entry ledge
       expect(entriesNet(input.entries)).toBe(0n);
       expect(input.entries).toEqual(expect.arrayContaining([
         { accountKey: 'system:revenue:IC', amount: -250n },
-        { accountKey: 'user:u1:refundable:IC', amount: 250n },
+        { accountKey: 'user:u1:available:IC', amount: 250n },
       ]));
       expect(res.json).toHaveBeenCalledWith({ success: true, refundedAmount: 250 });
     });
