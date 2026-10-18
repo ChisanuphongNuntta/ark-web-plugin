@@ -1,5 +1,18 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## Item catalog + dossier art + game servers online — 2026-10-18
+
+- Items: 1,676 active (was 538), applied via `scripts/item-catalog/apply-plan.ts --apply` (backup `backups/postgres/heartshop-pre-item-catalog-20261018-152656.dump`). Legacy rows were left untouched apart from added images. 167 drafts stay off (ASA-only, platform-exclusive, mission-only, admin/debug, etc.). Icons: `frontend/public/images/catalog/ark/items` (1,501 webp).
+- Dinos now use parchment dossier art: `images/catalog/ark/dossiers`, 286 files (commit f39a707).
+- Server1 and Server2 came online 2026-10-18 15:15 (+07). Plugin build ec155f58 loads, its license verifies, and heartbeat, claim, wallet events and chat return 200 through the plugin gateway on :8443. Both servers are still `drain_mode=true`.
+- Fixed: nginx pinned upstream container IPs, so a gateway recreate caused about 2 minutes of 502s. Upstreams now use `resolve` with the Docker DNS resolver 127.0.0.11 (commit e51d4a5).
+- Owner review items:
+  - legacy #212 "Chibi-Doedicurus" delivers the Direbear chibi;
+  - legacy #267 "Chibi-Skeletal Jerboa" delivers the Skeletal Bronto chibi;
+  - #810 "Stego Saddle" delivers a Tapejara Tek Saddle;
+  - non-boss trophies are priced at 40 IC;
+  - nginx 1.28.2 is legacy and affected by 22 CVEs; 1.30.6 is tested and pending owner approval.
+
 ## Dino catalog — 2026-10-18 (commits db6c868, 7cd07b7)
 
 - 414 active dinos (was 362), every one with an image and every one passing the real delivery builder and the HeartShop.cpp guards. Applied with `scripts/dino-catalog/apply-plan.ts --apply` (one transaction, audited). Backup: `backups/postgres/heartshop-pre-dino-catalog-20261018-031047.dump`.
