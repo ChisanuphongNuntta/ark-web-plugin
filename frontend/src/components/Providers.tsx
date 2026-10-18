@@ -4,11 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { authApi } from '@/lib/api';
+import { applyRealtimeFallbackDefaults } from '@/lib/realtime/queryKeys';
+import { RealtimeProvider } from '@/components/realtime/RealtimeProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
+  const [queryClient] = useState(() => {
+    const client = new QueryClient({
         defaultOptions: {
           queries: {
             staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh longer
@@ -18,8 +19,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
             retry: 1, // Reduce retry attempts
           },
         },
-      })
-  );
+      });
+    // Wallet / orders / servers refresh on focus and every 60 s even if the socket drops.
+    applyRealtimeFallbackDefaults(client);
+    return client;
+  });
 
   const { setUser, setLoading } = useAuthStore();
   const hasCheckedAuth = useRef(false);
@@ -53,7 +57,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <RealtimeProvider>{children}</RealtimeProvider>
     </QueryClientProvider>
   );
 }

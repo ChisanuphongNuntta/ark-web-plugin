@@ -74,6 +74,9 @@ namespace HeartShop
         const nlohmann::json& Payload,
         uint64 NotifySteamId = 0);
     void RecoverPendingDinoListings();
+    // Game thread: resolves the cryopod item class and, once it loads, makes the
+    // heartbeat advertise delivery.dino.cryopod.v1.
+    void RefreshCryopodCapability();
 
     // Hook typedefs
     typedef void(*HandleNewPlayer_t)(AShooterGameMode*, AShooterPlayerController*, UPrimalPlayerData*, AShooterCharacter*, bool);

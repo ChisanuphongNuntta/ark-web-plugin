@@ -2,15 +2,17 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import prisma from '../config/database.js';
 import { chatHandler } from './chat.handler.js';
+import { setRealtimeServer } from '../realtime/io.js';
+import { allowedSocketOrigins, extractSocketToken, isTrustedSocketOrigin, verifySocketToken } from '../realtime/socketAuth.js';
+import { RealtimeClientEvents, RealtimeEvents, RealtimeRooms } from '../realtime/events.js';
+import serverQueryService from '../services/serverQuery.service.js';
 
 export let io: Server;
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
+  isAdmin?: boolean;
   userName?: string;
   userAvatar?: string;
 }
@@ -43,39 +45,41 @@ export async function setupSocketIO(httpServer: HttpServer): Promise<Server> {
     console.log('Socket.IO running without Redis adapter (REDIS_URL not configured)');
   }
 
-  // Authentication middleware
+  // Authentication middleware — same session rules as REST (middlewares/auth.ts). The browser's
+  // httpOnly `token` cookie rides on the handshake (client: withCredentials: true); an explicit
+  // auth.token / Bearer header is also accepted.
+  const trustedOrigins = allowedSocketOrigins();
   io.use(async (socket: AuthenticatedSocket, next) => {
-    const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
-
-    if (token) {
-      try {
-        const jwtSecret = process.env.JWT_SECRET;
-        if (!jwtSecret || jwtSecret.length < 32) throw new Error('JWT secret is not configured');
-        const decoded = jwt.verify(token, jwtSecret) as { userId: string };
-        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-        const [session, user] = await Promise.all([
-          prisma.userSession.findUnique({ where: { token: tokenHash } }),
-          prisma.user.findUnique({
-            where: { id: decoded.userId },
-            select: { id: true, discordUsername: true, discordAvatar: true, isBanned: true },
-          }),
-        ]);
-        if (!session || !session.isActive || session.expiresAt < new Date() || !user || user.isBanned) {
-          return next(new Error('Authentication error'));
-        }
-        socket.userId = decoded.userId;
-        socket.userName = user.discordUsername || 'Anonymous';
-        socket.userAvatar = user.discordAvatar || undefined;
-      } catch {
-        // A supplied but invalid/revoked token must not be downgraded to a guest.
-        return next(new Error('Authentication error'));
-      }
-    } else {
-      // No token - allow connection as guest (read-only)
-      socket.userId = undefined;
-      socket.userName = 'Guest';
+    let found = extractSocketToken(socket.handshake);
+    // CORS does not cover websocket upgrades: the ambient cookie only authenticates handshakes
+    // from the site itself (allow-listed or same-origin). Anything else connects as a guest.
+    if (found?.source === 'cookie' && !isTrustedSocketOrigin(socket.handshake, trustedOrigins)) {
+      found = null;
     }
 
+    if (found) {
+      try {
+        const identity = await verifySocketToken(found.token);
+        if (identity) {
+          socket.userId = identity.userId;
+          socket.userName = identity.userName;
+          socket.userAvatar = identity.userAvatar;
+          socket.isAdmin = identity.isAdmin;
+          return next();
+        }
+      } catch (error) {
+        console.error('Socket auth lookup failed:', error);
+      }
+      // An explicitly supplied but invalid/revoked token must not be downgraded to a guest.
+      // A stale cookie (logged out / expired session) only downgrades to guest so public
+      // rooms (chat, server status) keep working.
+      if (found.source !== 'cookie') return next(new Error('Authentication error'));
+    }
+
+    // No (valid) token - guest (read-only, public rooms only)
+    socket.userId = undefined;
+    socket.isAdmin = false;
+    socket.userName = 'Guest';
     next();
   });
 
@@ -86,6 +90,23 @@ export async function setupSocketIO(httpServer: HttpServer): Promise<Server> {
     // Join global chat room by default
     socket.join('chat:global');
 
+    // Private realtime rooms (wallet / order / delivery events for this user only).
+    if (socket.userId) socket.join(RealtimeRooms.user(socket.userId));
+    if (socket.isAdmin) socket.join(RealtimeRooms.admin);
+
+    // Public live server status. Joining sends the current snapshot immediately.
+    socket.on(RealtimeClientEvents.serversSubscribe, async () => {
+      socket.join(RealtimeRooms.servers);
+      try {
+        socket.emit(RealtimeEvents.serversStatus, await serverQueryService.getPublicStatus());
+      } catch (error) {
+        console.error('servers:subscribe snapshot failed:', error);
+      }
+    });
+    socket.on(RealtimeClientEvents.serversUnsubscribe, () => {
+      socket.leave(RealtimeRooms.servers);
+    });
+
     // Register chat handlers
     chatHandler(io, socket);
 
@@ -94,6 +115,7 @@ export async function setupSocketIO(httpServer: HttpServer): Promise<Server> {
     });
   });
 
+  setRealtimeServer(io);
   console.log('Socket.IO server initialized');
   return io;
 }

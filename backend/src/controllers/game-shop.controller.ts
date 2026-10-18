@@ -3,6 +3,8 @@ import { NextFunction, Request, Response } from 'express';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService, { SYSTEM_ACCOUNTS, userAccountKey } from '../services/wallet.service.js';
+import { afterCommit } from '../realtime/afterCommit.js';
+import { emitCatalogUpdated, emitOrderUpdated } from '../realtime/emit.js';
 import { resolveDinoCatalogDelivery } from '../services/dinoCatalogDelivery.js';
 import { resolveItemDelivery } from '../services/itemCatalogDelivery.js';
 
@@ -14,9 +16,15 @@ const compatible = (required: string[], available: string[]) =>
 const isGameDeliverableProduct = (product: { productType: string; itemBlueprint: string | null }) =>
   (product.productType === 'item' || product.productType === 'dino') && Boolean(product.itemBlueprint);
 
-const buildDeliveryPayload = (product: any, orderId: string, purchasedQuantity: number) => {
+const buildDeliveryPayload = (
+  product: any,
+  orderId: string,
+  purchasedQuantity: number,
+  serverCapabilities: readonly string[] = [],
+) => {
   if (product.productType === 'dino') {
-    const result = resolveDinoCatalogDelivery(product, orderId);
+    // Capabilities of the server the job is queued for (cryopod delivery opt-in).
+    const result = resolveDinoCatalogDelivery(product, orderId, serverCapabilities);
     if (!result.ok) {
       throw new AppError(
         result.reason === 'level' ? 'Dino level is outside the supported range' : 'Dino delivery blueprint is invalid',
@@ -254,6 +262,7 @@ export class GameShopController {
 
         if (product.stock !== null) {
           await tx.product.update({ where: { id: product.id }, data: { stock: { decrement: quote.quantity } } });
+          afterCommit(() => emitCatalogUpdated('stock'));
         }
         await tx.user.update({ where: { id: user.id }, data: { totalSpent: { increment: quote.totalPrice } } });
 
@@ -282,7 +291,7 @@ export class GameShopController {
             total: BigInt(quote.totalPrice), status: 'queued', paidAt: now, queuedAt: now,
           },
         });
-        const { deliveryType, payload } = buildDeliveryPayload(product, order.id, quote.quantity);
+        const { deliveryType, payload } = buildDeliveryPayload(product, order.id, quote.quantity, server.capabilities);
         const payloadHash = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
         await tx.deliveryJob.create({
           data: {
@@ -301,6 +310,7 @@ export class GameShopController {
           where: { id: quote.id },
           data: { status: 'completed', orderId: order.id, completedAt: now },
         });
+        afterCommit(() => emitOrderUpdated(user.id, order.id, 'queued'));
         return { orderId: order.id, duplicate: false, totalPrice: quote.totalPrice };
       }, { isolationLevel: 'Serializable' });
 

@@ -11,6 +11,14 @@ import {
 } from '../services/delivery.service.js';
 import { canTransition } from '../services/orderState.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
+import serverQueryService from '../services/serverQuery.service.js';
+import { afterCommit } from '../realtime/afterCommit.js';
+import {
+  ORDER_BACKED_DELIVERY_TYPES,
+  emitAdminDeliveryFailed,
+  emitDeliveryUpdated,
+  emitOrderUpdated,
+} from '../realtime/emit.js';
 
 const dinoFeeSplit = (price: number) => {
   const platformFee = Math.floor(price * 0.05);
@@ -31,6 +39,18 @@ async function advanceOrder(
   if (order.status === to) return; // idempotent no-op
   if (!canTransition(order.status, to)) return;
   await client.order.update({ where: { id: orderId }, data: { status: to, ...extra } });
+  // Realtime: after the caller's transaction commits (immediately when client is prisma).
+  afterCommit(() => emitOrderUpdated(order.userId, orderId, to));
+}
+
+// Realtime delivery:updated for the job's owner, after the enclosing transaction commits.
+function notifyDelivery(job: { id: string; deliveryType: string; referenceId: string }, status: string) {
+  afterCommit(() => emitDeliveryUpdated({
+    deliveryId: job.id,
+    deliveryType: job.deliveryType,
+    referenceId: job.referenceId,
+    status,
+  }));
 }
 
 interface PluginRequest extends Request {
@@ -167,6 +187,7 @@ export class PluginController {
           deliveredAt: new Date(),
         },
       });
+      emitOrderUpdated(order.userId, orderId, 'delivered');
 
       res.json({ success: true, message: 'Order marked as delivered' });
     } catch (error) {
@@ -200,6 +221,7 @@ export class PluginController {
           status: order.deliveryAttempts >= 2 ? 'failed' : 'pending',
         },
       });
+      emitOrderUpdated(order.userId, orderId, order.deliveryAttempts >= 2 ? 'failed' : 'pending');
 
       res.json({ success: true, message: 'Failure recorded' });
     } catch (error) {
@@ -245,6 +267,8 @@ export class PluginController {
           ...(map && { map }),
         },
       });
+      // Realtime: heartbeat-only servers update the live status snapshot immediately.
+      void serverQueryService.applyHeartbeat(req.serverId!, playerCount);
 
       res.json({
         success: true,
@@ -430,7 +454,8 @@ export class PluginController {
 
         // Bind order/fulfillment state: queued -> delivering (claimed). Illegal/no-op moves
         // are ignored by advanceOrder so a re-lease of an already-delivering job is safe.
-        if (updated.deliveryType === 'order') {
+        notifyDelivery(updated, 'leased');
+        if (ORDER_BACKED_DELIVERY_TYPES.has(updated.deliveryType)) {
           await advanceOrder(prisma, updated.referenceId, 'delivering');
           await prisma.fulfillment.updateMany({
             where: { orderId: updated.referenceId },
@@ -527,7 +552,8 @@ export class PluginController {
           throw new AppError('Invalid lease token', 400);
         }
 
-        if (job.deliveryType === 'order') {
+        notifyDelivery(job, 'completed');
+        if (ORDER_BACKED_DELIVERY_TYPES.has(job.deliveryType)) {
           await advanceOrder(tx, job.referenceId, 'delivered', { deliveredAt: now });
           await tx.fulfillment.updateMany({
             where: { orderId: job.referenceId },
@@ -631,8 +657,10 @@ export class PluginController {
         });
         if (changed.count !== 1) throw new AppError('Delivery lease changed concurrently', 409);
         const updated = await tx.deliveryJob.findUniqueOrThrow({ where: { id: deliveryKey } });
+        notifyDelivery(job, decision.status);
+        if (!decision.retry) afterCommit(() => emitAdminDeliveryFailed(job.id, job.deliveryType, job.serverId));
 
-        if (job.deliveryType === 'order') {
+        if (ORDER_BACKED_DELIVERY_TYPES.has(job.deliveryType)) {
           if (decision.retry) {
             await advanceOrder(tx, job.referenceId, 'queued', {
               deliveryAttempts: updated.attempts,
@@ -729,8 +757,10 @@ export class PluginController {
         },
       });
 
+      notifyDelivery(job, 'pending');
+
       // Bind order/fulfillment back: delivering -> queued (re-claimable).
-      if (job.deliveryType === 'order') {
+      if (ORDER_BACKED_DELIVERY_TYPES.has(job.deliveryType)) {
         await advanceOrder(prisma, job.referenceId, 'queued');
         await prisma.fulfillment.updateMany({
           where: { orderId: job.referenceId },

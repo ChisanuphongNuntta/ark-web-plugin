@@ -4,6 +4,7 @@ import prisma from '../config/database.js';
 import { AuthRequest } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import paymentService from '../services/payment.service.js';
+import { emitAdminSlipCreated } from '../realtime/emit.js';
 
 export class PaymentController {
   listPackages = async (_req: Request, res: Response, next: NextFunction) => {
@@ -73,6 +74,7 @@ export class PaymentController {
         },
         include: { user: true, package: true },
       });
+      emitAdminSlipCreated(intent.id);
 
       res.status(201).json({
         success: true,

@@ -10,6 +10,8 @@ import { AppError } from '../middlewares/errorHandler.js';
 import { ServerAdminService } from '../services/serverAdmin.service.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
 import { isRefundable } from '../services/orderState.js';
+import { afterCommit } from '../realtime/afterCommit.js';
+import { emitCatalogUpdated, emitOrderUpdated } from '../realtime/emit.js';
 import pluginCredentialService from '../services/pluginCredential.service.js';
 import archiver from 'archiver';
 import { normalizeBlueprintPath } from '../utils/blueprint.js';
@@ -519,6 +521,7 @@ export class AdminController {
       const product = await prisma.product.create({
         data,
       });
+      emitCatalogUpdated('products');
       res.status(201).json({ product });
     } catch (error) {
       next(error);
@@ -535,6 +538,7 @@ export class AdminController {
         where: { id: parseInt(req.params.id) },
         data,
       });
+      emitCatalogUpdated('products');
       res.json({ product });
     } catch (error) {
       next(error);
@@ -547,6 +551,7 @@ export class AdminController {
         where: { id: parseInt(req.params.id) },
         data: { isActive: false },
       });
+      emitCatalogUpdated('products');
       res.json({ success: true });
     } catch (error) {
       next(error);
@@ -559,6 +564,7 @@ export class AdminController {
       const category = await prisma.category.create({
         data: req.body,
       });
+      emitCatalogUpdated('categories');
       res.status(201).json({ category });
     } catch (error) {
       next(error);
@@ -571,6 +577,7 @@ export class AdminController {
         where: { id: parseInt(req.params.id) },
         data: req.body,
       });
+      emitCatalogUpdated('categories');
       res.json({ category });
     } catch (error) {
       next(error);
@@ -583,6 +590,7 @@ export class AdminController {
         where: { id: parseInt(req.params.id) },
         data: { isActive: false },
       });
+      emitCatalogUpdated('categories');
       res.json({ success: true });
     } catch (error) {
       next(error);
@@ -664,6 +672,7 @@ export class AdminController {
         if (updatedOrder.count !== 1) {
           throw new AppError('Order already refunded', 400);
         }
+        afterCommit(() => emitOrderUpdated(order.userId, order.id, 'refunded'));
 
         await walletService.post({
           idempotencyKey: `order:refund:${order.id}`,

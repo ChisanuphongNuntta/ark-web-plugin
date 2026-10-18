@@ -209,7 +209,11 @@ describe('server-directory seed plan', () => {
     expect(scorched.listing).toMatchObject({ connectHost: null, connectPort: null, isAvailable: false });
     const valguero = synthetic.servers.find((s) => s.directoryKey === 'test-group:Valguero')!;
     expect(valguero.listing.isAvailable).toBe(false);
-    expect(plan.servers.find((s) => s.directoryKey === 'pvpve-x10:Genesis2')!.flag).toBe('duplicate-port-needs-confirmation');
+    // Port clash resolved by A2S (2026-10-18): 28013 is the PvPvE Gen2 server, PvE-Mod Gen2 is 28032.
+    expect(plan.servers.find((s) => s.directoryKey === 'pvpve-x10:Genesis2')!.listing.connectPort).toBe(28013);
+    expect(plan.servers.find((s) => s.directoryKey === 'pve-mod-x10:Genesis2')!.listing.connectPort).toBe(28032);
+    const ports = plan.servers.map((s) => `${s.listing.connectHost}:${s.listing.connectPort}`).filter((key) => !key.startsWith('null'));
+    expect(new Set(ports).size).toBe(ports.length);
   });
 
   it('never plans credentials, apiKeys or drain/activation changes for listing updates', () => {

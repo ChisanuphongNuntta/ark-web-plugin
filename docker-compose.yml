@@ -391,6 +391,8 @@ services:
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       STRIPE_CHECKOUT_ORIGIN: ${STRIPE_CHECKOUT_ORIGIN:-https://localhost}
       SERVICE_ROLE: web
+      # A2S status for the local plugin servers (query ports from RunServer.cmd); no Join address published.
+      SERVER_QUERY_TARGETS: ${SERVER_QUERY_TARGETS:-1=151.141.23.59:1001,2=151.141.23.59:1004}
     volumes:
       - ./docker/certs/backend:/app/certs:ro
       - backend_logs:/app/logs

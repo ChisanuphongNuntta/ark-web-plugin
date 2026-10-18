@@ -53,3 +53,25 @@ Production requires a valid HTTPS certificate trusted by Windows. The
 `Security.AllowInvalidCertificates` setting defaults to `false` and can only be
 enabled when `ApiUrl` targets localhost. Prefer trusting a local development CA
 instead of disabling validation.
+
+## Upgrading a live server
+
+Replace only `HeartShop.dll` in `ArkApi/Plugins/HeartShop/`. Keep the server's
+existing `config.json`: the copy in the artifact folder is a template and its
+`ApiUrl`, keys and `ServerId` are not the live values.
+
+## Catalog dino cryopod smoke test (in game, after deploy)
+
+The cryopod delivery path (`dino_catalog` with `dino.cryopod: true`) calls ARK
+natives that CTest cannot exercise. Run these once per server after deploying:
+
+1. Server log shows `Cryopod item class resolved; advertising delivery.dino.cryopod.v1`
+   and the backend server directory lists that capability.
+2. Buy a land dino: a cryopod appears in the inventory, no dino next to you, and
+   releasing the pod gives a tamed dino of the bought level owned by your tribe.
+3. Buy an aquatic dino while standing on land: cryopod only; release it in water.
+4. Fill the inventory to `MaxItems - 1` and buy: the pod is accepted (no
+   `AddItemObject refused the cryopod` error in the log).
+5. Fill the inventory completely and buy: chat says the inventory is full, log
+   shows `deferred (no attempt consumed)`, the backend job stays pending with its
+   attempt count unchanged; free a slot and the pod arrives on the next poll.

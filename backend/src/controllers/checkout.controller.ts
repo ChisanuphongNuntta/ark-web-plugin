@@ -4,6 +4,8 @@ import prisma from '../config/database.js';
 import { AuthRequest } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
+import { afterCommit } from '../realtime/afterCommit.js';
+import { emitCatalogUpdated, emitOrdersUpdated } from '../realtime/emit.js';
 import promotionService from '../services/promotion.service.js';
 import { isServerDeliverable } from '../services/serverDirectory.service.js';
 import { resolveDinoCatalogDelivery } from '../services/dinoCatalogDelivery.js';
@@ -46,9 +48,10 @@ function isCheckoutDeliverable(product: { productType?: string | null; itemBluep
   return (type === 'item' || type === 'dino') && Boolean(product.itemBlueprint);
 }
 
-function buildCheckoutDelivery(item: any, orderId: string) {
+function buildCheckoutDelivery(item: any, orderId: string, serverCapabilities: readonly string[] = []) {
   if (item.productType === 'dino') {
-    const result = resolveDinoCatalogDelivery(item, orderId);
+    // Capabilities of the server the job is queued for (cryopod delivery opt-in).
+    const result = resolveDinoCatalogDelivery(item, orderId, serverCapabilities);
     if (!result.ok) {
       throw new AppError(`Dino delivery definition is invalid for "${item.name}"`, 409);
     }
@@ -287,6 +290,9 @@ export class CheckoutController {
         }
 
         // 2. Lock products and verify stock and limits under transaction
+        // Capability manifest of each target server as re-read under the payment
+        // transaction; used to build the dino delivery payload for that server.
+        const serverCapabilitiesById = new Map<number, string[]>();
         for (const item of lockedSnapshot) {
           // Row-level lock on Postgres products
           await tx.$queryRaw`SELECT id FROM products WHERE id = ${item.productId} FOR UPDATE`;
@@ -305,6 +311,7 @@ export class CheckoutController {
           if (serverDeliveryBlock(server)) {
             throw new AppError(`Server "${server.name}" is unavailable for delivery`, 409);
           }
+          serverCapabilitiesById.set(server.id, server.capabilities ?? []);
           const missingCapabilities = (product.requiredCapabilities ?? []).filter(
             (capability) => !(server.capabilities ?? []).includes(capability),
           );
@@ -380,6 +387,7 @@ export class CheckoutController {
               where: { id: item.productId },
               data: { stock: { decrement: item.quantity } },
             });
+            afterCommit(() => emitCatalogUpdated('stock'));
           }
         }
 
@@ -429,7 +437,7 @@ export class CheckoutController {
         // state-machine `paid` state and immediately transitioned to `queued` (§8). The
         // DeliveryJob (operational lease/idempotency) and Fulfillment (durable per-order
         // delivery timeline, §16/§18) are created in the same transaction.
-        const orderIds = [];
+        const orderIds: string[] = [];
         const discountsByLineNo = lineDiscountMap(promotion.snapshot);
         for (const [lineIndex, item] of lockedSnapshot.entries()) {
           const lineNo = item.lineNo ?? lineIndex + 1;
@@ -483,7 +491,11 @@ export class CheckoutController {
           // ledger would re-introduce the dual-write/divergence problem M2 removes.
 
           // Queue DeliveryJob
-          const { deliveryType, payload } = buildCheckoutDelivery(item, order.id);
+          const { deliveryType, payload } = buildCheckoutDelivery(
+            item,
+            order.id,
+            serverCapabilitiesById.get(item.serverId) ?? [],
+          );
           const payloadHash = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
 
           await tx.deliveryJob.create({
@@ -533,6 +545,8 @@ export class CheckoutController {
           data: { status: 'completed' },
         });
 
+        // Realtime (after commit): the new orders appear on the buyer's order page at once.
+        afterCommit(() => emitOrdersUpdated(session.userId, orderIds, 'queued'));
         return { orderIds, orderGroupId: orderGroup.id };
       }, { isolationLevel: 'Serializable' });
 

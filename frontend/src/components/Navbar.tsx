@@ -23,6 +23,7 @@ import { useAuthStore, useCartStore } from '@/lib/store';
 const primaryLinks = [
   { href: '/shop', label: 'ร้านค้า', caption: 'Official Store' },
   { href: '/market', label: 'ตลาดผู้เล่น', caption: 'Player Market' },
+  { href: '/servers', label: 'เซิร์ฟเวอร์', caption: 'Servers' },
   { href: '/event', label: 'กิจกรรม', caption: 'Events' },
   { href: '/promotion', label: 'โปรโมชั่น', caption: 'Privileges' },
 ];

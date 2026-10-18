@@ -17,6 +17,8 @@ import { AppError } from '../middlewares/errorHandler.js';
 import { DEFAULT_MAX_ATTEMPTS } from './delivery.service.js';
 import { canTransition } from './orderState.js';
 import { paginateQuery } from '../utils/pagination.js';
+import { afterCommit } from '../realtime/afterCommit.js';
+import { emitDeliveryUpdated, emitOrderUpdated } from '../realtime/emit.js';
 
 export const DELIVERY_JOB_STATUSES = ['pending', 'leased', 'completed', 'failed', 'dead_letter'] as const;
 export type DeliveryJobStatusValue = (typeof DELIVERY_JOB_STATUSES)[number];
@@ -142,7 +144,7 @@ class DeliveryAdminService {
       if (!job) throw new AppError('Delivery job not found', 404);
 
       const order = ORDER_BACKED_TYPES.has(job.deliveryType)
-        ? await tx.order.findUnique({ where: { id: job.referenceId }, select: { id: true, status: true } })
+        ? await tx.order.findUnique({ where: { id: job.referenceId }, select: { id: true, status: true, userId: true } })
         : null;
 
       const decision = decideRetry(job, order);
@@ -169,6 +171,18 @@ class DeliveryAdminService {
             });
             if (moved.count !== 1) throw new AppError('Order changed concurrently; retry again', 409);
           }
+          // Realtime after commit: the buyer sees the retried delivery / re-queued order.
+          const requeued = Boolean(order && order.status !== 'queued' && canTransition(order.status, 'queued'));
+          afterCommit(async () => {
+            await emitDeliveryUpdated({
+              deliveryId: job.id,
+              deliveryType: job.deliveryType,
+              referenceId: job.referenceId,
+              status: 'pending',
+              userId: order?.userId,
+            });
+            if (order && requeued) emitOrderUpdated(order.userId, order.id, 'queued');
+          });
           if (order) {
             await tx.fulfillment.updateMany({
               where: { orderId: order.id, status: 'failed' },

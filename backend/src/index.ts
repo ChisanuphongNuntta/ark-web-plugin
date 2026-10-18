@@ -31,6 +31,7 @@ import { setupSocketIO } from './websocket/index.js';
 import { startDiscordBot, registerCommands, sendToDiscord } from './discord/bot.js';
 import { startDiscordRelaySubscriber } from './discord/relay.js';
 import { getServiceRole, servesPlugin, servesWeb } from './config/serviceRole.js';
+import serverQueryService from './services/serverQuery.service.js';
 
 dotenv.config();
 
@@ -163,6 +164,16 @@ async function startServer() {
         setTimeout(() => registerCommands(), 2000);
       }
       if (SERVICE_ROLE === 'web') await startDiscordRelaySubscriber(sendToDiscord);
+
+      // Live A2S server status poller. Web process only; a Redis lock keeps it to one replica.
+      serverQueryService.start();
+      // Release the poller lock on shutdown so the next instance takes over immediately, then
+      // re-raise the signal for the default exit (listeners are one-shot).
+      for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+        process.once(signal, () => {
+          void serverQueryService.stop().finally(() => process.kill(process.pid, signal));
+        });
+      }
     }
 
     httpServer.listen(PORT, () => {
@@ -177,6 +188,12 @@ async function startServer() {
     });
   }
 }
+
+// Last line of defence: a stray rejected promise (e.g. a socket handler fed a malformed payload)
+// must be logged, not take down every user's realtime connection (Node >= 15 exits by default).
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
+});
 
 startServer();
 

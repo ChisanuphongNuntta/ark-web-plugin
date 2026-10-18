@@ -9,6 +9,31 @@ const nextConfig = {
       ? [{ source: '/api/:path*', destination: `${process.env.IRIS_LOCAL_API_ORIGIN || 'http://127.0.0.1:3201'}/api/:path*` }]
       : [];
   },
+  // Legacy iris-th.cloud server-list URLs -> the /servers directory (308).
+  // Explicit case variants: people type these by hand and old links vary.
+  async redirects() {
+    const legacy = [
+      ['/Listserver-PVE', '/servers?mode=pve'],
+      ['/list-server-pve-mod', '/servers?mode=pve-mod'],
+      ['/Listserver-PVPVE', '/servers?mode=pvpve'],
+      ['/list-server-pvpve-pre-aqua', '/servers?mode=pvpve'],
+      ['/status-server', '/servers'],
+    ];
+    const variants = (path) => {
+      const titled = path.replace(/^\/(\w)/, (_, c) => `/${c.toUpperCase()}`);
+      return [path, path.toLowerCase(), path.toUpperCase(), titled, titled.replace(/server/i, 'Server')];
+    };
+    const seen = new Set();
+    const rules = [];
+    for (const [source, destination] of legacy) {
+      for (const variant of variants(source)) {
+        if (seen.has(variant)) continue;
+        seen.add(variant);
+        rules.push({ source: variant, destination, permanent: true });
+      }
+    }
+    return rules;
+  },
   images: {
     remotePatterns: [
       {

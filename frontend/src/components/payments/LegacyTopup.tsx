@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
 import Link from 'next/link';
+import { syncWalletNow } from '@/lib/realtime/walletSync';
 
 // Fallback packages if network is offline
 const fallbackCoinPackages = [
@@ -237,7 +238,7 @@ export function LegacyTopupPage() {
         slipImageUrl: slipPreviewUrl || '/images/mock/slips/sample-slip-01.svg',
       });
 
-      queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void syncWalletNow(queryClient);
 
       setDialogConfig({
         open: true,
@@ -339,7 +340,7 @@ export function LegacyTopupPage() {
         paymentApi
           .verifyStripeSession(sessionId)
           .then((res: any) => {
-            queryClient.invalidateQueries({ queryKey: ['wallet'] });
+            void syncWalletNow(queryClient);
             setDialogConfig({
               open: true,
               title: 'ชำระเงินผ่าน Stripe สำเร็จ!',
@@ -367,7 +368,7 @@ export function LegacyTopupPage() {
             console.error('Failed to verify Stripe session:', err);
           });
       } else if (checkoutState === 'returned') {
-        queryClient.invalidateQueries({ queryKey: ['wallet'] });
+        void syncWalletNow(queryClient);
         window.history.replaceState({}, '', '/topup');
       }
     }
@@ -391,7 +392,7 @@ export function LegacyTopupPage() {
         autoCredit: true,
       });
 
-      queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void syncWalletNow(queryClient);
 
       setDialogConfig({
         open: true,

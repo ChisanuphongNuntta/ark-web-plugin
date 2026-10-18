@@ -1,16 +1,24 @@
 /**
  * Catalog dino delivery: turns a dino product into the `dino_catalog` delivery
- * job payload that HeartShop.cpp's SpawnCatalogDinoForPlayer consumes.
+ * job payload that HeartShop.cpp's DeliverCatalogDinoForPlayer consumes.
  *
  * Shared by the web checkout (checkout.controller) and the in-game quote/confirm
  * flow (game-shop.controller) so both build byte-identical payloads, and by the
  * dino catalog tooling (scripts/dino-catalog) and its unit tests so every product
  * the catalog activates is validated by this exact code.
  *
- * Plugin contract (HeartShop.cpp SpawnCatalogDinoForPlayer):
+ * Plugin contract (ark-plugin CatalogDino::ParseRequest, used by HeartShop.cpp DeliverCatalogDinoForPlayer):
  *   schemaVersion == 1, productType == "dino", dino is an object with
- *   blueprint (non-empty), level 1..10000, forceTame == true, neutered (bool).
- * The plugin passes the blueprint string verbatim to ArkApi SpawnDino.
+ *   blueprint (non-empty), level 1..10000, forceTame == true, neutered (bool),
+ *   optional cryopod (bool).
+ * The plugin passes the blueprint string verbatim to ArkApi SpawnDino. When
+ * dino.cryopod === true the plugin stores the spawned tame in a cryopod in the
+ * buyer's inventory instead of leaving it next to the buyer. The flag is only set
+ * for a target server that advertises DINO_CRYOPOD_CAPABILITY, so older plugins
+ * (which ignore unknown keys) keep receiving the exact legacy payload. The plugin
+ * advertises the capability only after the cryopod item class loads on that
+ * server; a full buyer inventory releases the lease (no attempt consumed) instead
+ * of failing, and a missing cryopod class falls back to the live spawn.
  *
  * Pure module: no Prisma, no Express.
  */
@@ -18,6 +26,8 @@
 /** Plugin capability a server must advertise before catalog dinos are offered/delivered. */
 export const DINO_CATALOG_CAPABILITY = 'delivery.dino.catalog.v1';
 export const DINO_CATALOG_DELIVERY_TYPE = 'dino_catalog';
+/** Plugin capability: catalog dinos can be delivered inside a cryopod (dino.cryopod). */
+export const DINO_CRYOPOD_CAPABILITY = 'delivery.dino.cryopod.v1';
 export const DINO_LEVEL_MIN = 1;
 export const DINO_LEVEL_MAX = 10_000;
 
@@ -26,7 +36,7 @@ export type DinoCatalogDeliveryPayload = {
   orderId: string;
   productType: 'dino';
   productName: string;
-  dino: { blueprint: string; level: number; forceTame: true; neutered: boolean };
+  dino: { blueprint: string; level: number; forceTame: true; neutered: boolean; cryopod?: true };
 };
 
 export type DinoCatalogProduct = {
@@ -45,8 +55,16 @@ const cleanBlueprint = (value: unknown) => String(value ?? '').replace(/^"+|"+$/
  * Build the delivery for a dino product. The spawn definition comes from
  * deliveryPayload.spawn (catalog/legacy rows) or deliveryPayload.definition
  * (ArkShop import), and its blueprint must equal the product's itemBlueprint.
+ *
+ * `serverCapabilities` is the capability manifest of the server the job is queued
+ * for; when it includes DINO_CRYOPOD_CAPABILITY the payload asks for cryopod
+ * delivery, otherwise the key is omitted entirely (byte-identical legacy payload).
  */
-export function resolveDinoCatalogDelivery(product: DinoCatalogProduct, orderId: string): DinoCatalogDeliveryResult {
+export function resolveDinoCatalogDelivery(
+  product: DinoCatalogProduct,
+  orderId: string,
+  serverCapabilities: readonly string[] | null | undefined = [],
+): DinoCatalogDeliveryResult {
   const configured = product.deliveryPayload?.spawn ?? product.deliveryPayload?.definition ?? {};
   const level = Number(configured.level ?? configured.Level ?? 1);
   if (!Number.isSafeInteger(level) || level < DINO_LEVEL_MIN || level > DINO_LEVEL_MAX) {
@@ -69,13 +87,19 @@ export function resolveDinoCatalogDelivery(product: DinoCatalogProduct, orderId:
         level,
         forceTame: true,
         neutered: Boolean(configured.neutered ?? configured.Neutered),
+        ...(serverSupportsDinoCryopod(serverCapabilities) ? { cryopod: true as const } : {}),
       },
     },
   };
 }
 
+/** True when the target server's plugin can deliver catalog dinos in a cryopod. */
+export function serverSupportsDinoCryopod(serverCapabilities: readonly string[] | null | undefined): boolean {
+  return Array.isArray(serverCapabilities) && serverCapabilities.includes(DINO_CRYOPOD_CAPABILITY);
+}
+
 /**
- * Mirror of the guards in HeartShop.cpp SpawnCatalogDinoForPlayer. Returns null
+ * Mirror of the guards in ark-plugin CatalogDino::ParseRequest. Returns null
  * when the plugin would accept the payload, otherwise the reason it would reject it.
  */
 export function pluginRejectsDinoPayload(payload: unknown): string | null {
@@ -89,5 +113,6 @@ export function pluginRejectsDinoPayload(payload: unknown): string | null {
   if (!Number.isInteger(dino.level) || dino.level < DINO_LEVEL_MIN || dino.level > DINO_LEVEL_MAX) return 'dino.level outside 1..10000';
   if (dino.forceTame !== true) return 'dino.forceTame must be true';
   if (dino.neutered !== undefined && typeof dino.neutered !== 'boolean') return 'dino.neutered must be boolean';
+  if (dino.cryopod !== undefined && typeof dino.cryopod !== 'boolean') return 'dino.cryopod must be boolean';
   return null;
 }

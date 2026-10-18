@@ -352,6 +352,15 @@ describe('Cart & Checkout System', () => {
       });
     });
 
+    it('commitCheckoutSession sets dino.cryopod only for a target server with delivery.dino.cryopod.v1', async () => {
+      const legacy = await commitDinoCheckout(['delivery.dino.catalog.v1']);
+      expect(legacy.dino).not.toHaveProperty('cryopod');
+      expect(legacy.dino).toEqual(expect.objectContaining({ level: 150, forceTame: true, neutered: false }));
+
+      const capable = await commitDinoCheckout(['delivery.dino.catalog.v1', 'delivery.dino.cryopod.v1']);
+      expect(capable.dino).toEqual(expect.objectContaining({ level: 150, forceTame: true, neutered: false, cryopod: true }));
+    });
+
     it('does NOT write a legacy PointTransaction (ledger is the single source of truth)', async () => {
       const mockSession = {
         id: 'cs2',
@@ -418,3 +427,52 @@ describe('Cart & Checkout System', () => {
     });
   });
 });
+
+/** Commits a one-line dino checkout to a server with the given capabilities; returns the queued payload. */
+async function commitDinoCheckout(capabilities: string[]) {
+  const blueprint = "Blueprint'/Game/PrimalEarth/Dinos/Rex/Rex_Character_BP.Rex_Character_BP'";
+  const deliveryPayload = { schemaVersion: 1, type: 'dino', spawn: { blueprint, level: 150, forceTame: true, neutered: false } };
+  const line = {
+    productId: 7, serverId: 3, quantity: 1, price: 120, name: 'Rex (Lv.150)', productType: 'dino',
+    itemBlueprint: blueprint, deliveryQuantity: 1, quality: 0, isBlueprint: false, deliveryPayload,
+    requiredCapabilities: ['delivery.dino.catalog.v1'],
+  };
+  const mockSession = {
+    id: 'cs-dino', userId: 'u1', totalAmount: 120n, status: 'pending',
+    expiresAt: new Date(Date.now() + 100000), cartSnapshot: [line],
+  };
+  db.checkoutSession.findUnique.mockResolvedValueOnce(mockSession);
+  const mockTx: any = {
+    user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'u1', steamId: 'steam-123' }) },
+    product: {
+      findUniqueOrThrow: vi.fn().mockResolvedValue({
+        id: 7, name: 'Rex (Lv.150)', price: 120, categoryId: null, isActive: true, stock: null, maxPerUser: null,
+        productType: 'dino', itemBlueprint: blueprint, quantity: 1, quality: 0, isBlueprint: false,
+        deliveryPayload, requiredCapabilities: ['delivery.dino.catalog.v1'],
+      }),
+      update: vi.fn().mockResolvedValue({}),
+    },
+    server: {
+      findUniqueOrThrow: vi.fn().mockResolvedValue({
+        id: 3, name: 'PVP', isActive: true, drainMode: false, isAvailable: true, capabilities, credentials: [{ id: 'cred-3' }],
+      }),
+    },
+    order: { create: vi.fn().mockResolvedValue({ id: 'o-dino' }) },
+    orderGroup: { create: vi.fn().mockResolvedValue({ id: 'og-dino' }) },
+    orderItem: { create: vi.fn().mockResolvedValue({ id: 'oi-dino' }) },
+    pointTransaction: { create: vi.fn().mockResolvedValue({}) },
+    deliveryJob: { create: vi.fn().mockResolvedValue({}) },
+    fulfillment: { create: vi.fn().mockResolvedValue({}) },
+    cartItem: { deleteMany: vi.fn().mockResolvedValue({}) },
+    checkoutSession: { findUniqueOrThrow: vi.fn().mockResolvedValue(mockSession), update: vi.fn().mockResolvedValue({}) },
+    $queryRaw: vi.fn().mockResolvedValue([]),
+  };
+  db.$transaction.mockImplementationOnce((callback: any) => callback(mockTx));
+  const next = vi.fn();
+  await checkoutController.commitCheckoutSession({ user: { id: 'u1' }, params: { id: 'cs-dino' } } as any, { json: vi.fn() } as any, next);
+  expect(next).not.toHaveBeenCalled();
+  expect(mockTx.deliveryJob.create).toHaveBeenCalledTimes(1);
+  const job = mockTx.deliveryJob.create.mock.calls[0][0].data;
+  expect(job).toEqual(expect.objectContaining({ serverId: 3, deliveryType: 'dino_catalog' }));
+  return job.payload;
+}

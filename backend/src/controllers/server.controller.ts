@@ -4,8 +4,10 @@ import { isServerOnline, HEARTBEAT_ONLINE_WINDOW_MS } from '../utils/serverStatu
 import serverDirectoryService, {
   SERVER_SUMMARY_SELECT,
   ServerSummarySource,
+  mergeDirectoryLiveStatus,
   toServerSummary,
 } from '../services/serverDirectory.service.js';
+import serverQueryService from '../services/serverQuery.service.js';
 
 // Re-exported for backward compatibility (tests and older imports).
 export { isServerOnline, HEARTBEAT_ONLINE_WINDOW_MS };
@@ -66,10 +68,43 @@ export class ServerController {
     }
   };
 
-  // GET /servers/directory — public grouped directory (PVE / PVE Mod / PvPvE sets).
+  // GET /servers/directory — public grouped directory (PVE / PVE Mod / PvPvE sets), with the
+  // live A2S/heartbeat status merged into each server (online, playerCount, maxPlayers, version,
+  // statusSource, playersRev). Falls back to heartbeat values when the snapshot is unavailable.
   getDirectory = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      res.json(await serverDirectoryService.getDirectory());
+      const [directory, live] = await Promise.all([
+        serverDirectoryService.getDirectory(),
+        serverQueryService.getStatusMap(),
+      ]);
+      res.json(mergeDirectoryLiveStatus(directory, live));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // GET /servers/status — full live snapshot; same payload as the `servers:status` socket event.
+  getStatus = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.set('Cache-Control', 'public, max-age=5');
+      res.json(await serverQueryService.getPublicStatus());
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // GET /servers/:id/players — { serverId, players: [{ name, durationSec }], fetchedAt, online, source }.
+  // Names only (A2S); empty names are returned as "ไม่ระบุชื่อ". 404 for unknown/inactive servers.
+  getPlayers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const serverId = Number.parseInt(String(req.params.id), 10);
+      if (!Number.isSafeInteger(serverId) || serverId <= 0 || String(serverId) !== String(req.params.id)) {
+        return res.status(400).json({ error: 'Invalid server id' });
+      }
+      const result = await serverQueryService.getPlayers(serverId);
+      if (!result) return res.status(404).json({ error: 'Server not found' });
+      res.set('Cache-Control', 'public, max-age=10');
+      res.json(result);
     } catch (error) {
       next(error);
     }

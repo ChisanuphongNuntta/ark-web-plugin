@@ -4,14 +4,15 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageSquare, X, Send, Globe, Server, User } from 'lucide-react';
 import {
   connectSocket,
-  disconnectSocket,
   joinChatRoom,
+  useSocketStatus,
   sendChatMessage,
   onChatMessage,
   onChatHistory,
   onChatError,
   ChatMessage,
 } from '@/lib/socket';
+import { useAuthStore } from '@/lib/store';
 
 interface ChatServer {
   id: number;
@@ -37,16 +38,11 @@ export default function ChatWidget() {
   const [inputValue, setInputValue] = useState('');
   const [selectedServer, setSelectedServer] = useState<number | null>(null);
   const [servers, setServers] = useState<ChatServer[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const isConnected = useSocketStatus((state) => state.status === 'connected');
+  // The session cookie is httpOnly, so login state comes from the auth store.
+  const isLoggedIn = useAuthStore((state) => Boolean(state.user));
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Check login status
-  useEffect(() => {
-    const token = document.cookie.split(';').find(c => c.trim().startsWith('token='));
-    setIsLoggedIn(!!token);
-  }, []);
 
   // Fetch servers
   useEffect(() => {
@@ -64,11 +60,8 @@ export default function ChatWidget() {
   useEffect(() => {
     if (!isOpen) return;
 
-    const token = document.cookie.split(';').find(c => c.trim().startsWith('token='))?.split('=')[1];
-    const socket = connectSocket(token);
-
-    socket.on('connect', () => setIsConnected(true));
-    socket.on('disconnect', () => setIsConnected(false));
+    // Shared, cookie-authenticated connection (see lib/socket.ts).
+    connectSocket();
 
     // Join selected room
     joinChatRoom(selectedServer ?? undefined);

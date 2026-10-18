@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQueries, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -34,6 +34,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ProductArtwork } from '@/components/ProductArtwork';
+import { syncWalletNow } from '@/lib/realtime/walletSync';
 
 type CheckoutStep = 'cart' | 'submitting' | 'success';
 
@@ -46,6 +47,7 @@ function makeIdempotencyKey() {
 }
 
 export default function CartPage() {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const { user } = useAuthStore();
   const { items, removeItem, setQuantity, setLineServer, clear } = useCartStore();
@@ -142,6 +144,9 @@ export default function CartPage() {
       setAuthoritativeTotal(result.totalSpent);
       setCheckoutStep('success');
       clear();
+      // Navbar IC pill + order lists update immediately; socket events confirm.
+      void syncWalletNow(queryClient);
+      void queryClient.invalidateQueries({ queryKey: ['orders'] });
     },
     onError: (err) => {
       const error = toContractError(err, 'การยืนยันคำสั่งซื้อล้มเหลว');

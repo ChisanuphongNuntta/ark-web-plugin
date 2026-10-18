@@ -1,4 +1,5 @@
 #include "HttpClient.h"
+#include "CatalogDino.h"
 #include "GameThreadDispatcher.h"
 #include "RequestSigning.h"
 #include <Logger/Logger.h>
@@ -156,6 +157,12 @@ namespace
             "delivery.dino.v2",
             "protocol.v1"
         });
+        // Only once the cryopod item class has resolved on this server; otherwise
+        // the backend keeps sending the legacy live-spawn dino payload.
+        if (CatalogDino::IsCryopodDeliveryAvailable())
+        {
+            Body["capabilities"].push_back(CatalogDino::CryopodCapability);
+        }
         // Requests are admitted or rejected immediately; there is deliberately
         // no in-memory mutation queue that could be lost on plugin shutdown.
         Body["queueDepth"] = 0;

@@ -197,5 +197,60 @@ describe('in-game shop quote and confirmation', () => {
         }),
       }),
     }));
+    // Server without the cryopod capability: legacy payload, no cryopod key at all.
+    const payload = tx.deliveryJob.create.mock.calls[0][0].data.payload;
+    expect(payload.dino).not.toHaveProperty('cryopod');
+  });
+
+  it('asks for cryopod delivery only when the target server advertises delivery.dino.cryopod.v1', async () => {
+    const legacy = await confirmDinoQuote(['delivery.dino.catalog.v1', 'game-shop.quote-confirm.v1']);
+    expect(legacy.dino).not.toHaveProperty('cryopod');
+
+    const capable = await confirmDinoQuote([
+      'delivery.dino.catalog.v1', 'game-shop.quote-confirm.v1', 'delivery.dino.cryopod.v1',
+    ]);
+    expect(capable.dino).toEqual({
+      blueprint: "Blueprint'/Game/PrimalEarth/Dinos/Rex/Rex_Character_BP.Rex_Character_BP'",
+      level: 380,
+      forceTame: true,
+      neutered: false,
+      cryopod: true,
+    });
   });
 });
+
+/** Confirms a Rex quote on a server with the given capabilities; returns the queued payload. */
+async function confirmDinoQuote(capabilities: string[]) {
+  const blueprint = "Blueprint'/Game/PrimalEarth/Dinos/Rex/Rex_Character_BP.Rex_Character_BP'";
+  const dinoPayload = { schemaVersion: 1, source: 'arkshop', type: 'dino', spawn: { blueprint, level: 380, forceTame: true, neutered: false } };
+  const quote = {
+    id: 'q-cryo', userId: 'u1', serverId: 1, productId: 21, quantity: 1,
+    unitPrice: 195, totalPrice: 195, status: 'pending', orderId: null,
+    expiresAt: new Date(Date.now() + 60_000),
+    productSnapshot: { productType: 'dino', itemBlueprint: blueprint, quality: 0, isBlueprint: false, deliveryPayload: dinoPayload },
+  };
+  const product = {
+    id: 21, name: 'Rex (Lv.380)', price: 195, isActive: true, productType: 'dino', itemBlueprint: blueprint,
+    quantity: 1, quality: 0, isBlueprint: false, stock: null, maxPerUser: null,
+    deliveryPayload: dinoPayload, requiredCapabilities: ['delivery.dino.catalog.v1'],
+  };
+  const tx: any = {
+    $queryRaw: vi.fn().mockResolvedValue([]),
+    gamePurchaseQuote: { findUniqueOrThrow: vi.fn().mockResolvedValue(quote), update: vi.fn().mockResolvedValue({}) },
+    user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'u1', steamId: '76561198000000001' }), update: vi.fn().mockResolvedValue({}) },
+    product: { findUniqueOrThrow: vi.fn().mockResolvedValue(product), update: vi.fn().mockResolvedValue({}) },
+    server: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, isActive: true, drainMode: false, capabilities }) },
+    order: { aggregate: vi.fn(), create: vi.fn().mockResolvedValue({ id: 'order-cryo' }) },
+    orderGroup: { create: vi.fn().mockResolvedValue({ id: 'group-cryo' }) },
+    orderItem: { create: vi.fn().mockResolvedValue({ id: 'item-cryo' }) },
+    deliveryJob: { create: vi.fn().mockResolvedValue({}) },
+    fulfillment: { create: vi.fn().mockResolvedValue({}) },
+  };
+  db.$transaction.mockImplementationOnce((callback: any) => callback(tx));
+  const next = vi.fn();
+  await gameShopController.confirmQuote({ serverId: 1, body: { quoteId: 'q-cryo', steamId: '76561198000000001' } } as any, response(), next);
+  expect(next).not.toHaveBeenCalled();
+  const job = tx.deliveryJob.create.mock.calls[0][0].data;
+  expect(job.deliveryType).toBe('dino_catalog');
+  return job.payload;
+}

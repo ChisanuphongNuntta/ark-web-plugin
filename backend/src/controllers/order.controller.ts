@@ -4,6 +4,8 @@ import { AuthRequest } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
 import { assertOrderTransition, isRefundable } from '../services/orderState.js';
+import { afterCommit } from '../realtime/afterCommit.js';
+import { emitCatalogUpdated, emitOrderUpdated } from '../realtime/emit.js';
 
 // Build a normalized delivery timeline (status + timestamps) for GET /orders/{id}.
 // Sourced from the durable Order lifecycle timestamps plus the Fulfillment row, ordered
@@ -161,8 +163,10 @@ export class OrderController {
             where: { id: product.id },
             data: { stock: { decrement: parsedQuantity } },
           });
+          afterCommit(() => emitCatalogUpdated('stock'));
         }
 
+        afterCommit(() => emitOrderUpdated(req.user!.id, created.id, created.status));
         return created;
       }, { isolationLevel: 'Serializable' });
 
@@ -327,6 +331,7 @@ export class OrderController {
           where: { id: order.id },
           data: { status: 'refunded', refundedAt: new Date(), lastError: null },
         });
+        afterCommit(() => emitOrderUpdated(order.userId, order.id, 'refunded'));
 
         return { alreadyRefunded: false as const, order: updated };
       }, { isolationLevel: 'Serializable' });

@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ProductArtwork } from '@/components/ProductArtwork';
+import { syncWalletNow } from '@/lib/realtime/walletSync';
 
 interface Product {
   id: number;
@@ -114,6 +115,8 @@ export default function ProductDetailPopup({
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['wallet-balance'] });
       queryClient.invalidateQueries({ queryKey: ['user-wallet-popup'] });
+      // Navbar IC pill updates immediately; the wallet:updated event confirms it.
+      void syncWalletNow(queryClient);
       
       setIsBuySuccess(true);
       setIsBuyError(false);

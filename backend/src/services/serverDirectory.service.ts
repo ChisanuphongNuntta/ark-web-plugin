@@ -153,6 +153,53 @@ export function toServerSummary(server: ServerSummarySource, now: Date = new Dat
   };
 }
 
+// Live status merged into directory items (realtime 2026-10). When the A2S/heartbeat snapshot
+// has an entry, `online`/`playerCount` come from it (A2S is authoritative for listed servers
+// without a plugin) and the extra fields are filled; otherwise the heartbeat-derived values stay.
+export interface LiveStatusLike {
+  online: boolean;
+  players: number | null;
+  maxPlayers: number | null;
+  version?: string | null;
+  source: 'a2s' | 'heartbeat';
+  playersRev?: string;
+}
+
+export interface LiveServerSummary extends ServerSummary {
+  maxPlayers: number | null;
+  version: string | null;
+  statusSource: 'a2s' | 'heartbeat';
+  playersRev: string | null;
+}
+
+export function mergeLiveStatus(summary: ServerSummary, live: LiveStatusLike | undefined): LiveServerSummary {
+  if (!live) {
+    return { ...summary, maxPlayers: null, version: null, statusSource: 'heartbeat', playersRev: null };
+  }
+  return {
+    ...summary,
+    online: live.online,
+    playerCount: live.players ?? 0,
+    maxPlayers: live.maxPlayers ?? null,
+    version: live.version ?? null,
+    statusSource: live.source,
+    playersRev: live.playersRev ?? null,
+  };
+}
+
+export function mergeDirectoryLiveStatus(
+  directory: DirectoryResponse,
+  live: Map<number, LiveStatusLike>,
+): DirectoryResponse & { groups: Array<DirectoryGroup & { servers: LiveServerSummary[] }> } {
+  return {
+    ...directory,
+    groups: directory.groups.map((group) => ({
+      ...group,
+      servers: group.servers.map((server) => mergeLiveStatus(server, live.get(server.id))),
+    })),
+  };
+}
+
 export const UNASSIGNED_GROUP_KEY = 'unassigned';
 
 // Groups listed servers by cluster, ordered by cluster.sortOrder then server.sortOrder

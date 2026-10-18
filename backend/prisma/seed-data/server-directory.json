@@ -1,7 +1,7 @@
 {
   "_source": "Scraped 2026-10-17 from https://www.iris-th.cloud (Listserver-PVE, list-server-pve-mod, Listserver-PVPVE, list-server-pvpve-pre-aqua). Data anomalies preserved and flagged below; an admin must confirm them.",
   "_anomalies": [
-    "PVPVE Genesis Part 2 lists port 28013, identical to PVE_MOD Genesis Part 2 (28013) on the same host - one of them is wrong.",
+    "Legacy site listed PVE_MOD Genesis Part 2 on 28013 (same as PVPVE Genesis Part 2). A2S on 2026-10-18 showed 28013 = \"Genesis: Part 2 - PvPvE X10 MOD\" and 28032 = \"Genesis Part 2 - PvE X20 MOD +Additions\"; PVE_MOD Genesis Part 2 corrected to 28032.",
     "PVPVE Aquatica is labelled 'PvEvE' on the legacy site - treated as PvPvE."
   ],
   "statusPages": [
@@ -162,7 +162,7 @@
           "map": "Genesis2",
           "name": "Genesis Part 2",
           "host": "ark.iris-th.cloud",
-          "port": 28013
+          "port": 28032
         },
         {
           "map": "LostIsland",
@@ -249,8 +249,7 @@
           "map": "Genesis2",
           "name": "Genesis Part 2",
           "host": "ark.iris-th.cloud",
-          "port": 28013,
-          "flag": "duplicate-port-needs-confirmation"
+          "port": 28013
         },
         {
           "map": "LostIsland",

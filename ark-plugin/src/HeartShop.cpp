@@ -3,10 +3,12 @@
 #include "Protection.h"
 #include "GameThreadDispatcher.h"
 #include "DinoPayload.h"
+#include "CatalogDino.h"
 #include "RequestSigning.h"
 #include <Logger/Logger.h>
 #include <Windows.h>
 #include <filesystem>
+#include <stdexcept>
 #include <vector>
 
 namespace HeartShop
@@ -518,6 +520,10 @@ namespace HeartShop
                             return;
                         }
 
+                        // Game thread: resolve the cryopod class before the heartbeat so the
+                        // cryopod capability is only advertised when this server can make pods.
+                        RefreshCryopodCapability();
+
                         Http->SendHeartbeat(CountOnlinePlayers(), [](bool Success, const nlohmann::json&) {
                             static bool LoggedSuccess = false;
                             if (Success)
@@ -783,59 +789,417 @@ namespace HeartShop
         }
     }
 
-    bool SpawnCatalogDinoForPlayer(
+    // Legacy catalog spawn: force-tamed for the buyer's team next to the buyer.
+    // Unchanged from the pre-cryopod plugin so old payloads behave identically.
+    static APrimalDinoCharacter* SpawnCatalogDinoActor(
         AShooterPlayerController* Player,
-        const nlohmann::json& Payload)
+        const CatalogDino::Request& Request)
     {
-        if (!Player || !Player->GetPlayerCharacter() ||
-            Payload.value("schemaVersion", 0) != 1 ||
-            Payload.value("productType", "") != "dino" ||
-            !Payload.contains("dino") || !Payload["dino"].is_object())
+        FString Blueprint(ArkApi::Tools::Utf8Decode(Request.Blueprint).c_str());
+        auto* Dino = ArkApi::GetApiUtils().SpawnDino(
+            Player,
+            Blueprint,
+            nullptr,
+            Request.Level,
+            true,
+            Request.Neutered);
+        if (!Dino || !Dino->IsValidLowLevel())
         {
-            Log::GetLog()->error("Rejected malformed catalog dino delivery payload");
-            return false;
+            Log::GetLog()->error("ARK rejected catalog dino {} level {}", Request.Blueprint, Request.Level);
+            return nullptr;
+        }
+        return Dino;
+    }
+
+    // Cryopod custom data for a live dino. Mirrors ArkShop::GetDinoCustomItemData
+    // (non-modded branch, no saddle) from ASE-Plugins-master/ArkShop, which is the
+    // layout the vanilla Extinction cryopod reads back when the dino is released.
+    // No durability/cryo-sickness limits are applied.
+    static FCustomItemData BuildCryopodCustomData(APrimalDinoCharacter* Dino)
+    {
+        FCustomItemData Data;
+
+        FARKDinoData DinoData;
+        Dino->GetDinoData(&DinoData);
+
+        Data.CustomDataName = FName("Dino", EFindName::FNAME_Add);
+        Data.CustomDataNames.Add(FName("MissionTemporary", EFindName::FNAME_Add));
+        Data.CustomDataNames.Add(FName("None", EFindName::FNAME_Find));
+
+        UPrimalCharacterStatusComponent* Status = Dino->MyCharacterStatusComponentField();
+        if (!Status)
+        {
+            throw std::runtime_error("spawned dino has no status component");
         }
 
+        float* Current = Status->CurrentStatusValuesField()();
+        float* Max = Status->MaxStatusValuesField()();
+        const EPrimalCharacterStatusValue::Type StatOrder[] = {
+            EPrimalCharacterStatusValue::Health,
+            EPrimalCharacterStatusValue::Stamina,
+            EPrimalCharacterStatusValue::Torpidity,
+            EPrimalCharacterStatusValue::Oxygen,
+            EPrimalCharacterStatusValue::Food,
+            EPrimalCharacterStatusValue::Water,
+            EPrimalCharacterStatusValue::Temperature,
+            EPrimalCharacterStatusValue::Weight,
+            EPrimalCharacterStatusValue::MeleeDamageMultiplier,
+            EPrimalCharacterStatusValue::SpeedMultiplier,
+            EPrimalCharacterStatusValue::TemperatureFortitude,
+            EPrimalCharacterStatusValue::CraftingSpeedMultiplier,
+        };
+        for (const auto Stat : StatOrder) Data.CustomDataFloats.Add(Current[Stat]);
+        for (const auto Stat : StatOrder) Data.CustomDataFloats.Add(Max[Stat]);
+        Data.CustomDataFloats.Add(Dino->bIsFemale()() ? 1.0f : 0.0f);
+
+        const double Now = static_cast<double>(ArkApi::GetApiUtils().GetWorld()->TimeSecondsField());
+        Data.CustomDataDoubles.Doubles.Add(Now);
+        Data.CustomDataDoubles.Doubles.Add(static_cast<double>(Dino->BabyNextCuddleTimeField()) - Now);
+        Data.CustomDataDoubles.Doubles.Add(static_cast<double>(Dino->NextAllowedMatingTimeField()));
+        Data.CustomDataDoubles.Doubles.Add(static_cast<double>(Dino->RandomMutationsMaleField()));
+        Data.CustomDataDoubles.Doubles.Add(static_cast<double>(Dino->RandomMutationsFemaleField()));
+        Data.CustomDataDoubles.Doubles.Add(static_cast<double>(Status->DinoImprintingQualityField()));
+
+        FString ColorIndices;
+        Dino->GetColorSetInidcesAsString(&ColorIndices);
+        Data.CustomDataStrings.Add(DinoData.DinoNameInMap);
+        Data.CustomDataStrings.Add(DinoData.DinoName);
+        Data.CustomDataStrings.Add(ColorIndices);
+        Data.CustomDataStrings.Add(Dino->bNeutered()() ? FString("NEUTERED") : FString(""));
+        Data.CustomDataStrings.Add(Dino->bIsFemale()() ? FString("FEMALE") : FString("Male"));
+
+        Data.CustomDataClasses.Add(DinoData.DinoClass);
+
+        FCustomItemByteArray DinoBytes;
+        DinoBytes.Bytes = DinoData.DinoData;
+        if (DinoBytes.Bytes.Num() <= 0)
+        {
+            throw std::runtime_error("spawned dino produced an empty native snapshot");
+        }
+        Data.CustomDataBytes.ByteArrays.Add(DinoBytes);
+        return Data;
+    }
+
+    // ---- Native fault guard for the cryopod path -------------------------------
+    // The plugin is built with /EHsc, so catch(...) does NOT see SEH faults such as
+    // an access violation inside a NativeCall (GetDinoData, SetCustomItemData,
+    // AddItemObject, Destroy, ...). Each native cryopod step therefore runs through
+    // CallWithSehGuard, which converts a native fault into a failed step (logged as
+    // critical) instead of crashing the live server. The frame holding __try must
+    // not contain C++ objects with destructors, hence the plain thunk signature.
+    // Caveat: after a converted fault, destructors of objects inside the faulting
+    // step may not have run (a small leak is accepted over a server crash), and the
+    // step's partial effect is unknown; the runner's ordering keeps the buyer from
+    // receiving two assets either way.
+    using NativeStepThunk = bool (*)(void* Context);
+
+    static bool CallWithSehGuard(const NativeStepThunk Thunk, void* Context, unsigned long* FaultCode)
+    {
+        __try
+        {
+            return Thunk(Context);
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+            *FaultCode = GetExceptionCode();
+            return false;
+        }
+    }
+
+    struct GuardedStepContext
+    {
+        const std::function<bool()>* Step;
+        const char* Name;
+    };
+
+    static bool InvokeGuardedStep(void* Context)
+    {
+        const auto* Guarded = static_cast<GuardedStepContext*>(Context);
         try
         {
-            const auto& DinoDefinition = Payload["dino"];
-            const std::string BlueprintPath = DinoDefinition.value("blueprint", "");
-            const int Level = DinoDefinition.value("level", 0);
-            const bool ForceTame = DinoDefinition.value("forceTame", false);
-            const bool Neutered = DinoDefinition.value("neutered", false);
-            if (BlueprintPath.empty() || Level < 1 || Level > 10000 || !ForceTame)
-            {
-                Log::GetLog()->error("Rejected unsafe catalog dino definition");
-                return false;
-            }
-
-            FString Blueprint(ArkApi::Tools::Utf8Decode(BlueprintPath).c_str());
-            auto* Dino = ArkApi::GetApiUtils().SpawnDino(
-                Player,
-                Blueprint,
-                nullptr,
-                Level,
-                true,
-                Neutered);
-            if (!Dino || !Dino->IsValidLowLevel())
-            {
-                Log::GetLog()->error("ARK rejected catalog dino {} level {}", BlueprintPath, Level);
-                return false;
-            }
-
-            Log::GetLog()->info(
-                "Spawned catalog dino {} level {} for SteamID {} (neutered={})",
-                BlueprintPath,
-                Level,
-                GetSteamId(Player),
-                Neutered ? "true" : "false");
-            return true;
+            return (*Guarded->Step)();
         }
         catch (const std::exception& e)
         {
-            Log::GetLog()->error("Catalog dino spawn exception: {}", e.what());
+            Log::GetLog()->error("Catalog dino cryopod step '{}' threw: {}", Guarded->Name, e.what());
             return false;
         }
+        catch (...)
+        {
+            Log::GetLog()->error("Catalog dino cryopod step '{}' threw an unknown exception", Guarded->Name);
+            return false;
+        }
+    }
+
+    // Runs Step now; C++ exceptions and native (SEH) faults both become `false`.
+    static bool RunNativeStep(const char* Name, const std::function<bool()>& Step)
+    {
+        GuardedStepContext Context{&Step, Name};
+        unsigned long FaultCode = 0;
+        const bool Ok = CallWithSehGuard(&InvokeGuardedStep, &Context, &FaultCode);
+        if (FaultCode != 0)
+        {
+            Log::GetLog()->critical(
+                "Native fault 0x{:08X} in catalog dino cryopod step '{}' was contained; step treated as failed",
+                FaultCode,
+                Name);
+            return false;
+        }
+        return Ok;
+    }
+
+    static UClass* LoadCryopodItemClass()
+    {
+        FString CryopodPath(CatalogDino::CryopodItemBlueprint);
+        return UVictoryCore::BPLoadClass(&CryopodPath);
+    }
+
+    // Resolves the cryopod item class on the game thread and publishes the result
+    // to the heartbeat (delivery.dino.cryopod.v1 is only advertised once it loads).
+    // Called before every heartbeat until it succeeds; once it has succeeded the
+    // capability stays on. Only the availability is cached, never the UClass
+    // pointer: delivery re-resolves it, so a GC'd class can never be dereferenced.
+    void RefreshCryopodCapability()
+    {
+        if (CatalogDino::IsCryopodDeliveryAvailable())
+        {
+            return;
+        }
+
+        UClass* CryopodClass = nullptr;
+        const bool Ran = RunNativeStep("resolve cryopod class", [&CryopodClass]() {
+            CryopodClass = LoadCryopodItemClass();
+            return CryopodClass != nullptr;
+        });
+
+        static bool LoggedFailure = false;
+        if (Ran && CryopodClass)
+        {
+            CatalogDino::SetCryopodDeliveryAvailable(true);
+            Log::GetLog()->info(
+                "Cryopod item class resolved; advertising {} (catalog dinos are delivered in cryopods)",
+                CatalogDino::CryopodCapability);
+        }
+        else if (!LoggedFailure)
+        {
+            LoggedFailure = true;
+            Log::GetLog()->warn(
+                "Cryopod item class {} could not be loaded; {} not advertised, catalog dinos keep the live spawn",
+                CatalogDino::CryopodItemBlueprint,
+                CatalogDino::CryopodCapability);
+        }
+    }
+
+    struct CatalogDinoDelivery
+    {
+        CatalogDino::Outcome Outcome = CatalogDino::Outcome::Failed;
+        bool CryopodRequested = false;
+        bool InventoryFull = false;
+        int Level = 0;
+        std::string Error;
+    };
+
+    // Delivers a `dino_catalog` payload. Runs on the game thread inside the
+    // journal's mutating window (PrepareDelivery -> MarkMutating already done by
+    // the caller), so a re-sent/acknowledged delivery never reaches this again.
+    CatalogDinoDelivery DeliverCatalogDinoForPlayer(
+        AShooterPlayerController* Player,
+        const nlohmann::json& Payload)
+    {
+        CatalogDinoDelivery Result;
+
+        CatalogDino::Request Request;
+        if (!Player || !Player->GetPlayerCharacter())
+        {
+            Result.Error = "Player is not spawned";
+            return Result;
+        }
+        if (!CatalogDino::ParseRequest(Payload, Request, Result.Error))
+        {
+            Log::GetLog()->error("Rejected catalog dino delivery payload: {}", Result.Error);
+            Result.Error = "Rejected catalog dino payload: " + Result.Error;
+            return Result;
+        }
+        Result.Level = Request.Level;
+        Result.CryopodRequested = Request.Cryopod;
+
+        if (!Request.Cryopod)
+        {
+            try
+            {
+                if (SpawnCatalogDinoActor(Player, Request))
+                {
+                    Log::GetLog()->info(
+                        "Spawned catalog dino {} level {} for SteamID {} (neutered={})",
+                        Request.Blueprint,
+                        Request.Level,
+                        GetSteamId(Player),
+                        Request.Neutered ? "true" : "false");
+                    Result.Outcome = CatalogDino::Outcome::DeliveredAsLiveTame;
+                }
+                else
+                {
+                    Result.Error = "Catalog dino spawn failed";
+                }
+            }
+            catch (const std::exception& e)
+            {
+                Log::GetLog()->error("Catalog dino spawn exception: {}", e.what());
+                Result.Error = std::string("Catalog dino spawn exception: ") + e.what();
+            }
+            return Result;
+        }
+
+        UPrimalInventoryComponent* Inventory = nullptr;
+        UClass* CryopodClass = nullptr;
+        APrimalDinoCharacter* Dino = nullptr;
+        UPrimalItem* Cryopod = nullptr;
+
+        CatalogDino::CryopodSteps Steps;
+        Steps.Preflight = [&](std::string& Error) {
+            CatalogDino::PreflightResult Preflight = CatalogDino::PreflightResult::Fail;
+            const bool Ran = RunNativeStep("preflight", [&]() {
+                AShooterCharacter* Character = Player->GetPlayerCharacter();
+                Inventory = Character ? Character->MyInventoryComponentField() : nullptr;
+                if (!Inventory || !Inventory->IsValidLowLevel())
+                {
+                    // Transient (character mid-respawn): retry later without using an attempt.
+                    Inventory = nullptr;
+                    Error = "Player has no inventory yet; cryopod delivery deferred";
+                    Preflight = CatalogDino::PreflightResult::Defer;
+                    return true;
+                }
+                if (Inventory->IsAtMaxInventoryItems())
+                {
+                    Result.InventoryFull = true;
+                    Error = "Player inventory is full; cryopod delivery deferred until a slot is free";
+                    Preflight = CatalogDino::PreflightResult::Defer;
+                    return true;
+                }
+                CryopodClass = LoadCryopodItemClass();
+                if (!CryopodClass)
+                {
+                    // Permanent for this server: never burn retries on it.
+                    Error = "Could not load cryopod item class";
+                    Preflight = CatalogDino::PreflightResult::FallbackToLiveSpawn;
+                    return true;
+                }
+                Preflight = CatalogDino::PreflightResult::Ready;
+                return true;
+            });
+            if (!Ran)
+            {
+                Error = "Cryopod delivery preflight faulted";
+                return CatalogDino::PreflightResult::Fail;
+            }
+            return Preflight;
+        };
+        Steps.SpawnDino = [&]() {
+            return RunNativeStep("spawn dino", [&]() {
+                Dino = SpawnCatalogDinoActor(Player, Request);
+                return Dino != nullptr;
+            });
+        };
+        Steps.BuildCryopod = [&]() {
+            return RunNativeStep("build cryopod", [&]() {
+                if (!Dino || !Dino->IsValidLowLevel() || !CryopodClass)
+                {
+                    return false;
+                }
+                Cryopod = UPrimalItem::AddNewItem(
+                    CryopodClass, nullptr, false, false, 0, false, 0, false, 0, false, nullptr, 0, false, false);
+                if (!Cryopod)
+                {
+                    return false;
+                }
+                FCustomItemData CustomData = BuildCryopodCustomData(Dino);
+                Cryopod->SetCustomItemData(&CustomData);
+                Cryopod->UpdatedItem(true);
+                return true;
+            });
+        };
+        Steps.DestroyDino = [&]() {
+            return RunNativeStep("destroy dino", [&]() {
+                if (!Dino)
+                {
+                    return true;
+                }
+                if (!Dino->IsValidLowLevel())
+                {
+                    return false;
+                }
+                const bool Destroyed = Dino->Destroy(true, false) || Dino->IsPendingKillPending();
+                if (Destroyed)
+                {
+                    Dino = nullptr;
+                }
+                return Destroyed;
+            });
+        };
+        Steps.AddCryopodToInventory = [&]() {
+            return RunNativeStep("add cryopod to inventory", [&]() {
+                if (!Cryopod || !Inventory || !Inventory->IsValidLowLevel())
+                {
+                    Log::GetLog()->error("Cryopod or player inventory became invalid before the cryopod was added");
+                    return false;
+                }
+                if (!Inventory->AddItemObject(Cryopod))
+                {
+                    // The tame was already destroyed; record the capacity so a Failed
+                    // result after the destroy can be diagnosed (the retry spawns again).
+                    Log::GetLog()->error(
+                        "AddItemObject refused the cryopod: inventory items={} max={} atMax={}",
+                        Inventory->InventoryItemsField().Num(),
+                        Inventory->GetMaxInventoryItems(false),
+                        Inventory->IsAtMaxInventoryItems() ? "true" : "false");
+                    return false;
+                }
+                Cryopod = nullptr; // now owned by the inventory
+                return true;
+            });
+        };
+        Steps.DiscardCryopod = [&]() {
+            // Never added to an inventory: unreferenced, collected by the engine GC.
+            Cryopod = nullptr;
+        };
+
+        Result.Outcome = CatalogDino::RunCryopodDelivery(Steps, Result.Error);
+        switch (Result.Outcome)
+        {
+            case CatalogDino::Outcome::DeliveredInCryopod:
+                Log::GetLog()->info(
+                    "Delivered catalog dino {} level {} in cryopod to SteamID {} (neutered={})",
+                    Request.Blueprint,
+                    Request.Level,
+                    GetSteamId(Player),
+                    Request.Neutered ? "true" : "false");
+                break;
+            case CatalogDino::Outcome::DeliveredAsLiveTame:
+                Log::GetLog()->warn(
+                    "Catalog dino {} level {} for SteamID {} delivered as live tame (cryopod fallback): {}",
+                    Request.Blueprint,
+                    Request.Level,
+                    GetSteamId(Player),
+                    Result.Error);
+                break;
+            case CatalogDino::Outcome::Deferred:
+                Log::GetLog()->info(
+                    "Catalog dino {} level {} cryopod delivery to SteamID {} deferred, nothing touched: {}",
+                    Request.Blueprint,
+                    Request.Level,
+                    GetSteamId(Player),
+                    Result.Error);
+                break;
+            case CatalogDino::Outcome::Failed:
+                Log::GetLog()->warn(
+                    "Catalog dino {} level {} cryopod delivery to SteamID {} failed, nothing given: {}",
+                    Request.Blueprint,
+                    Request.Level,
+                    GetSteamId(Player),
+                    Result.Error);
+                break;
+        }
+        return Result;
     }
 
     // Interpret the structured response the backend returns from POST /deliveries/{key}/fail.
@@ -1035,6 +1399,9 @@ namespace HeartShop
 
                     // Action is Execute
                     bool SpawnSuccess = false;
+                    // Set only when the game was NOT touched and the cause is transient
+                    // (catalog dino cryopod: inventory full). Released, not failed.
+                    bool DeferDelivery = false;
                     std::string ErrorMessage = "";
 
                     if (DeliveryType == "order")
@@ -1133,19 +1500,45 @@ namespace HeartShop
                     {
                         try
                         {
-                            const auto& DinoDefinition = Payload["dino"];
-                            const int Level = DinoDefinition.value("level", 1);
                             const std::string ProductName = Payload.value("productName", "Dino");
-                            if (SpawnCatalogDinoForPlayer(TargetPC, Payload))
+                            const CatalogDinoDelivery Delivered = DeliverCatalogDinoForPlayer(TargetPC, Payload);
+                            if (Delivered.Outcome == CatalogDino::Outcome::DeliveredInCryopod)
                             {
                                 SpawnSuccess = true;
                                 const std::string Message = "Successfully delivered " + ProductName +
-                                    " (Level " + std::to_string(Level) + ")!";
+                                    " (Level " + std::to_string(Delivered.Level) + ") in a cryopod - check your inventory!";
                                 SendMessage(TargetPC, FString(ArkApi::Tools::Utf8Decode(Message).c_str()));
+                            }
+                            else if (Delivered.Outcome == CatalogDino::Outcome::DeliveredAsLiveTame)
+                            {
+                                SpawnSuccess = true;
+                                // A cryopod was requested but the tame is standing next to the
+                                // buyer: say so, so water/large dinos can be looked after.
+                                const std::string Message = Delivered.CryopodRequested
+                                    ? "Delivered " + ProductName + " (Level " + std::to_string(Delivered.Level) +
+                                        ") next to you - cryopod unavailable, the dino is NOT in your inventory!"
+                                    : "Successfully delivered " + ProductName +
+                                        " (Level " + std::to_string(Delivered.Level) + ")!";
+                                SendMessage(TargetPC, FString(ArkApi::Tools::Utf8Decode(Message).c_str()));
+                            }
+                            else if (Delivered.Outcome == CatalogDino::Outcome::Deferred)
+                            {
+                                // Nothing touched (inventory full / no inventory yet): release the
+                                // lease below without consuming a backend attempt.
+                                DeferDelivery = true;
+                                ErrorMessage = Delivered.Error;
+                                static CatalogDino::NoticeThrottle InventoryFullNotices(std::chrono::seconds(60));
+                                if (Delivered.InventoryFull &&
+                                    InventoryFullNotices.ShouldNotify(DeliveryKey, CatalogDino::NoticeThrottle::Clock::now()))
+                                {
+                                    const std::string Message = "Your inventory is full. Free a slot to receive " +
+                                        ProductName + " in a cryopod - delivery will retry automatically.";
+                                    SendMessage(TargetPC, FString(ArkApi::Tools::Utf8Decode(Message).c_str()));
+                                }
                             }
                             else
                             {
-                                ErrorMessage = "Catalog dino spawn failed";
+                                ErrorMessage = Delivered.Error.empty() ? "Catalog dino spawn failed" : Delivered.Error;
                             }
                         }
                         catch (const std::exception& e)
@@ -1189,6 +1582,28 @@ namespace HeartShop
                                 "Delivery {} mutated game state but journal completion failed; backend acknowledgement suppressed",
                                 DeliveryKey);
                         }
+                    }
+                    else if (DeferDelivery)
+                    {
+                        // Nothing was mutated. Roll back the local prepared record and release
+                        // the lease (same as DeliveryAction::Deferred): the backend re-queues the
+                        // job WITHOUT consuming an attempt, so a full inventory can never
+                        // dead-letter/refund a paid order.
+                        if (!AbortDelivery(DeliveryType, DeliveryKey))
+                        {
+                            Log::GetLog()->error(
+                                "Deferred delivery {} could not be rolled back in the local journal", DeliveryKey);
+                        }
+                        Http->ReleaseDelivery(DeliveryKey, LeaseToken, [DeliveryKey, ErrorMessage](bool Success, const nlohmann::json&) {
+                            if (Success)
+                            {
+                                Log::GetLog()->info("Delivery {} deferred (no attempt consumed): {}", DeliveryKey, ErrorMessage);
+                            }
+                            else
+                            {
+                                Log::GetLog()->warn("Failed to release deferred delivery lease {}: {}", DeliveryKey, ErrorMessage);
+                            }
+                        });
                     }
                     else
                     {

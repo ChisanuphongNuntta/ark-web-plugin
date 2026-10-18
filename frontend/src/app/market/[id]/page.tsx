@@ -32,6 +32,7 @@ import {
 import Link from 'next/link';
 import { useState } from 'react';
 import { getProductImageUrl } from '@/lib/productVisuals';
+import { syncWalletNow } from '@/lib/realtime/walletSync';
 
 // Stat display component
 function StatBar({
@@ -149,6 +150,7 @@ export default function DinoDetailPage() {
       });
       queryClient.invalidateQueries({ queryKey: ['dinoListing'] });
       queryClient.invalidateQueries({ queryKey: ['user'] });
+      void syncWalletNow(queryClient);
     },
     onError: (error: any) => {
       setDialogConfig({

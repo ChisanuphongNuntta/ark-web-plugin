@@ -28,16 +28,30 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
+/**
+ * Socket payloads are untrusted (any guest can emit anything, including nothing). Only a positive
+ * safe integer is accepted as a server id; everything else means the global room.
+ */
+export function readServerId(data: unknown): number | undefined {
+  if (!data || typeof data !== 'object') return undefined;
+  const serverId = (data as { serverId?: unknown }).serverId;
+  return typeof serverId === 'number' && Number.isSafeInteger(serverId) && serverId > 0 ? serverId : undefined;
+}
+
+function roomFor(serverId: number | undefined): string {
+  return serverId ? `chat:server:${serverId}` : 'chat:global';
+}
+
 export function chatHandler(io: Server, socket: AuthenticatedSocket) {
   // Join a server-specific chat room
-  socket.on('chat:join', async (data: { serverId?: number }) => {
-    const room = data.serverId ? `chat:server:${data.serverId}` : 'chat:global';
-    socket.join(room);
-
-    // Send recent message history
+  socket.on('chat:join', async (data: unknown) => {
     try {
+      const serverId = readServerId(data);
+      socket.join(roomFor(serverId));
+
+      // Send recent message history
       const messages = await prisma.chatMessage.findMany({
-        where: data.serverId ? { serverId: data.serverId } : { serverId: null },
+        where: serverId ? { serverId } : { serverId: null },
         orderBy: { createdAt: 'desc' },
         take: 50,
         include: {
@@ -52,20 +66,32 @@ export function chatHandler(io: Server, socket: AuthenticatedSocket) {
         server: undefined, // Remove server relation from response
       }));
 
-      socket.emit('chat:history', { messages: messagesWithServerName, serverId: data.serverId ?? null });
+      socket.emit('chat:history', { messages: messagesWithServerName, serverId: serverId ?? null });
     } catch (error) {
       console.error('Error fetching chat history:', error);
     }
   });
 
   // Leave a server-specific chat room
-  socket.on('chat:leave', (data: { serverId?: number }) => {
-    const room = data.serverId ? `chat:server:${data.serverId}` : 'chat:global';
-    socket.leave(room);
+  socket.on('chat:leave', (data: unknown) => {
+    try {
+      socket.leave(roomFor(readServerId(data)));
+    } catch (error) {
+      console.error('chat:leave failed:', error);
+    }
   });
 
   // Send a chat message
-  socket.on('chat:send', async (data: { content: string; serverId?: number | null }) => {
+  socket.on('chat:send', async (data: unknown) => {
+    try {
+      await handleSend(data);
+    } catch (error) {
+      console.error('Error saving chat message:', error);
+      socket.emit('chat:error', { message: 'Failed to send message' });
+    }
+  });
+
+  async function handleSend(data: unknown) {
     // Must be authenticated to send
     if (!socket.userId) {
       socket.emit('chat:error', { message: 'You must be logged in to send messages' });
@@ -73,7 +99,9 @@ export function chatHandler(io: Server, socket: AuthenticatedSocket) {
     }
 
     // Validate content
-    const content = data.content?.trim();
+    const rawContent = data && typeof data === 'object' ? (data as { content?: unknown }).content : undefined;
+    const content = typeof rawContent === 'string' ? rawContent.trim() : '';
+    const serverId = readServerId(data);
     if (!content || content.length === 0) {
       socket.emit('chat:error', { message: 'Message cannot be empty' });
       return;
@@ -90,70 +118,67 @@ export function chatHandler(io: Server, socket: AuthenticatedSocket) {
       return;
     }
 
-    try {
-      // Get server name if serverId is provided
-      let serverName: string | null = null;
-      if (data.serverId) {
-        const server = await prisma.server.findUnique({
-          where: { id: data.serverId },
-          select: { name: true },
-        });
-        serverName = server?.name || null;
-      }
-
-      // Save message to database
-      const message = await prisma.chatMessage.create({
-        data: {
-          source: 'web',
-          serverId: data.serverId ?? null,
-          senderType: 'web_user',
-          senderId: socket.userId,
-          senderName: socket.userName || 'Unknown',
-          senderAvatar: socket.userAvatar,
-          content,
-        },
+    // Get server name if serverId is provided
+    let serverName: string | null = null;
+    if (serverId) {
+      const server = await prisma.server.findUnique({
+        where: { id: serverId },
+        select: { name: true },
       });
-
-      // Broadcast to appropriate room(s)
-      const room = data.serverId ? `chat:server:${data.serverId}` : 'chat:global';
-      io.to(room).emit('chat:message', {
-        id: message.id,
-        source: message.source,
-        serverId: message.serverId,
-        serverName,
-        senderType: message.senderType,
-        senderId: message.senderId,
-        senderName: message.senderName,
-        senderAvatar: message.senderAvatar,
-        content: message.content,
-        createdAt: message.createdAt,
-      });
-
-      // Send to Discord
-      sendToDiscord({
-        source: message.source,
-        serverId: message.serverId,
-        serverName,
-        senderName: message.senderName,
-        content: message.content,
-      });
-
-    } catch (error) {
-      console.error('Error saving chat message:', error);
-      socket.emit('chat:error', { message: 'Failed to send message' });
+      serverName = server?.name || null;
     }
-  });
+
+    // Save message to database
+    const message = await prisma.chatMessage.create({
+      data: {
+        source: 'web',
+        serverId: serverId ?? null,
+        senderType: 'web_user',
+        senderId: socket.userId,
+        senderName: socket.userName || 'Unknown',
+        senderAvatar: socket.userAvatar,
+        content,
+      },
+    });
+
+    // Broadcast to appropriate room(s)
+    io.to(roomFor(serverId)).emit('chat:message', {
+      id: message.id,
+      source: message.source,
+      serverId: message.serverId,
+      serverName,
+      senderType: message.senderType,
+      senderId: message.senderId,
+      senderName: message.senderName,
+      senderAvatar: message.senderAvatar,
+      content: message.content,
+      createdAt: message.createdAt,
+    });
+
+    // Send to Discord
+    sendToDiscord({
+      source: message.source,
+      serverId: message.serverId,
+      serverName,
+      senderName: message.senderName,
+      content: message.content,
+    });
+  }
 
   // Get online users in a room
-  socket.on('chat:users', async (data: { serverId?: number }) => {
-    const room = data.serverId ? `chat:server:${data.serverId}` : 'chat:global';
-    const sockets = await io.in(room).fetchSockets();
+  socket.on('chat:users', async (data: unknown) => {
+    try {
+      const serverId = readServerId(data);
+      const sockets = await io.in(roomFor(serverId)).fetchSockets();
 
-    const users = sockets.map((s) => ({
-      id: (s as unknown as AuthenticatedSocket).userId,
-      name: (s as unknown as AuthenticatedSocket).userName,
-    })).filter(u => u.id); // Only include authenticated users
+      const users = sockets.map((s) => ({
+        id: (s as unknown as AuthenticatedSocket).userId,
+        name: (s as unknown as AuthenticatedSocket).userName,
+      })).filter(u => u.id); // Only include authenticated users
 
-    socket.emit('chat:users', { users, serverId: data.serverId ?? null });
+      socket.emit('chat:users', { users, serverId: serverId ?? null });
+    } catch (error) {
+      console.error('chat:users failed:', error);
+    }
   });
 }

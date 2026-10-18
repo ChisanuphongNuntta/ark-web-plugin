@@ -9,6 +9,7 @@ import { useAuthStore } from '@/lib/store';
 import type { PaymentIntent, PaymentPackage } from '@/lib/contracts/types';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
+import { syncWalletNow } from '@/lib/realtime/walletSync';
 
 const count = (value: string) => /^\d+$/.test(value) ? BigInt(value).toLocaleString('th-TH') : '—';
 const labels: Record<PaymentIntent['status'], string> = {
@@ -45,7 +46,7 @@ export function StripeTopup() {
   useEffect(() => {
     if (payment.data && !['pending', 'processing'].includes(payment.data.status)) attempt.current = null;
     if (payment.data?.status === 'completed') {
-      void cache.invalidateQueries({ queryKey: ['wallet'] });
+      void syncWalletNow(cache);
       void cache.invalidateQueries({ queryKey: ['user'] });
       void authApi.getMe().then(({ data }) => { if (data.user) setUser(data.user); }).catch(() => undefined);
     }

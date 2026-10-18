@@ -2,6 +2,8 @@ import { Prisma, WalletAccountStatus, WalletAccountType } from '@prisma/client';
 import { createHash } from 'node:crypto';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
+import { afterCommit } from '../realtime/afterCommit.js';
+import { emitWalletUpdated, walletReasonFor } from '../realtime/emit.js';
 
 export const SYSTEM_ACCOUNTS = {
   issuance: 'system:issuance:IC',
@@ -212,6 +214,15 @@ export class WalletService {
         where: { id: transaction.id },
         data: { postedAt: new Date() },
       });
+
+      // Realtime: every user whose account moved gets wallet:updated, but only once the
+      // enclosing transaction (ours, or the caller's `tx`) has committed. Idempotent replays
+      // (the early return above) post nothing and emit nothing.
+      const touchedUserIds = [...new Set(accounts.map((account) => account.userId).filter((id): id is string => Boolean(id)))];
+      if (touchedUserIds.length > 0) {
+        const reason = walletReasonFor(input.type);
+        afterCommit(() => emitWalletUpdated(touchedUserIds, reason));
+      }
 
       const posted = await tx.ledgerTransaction.findUniqueOrThrow({
         where: { id: transaction.id },
