@@ -13,6 +13,15 @@
   - Admin rows `balanceAfter` fallback ordered by `postedAt`. CSV export uses keyset pagination with a 5s settle snapshot and adds a truncation marker row. Reconcile logs Redis-lock skips and, after 2 windows, runs without the lock (audit `ledger_reconcile_degraded`).
 - Verified: backend `tsc` + `vitest run tests/unit` (561 tests), frontend `tsc` + `eslint` (0 errors), `heart-plugin-backend:tx-check` and `heart-plugin-frontend:tx-check` Docker builds. Not deployed and no containers restarted.
 
+## Security fixes — 2026-10-23 (commit e6cfa90)
+
+- CRITICAL: `POST /payments/intents {provider:"sandbox"}` credited IC instantly for ANY logged-in user. Only osv1 ever used it (3 intents, 11,700 IC). Sandbox now needs `PAYMENT_SANDBOX_ENABLED=true` (unset in prod) AND an admin/root caller. Verified in prod: user→403, root→403, no provider→400.
+- The customer refund endpoint let admins refund DELIVERED orders. osv1 got a Tek Sword and 8 IC back (order fb01dc98, 2026-10-22 17:26 UTC). Fix:
+  - delivered orders are refused there for everyone;
+  - completed or leased delivery jobs block a refund;
+  - pending retries are dead-lettered on refund.
+- In-game wallet chat now shows English labels (`ledgerTypeLabelEn`), e.g. "Order refund" instead of `order_refund`.
+
 ## IrisDefender (third-party anti-cheat, DLL only, no source) — 2026-10-19
 
 - False positive found: on 2026-10-18 15:55, right after a Tiktaalik was delivered to osv1 (character Skrael), there were 36 "Teleport" violations and 35 auto-kicks. The position read 0,0,0 every time (mount/attach), giving a delta of about 259k against the 8k limit.
