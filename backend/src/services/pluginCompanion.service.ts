@@ -1,6 +1,7 @@
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService from './wallet.service.js';
+import { ledgerTypeLabelEn } from './ledgerTypes.js';
 
 type WalletEventCursor = { postedAt: string; id: string };
 
@@ -144,7 +145,11 @@ export class PluginCompanionService {
         eventType: 'wallet.transaction.posted' as const,
         occurredAt: (tx.postedAt ?? tx.createdAt).toISOString(),
         transactionId: tx.id,
-        transactionType: tx.type,
+        // The deployed plugin prints transactionType verbatim for types it does not know
+        // (e.g. "order_refund"), so send the player-facing English label here and keep the
+        // raw ledger type in transactionTypeCode.
+        transactionType: ledgerTypeLabelEn(tx.type),
+        transactionTypeCode: tx.type,
         referenceType: tx.referenceType ?? null,
         referenceId: tx.referenceId ?? null,
         // Additive, server-scoped attribution fields (backward compatible with the event schema).

@@ -30,6 +30,7 @@ const sign = (payload: unknown) => crypto.createHmac('sha256', 'test-secret')
 
 describe('Payment sandbox', () => {
   beforeEach(() => {
+    process.env.PAYMENT_SANDBOX_ENABLED = 'true';
     vi.clearAllMocks();
     process.env.PAYMENT_SANDBOX_WEBHOOK_SECRET = 'test-secret';
     db.paymentPackage = { findMany: vi.fn(), findUnique: vi.fn() };
@@ -51,7 +52,7 @@ describe('Payment sandbox', () => {
   it('returns the original intent when an idempotency key is replayed', async () => {
     db.paymentIntent.findUnique.mockResolvedValue(intent);
 
-    const result = await paymentService.createIntent('u1', 'pkg-100', 'idem-1');
+    const result = await paymentService.createIntent('u1', 'pkg-100', 'idem-1', 'sandbox');
 
     expect(result.replayed).toBe(true);
     expect(result.intent.pointsAmount).toBe('110');
@@ -61,7 +62,7 @@ describe('Payment sandbox', () => {
   it('rejects reuse of an idempotency key for another request', async () => {
     db.paymentIntent.findUnique.mockResolvedValue(intent);
 
-    await expect(paymentService.createIntent('u1', 'another-package', 'idem-1'))
+    await expect(paymentService.createIntent('u1', 'another-package', 'idem-1', 'sandbox'))
       .rejects.toMatchObject({ statusCode: 409 });
   });
 
@@ -70,7 +71,7 @@ describe('Payment sandbox', () => {
     db.paymentPackage.findUnique.mockResolvedValue(paymentPackage);
     db.paymentIntent.create.mockImplementation(({ data }: any) => Promise.resolve({ id: 'pi-new', status: 'pending', ...data }));
 
-    const result = await paymentService.createIntent('u1', 'pkg-100', 'idem-new');
+    const result = await paymentService.createIntent('u1', 'pkg-100', 'idem-new', 'sandbox');
 
     expect(result.replayed).toBe(false);
     expect(db.paymentIntent.create).toHaveBeenCalledWith({ data: expect.objectContaining({
@@ -136,5 +137,27 @@ describe('Payment sandbox', () => {
     const signature = new Stripe('sk_test_unit').webhooks.generateTestHeaderString({ payload: raw, secret: 'whsec_unit' });
     await expect(paymentService.processWebhook('stripe', Buffer.from(raw), signature)).resolves.toEqual({ accepted: true, duplicate: true });
     expect(walletService.creditUser).not.toHaveBeenCalled();
+  });
+});
+
+describe('Sandbox payments gate', () => {
+  it('refuses the sandbox provider when PAYMENT_SANDBOX_ENABLED is not "true"', async () => {
+    const previous = process.env.PAYMENT_SANDBOX_ENABLED;
+    delete process.env.PAYMENT_SANDBOX_ENABLED;
+    try {
+      await expect(paymentService.createIntent('u1', 'pkg-100', 'k-1', 'sandbox', true)).rejects.toMatchObject({ statusCode: 403 });
+    } finally {
+      if (previous === undefined) delete process.env.PAYMENT_SANDBOX_ENABLED; else process.env.PAYMENT_SANDBOX_ENABLED = previous;
+    }
+  });
+
+  it('only lets admin/root use sandbox, and only with the env switch on', async () => {
+    const { sandboxPaymentsAllowedFor } = await import('../../src/controllers/payment.controller.js');
+    const on = { PAYMENT_SANDBOX_ENABLED: 'true' } as NodeJS.ProcessEnv;
+    expect(sandboxPaymentsAllowedFor({ id: 'u', role: 'user' } as any, on)).toBe(false);
+    expect(sandboxPaymentsAllowedFor({ id: 'u', role: 'server_admin' } as any, on)).toBe(false);
+    expect(sandboxPaymentsAllowedFor({ id: 'a', role: 'admin' } as any, on)).toBe(true);
+    expect(sandboxPaymentsAllowedFor({ id: 'r', role: 'root' } as any, on)).toBe(true);
+    expect(sandboxPaymentsAllowedFor({ id: 'r', role: 'root' } as any, {} as NodeJS.ProcessEnv)).toBe(false);
   });
 });

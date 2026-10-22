@@ -37,7 +37,10 @@ export class PaymentService {
     }));
   }
 
-  async createIntent(userId: string, packageId: string, idempotencyKey: string, providerName = 'sandbox', autoCredit = false) {
+  async createIntent(userId: string, packageId: string, idempotencyKey: string, providerName: string, autoCredit = false) {
+    if (providerName === 'sandbox' && process.env.PAYMENT_SANDBOX_ENABLED !== 'true') {
+      throw new AppError('Sandbox payments are disabled', 403);
+    }
     if (!idempotencyKey?.trim()) throw new AppError('Idempotency-Key header is required', 400);
     if (idempotencyKey.length > 255) throw new AppError('Idempotency-Key must not exceed 255 characters', 400);
     if (!packageId) throw new AppError('packageId is required', 400);

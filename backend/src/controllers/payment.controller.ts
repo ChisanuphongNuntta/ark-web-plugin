@@ -6,6 +6,12 @@ import { AppError } from '../middlewares/errorHandler.js';
 import paymentService from '../services/payment.service.js';
 import { emitAdminSlipCreated } from '../realtime/emit.js';
 
+export function sandboxPaymentsAllowedFor(user: AuthRequest['user'] | undefined, env: NodeJS.ProcessEnv = process.env): boolean {
+  if (env.PAYMENT_SANDBOX_ENABLED !== 'true') return false;
+  const role = String(user?.role ?? '').toLowerCase();
+  return role === 'admin' || role === 'root';
+}
+
 export class PaymentController {
   listPackages = async (_req: Request, res: Response, next: NextFunction) => {
     try { res.json({ packages: await paymentService.listPackages() }); } catch (error) { next(error); }
@@ -14,8 +20,15 @@ export class PaymentController {
   createIntent = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const idempotencyKey = req.header('Idempotency-Key') || '';
-      const autoCredit = req.body?.autoCredit === true || req.body?.simulateSuccess === true || (req.body?.provider === 'sandbox' && process.env.NODE_ENV !== 'test');
-      const result = await paymentService.createIntent(req.user!.id, req.body?.packageId, idempotencyKey, req.body?.provider || 'sandbox', autoCredit);
+      const provider = typeof req.body?.provider === 'string' ? req.body.provider : '';
+      if (!provider) throw new AppError('provider is required', 400);
+      // The sandbox provider mints IC without a real payment. It must never be reachable by
+      // players in production: it needs an explicit env switch AND an admin/root caller.
+      if (provider === 'sandbox' && !sandboxPaymentsAllowedFor(req.user)) {
+        throw new AppError('Sandbox payments are disabled', 403);
+      }
+      const autoCredit = provider === 'sandbox';
+      const result = await paymentService.createIntent(req.user!.id, req.body?.packageId, idempotencyKey, provider, autoCredit);
       res.status(result.replayed ? 200 : 201).json(result);
     } catch (error) { next(error); }
   };

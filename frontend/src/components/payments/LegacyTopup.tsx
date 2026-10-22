@@ -142,6 +142,7 @@ function generateTransferRef(): string {
 
 export function LegacyTopupPage() {
   const { user } = useAuthStore();
+  const canUseSandbox = user?.role === 'admin' || user?.role === 'root';
   const queryClient = useQueryClient();
 
   const [selectedPackageId, setSelectedPackageId] = useState<string>('pkg-4');
@@ -676,7 +677,7 @@ export function LegacyTopupPage() {
             </div>
 
             {/* Payment Method Switcher Pills */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className={`grid gap-2 ${canUseSandbox ? 'grid-cols-3' : 'grid-cols-2'}`}>
               {/* Option 1: Bank Transfer / Slip */}
               <button
                 type="button"
@@ -723,7 +724,8 @@ export function LegacyTopupPage() {
                 </div>
               </button>
 
-              {/* Option 3: Sandbox */}
+              {/* Option 3: Sandbox — admin/root only; backend refuses everyone else (PAYMENT_SANDBOX_ENABLED + role) */}
+              {canUseSandbox && (
               <button
                 type="button"
                 className={`rounded-xl border p-2 text-left transition-all duration-200 relative ${
@@ -745,6 +747,7 @@ export function LegacyTopupPage() {
                   </div>
                 </div>
               </button>
+              )}
             </div>
           </div>
 

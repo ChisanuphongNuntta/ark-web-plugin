@@ -75,7 +75,7 @@ describe.skipIf(!manifest)('item artwork manifest', () => {
     expect(files.every((f) => f.endsWith('.webp'))).toBe(true);
     const bytes = files.reduce((sum, f) => sum + fs.statSync(path.join(assetsDir, f)).size, 0);
     expect(bytes).toBeLessThan(40 * 1024 * 1024);
-  });
+  }, 60_000); // walks ~1,800 image files; slow on the F: drive under full-suite load
 
   it('attributes every downloaded file', () => {
     const attribution = fs.readFileSync(attributionPath, 'utf8');

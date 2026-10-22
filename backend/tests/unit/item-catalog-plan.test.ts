@@ -189,5 +189,5 @@ describe('item catalog plan (committed JSON)', () => {
         .filter((url) => !fs.existsSync(path.join(publicDir, ...url.split('/').filter(Boolean))));
       expect(missing).toEqual([]);
     }
-  });
+  }, 60_000); // walks ~1,800 image files; slow on the F: drive under full-suite load
 });

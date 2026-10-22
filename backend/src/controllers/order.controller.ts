@@ -294,8 +294,11 @@ export class OrderController {
       if (order.userId !== req.user!.id && !req.user!.isAdmin) {
         throw new AppError('Access denied', 403);
       }
-      if (order.status === 'delivered' && !req.user!.isAdmin) {
-        throw new AppError('Delivered orders require administrator review and verified item recovery', 403);
+      // No admin bypass here: an admin refunding a delivered order from the customer page
+      // let a buyer keep the item AND get the IC back. Delivered-order refunds go through
+      // POST /admin/orders/:id/refund, which requires verified item recovery.
+      if (order.status === 'delivered') {
+        throw new AppError('Delivered orders can only be refunded by an administrator from the admin console after the item is recovered', 403);
       }
 
       if (!isRefundable(order.status)) {
@@ -315,6 +318,21 @@ export class OrderController {
           return { alreadyRefunded: true as const };
         }
         assertOrderTransition(fresh.status, 'refunded');
+        if (fresh.status === 'delivered') {
+          throw new AppError('Delivered orders can only be refunded by an administrator from the admin console after the item is recovered', 403);
+        }
+        // Never refund while any delivery for this order reached or may reach the game.
+        const inGame = await tx.deliveryJob.count({
+          where: { referenceId: order.id, status: { in: ['completed', 'leased'] } },
+        });
+        if (inGame > 0) {
+          throw new AppError('This order has a delivery that reached or is reaching the game, so it cannot be refunded here', 409);
+        }
+        // Stop any queued retry so the plugin cannot deliver after the refund.
+        await tx.deliveryJob.updateMany({
+          where: { referenceId: order.id, status: { in: ['pending', 'failed'] } },
+          data: { status: 'dead_letter', error: 'order refunded', nextRetryAt: null },
+        });
 
         await walletService.post({
           idempotencyKey: `order:refund:${order.id}`,

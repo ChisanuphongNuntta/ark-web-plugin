@@ -78,44 +78,35 @@ describe('M3 Orders — list / detail with timeline / refund', () => {
   });
 
   describe('POST /orders/:id/refund', () => {
-    it('allows an administrator to refund a delivered order after recovery review', async () => {
-      db.order.findUnique.mockResolvedValueOnce({ id: 'order-1', userId: 'u1', status: 'delivered', totalPrice: 500 });
-
-      const tx: any = {
-        order: {
-          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'order-1', status: 'delivered' }),
-          update: vi.fn().mockResolvedValue({ id: 'order-1', status: 'refunded' }),
-        },
-      };
-      db.$transaction.mockImplementationOnce((cb: any) => cb(tx));
-
-      const req: any = { user: { id: 'admin', isAdmin: true }, params: { id: 'order-1' }, body: { reason: 'item recovered' } };
+    it('refuses a delivered order on the customer endpoint even for an administrator (no item+refund double benefit)', async () => {
+      db.order.findUnique.mockResolvedValueOnce({ id: 'order-1', userId: 'admin', status: 'delivered', totalPrice: 500 });
+      const req: any = { user: { id: 'admin', isAdmin: true }, params: { id: 'order-1' }, body: { reason: 'customer_requested_from_order_detail' } };
       const res: any = { json: vi.fn() };
       const next = vi.fn();
 
       await orders.refundOrder(req, res, next);
 
-      // Money flows ONLY through the wallet ledger; entries are zero-sum.
-      const postArg = vi.mocked(walletService.post).mock.calls[0][0] as any;
-      expect(postArg.idempotencyKey).toBe('order:refund:order-1');
-      expect(postArg.type).toBe('order_refund');
-      const entries = postArg.entries;
-      const sum = entries.reduce((acc: bigint, e: any) => acc + e.amount, 0n);
-      expect(sum).toBe(0n); // zero-sum double entry
-      const revenue = entries.find((e: any) => e.accountKey === 'system:revenue:IC');
-      // Refund policy 2026-10: refunds credit the spendable `available` account.
-      const available = entries.find((e: any) => e.accountKey === 'user:u1:available:IC');
-      expect(revenue.amount).toBe(-500n);
-      expect(available.amount).toBe(500n);
-      expect(entries.some((e: any) => e.accountKey === 'user:u1:refundable:IC')).toBe(false);
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 403 }));
+      expect(walletService.post).not.toHaveBeenCalled();
+      expect(res.json).not.toHaveBeenCalled();
+    });
 
-      // Order transitioned to refunded; pointsBalance is NEVER touched directly here.
-      expect(tx.order.update).toHaveBeenCalledWith({
-        where: { id: 'order-1' },
-        data: expect.objectContaining({ status: 'refunded', refundedAt: expect.any(Date) }),
-      });
-      expect(db.user.update).not.toHaveBeenCalled();
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, status: 'refunded', refundedAmount: '500' }));
+    it('refuses a failed order whose delivery already reached the game', async () => {
+      db.order.findUnique.mockResolvedValueOnce({ id: 'order-2', userId: 'u1', status: 'failed', totalPrice: 500 });
+      const tx: any = {
+        order: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'order-2', status: 'failed' }), update: vi.fn() },
+        deliveryJob: { count: vi.fn().mockResolvedValue(1), updateMany: vi.fn() },
+      };
+      db.$transaction.mockImplementationOnce((cb: any) => cb(tx));
+      const req: any = { user: { id: 'u1' }, params: { id: 'order-2' }, body: {} };
+      const res: any = { json: vi.fn() };
+      const next = vi.fn();
+
+      await orders.refundOrder(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 409 }));
+      expect(walletService.post).not.toHaveBeenCalled();
+      expect(tx.order.update).not.toHaveBeenCalled();
     });
 
     it('refunds a failed (dead-lettered) order', async () => {
@@ -125,6 +116,7 @@ describe('M3 Orders — list / detail with timeline / refund', () => {
           findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'order-2', status: 'failed' }),
           update: vi.fn().mockResolvedValue({ id: 'order-2', status: 'refunded' }),
         },
+        deliveryJob: { count: vi.fn().mockResolvedValue(0), updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
       };
       db.$transaction.mockImplementationOnce((cb: any) => cb(tx));
 
@@ -150,16 +142,17 @@ describe('M3 Orders — list / detail with timeline / refund', () => {
     });
 
     it('is idempotent: a concurrent refund that already flipped the order returns alreadyRefunded without double-posting', async () => {
-      db.order.findUnique.mockResolvedValueOnce({ id: 'order-4', userId: 'u1', status: 'delivered', totalPrice: 500 });
+      db.order.findUnique.mockResolvedValueOnce({ id: 'order-4', userId: 'u1', status: 'failed', totalPrice: 500 });
       const tx: any = {
         order: {
           findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'order-4', status: 'refunded' }), // already refunded under tx
           update: vi.fn(),
         },
+        deliveryJob: { count: vi.fn().mockResolvedValue(0), updateMany: vi.fn() },
       };
       db.$transaction.mockImplementationOnce((cb: any) => cb(tx));
 
-      const req: any = { user: { id: 'admin', isAdmin: true }, params: { id: 'order-4' }, body: {} };
+      const req: any = { user: { id: 'u1', isAdmin: false }, params: { id: 'order-4' }, body: {} };
       const res: any = { json: vi.fn() };
       const next = vi.fn();
 

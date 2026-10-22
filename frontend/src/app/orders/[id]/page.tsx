@@ -149,7 +149,9 @@ export default function OrderDetailPage() {
   const status = statusOf(order.status);
   const productName = order.product?.name ?? `สินค้า #${order.productId}`;
   const serverName = order.server?.name ?? `เซิร์ฟเวอร์ #${order.serverId}`;
-  const canRequestRefund = isRefundable(order.status);
+  // Only failed deliveries can be refunded by the buyer; delivered orders need an admin
+  // item-recovery refund from the admin console (backend enforces this too).
+  const canRequestRefund = order.status === 'failed';
 
   return (
     <div className="page-shell py-10 space-y-8 animate-slide-up">

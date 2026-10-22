@@ -57,6 +57,34 @@ export const LEDGER_TYPES: Record<string, LedgerTypeInfo> = {
   wallet_hold: { labelTh: 'กันวงเงิน', category: 'other' },
 };
 
+/** Short English labels for in-game chat (players see "IRIS Wallet: <label> credited 8 IC"). */
+const LEDGER_TYPE_LABEL_EN: Record<string, string> = {
+  payment_topup: 'Top-up',
+  payment_topup_sandbox: 'Test top-up',
+  stripe_topup: 'Top-up',
+  bank_slip_approval: 'Top-up',
+  bank_slip_approval_demo: 'Test top-up',
+  order_purchase: 'Purchase',
+  checkout_purchase: 'Purchase',
+  game_purchase: 'Purchase',
+  order_refund: 'Order refund',
+  dino_escrow_refund: 'Marketplace refund',
+  admin_adjustment: 'Admin adjustment',
+  earn_playtime: 'Playtime reward',
+  dino_escrow_hold: 'Marketplace purchase',
+  dino_escrow_release: 'Marketplace sale',
+  legacy_balance_claim: 'Balance transfer',
+  opening_balance: 'Opening balance',
+  wallet_hold: 'Hold',
+};
+
+export function ledgerTypeLabelEn(type: string): string {
+  const known = LEDGER_TYPE_LABEL_EN[type];
+  if (known) return known;
+  const words = String(type || 'wallet').replace(/[_-]+/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export function ledgerTypeLabelTh(type: string): string {
   return LEDGER_TYPES[type]?.labelTh ?? type;
 }
