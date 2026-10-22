@@ -57,29 +57,29 @@ function Catalog() {
         <FrozenHero/>
         <section id="catalog" className="scroll-mt-32">
           <div className="flex flex-wrap items-end justify-between gap-4 mb-6"><div><p className="eyebrow">THE EXPEDITION COLLECTION</p><h2 className="font-display text-2xl sm:text-3xl mt-2">เลือกคู่ใจ เตรียมพร้อมออกเดินทาง <span className="sr-only">Official Store Database</span></h2></div><Link href="/orders" className="text-sm text-iris-cyan">ติดตามคำสั่งซื้อ ↗</Link></div>
-          <div className="flex gap-2 mb-6" aria-label="ประเภทสินค้า">{[{id:null,label:'ทั้งหมด',icon:Package},{id:'dino',label:'สัตว์ ARK',icon:PawPrint},{id:'item',label:'ไอเทม',icon:Package}].map(tab=><button key={tab.label} onClick={()=>update({type:tab.id,category:null,page:null})} aria-pressed={type===tab.id} className={type===tab.id?'btn-primary':'btn-secondary'}><tab.icon size={16}/>{tab.label}</button>)}</div>
+          <div className="flex flex-wrap gap-2 mb-6" aria-label="ประเภทสินค้า">{[{id:null,label:'ทั้งหมด',icon:Package},{id:'dino',label:'สัตว์ ARK',icon:PawPrint},{id:'item',label:'ไอเทม',icon:Package}].map(tab=><button key={tab.label} onClick={()=>update({type:tab.id,category:null,page:null})} aria-pressed={type===tab.id} className={`${type===tab.id?'btn-primary':'btn-secondary'} whitespace-nowrap`}><tab.icon size={16}/>{tab.label}</button>)}</div>
           <form key={params.toString()} onSubmit={submit} className="frozen-toolbar" role="search">
             <label className="search-field">
               <span>ค้นหาสินค้า</span>
-              <input name="search" placeholder="ค้นหาชื่อสินค้า เช่น Rex, Saddle" defaultValue={params.get('search')||''}/>
+              <span className="toolbar-input-icon">
+                <Search size={16} aria-hidden="true"/>
+                <input name="search" placeholder="ค้นหาชื่อสินค้า เช่น Rex, Saddle" defaultValue={params.get('search')||''}/>
+              </span>
             </label>
-            <label>
-              <span>ต่ำสุด (IC)</span>
-              <input className="w-24" name="min" type="number" min="0" placeholder="Min" defaultValue={params.get('minPrice')||''}/>
-            </label>
-            <label>
-              <span>สูงสุด (IC)</span>
-              <input className="w-24" name="max" type="number" min="0" placeholder="Max" defaultValue={params.get('maxPrice')||''}/>
-            </label>
-            <div className="flex items-center gap-2 self-end">
-              <button className="btn-primary" type="submit">
-                <Search size={16}/>
+            <div className="price-range" role="group" aria-labelledby="price-range-label">
+              <span id="price-range-label">ช่วงราคา (IC)</span>
+              <div className="price-range-inputs">
+                <input name="min" type="number" min="0" inputMode="numeric" placeholder="ต่ำสุด" aria-label="ราคาต่ำสุด (IC)" defaultValue={params.get('minPrice')||''}/>
+                <span aria-hidden="true">–</span>
+                <input name="max" type="number" min="0" inputMode="numeric" placeholder="สูงสุด" aria-label="ราคาสูงสุด (IC)" defaultValue={params.get('maxPrice')||''}/>
+              </div>
+            </div>
+            <div className="toolbar-actions">
+              <button className="toolbar-submit" type="submit">
+                <Search size={16} aria-hidden="true"/>
                 <span>ค้นหา</span>
               </button>
-              <button className="btn-secondary text-xs" type="submit">
-                ใช้ช่วงราคา
-              </button>
-              {params.size>0&&<Link href="/shop" className="text-xs py-2 px-3 text-iris-cyan hover:text-white whitespace-nowrap transition">ล้างตัวกรอง</Link>}
+              {params.size>0&&<Link href="/shop" className="toolbar-clear">ล้างตัวกรอง</Link>}
             </div>
             {formError&&<p role="alert" className="w-full text-rose-300 text-sm">{formError}</p>}
           </form>

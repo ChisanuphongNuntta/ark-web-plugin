@@ -96,39 +96,50 @@ body { background: radial-gradient(ellipse at 90% 0%, #17374a 0, transparent 45r
 .frozen-category-list button:hover { background:#ffffff08; }
 .frozen-intro { padding:32px 0; border-bottom:1px solid #b6def021; margin-bottom:28px; }
 .frozen-intro h1 { font-family:var(--font-iris-display); font-size:clamp(28px,3.1vw,42px); margin:8px 0; }
+/* Shop search toolbar: one solid panel, every control 44px tall with the same 12px radius. */
 .frozen-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 12px;
-  padding: 16px 20px;
-  background: rgba(8, 22, 36, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(160, 224, 244, 0.22);
-  border-radius: 18px;
+  gap: 14px;
+  padding: 18px 20px;
+  background: linear-gradient(180deg, #11283a, #0c1e2d);
+  border: 1px solid rgba(160, 224, 244, 0.28);
+  border-radius: 16px;
   margin-bottom: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(160, 224, 244, 0.08);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
-.frozen-toolbar:hover {
-  border-color: rgba(160, 224, 244, 0.35);
-}
-.frozen-toolbar label { display: flex; flex-direction: column; gap: 6px; color: #abc6d7; font-size: 12px; font-weight: 600; }
+.frozen-toolbar label,
+.frozen-toolbar .price-range { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.frozen-toolbar label > span:first-child,
+.frozen-toolbar .price-range > span:first-child { color: #abc6d7; font-size: 12px; font-weight: 600; line-height: 1.4; }
 .frozen-toolbar input {
-  background: rgba(4, 13, 22, 0.75);
-  border: 1px solid rgba(182, 222, 240, 0.2);
+  height: 44px;
+  background: #06131f;
+  border: 1px solid rgba(182, 222, 240, 0.22);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 0 14px;
   min-width: 0;
   color: #f0f8fc;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
-.frozen-toolbar input:focus {
-  border-color: rgba(75, 228, 255, 0.5);
-  box-shadow: 0 0 12px rgba(75, 228, 255, 0.25);
-  outline: none;
-}
-.frozen-toolbar .search-field { flex: 1; min-width: 200px; }
+.frozen-toolbar input::placeholder { color: rgba(171, 198, 215, 0.55); }
+.frozen-toolbar input:hover { border-color: rgba(182, 222, 240, 0.36); }
+.frozen-toolbar input:focus { border-color: rgba(160, 224, 244, 0.7); background: #081826; outline: none; }
+.frozen-toolbar .search-field { flex: 1 1 280px; }
+.toolbar-input-icon { position: relative; display: block; }
+.toolbar-input-icon > svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #8fb3c7; pointer-events: none; }
+.toolbar-input-icon > input { width: 100%; padding-left: 40px; }
+.price-range-inputs { display: flex; align-items: center; height: 44px; background: #06131f; border: 1px solid rgba(182, 222, 240, 0.22); border-radius: 12px; }
+.price-range-inputs:focus-within { border-color: rgba(160, 224, 244, 0.7); }
+.price-range-inputs > input { width: 92px; height: 42px; border: 0; background: transparent; text-align: center; }
+.price-range-inputs > input:focus { background: transparent; }
+.price-range-inputs > span { color: #6f8fa3; }
+.toolbar-actions { display: flex; align-items: center; gap: 10px; }
+.toolbar-submit { height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 20px; border-radius: 12px; background: #d8f3fc; color: #092331; font-size: 14px; font-weight: 700; transition: background 0.15s ease; }
+.toolbar-submit:hover { background: #ffffff; }
+.toolbar-clear { height: 44px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 12px; font-size: 13px; color: #a0e0f4; white-space: nowrap; }
+.toolbar-clear:hover { color: #ffffff; background: rgba(160, 224, 244, 0.08); }
 .frozen-page-privacy > .page-shell,.frozen-page-terms > .page-shell { max-width:900px; }
 @media(max-width:767px) {
  .frozen-wayfinding { padding-top:16px; font-size:11px; }
@@ -142,7 +153,7 @@ body { background: radial-gradient(ellipse at 90% 0%, #17374a 0, transparent 45r
 
 .frozen-artwork-placeholder { display:none; position:absolute; bottom:8px; inset-inline:6px; z-index:3; text-align:center; font-size:10px; color:#bedce9; }
 .frozen-artwork-placeholder.is-visible, .frozen-artwork img[data-fallback] ~ .frozen-artwork-placeholder { display:block; }
-@media(max-width:480px) { .frozen-toolbar .search-field { flex-basis:100%; } .frozen-toolbar label:not(.search-field) { flex:1; } .frozen-toolbar label:not(.search-field) input { width:100%; } }
+@media(max-width:480px) { .frozen-toolbar .search-field { flex-basis:100%; } .frozen-toolbar .price-range { flex:1; } .price-range-inputs > input { width:100%; flex:1; } .toolbar-actions { flex-basis:100%; } .toolbar-submit { flex:1; justify-content:center; } }
 
 /* Magical Menubar & Magic Interaction Effects */
 @keyframes magic-sparkle-pulse {
