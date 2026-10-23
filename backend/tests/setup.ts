@@ -231,6 +231,22 @@ vi.mock('../src/config/database.js', () => ({
       update: vi.fn(),
       count: vi.fn().mockResolvedValue(0),
     },
+    // VIP 2026-10: badge lookups decorate many lists; default to "nobody is VIP".
+    vipMembership: {
+      findUnique: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
+      groupBy: vi.fn().mockResolvedValue([]),
+    },
+    vipPackage: {
+      findUnique: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
     $transaction: vi.fn((ops: any[]) => Promise.all(ops)),
     $disconnect: vi.fn(),
   },

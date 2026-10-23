@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <API/ARK/Ark.h>
 #include <nlohmann/json.hpp>
 
@@ -38,6 +39,18 @@ namespace HeartShop
         bool GetDeferWhileUnconscious() const { return m_DeferWhileUnconscious; }
         bool GetDeferWhileCarried() const { return m_DeferWhileCarried; }
 
+        // VIP / Permissions bridge (permission_grant / permission_revoke jobs).
+        //   HeartShop.Permissions.AllowedGroups: optional allow-list of groups this
+        //     server may add/remove ([] = any valid group except Admins/Default).
+        //   HeartShop.Vip.CommandEnabled: register the /vip chat command (default
+        //     true; /iris vip is always available).
+        const std::vector<std::string>& GetPermissionAllowedGroups() const { return m_PermissionAllowedGroups; }
+        bool GetVipCommandEnabled() const { return m_VipCommandEnabled; }
+        //   HeartShop.Vip.ChatRankPrefix: prefix in-game global chat of players in a
+        //     Permissions group mapped to a web Chat Rank, e.g. "[VIP] Name" (default
+        //     true). Turn off when another plugin already prefixes chat by group.
+        bool GetVipChatRankPrefix() const { return m_VipChatRankPrefix; }
+
         std::string GetMessagePrefix() const;
         std::string GetMessage(const std::string& Key) const;
 
@@ -55,5 +68,8 @@ namespace HeartShop
         bool m_DeferWhileNoglinControlled = true;
         bool m_DeferWhileUnconscious = true;
         bool m_DeferWhileCarried = true;
+        std::vector<std::string> m_PermissionAllowedGroups;
+        bool m_VipCommandEnabled = true;
+        bool m_VipChatRankPrefix = true;
     };
 }

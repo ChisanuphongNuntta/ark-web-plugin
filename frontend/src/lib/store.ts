@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { toVipBadge, type VipBadge } from '@/lib/vip';
 
 // User role types
 export type UserRole = 'user' | 'admin' | 'server_admin' | 'root';
@@ -29,7 +30,7 @@ export function canManageServerUsers(role: UserRole): boolean {
   return role === 'server_admin' || role === 'root';
 }
 
-interface User {
+export interface User {
   id: string;
   discordId: string;
   discordUsername: string | null;
@@ -47,12 +48,32 @@ interface User {
   isAdmin: boolean;
   role: UserRole;
   apiKeyServerId?: number | null;
+  /** VIP frame data (GET /auth/me `user.vip`), null when not VIP. Refreshed by 'vip:updated'. */
+  vip?: VipBadge | null;
+}
+
+/**
+ * Store user from a GET /auth/me body (`{ user, vip? }`). The VIP badge may sit
+ * on `user.vip` or at the top level; anything else is passed through as-is.
+ */
+export function userFromMe(data: unknown): User | null {
+  const body = (data && typeof data === 'object' ? data : {}) as { user?: Record<string, unknown> | null; vip?: unknown };
+  if (!body.user || typeof body.user !== 'object') return null;
+  const raw = body.user;
+  return {
+    ...(raw as unknown as User),
+    pointsBalance: Number(raw.pointsBalance ?? 0),
+    // undefined = this backend does not report VIP in /me (callers then use GET /vip/badges).
+    vip: raw.vip !== undefined ? toVipBadge(raw.vip) : body.vip !== undefined ? toVipBadge(body.vip) : undefined,
+  };
 }
 
 interface AuthState {
   user: User | null;
   isLoading: boolean;
   setUser: (user: User | null) => void;
+  /** Patch only the VIP badge (realtime 'vip:updated'). */
+  setVip: (vip: VipBadge | null) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
 }
@@ -63,6 +84,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isLoading: true,
       setUser: (user) => set({ user, isLoading: false }),
+      setVip: (vip) => set((state) => (state.user ? { user: { ...state.user, vip } } : state)),
       setLoading: (isLoading) => set({ isLoading }),
       logout: () => set({ user: null }),
     }),

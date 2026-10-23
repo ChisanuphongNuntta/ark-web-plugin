@@ -90,3 +90,64 @@ Item gives follow ArkShop `Store::BuyItem` and are all-or-nothing:
    delivery is deferred with a chat notice and arrives once released.
 5. On a server advertising `delivery.dino.extras.v1`, buy a dino with a saddle:
    the saddle is equipped when the cryopod is released (or on the live tame).
+
+## VIP / Permissions bridge (`permissions.group.v1`)
+
+HeartShop applies web VIP memberships to the ArkApi **Permissions** plugin
+(V2, cluster MySQL). The backend queues `permission_grant` / `permission_revoke`
+delivery jobs (payload `{schemaVersion:1, steamId, group, action:'add'|'remove',
+expiresAt?}`, see `backend/contracts/vip-2026-10.md`); any server advertising
+`permissions.group.v1` may claim them, and the target player may be offline.
+
+* The capability is advertised only while `Permissions.dll` is loaded and its
+  group API resolves (re-checked before every heartbeat; a Permissions reload is
+  picked up, an unload withdraws it). Without Permissions, permission jobs that
+  still reach this server are released (no attempt consumed).
+* Grant with `expiresAt`: `RemovePlayerFromGroup` (a stale permanent membership
+  would outlive the web's end date) + `RemovePlayerFromTimedGroup` +
+  `AddPlayerToTimedGroup` (remaining seconds), so a re-run lands on the same absolute expiry (Permissions
+  itself ADDS time to a running timer). Grant without `expiresAt`:
+  `AddPlayerToGroup`. Revoke: removes the timed and the permanent membership.
+  "Already in group" / "not in group" count as success. Admins/Default are never
+  touched; `HeartShop.Permissions.AllowedGroups` (optional) restricts the groups a
+  server will change (others are released for another server).
+* The group must already exist in Permissions (the legacy `VIP` group does);
+  otherwise the job fails with `Group does not exist` and the backend retries /
+  dead-letters it (admin resync after `Permissions.AddGroup <group>`).
+* Every Permissions call runs under an SEH guard: a native fault disables the
+  bridge until Permissions is reloaded instead of crashing the server.
+* Known Permissions V2 caveat: each server caches groups and re-reads MySQL every
+  `ClusterSyncTime` (default 60 s). Other servers see a change within that
+  window; a player whose Permissions row was created on another server in the
+  last sync window can have that row rewritten from the stale cache, and a
+  revoke run there would report "not in group" (success) while MySQL still holds
+  the timed VIP. The backend therefore keeps consecutive jobs for one player/group
+  on the server that completed the previous one for `ClusterSyncTime + 30 s`
+  (`PERMISSIONS_CLUSTER_SYNC_SECONDS` on plugin-gateway if you changed
+  `ClusterSyncTime`).
+* `/vip` (and `/iris vip`) shows the web VIP status (GET
+  `/api/plugin/player/{steamId}/vip`) and whether the group is already active on
+  this server. `HeartShop.Vip.CommandEnabled: false` keeps only `/iris vip`.
+* Cross-chat now sends the sender's real SteamID64 (rebuilt from the 32-bit id of
+  `AShooterGameMode.SendChatMessage` and checked against online players), so the
+  web Chat Rank mapped to the VIP group shows on game messages on the web/Discord.
+* In-game chat rank: HeartShop loads the web Chat Ranks (`GET /chat/plugin/config`,
+  every 5 minutes) and re-sends a global chat line of a player in a mapped
+  Permissions group as `[VIP] Name` (the default line is suppressed and the
+  message is forwarded to cross-chat by HeartShop). Web messages from a VIP show
+  as `[Web] [VIP] Name: text`. `HeartShop.Vip.ChatRankPrefix: false` turns the
+  in-game prefix off (use it if another plugin already prefixes chat by group).
+
+Smoke test after deploy (one server is enough for the cluster):
+
+1. Server log: `Permissions plugin linked (timed groups: yes); advertising
+   permissions.group.v1`; the backend server directory lists the capability.
+2. Admin grants VIP 30 days on the web: within one poll interval the log shows
+   `RemovePlayerFromTimedGroup ... already in state`, `AddPlayerToTimedGroup ...
+   applied (2592000s)` and `Permission job ... acknowledged`; in game
+   RCON `Permissions.PlayerGroups <steamId>` (or `/vip`, `/groups`) shows VIP, also for an
+   offline player. A VIP-only command such as `/pods` works.
+3. Admin extends by 7 days: the timed group is re-applied with the new total, not
+   stacked. Admin revokes: the group disappears (other servers within ~60 s).
+4. Unload Permissions (`plugins.unload Permissions`): the next heartbeat no
+   longer lists the capability and no crash occurs; load it again and it returns.

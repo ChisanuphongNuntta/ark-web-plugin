@@ -22,7 +22,7 @@ vi.mock('../../src/middlewares/auth.js', async (importOriginal) => {
     authenticate: (req: any, _res: any, next: any) => {
       const role = req.headers['x-test-role'];
       if (!role) return next(new AppError('Authentication required', 401));
-      req.user = { id: `user-${role}`, discordId: 'd', role, isAdmin: role !== 'user', apiKeyServerId: null };
+      req.user = { id: `user-${role}`, discordId: 'd', role, isAdmin: role !== 'user' || req.headers['x-test-legacy-admin'] === '1', apiKeyServerId: null };
       next();
     },
   };
@@ -455,6 +455,27 @@ describe('bank slip approval hardening', () => {
     await controller.rejectSlip({ params: { id: 'pi-3' }, body: {}, user: { id: 'admin-1' } } as any, { json: vi.fn() } as any, next);
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 409 }));
     expect(db.paymentIntent.updateMany).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['server_admin', '0'],
+    ['user', '1'],
+  ])('slip approve/reject/list reject role %s (legacy isAdmin=%s) with 403', async (role, legacy) => {
+    const app = buildApp();
+    const approve = await request(app).post('/api/admin/payments/approve/pi-9').set('x-test-role', role).set('x-test-legacy-admin', legacy).send({});
+    const reject = await request(app).post('/api/admin/payments/reject/pi-9').set('x-test-role', role).set('x-test-legacy-admin', legacy).send({});
+    const list = await request(app).get('/api/admin/payments/pending-slips').set('x-test-role', role).set('x-test-legacy-admin', legacy);
+    expect([approve.status, reject.status, list.status]).toEqual([403, 403, 403]);
+    expect(db.paymentIntent.findUnique).not.toHaveBeenCalled();
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('refuses self-approval of a slip (approver is the buyer)', async () => {
+    db.paymentIntent.findUnique.mockResolvedValueOnce({ id: 'pi-4', provider: 'bank_slip', status: 'pending', pointsAmount: 0n, userId: 'admin-1', vipPackageId: 'vp-1' });
+    const next = vi.fn();
+    await controller.approveSlip({ params: { id: 'pi-4' }, body: {}, user: { id: 'admin-1', role: 'admin' } } as any, { json: vi.fn() } as any, next);
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 403 }));
+    expect(db.$transaction).not.toHaveBeenCalled();
   });
 
   it('pending-slips returns no fake fixtures unless demo mode is explicitly enabled', async () => {

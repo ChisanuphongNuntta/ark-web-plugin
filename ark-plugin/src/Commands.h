@@ -23,5 +23,8 @@ namespace Commands
 
     // Unified ecosystem companion (read-only): wallet balance + pending deliveries.
     void IrisCommand(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode);
+
+    // VIP status (read-only): /vip (optional, HeartShop.Vip.CommandEnabled) and /iris vip.
+    void VipCommand(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode);
 }
 }

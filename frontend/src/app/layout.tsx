@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Noto_Sans_Thai, Noto_Serif_Thai } from 'next/font/google';
 import './globals.css';
 import './frozen.css';
+import './vip-frames.css';
 import { FrozenPageFrame } from '@/components/FrozenPageFrame';
 import { Providers } from '@/components/Providers';
 import { Navbar } from '@/components/Navbar';

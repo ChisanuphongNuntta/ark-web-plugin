@@ -15,6 +15,13 @@
       "DeferWhileUnconscious": true,
       "DeferWhileCarried": true
     },
+    "Permissions": {
+      "AllowedGroups": ["VIP"]
+    },
+    "Vip": {
+      "CommandEnabled": true,
+      "ChatRankPrefix": true
+    },
     "Messages": {
       "Prefix": "[HeartShop]",
       "ClaimSuccess": "You received: {item} x{quantity}",

@@ -366,7 +366,8 @@ export default function AdminDashboardPage() {
   const { data: pendingTopupsData, isLoading: pendingTopupsLoading } = useQuery({
     queryKey: ['admin-pending-topups'],
     queryFn: () => adminContractApi.getPendingTopups(),
-    enabled: canAccessAdmin,
+    // Slip review is website-admin only (admin | root) on the backend, never server_admin.
+    enabled: canAccessAdmin && isAdmin,
   });
 
   const [localPendingTopups, setLocalPendingTopups] = useState<SlipTopupSubmission[] | null>(null);
@@ -383,7 +384,10 @@ export default function AdminDashboardPage() {
       setSelectedSlip(null);
       setFeedback({
         title: 'อนุมัติยอดโอนเงินสำเร็จ',
-        desc: `ระบบได้เติมเงิน ${topup.pointsToCredit.toLocaleString()} IC ให้กับ ${topup.userName} เรียบร้อยแล้ว`,
+        desc:
+          topup.kind === 'vip'
+            ? `เปิดใช้งาน ${topup.packageName} ให้ ${topup.userName} แล้ว ระบบจะซิงก์กลุ่ม VIP เข้าเกมผ่านเซิร์ฟเวอร์ที่ออนไลน์`
+            : `ระบบได้เติมเงิน ${topup.pointsToCredit.toLocaleString()} IC ให้กับ ${topup.userName} เรียบร้อยแล้ว`,
         type: 'success',
       });
     } catch (err: unknown) {
@@ -540,7 +544,7 @@ export default function AdminDashboardPage() {
         onChange={setActiveTab}
         options={[
           { value: 'analytics', label: 'ภาพรวม' },
-          { value: 'slips', label: 'สลิปรออนุมัติ', count: pendingTopups.length },
+          ...(isAdmin ? [{ value: 'slips' as const, label: 'สลิปรออนุมัติ', count: pendingTopups.length }] : []),
           { value: 'strategy', label: 'กลยุทธ์' },
           { value: 'clusters', label: 'เซิร์ฟเวอร์และทางลัด' },
         ]}
@@ -729,8 +733,10 @@ export default function AdminDashboardPage() {
                           <dd className="font-semibold tabular-nums text-iris-pearl">฿{item.amountThb.toLocaleString()}</dd>
                         </div>
                         <div className="flex gap-1">
-                          <dt className="text-iris-muted">เหรียญที่จะได้รับ:</dt>
-                          <dd className="font-semibold tabular-nums text-iris-gold">+{item.pointsToCredit.toLocaleString()} IC</dd>
+                          <dt className="text-iris-muted">{item.kind === 'vip' ? 'สิ่งที่จะได้รับ:' : 'เหรียญที่จะได้รับ:'}</dt>
+                          <dd className="font-semibold tabular-nums text-iris-gold">
+                            {item.kind === 'vip' ? 'สมาชิก VIP (ไม่เติมเหรียญ)' : `+${item.pointsToCredit.toLocaleString()} IC`}
+                          </dd>
                         </div>
                         <div className="flex gap-1 font-mono text-[11px] text-iris-muted">
                           <dt>Ref:</dt>
@@ -802,7 +808,31 @@ export default function AdminDashboardPage() {
           <AdminPanel title="ทางลัดการจัดการ" description="ไปยังหน้าจัดการที่ใช้บ่อย">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {isAdmin && (
+                <ShortcutCard href="/admin/orders" icon={<ShoppingCart />} title="คำสั่งซื้อทั้งหมด" desc="ดูไทม์ไลน์การส่งของและคืนเหรียญ" />
+              )}
+              {isAdmin && (
+                <ShortcutCard href="/admin/deliveries" icon={<Package />} title="การส่งของเข้าเกม" desc="งานส่งของที่ค้างหรือล้มเหลว ส่งใหม่ได้" />
+              )}
+              {isAdmin && (
+                <ShortcutCard href="/admin/payments" icon={<CreditCard />} title="การชำระเงินทั้งหมด" desc="เติมเหรียญและซื้อ VIP ทุกช่องทาง" />
+              )}
+              {isAdmin && (
                 <ShortcutCard href="/admin/transactions" icon={<ReceiptText />} title="ธุรกรรมทั้งหมด" desc="ทุกการเคลื่อนไหวของเหรียญแบบเรียลไทม์" />
+              )}
+              {isAdmin && (
+                <ShortcutCard href="/admin/vip" icon={<Award />} title="จัดการ VIP" desc="แพ็กเกจ สมาชิก และการซิงก์สิทธิ์ในเกม" />
+              )}
+              {isAdmin && (
+                <ShortcutCard href="/admin/market" icon={<Eye />} title="ตลาดผู้เล่น" desc="ประกาศขายไดโนทั้งหมด" />
+              )}
+              {isAdmin && (
+                <ShortcutCard href="/admin/audit" icon={<Target />} title="บันทึกการทำงาน" desc="ทุกการกระทำของทีมงานที่ถูกบันทึก" />
+              )}
+              {isAdmin && (
+                <ShortcutCard href="/admin/settings" icon={<Settings />} title="ตั้งค่าเว็บไซต์" desc="ธีมตามฤดูกาลและประกาศ" />
+              )}
+              {canManageProducts && (
+                <ShortcutCard href="/admin/content" icon={<FolderOpen />} title="จัดการเนื้อหา" desc="หน้าเนื้อหาและบทความ" />
               )}
               {canManageProducts && (
                 <ShortcutCard href="/admin/products" icon={<Package />} title="จัดการสินค้า" desc="เพิ่ม แก้ไข กำหนดราคาไอเทมและไดโน" />
@@ -819,9 +849,14 @@ export default function AdminDashboardPage() {
               {canManageChatRanks && (
                 <ShortcutCard href="/admin/chat-ranks" icon={<Crown />} title="แรงก์ในแชท" desc="กำหนดสีและป้ายชื่อในเกม" />
               )}
-              <ShortcutCard href="/admin/protection" icon={<Shield />} title="ระบบคุ้มครองผู้เล่น" desc="กฎการป้องกันและเวลาเรด" />
+              {isAdmin && (
+                <ShortcutCard href="/admin/protection" icon={<Shield />} title="ระบบคุ้มครองผู้เล่น" desc="กฎการป้องกันและเวลาเรด" />
+              )}
               {canManageApiKeys && (
                 <ShortcutCard href="/admin/api-keys" icon={<Key />} title="จัดการ API key" desc="กุญแจเชื่อมต่อของเซิร์ฟเวอร์" />
+              )}
+              {isRoot && (
+                <ShortcutCard href="/admin/plugin-keys" icon={<Key />} title="คีย์ปลั๊กอิน HeartShop" desc="ออก หมุน และเพิกถอนคีย์ของเซิร์ฟเวอร์เกม" />
               )}
               {isRoot && (
                 <ShortcutCard href="/admin/system/api-key" icon={<Settings />} title="API key ของระบบ" desc="กุญแจหลักของระบบ (เฉพาะผู้ดูแลสูงสุด)" />
@@ -886,8 +921,10 @@ export default function AdminDashboardPage() {
                 <dd className="font-semibold tabular-nums text-iris-pearl">฿{selectedSlip.amountThb.toLocaleString()}</dd>
               </div>
               <div>
-                <dt className="text-iris-muted">เหรียญที่จะเติม</dt>
-                <dd className="font-semibold tabular-nums text-iris-gold">+{selectedSlip.pointsToCredit.toLocaleString()} IC</dd>
+                <dt className="text-iris-muted">{selectedSlip.kind === 'vip' ? 'สิ่งที่จะได้รับ' : 'เหรียญที่จะเติม'}</dt>
+                <dd className="font-semibold tabular-nums text-iris-gold">
+                  {selectedSlip.kind === 'vip' ? 'สมาชิก VIP (ไม่เติมเหรียญ)' : `+${selectedSlip.pointsToCredit.toLocaleString()} IC`}
+                </dd>
               </div>
             </dl>
             {dialogError && (

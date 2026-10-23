@@ -375,6 +375,14 @@ export const ADMIN_ROUTES: readonly string[] = [
   '/admin/chat-ranks',
   '/admin/protection',
   '/admin/api-keys',
+  '/admin/orders',
+  '/admin/deliveries',
+  '/admin/audit',
+  '/admin/market',
+  '/admin/settings',
+  '/admin/plugin-keys',
+  '/admin/vip',
+  '/admin/payments',
 ];
 
 /**

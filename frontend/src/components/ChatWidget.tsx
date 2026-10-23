@@ -13,6 +13,9 @@ import {
   ChatMessage,
 } from '@/lib/socket';
 import { useAuthStore } from '@/lib/store';
+import { VipAvatar, VipBadgePill } from '@/components/vip/VipAvatar';
+import { useVipBadges } from '@/hooks/useVipBadges';
+import { toVipBadge } from '@/lib/vip';
 
 interface ChatServer {
   id: number;
@@ -43,6 +46,15 @@ export default function ChatWidget() {
   const isLoggedIn = useAuthStore((state) => Boolean(state.user));
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // VIP frames: a message may carry `vip` (backend), else look up web users by id.
+  const badges = useVipBadges(
+    messages.filter((m) => m.senderType === 'web_user' && m.vip === undefined).map((m) => m.senderId),
+    isOpen,
+  );
+  const badgeOf = (m: ChatMessage) => {
+    const own = m.vip;
+    return own !== undefined ? toVipBadge(own) : m.senderType === 'web_user' ? (badges.get(m.senderId) ?? null) : null;
+  };
 
   // Fetch servers
   useEffect(() => {
@@ -192,17 +204,15 @@ export default function ChatWidget() {
             <div key={msg.id} className="group">
               <div className="flex items-start gap-2">
                 {/* Avatar or icon */}
-                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
-                  {msg.senderAvatar ? (
-                    <img
-                      src={msg.senderAvatar}
-                      alt={msg.senderName}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  ) : (
-                    <span className="text-lg">{SOURCE_ICONS[msg.source]}</span>
-                  )}
-                </div>
+                <VipAvatar
+                  size={32}
+                  src={msg.senderAvatar}
+                  name={msg.senderName}
+                  vip={badgeOf(msg)}
+                  showLabel={false}
+                  plainClassName="bg-gray-700"
+                  fallback={<span className="text-lg">{SOURCE_ICONS[msg.source]}</span>}
+                />
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -225,6 +235,7 @@ export default function ChatWidget() {
                     <span className={`font-medium text-sm ${SOURCE_COLORS[msg.source]}`}>
                       {msg.senderName}
                     </span>
+                    <VipBadgePill vip={badgeOf(msg)} />
                     <span className="text-xs text-gray-500">
                       {formatTime(msg.createdAt)}
                     </span>

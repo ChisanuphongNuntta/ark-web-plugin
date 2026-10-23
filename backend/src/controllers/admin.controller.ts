@@ -19,6 +19,8 @@ import { afterCommit } from '../realtime/afterCommit.js';
 import { emitCatalogUpdated, emitOrderUpdated } from '../realtime/emit.js';
 import { disconnectUserSockets, revokeAdminRoom } from '../realtime/sessionControl.js';
 import pluginCredentialService from '../services/pluginCredential.service.js';
+import { fulfillPaidIntent } from '../services/payment.service.js';
+import vipService from '../services/vip.service.js';
 import archiver from 'archiver';
 import { normalizeBlueprintPath } from '../utils/blueprint.js';
 import { z } from 'zod';
@@ -26,6 +28,7 @@ import auditService from '../services/audit.service.js';
 import { HEARTBEAT_ONLINE_WINDOW_MS, isServerOnline } from '../utils/serverStatus.js';
 import { bangkokStartOfDay } from '../services/season.service.js';
 import { isServerDeliverable } from '../services/serverDirectory.service.js';
+import { toDeliveryItem } from '../services/deliveryAdmin.service.js';
 import {
   paginateQuery,
   parsePagination,
@@ -246,6 +249,33 @@ export function buildAdminProductWhere(query: Record<string, unknown>) {
   return and.length > 0 ? { AND: and } : {};
 }
 
+export const ADMIN_ORDER_STATUS_FILTERS = [
+  'pending', 'draft', 'pending_payment', 'paid', 'queued', 'delivering', 'delivered', 'failed', 'refunded', 'cancelled',
+] as const;
+
+/** WHERE for GET /admin/orders. Unknown status / bad serverId -> 400 (never a 500). */
+export function buildAdminOrderWhere(query: Record<string, unknown>) {
+  const and: any[] = [];
+  const status = parseEnumFilter(query.status, ADMIN_ORDER_STATUS_FILTERS, 'status');
+  if (status) and.push({ status });
+  const serverId = parseIntFilter(query.serverId, 'serverId');
+  if (serverId !== undefined) and.push({ serverId });
+  const userId = parseSearch(query.userId, 64);
+  if (userId) and.push({ userId });
+  const search = parseSearch(query.search);
+  if (search) {
+    and.push({
+      OR: [
+        { id: { startsWith: search } },
+        { user: { discordUsername: { contains: search, mode: 'insensitive' } } },
+        { user: { steamId: { startsWith: search } } },
+        { product: { name: { contains: search, mode: 'insensitive' } } },
+      ],
+    });
+  }
+  return and.length > 0 ? { AND: and } : {};
+}
+
 export function toGameModeCounts(grouped: Array<{ gameMode: string | null; _count?: { _all?: number } | number }> | undefined) {
   const counts = { all: 0, PVE: 0, PVE_MOD: 0, PVPVE: 0, NONE: 0 };
   for (const row of grouped ?? []) {
@@ -346,11 +376,13 @@ export class AdminController {
         { params, search: req.query.search }
       );
 
+      const badges = await vipService.badgesForUserIds(result.users.map((u: any) => u.id));
       res.json({
         users: result.users.map(u => ({
           ...u,
           pointsBalance: Number(u.pointsBalance),
           totalSpent: Number(u.totalSpent),
+          vip: badges.get((u as any).id) ?? null,
         })),
         pagination: {
           ...result.pagination,
@@ -694,34 +726,183 @@ export class AdminController {
   };
 
   // Orders management
+  // GET /admin/orders?page&pageSize(limit)&status&serverId&userId&search (Admin pagination
+  // contract: pageSize snapped to 10/25/50/100, page clamped after count). `search` matches the
+  // order id prefix, buyer name / Steam ID, or product name. Rows carry the buyer's VIP badge.
   getAllOrders = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
-      const status = req.query.status as string;
-      const skip = (page - 1) * limit;
-
-      const where: any = {};
-      if (status) where.status = status;
-
-      const [orders, total] = await Promise.all([
-        prisma.order.findMany({
-          where,
-          include: {
-            user: { select: { discordUsername: true, steamId: true } },
-            product: { select: { name: true } },
-            server: { select: { name: true } },
-          },
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: limit,
-        }),
-        prisma.order.count({ where }),
-      ]);
+      const query = req.query as Record<string, unknown>;
+      const where = buildAdminOrderWhere(query);
+      const params = parsePagination(query);
+      const { result, pagination } = await paginateQuery(params, (skip, take) =>
+        prisma.$transaction([
+          prisma.order.count({ where }),
+          prisma.order.findMany({
+            where,
+            include: {
+              user: { select: { id: true, discordUsername: true, discordAvatar: true, steamId: true } },
+              product: { select: { id: true, name: true, productType: true } },
+              server: { select: { id: true, name: true } },
+              fulfillment: { select: { status: true, attempts: true, lastError: true, deliveredAt: true, failedAt: true } },
+            },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            skip,
+            take,
+          }),
+        ]) as Promise<[number, any[]]>,
+      );
+      const rows = result[1];
+      const badges = await vipService.badgesForUserIds(rows.map((row: any) => row.userId));
 
       res.json({
-        orders,
-        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        orders: rows.map((row: any) => ({
+          ...row,
+          refundable: isRefundable(row.status),
+          requiresInventoryRecovery: row.status === 'delivered',
+          user: row.user ? { ...row.user, vip: badges.get(row.userId) ?? null } : row.user,
+        })),
+        pagination: { ...pagination, limit: pagination.pageSize },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // GET /admin/orders/:id — everything about one order: buyer, product, server, the order group
+  // + line, fulfillment, every delivery job for it, and the ledger postings that reference it.
+  // `refundable` / `requiresInventoryRecovery` tell the console which refund form to show
+  // (POST /admin/orders/:id/refund needs inventoryReclaimed + reclaimReceipt for delivered).
+  getOrderDetail = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const id = String(req.params.id ?? '').trim();
+      if (!id || id.length > 64) throw new AppError('Invalid order id', 400);
+      const order = await prisma.order.findUnique({
+        where: { id },
+        include: {
+          user: { select: { id: true, discordUsername: true, discordAvatar: true, steamId: true, isBanned: true } },
+          product: { select: { id: true, name: true, productType: true, price: true, imageUrl: true } },
+          server: { select: { id: true, name: true, map: true } },
+          fulfillment: true,
+          orderItem: true,
+          orderGroup: {
+            select: { id: true, status: true, subtotal: true, discount: true, total: true, paidAt: true, refundedAt: true, createdAt: true },
+          },
+        },
+      });
+      if (!order) throw new AppError('Order not found', 404);
+
+      const [deliveries, ledger, badge] = await Promise.all([
+        prisma.deliveryJob.findMany({
+          where: { referenceId: order.id },
+          include: { server: { select: { name: true } } },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        }),
+        prisma.ledgerTransaction.findMany({
+          where: {
+            OR: [
+              { referenceType: 'order', referenceId: order.id },
+              ...(order.orderGroupId ? [{ referenceId: order.orderGroupId }] : []),
+              { idempotencyKey: `order:refund:${order.id}` },
+            ],
+          },
+          select: { id: true, type: true, referenceType: true, referenceId: true, description: true, createdBy: true, createdAt: true },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          take: 50,
+        }),
+        vipService.badgeForUser(order.userId),
+      ]);
+
+      const big = (value: unknown) => (typeof value === 'bigint' ? value.toString() : value);
+      res.json({
+        order: {
+          ...order,
+          user: order.user ? { ...order.user, vip: badge } : null,
+          orderItem: order.orderItem
+            ? { ...order.orderItem, unitPrice: big(order.orderItem.unitPrice), subtotal: big(order.orderItem.subtotal), discount: big(order.orderItem.discount), total: big(order.orderItem.total) }
+            : null,
+          orderGroup: order.orderGroup
+            ? { ...order.orderGroup, subtotal: big(order.orderGroup.subtotal), discount: big(order.orderGroup.discount), total: big(order.orderGroup.total) }
+            : null,
+        },
+        deliveries: deliveries.map(toDeliveryItem),
+        ledger,
+        refundable: isRefundable(order.status),
+        requiresInventoryRecovery: order.status === 'delivered',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // GET /admin/payments?page&pageSize&provider&status&kind(topup|vip)&userId&search — every
+  // payment intent (Stripe, bank slip, sandbox; top-up and VIP). Read-only; approval stays on
+  // /admin/payments/approve|reject/:id.
+  getPayments = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const query = req.query as Record<string, unknown>;
+      const and: any[] = [];
+      const provider = parseEnumFilter(query.provider, ['stripe', 'bank_slip', 'sandbox'] as const, 'provider');
+      if (provider) and.push({ provider });
+      const status = parseEnumFilter(query.status, ['pending', 'processing', 'completed', 'failed', 'expired', 'refunded'] as const, 'status');
+      if (status) and.push({ status });
+      const kind = parseEnumFilter(query.kind, ['topup', 'vip'] as const, 'kind');
+      if (kind === 'vip') and.push({ vipPackageId: { not: null } });
+      if (kind === 'topup') and.push({ vipPackageId: null });
+      const userId = parseSearch(query.userId, 64);
+      if (userId) and.push({ userId });
+      const search = parseSearch(query.search);
+      if (search) {
+        and.push({
+          OR: [
+            { id: { startsWith: search } },
+            { reference: { contains: search, mode: 'insensitive' } },
+            { providerIntentId: { startsWith: search } },
+            { user: { discordUsername: { contains: search, mode: 'insensitive' } } },
+            { user: { steamId: { startsWith: search } } },
+          ],
+        });
+      }
+      const where = and.length > 0 ? { AND: and } : {};
+      const { result, pagination } = await paginateQuery(parsePagination(query), (skip, take) =>
+        prisma.$transaction([
+          prisma.paymentIntent.count({ where }),
+          prisma.paymentIntent.findMany({
+            where,
+            include: {
+              user: { select: { id: true, discordUsername: true, discordAvatar: true, steamId: true } },
+              package: { select: { id: true, name: true } },
+              vipPackage: { select: { id: true, key: true, name: true } },
+              vipMembership: { select: { id: true, status: true, startsAt: true, expiresAt: true } },
+            },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            skip,
+            take,
+          }),
+        ]) as Promise<[number, any[]]>,
+      );
+      res.json({
+        items: result[1].map((row: any) => ({
+          id: row.id,
+          kind: row.vipPackageId ? 'vip' : 'topup',
+          provider: row.provider,
+          status: row.status,
+          reference: row.reference,
+          providerIntentId: row.providerIntentId ?? null,
+          amountThb: String(row.amountThb),
+          pointsAmount: row.vipPackageId ? '0' : String(row.pointsAmount),
+          package: row.package ?? null,
+          vipPackage: row.vipPackage ?? null,
+          vipMembership: row.vipMembership ?? null,
+          user: row.user ?? null,
+          slipImageUrl: (row.metadata as any)?.slipImageUrl ?? (row.provider === 'bank_slip' ? row.paymentUrl : null) ?? null,
+          approvedBy: (row.metadata as any)?.approvedBy ?? null,
+          rejectedBy: (row.metadata as any)?.rejectedBy ?? null,
+          rejectReason: (row.metadata as any)?.rejectReason ?? null,
+          expiresAt: row.expiresAt,
+          completedAt: row.completedAt ?? null,
+          createdAt: row.createdAt,
+        })),
+        pagination,
       });
     } catch (error) {
       next(error);
@@ -1577,20 +1758,24 @@ export class AdminController {
         include: {
           user: true,
           package: true,
+          vipPackage: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: 'desc' },
       });
 
       const mapped = dbSlips.map((item) => ({
         id: item.id,
+        // 'vip' slips grant VIP on approval and never credit IC (contracts/vip-2026-10.md).
+        kind: item.vipPackageId ? 'vip' as const : 'topup' as const,
+        vipPackageId: item.vipPackageId ?? null,
         userId: item.userId,
         userName: item.user?.discordUsername || 'Survivor',
         userDiscordId: item.user?.discordId,
         userAvatar: item.user?.discordAvatar,
         packageId: item.packageId,
-        packageName: (item.metadata as any)?.packageName || item.package?.name || `Pack ${item.pointsAmount} IC`,
+        packageName: (item.metadata as any)?.packageName || item.package?.name || item.vipPackage?.name || `Pack ${item.pointsAmount} IC`,
         amountThb: Number(item.amountThb),
-        pointsToCredit: Number(item.pointsAmount),
+        pointsToCredit: item.vipPackageId ? 0 : Number(item.pointsAmount),
         slipImageUrl: (item.metadata as any)?.slipImageUrl || item.paymentUrl || '/images/mock/slips/sample-slip-01.svg',
         transferBank: (item.metadata as any)?.transferBank || 'KBANK (กสิกรไทย)',
         transferRef: (item.metadata as any)?.transferRef || item.reference,
@@ -1663,10 +1848,17 @@ export class AdminController {
         if (intent.provider !== 'bank_slip') {
           throw new AppError('Only bank-slip top-ups can be approved manually', 409);
         }
+        // Four-eyes rule: the approver can never be the buyer (a website admin could otherwise
+        // open their own bank_slip checkout with no real transfer and approve it for free IC/VIP).
+        if (intent.userId === req.user!.id) {
+          throw new AppError('You cannot approve your own payment slip', 403);
+        }
+        const kind = intent.vipPackageId ? 'vip' : 'topup';
         if (intent.status === 'completed') {
           return res.json({
             success: true,
-            creditedPoints: Number(intent.pointsAmount),
+            kind,
+            creditedPoints: kind === 'vip' ? 0 : Number(intent.pointsAmount),
             transactionId: `TX-APPROVED-${intent.id}`,
             alreadyApproved: true,
           });
@@ -1675,7 +1867,7 @@ export class AdminController {
           throw new AppError(`Top-up in status "${intent.status}" cannot be approved`, 409);
         }
 
-        await prisma.$transaction(async (tx) => {
+        const fulfilled = await prisma.$transaction(async (tx) => {
           const flipped = await tx.paymentIntent.updateMany({
             where: { id: intent.id, status: intent.status },
             data: {
@@ -1692,20 +1884,18 @@ export class AdminController {
           if (flipped.count !== 1) {
             throw new AppError('Top-up was processed concurrently; refresh and try again', 409);
           }
-          await walletService.creditUser(
-            intent.userId,
-            intent.pointsAmount,
-            `slip:${intent.id}:credit`,
-            'bank_slip_approval',
-            intent.id,
-            tx,
-            // Replay-safe: guarded by the conditional status flip above.
-            {
+          // Same completion step as Stripe: a VIP slip grants VIP (never IC), a top-up slip
+          // credits IC. Replay-safe: guarded by the conditional status flip above.
+          return fulfillPaidIntent(tx, intent, {
+            idempotencyKey: `slip:${intent.id}:credit`,
+            type: 'bank_slip_approval',
+            options: {
               referenceType: 'slip',
               description: `Bank slip top-up approved: ${notes}`.slice(0, 300),
               createdBy: req.user!.id,
             },
-          );
+            approvedBy: req.user!.id,
+          });
         }, { isolationLevel: 'Serializable' });
 
         await auditService.log({
@@ -1714,13 +1904,21 @@ export class AdminController {
           resource: 'payment_intent',
           resourceId: intent.id,
           oldValue: { status: intent.status },
-          newValue: { status: 'completed', pointsAmount: String(intent.pointsAmount), notes },
+          newValue: {
+            status: 'completed',
+            kind,
+            pointsAmount: kind === 'vip' ? '0' : String(intent.pointsAmount),
+            ...(fulfilled.kind === 'vip' ? { vipMembershipId: fulfilled.membershipId } : {}),
+            notes,
+          },
           metadata: { targetUserId: intent.userId },
         }, req);
 
         return res.json({
           success: true,
-          creditedPoints: Number(intent.pointsAmount),
+          kind,
+          creditedPoints: kind === 'vip' ? 0 : Number(intent.pointsAmount),
+          ...(fulfilled.kind === 'vip' ? { vipMembershipId: fulfilled.membershipId } : {}),
           transactionId: `TX-APPROVED-${intent.id}`,
         });
       }

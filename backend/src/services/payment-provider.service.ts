@@ -9,6 +9,10 @@ export interface ProviderIntentRequest {
   reference: string;
   amountThb: string;
   expiresAt: Date;
+  /** Same-site path the hosted checkout returns to (default '/topup'). VIP uses '/vip'. */
+  returnPath?: '/topup' | '/vip';
+  /** Line-item name shown on the hosted checkout page. */
+  productName?: string;
 }
 
 export interface ProviderIntentResult {

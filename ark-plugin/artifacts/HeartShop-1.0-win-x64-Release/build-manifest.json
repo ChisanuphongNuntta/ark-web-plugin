@@ -9,6 +9,6 @@
     "cmake":  "cmake version 4.2.1",
     "compiler":  "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64/cl.exe (19.38.33133.0)",
     "artifact":  "HeartShop.dll",
-    "sha256":  "7dc0dae695628d1ef3854a6b1b4a62b53bad9b63be2ceeef3132a1d36ae4974a",
-    "generatedAtUtc":  "2026-10-18T16:53:22.6039591Z"
+    "sha256":  "c7f10f28319c3af31544215b5d839c308ae9a7977752000bf5dd7c1b2251811a",
+    "generatedAtUtc":  "2026-10-23T17:11:39.7831013Z"
 }

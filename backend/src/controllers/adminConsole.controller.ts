@@ -8,6 +8,7 @@ import { AuthRequest } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import auditService from '../services/audit.service.js';
 import deliveryAdminService, { isDeliveryJobStatus } from '../services/deliveryAdmin.service.js';
+import vipService from '../services/vip.service.js';
 import {
   paginateQuery,
   parsePagination as sharedParsePagination,
@@ -91,6 +92,17 @@ function toCluster(row: any) {
 }
 
 const LISTING_STATUSES = ['listed', 'sold', 'cancelled', 'expired'] as const;
+export const DELIVERY_TYPE_FILTERS = ['order', 'dino_catalog', 'dino_marketplace', 'permission_grant', 'permission_revoke'] as const;
+export const AUDIT_STATUS_FILTERS = ['success', 'failure'] as const;
+
+/** ISO date/datetime query param -> Date; invalid -> 400. */
+export function queryDate(query: Record<string, unknown> | undefined, key: string): Date | undefined {
+  const raw = queryString(query, key, 40);
+  if (!raw) return undefined;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) throw new AppError(`Invalid ${key}: expected an ISO date`, 400);
+  return date;
+}
 
 export class AdminConsoleController {
   // ---------------- Clusters (root) ----------------
@@ -163,9 +175,16 @@ export class AdminConsoleController {
         serverId = Number(serverIdRaw);
         if (!Number.isInteger(serverId) || serverId <= 0) throw new AppError('Invalid serverId', 400);
       }
+      const deliveryType = queryString(req.query, 'deliveryType', 40);
+      if (deliveryType && deliveryType !== 'all' && !(DELIVERY_TYPE_FILTERS as readonly string[]).includes(deliveryType)) {
+        throw new AppError(`Invalid deliveryType. Valid: ${DELIVERY_TYPE_FILTERS.join(', ')}`, 400);
+      }
+      const search = parseSearch(req.query.search);
       res.json(await deliveryAdminService.list({
         status: statusRaw && isDeliveryJobStatus(statusRaw) ? statusRaw : undefined,
         serverId,
+        deliveryType: deliveryType && deliveryType !== 'all' ? deliveryType : undefined,
+        search,
         page,
         pageSize,
       }));
@@ -198,13 +217,36 @@ export class AdminConsoleController {
   getAuditLogs = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const { page, pageSize } = parsePagination(req.query as any);
-      const where: Record<string, unknown> = {};
+      const where: Record<string, any> = {};
       const action = queryString(req.query, 'action');
       const actorId = queryString(req.query, 'actorId');
       const resource = queryString(req.query, 'resource');
+      const resourceId = queryString(req.query, 'resourceId');
+      const status = queryString(req.query, 'status');
+      if (status && !(AUDIT_STATUS_FILTERS as readonly string[]).includes(status)) {
+        throw new AppError(`Invalid status. Valid: ${AUDIT_STATUS_FILTERS.join(', ')}`, 400);
+      }
+      const from = queryDate(req.query, 'from');
+      const to = queryDate(req.query, 'to');
+      const search = parseSearch(req.query.search);
       if (action) where.action = action;
       if (actorId) where.userId = actorId;
       if (resource) where.resource = resource;
+      if (resourceId) where.resourceId = resourceId;
+      if (status) where.status = status;
+      if (from || to) where.createdAt = { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) };
+      if (search) {
+        // Free text over the indexed-ish columns; the JSON text columns are searched too so an
+        // admin can find "everything that touched user X / order Y".
+        where.OR = [
+          { action: { contains: search, mode: 'insensitive' } },
+          { resource: { contains: search, mode: 'insensitive' } },
+          { resourceId: { startsWith: search } },
+          { userId: search },
+          { metadata: { contains: search } },
+          { newValue: { contains: search } },
+        ];
+      }
 
       const { result, pagination } = await paginateQuery({ page, pageSize, skip: 0, take: pageSize }, (skip, take) =>
         prisma.$transaction([
@@ -218,6 +260,16 @@ export class AdminConsoleController {
         ]) as Promise<[number, any[]]>,
       );
       const [total, rows] = result;
+      const actorNames = new Map<string, string | null>();
+      try {
+        const actorIds = [...new Set(rows.map((row: any) => row.userId).filter(Boolean))] as string[];
+        if (actorIds.length > 0) {
+          const actors = (await prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, discordUsername: true } })) ?? [];
+          for (const actor of actors) actorNames.set(actor.id, actor.discordUsername ?? null);
+        }
+      } catch (error) {
+        console.error('[admin] audit actor lookup failed:', error);
+      }
 
       res.json({
         items: rows.map((row: any) => ({
@@ -226,6 +278,7 @@ export class AdminConsoleController {
           resource: row.resource,
           resourceId: row.resourceId ?? null,
           actorId: row.userId ?? null,
+          actorName: row.userId ? actorNames.get(row.userId) ?? null : null,
           actorEmail: row.userEmail ?? null,
           ipAddress: row.ipAddress ?? null,
           status: row.status,
@@ -252,7 +305,18 @@ export class AdminConsoleController {
       if (status && !(LISTING_STATUSES as readonly string[]).includes(status)) {
         throw new AppError(`Invalid status. Valid: ${LISTING_STATUSES.join(', ')}`, 400);
       }
-      const where = status ? { status } : {};
+      const search = parseSearch(req.query.search);
+      const where: Record<string, any> = status ? { status } : {};
+      if (search) {
+        where.OR = [
+          { id: { startsWith: search } },
+          { species: { contains: search, mode: 'insensitive' } },
+          { dinoName: { contains: search, mode: 'insensitive' } },
+          { seller: { discordUsername: { contains: search, mode: 'insensitive' } } },
+          { seller: { steamId: { startsWith: search } } },
+          { buyer: { discordUsername: { contains: search, mode: 'insensitive' } } },
+        ];
+      }
       const { result, pagination } = await paginateQuery({ page, pageSize, skip: 0, take: pageSize }, (skip, take) =>
         prisma.$transaction([
           prisma.dinoListing.count({ where }),
@@ -286,7 +350,13 @@ export class AdminConsoleController {
         ]) as Promise<[number, any[]]>,
       );
       const [total, rows] = result;
-      res.json({ items: rows, total, page: pagination.page, pageSize });
+      const badges = await vipService.badgesForUserIds(rows.map((row: any) => row.seller?.id).filter(Boolean));
+      res.json({
+        items: rows.map((row: any) => (row.seller ? { ...row, seller: { ...row.seller, vip: badges.get(row.seller.id) ?? null } } : row)),
+        total,
+        page: pagination.page,
+        pageSize,
+      });
     } catch (error) {
       next(error);
     }

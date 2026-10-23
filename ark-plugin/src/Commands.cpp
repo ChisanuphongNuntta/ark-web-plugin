@@ -3,6 +3,10 @@
 #include "Protection.h"
 #include "DinoPayload.h"
 #include "RequestSigning.h"
+#include "CatalogDino.h"
+#include "PermissionSync.h"
+#include "PermissionsBridge.h"
+#include <chrono>
 #include <Logger/Logger.h>
 #include <algorithm>
 #include <vector>
@@ -27,6 +31,10 @@ namespace Commands
         return true;
     }
 
+    // /vip may collide with another plugin's command; it is optional and only
+    // removed on unload when HeartShop registered it.
+    static bool VipCommandRegistered = false;
+
     void Register()
     {
         ArkApi::GetCommands().AddChatCommand(L"/claim", &ClaimCommand);
@@ -42,6 +50,13 @@ namespace Commands
 
         // Unified ecosystem companion
         ArkApi::GetCommands().AddChatCommand(L"/iris", &IrisCommand);
+
+        // VIP status (also reachable as /iris vip)
+        if (!PluginConfig || PluginConfig->GetVipCommandEnabled())
+        {
+            ArkApi::GetCommands().AddChatCommand(L"/vip", &VipCommand);
+            VipCommandRegistered = true;
+        }
 
         Log::GetLog()->info("HeartShop commands registered");
     }
@@ -61,6 +76,12 @@ namespace Commands
 
         // Unified ecosystem companion
         ArkApi::GetCommands().RemoveChatCommand(L"/iris");
+
+        if (VipCommandRegistered)
+        {
+            ArkApi::GetCommands().RemoveChatCommand(L"/vip");
+            VipCommandRegistered = false;
+        }
 
         Log::GetLog()->info("HeartShop commands unregistered");
     }
@@ -726,6 +747,12 @@ namespace Commands
             return;
         }
 
+        if (Subcommand == "vip")
+        {
+            VipCommand(Player, Message, Mode);
+            return;
+        }
+
         if (Subcommand == "claim")
         {
             SendMessage(Player, L"Checking your pending deliveries...");
@@ -813,6 +840,62 @@ namespace Commands
             catch (const std::exception& e)
             {
                 Log::GetLog()->warn("IrisCommand pending-deliveries parse error: {}", e.what());
+            }
+        });
+    }
+
+    void VipCommand(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode)
+    {
+        if (!Player)
+            return;
+
+        if (!CheckLicense(Player))
+            return;
+
+        const uint64 SteamId = GetSteamId(Player);
+        const std::string SteamIdStr = std::to_string(SteamId);
+        Log::GetLog()->info("Player {} used /vip", SteamIdStr);
+
+        static CatalogDino::NoticeThrottle VipRequests(std::chrono::seconds(5));
+        if (!VipRequests.ShouldNotify(SteamIdStr, CatalogDino::NoticeThrottle::Clock::now()))
+        {
+            SendMessage(Player, L"[VIP] Please wait a few seconds before checking again.");
+            return;
+        }
+
+        Http->GetPlayerVip(SteamIdStr, [SteamId](bool Success, const nlohmann::json& Response) {
+            auto* CurrentPlayer = ArkApi::GetApiUtils().FindPlayerFromSteamId(SteamId);
+            if (!CurrentPlayer) return;
+
+            if (!Success || !Response.is_object())
+            {
+                // The HTTP layer does not expose the status code: an unknown /
+                // unlinked SteamID and an outage look the same here.
+                SendMessage(CurrentPlayer, L"[VIP] Could not load your VIP status. "
+                    L"Make sure your Steam account is linked on the IRIS website, then try again.");
+                return;
+            }
+
+            try
+            {
+                const PermissionSync::VipStatus Status = PermissionSync::ParseVipStatus(Response);
+                std::optional<bool> InGame;
+                if (Status.Active)
+                {
+                    InGame = PermissionsBridge::IsPlayerInGroup(
+                        SteamId, Status.Group.empty() ? std::string("VIP") : Status.Group);
+                }
+                const long long Now = std::chrono::duration_cast<std::chrono::seconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+                for (const auto& Line : PermissionSync::FormatVipStatus(Status, Now, InGame))
+                {
+                    SendMessage(CurrentPlayer, FString(ArkApi::Tools::Utf8Decode(Line).c_str()));
+                }
+            }
+            catch (const std::exception& e)
+            {
+                Log::GetLog()->warn("VipCommand parse error: {}", e.what());
+                SendMessage(CurrentPlayer, L"[VIP] VIP status is temporarily unavailable. Please try again later.");
             }
         });
     }

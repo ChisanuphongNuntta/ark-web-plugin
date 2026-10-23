@@ -76,6 +76,8 @@ body { background: radial-gradient(ellipse at 90% 0%, #17374a 0, transparent 45r
 .frozen-section-nav { display:flex; gap:8px; overflow-x:auto; padding-bottom:16px; scrollbar-width:thin; }
 .frozen-section-nav a { flex-shrink:0; padding:10px 16px; border-radius:8px; font-size:13px; color:#b5ccdc; border:1px solid transparent; }
 .frozen-section-nav a[aria-current=page] { border-color:#a0e0f444; background:#a0e0f412; color:#e4f6ff; }
+/* Admin lists every page by role (up to 18 links): wrap on desktop, scroll on phones. */
+@media (min-width:768px) { .frozen-page-admin .frozen-section-nav { flex-wrap:wrap; gap:4px 8px; } .frozen-page-admin .frozen-section-nav a { padding:8px 14px; } }
 .frozen-page h1 { line-height:1.45; letter-spacing:-.025em; }
 .frozen-page h2 { line-height:1.5; }
 .frozen-page :is(input:not([type=checkbox]):not([type=radio]),select,textarea) { font-size:14px; border-radius:10px; }

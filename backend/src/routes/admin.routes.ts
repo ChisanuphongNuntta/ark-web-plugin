@@ -3,6 +3,8 @@ import { AdminController } from '../controllers/admin.controller.js';
 import adminConsoleController from '../controllers/adminConsole.controller.js';
 import siteController from '../controllers/site.controller.js';
 import adminTransactionsController from '../controllers/adminTransactions.controller.js';
+import adminVipController from '../controllers/adminVip.controller.js';
+import adminPluginKeysController from '../controllers/adminPluginKeys.controller.js';
 import rateLimit from 'express-rate-limit';
 import {
   authenticate,
@@ -51,7 +53,23 @@ router.delete('/categories/:id', requireWebsiteAdmin as any, adminController.del
 
 // Orders management
 router.get('/orders', requireWebsiteAdmin as any, adminController.getAllOrders as any);
+router.get('/orders/:id', requireWebsiteAdmin as any, adminController.getOrderDetail as any);
 router.post('/orders/:id/refund', requireWebsiteAdmin as any, adminController.refundOrder as any);
+
+// Every payment intent (top-up + VIP, all providers), read-only (VIP 2026-10)
+router.get('/payments', requireWebsiteAdmin as any, adminController.getPayments as any);
+
+// VIP console (contracts/vip-2026-10.md) — admin|root, every mutation audited
+router.get('/vip/summary', requireWebsiteAdmin as any, adminVipController.summary as any);
+router.get('/vip/packages', requireWebsiteAdmin as any, adminVipController.listPackages as any);
+router.post('/vip/packages', requireWebsiteAdmin as any, adminVipController.createPackage as any);
+router.put('/vip/packages/:id', requireWebsiteAdmin as any, adminVipController.updatePackage as any);
+router.get('/vip/memberships', requireWebsiteAdmin as any, adminVipController.listMemberships as any);
+router.post('/vip/memberships/:id/extend', requireWebsiteAdmin as any, adminVipController.extend as any);
+router.post('/vip/memberships/:id/revoke', requireWebsiteAdmin as any, adminVipController.revoke as any);
+router.post('/vip/grant', requireWebsiteAdmin as any, adminVipController.grant as any);
+router.get('/vip/users/:userId', requireWebsiteAdmin as any, adminVipController.userDetail as any);
+router.post('/vip/users/:userId/resync', requireWebsiteAdmin as any, adminVipController.resync as any);
 
 // Categories incl. inactive (console list; public /products/categories is active-only)
 router.get('/categories', requireWebsiteAdmin as any, adminConsoleController.getCategories as any);
@@ -79,9 +97,9 @@ router.get('/transactions/export.csv', requireWebsiteAdmin as any, transactionEx
 router.get('/transactions/:id', requireWebsiteAdmin as any, adminTransactionsController.detail as any);
 
 // Bank slip topups management
-router.get('/payments/pending-slips', requireAdmin as any, adminController.getPendingSlips as any);
-router.post('/payments/approve/:id', requireAdmin as any, adminController.approveSlip as any);
-router.post('/payments/reject/:id', requireAdmin as any, adminController.rejectSlip as any);
+router.get('/payments/pending-slips', requireWebsiteAdmin as any, adminController.getPendingSlips as any);
+router.post('/payments/approve/:id', requireWebsiteAdmin as any, adminController.approveSlip as any);
+router.post('/payments/reject/:id', requireWebsiteAdmin as any, adminController.rejectSlip as any);
 
 // ============================================
 // SERVER ADMIN ROUTES (server_admin, root)
@@ -104,6 +122,12 @@ router.delete('/api-keys/:userId', requireServerAdminOrRoot as any, adminControl
 // ROOT ONLY ROUTES
 // Plugin, Servers, ChatRanks, Role management
 // ============================================
+
+// Plugin keys: signed-gateway ServerCredentials (root only; secret returned once; audited)
+router.get('/plugin-keys', requireRoot as any, adminPluginKeysController.list as any);
+router.post('/plugin-keys', requireRoot as any, adminPluginKeysController.issue as any);
+router.post('/plugin-keys/:id/rotate', requireRoot as any, adminPluginKeysController.rotate as any);
+router.post('/plugin-keys/:id/revoke', requireRoot as any, adminPluginKeysController.revoke as any);
 
 // Plugin management
 router.get('/plugin/status', requireRoot as any, adminController.getPluginStatus as any);

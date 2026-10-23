@@ -31,7 +31,9 @@ namespace HeartShop
     // Core functions
     void PollPendingOrders();
     void PollChatMessages();
-    void BroadcastChatMessage(const std::string& Source, const std::string& SenderName, const std::string& Content);
+    void BroadcastChatMessage(const std::string& Source, const std::string& SenderName, const std::string& Content, const std::string& RankTag = "");
+    // Chat Ranks from GET /chat/plugin/config (Permissions group -> in-game tag).
+    void RefreshChatRanks();
 
     // Wallet notification sync (consumes wallet.transaction-posted events by polling).
     void PollWalletNotifications();

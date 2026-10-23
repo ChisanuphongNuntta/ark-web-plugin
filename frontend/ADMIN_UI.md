@@ -367,3 +367,40 @@ npx eslint src/components/admin src/hooks/usePaginatedQuery.ts src/lib/api.ts
 - Building blocks: `src/components/admin/transactions/*` (`TransactionBits`, `TransactionDetailDrawer`,
   `RecentTransactionsPanel`, `LedgerMismatchBanner`). Helper tests:
   `node --no-warnings --test src/lib/adminTransactionsMath.test.mts`.
+
+---
+
+## 8. Console pages + VIP (2026-10-23)
+
+Every admin page is listed by role in `components/FrozenPageFrame.tsx` (`adminLinks`) and on the
+dashboard's shortcut tab; `ADMIN_ROUTES` (`lib/adminTransactionsMath.ts`) must list the same paths.
+
+| Page | Roles | API (contracts) |
+| --- | --- | --- |
+| `/admin/orders` | admin, root | `GET /admin/orders`, `GET /admin/orders/:id`, `POST /admin/orders/:id/refund` (vip-2026-10 §8) |
+| `/admin/deliveries` | admin, root | `GET /admin/deliveries`, `POST /admin/deliveries/:id/retry` |
+| `/admin/payments` | admin, root | `GET /admin/payments` (read-only; slips are approved on `/admin?tab=slips`) |
+| `/admin/vip` | admin, root | `/admin/vip/*` (packages, memberships, grant/extend/revoke, resync, summary) |
+| `/admin/market` | admin, root | `GET /admin/market/listings` (read-only) |
+| `/admin/audit` | admin, root | `GET /admin/audit-logs` |
+| `/admin/settings` | admin, root | `GET /site/settings`, `PUT /admin/site/settings` |
+| `/admin/plugin-keys` | root | `/admin/plugin-keys` (issue / rotate / revoke; secret shown once) |
+
+Building blocks:
+
+- `lib/adminConsoleApi.ts`: typed `*Page` fetchers for the `{ items, total, page, pageSize }` and
+  `{ <key>, pagination }` envelopes (`fetchEnvelopePage`), defensive row parsers, and
+  `ignoredFilters` (a requested filter the server evidently did not apply → `IgnoredFiltersNotice`).
+- `components/admin/console/ConsoleBits.tsx`: `AdminAccessGate allow={[…roles]}`, `DetailField`,
+  `CopyValueButton`, `JsonBlock`, status badge helpers.
+- `hooks/useAdminLiveRefresh.ts`: debounced invalidation on socket events + after reconnects.
+- `hooks/useServerOptions.ts`: server filter options from the public `GET /servers`.
+
+Order refunds: a **delivered** order needs the "ยืนยันว่าเก็บของคืนแล้ว" checkbox and a reclaim note
+(≥ 8 chars) before `POST /admin/orders/:id/refund` is sent; failed orders need a reason only. The
+refund form lives inside the detail drawer (never a second dialog on top of it).
+
+VIP (player side): `/vip` (`components/vip/VipPage.tsx`), frames `components/vip/VipAvatar.tsx` +
+`app/vip-frames.css` (one metallic ring + small label per `frameStyle`, no glow/animation),
+`hooks/useVipBadges.ts` (`GET /vip/badges`) for lists that do not embed `vip`, realtime
+`vip:updated` in `RealtimeProvider`. Helper tests: `node --no-warnings --test src/lib/vip.test.mts`.

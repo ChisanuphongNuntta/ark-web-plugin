@@ -21,6 +21,28 @@ import {
 } from 'lucide-react';
 import { serverApi } from '@/lib/contracts/client';
 import { useAuthStore } from '@/lib/store';
+import { VipAvatar } from '@/components/vip/VipAvatar';
+import { useVipBadges } from '@/hooks/useVipBadges';
+import type { VipBadge } from '@/lib/vip';
+
+/** VIP-framed survivor avatar (rounded, Frozen metal ring) with the online dot. */
+function RankVipAvatar({ item, vip, size }: { item: SurvivorRankItem; vip: VipBadge; size: number }) {
+  return (
+    <span className="relative inline-flex">
+      <VipAvatar
+        size={size}
+        shape="rounded"
+        src={item.avatarUrl}
+        name={item.name}
+        vip={vip}
+        fallback={<span className="font-mono font-semibold text-iris-pearl">{item.name.substring(0, 2).toUpperCase()}</span>}
+      />
+      {item.isOnline && (
+        <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#061019] bg-emerald-400" title="Online" />
+      )}
+    </span>
+  );
+}
 
 type RankingCategory = 'playtime' | 'dinos' | 'contributors' | 'tribes';
 
@@ -30,6 +52,9 @@ interface SurvivorRankItem {
   name: string;
   guild?: string;
   avatarUrl?: string;
+  /** IRIS user id (enables the VIP frame lookup) and/or an embedded VIP badge. */
+  userId?: string;
+  vip?: VipBadge | null;
   level: number;
   serverName: string;
   score: string;
@@ -538,6 +563,8 @@ export default function RankingPage() {
   const [showRewardsModal, setShowRewardsModal] = React.useState(false);
 
   const rawList = LEADERBOARD_DATA[activeTab];
+  const rankBadges = useVipBadges(rawList.filter((i) => i.vip === undefined).map((i) => i.userId));
+  const vipOf = (item: SurvivorRankItem): VipBadge | null => item.vip ?? (item.userId ? rankBadges.get(item.userId) ?? null : null);
 
   // Filtered leaderboard
   const filteredList = React.useMemo(() => {
@@ -699,6 +726,9 @@ export default function RankingPage() {
                 </div>
 
                 {/* Avatar Frame */}
+                {vipOf(top2) ? (
+                  <div className="mt-3"><RankVipAvatar item={top2} vip={vipOf(top2)!} size={80} /></div>
+                ) : (
                 <div className="relative mt-3 h-20 w-20 rounded-2xl border-2 border-slate-300/50 bg-[#0b243b] flex items-center justify-center shadow-lg overflow-hidden">
                   <span className="text-2xl font-black text-slate-200 font-mono">
                     {top2.name.substring(0, 2).toUpperCase()}
@@ -707,6 +737,7 @@ export default function RankingPage() {
                     <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full bg-emerald-400 border-2 border-[#091f33]" title="Online" />
                   )}
                 </div>
+                )}
 
                 <div className="mt-3 space-y-1">
                   <div className="flex items-center justify-center gap-1.5">
@@ -740,6 +771,9 @@ export default function RankingPage() {
                 </div>
 
                 {/* Avatar Frame with Crown Glow */}
+                {vipOf(top1) ? (
+                  <div className="mt-3"><RankVipAvatar item={top1} vip={vipOf(top1)!} size={96} /></div>
+                ) : (
                 <div className="relative mt-4 h-24 w-24 rounded-3xl border-3 border-amber-400 bg-gradient-to-br from-[#24210d] to-[#0d2235] flex items-center justify-center shadow-[0_0_30px_rgba(251,191,36,0.4)] overflow-hidden">
                   <span className="text-3xl font-black text-amber-300 font-mono">
                     {top1.name.substring(0, 2).toUpperCase()}
@@ -748,6 +782,7 @@ export default function RankingPage() {
                     <span className="absolute bottom-1.5 right-1.5 h-4 w-4 rounded-full bg-emerald-400 border-2 border-[#1b1c11]" title="Online" />
                   )}
                 </div>
+                )}
 
                 <div className="mt-3.5 space-y-1">
                   <div className="flex items-center justify-center gap-1.5">
@@ -783,6 +818,9 @@ export default function RankingPage() {
                 </div>
 
                 {/* Avatar Frame */}
+                {vipOf(top3) ? (
+                  <div className="mt-3"><RankVipAvatar item={top3} vip={vipOf(top3)!} size={80} /></div>
+                ) : (
                 <div className="relative mt-3 h-20 w-20 rounded-2xl border-2 border-amber-600/50 bg-[#1f170c] flex items-center justify-center shadow-lg overflow-hidden">
                   <span className="text-2xl font-black text-amber-200 font-mono">
                     {top3.name.substring(0, 2).toUpperCase()}
@@ -791,6 +829,7 @@ export default function RankingPage() {
                     <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full bg-emerald-400 border-2 border-[#1c130b]" title="Online" />
                   )}
                 </div>
+                )}
 
                 <div className="mt-3 space-y-1">
                   <div className="flex items-center justify-center gap-1.5">
@@ -880,12 +919,16 @@ export default function RankingPage() {
                       {/* Survivor Identity */}
                       <td className="py-3.5">
                         <div className="flex items-center gap-3">
+                          {vipOf(item) ? (
+                            <RankVipAvatar item={item} vip={vipOf(item)!} size={36} />
+                          ) : (
                           <div className="relative h-9 w-9 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-xs font-bold text-cyan-200">
                             {item.name.substring(0, 2).toUpperCase()}
                             {item.isOnline && (
                               <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 border border-black" />
                             )}
                           </div>
+                          )}
                           <div>
                             <div className="flex items-center gap-1.5">
                               {item.guild && (

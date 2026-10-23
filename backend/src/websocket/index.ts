@@ -165,6 +165,8 @@ export function emitChatMessage(message: {
   senderName: string;
   senderAvatar?: string | null;
   playerRank?: { name: string; color: string; icon: string | null } | null;
+  /** Sender's VIP badge (contracts/vip-2026-10.md), null when not VIP. */
+  vip?: { tierRank: number; frameStyle: string; label: string } | null;
   content: string;
   createdAt: Date;
 }) {

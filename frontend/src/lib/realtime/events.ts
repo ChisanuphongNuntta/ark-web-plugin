@@ -14,6 +14,10 @@ export const REALTIME_EVENTS = {
   adminTransaction: 'admin:transaction',
   /** Room 'admin': the scheduled ledger reconcile found mismatches. */
   adminLedgerMismatch: 'admin:ledger:mismatch',
+  /** Room user:<id>: the player's VIP membership changed (purchase, grant, extend, revoke, expiry). */
+  vipUpdated: 'vip:updated',
+  /** Room 'admin': any VIP membership / package change (refreshes /admin/vip). */
+  adminVip: 'admin:vip',
 } as const;
 
 /** Client -> server: join / leave the public `servers` room. */
@@ -70,6 +74,16 @@ export interface CatalogUpdatedEvent {
 export interface AdminEvent {
   at?: string;
   [key: string]: unknown;
+}
+
+/** 'vip:updated' (room user:<id>) — see backend/contracts/vip-2026-10.md. */
+export interface VipUpdatedEvent {
+  /** Current badge after the change; null when the player is no longer VIP. */
+  vip?: { tierRank?: number; frameStyle?: string; label?: string } | null;
+  reason?: 'purchase' | 'admin_grant' | 'admin_extend' | 'admin_revoke' | 'expired' | (string & {});
+  expiresAt?: string | null;
+  membershipId?: string;
+  at?: string;
 }
 
 /** 'admin:transaction' — see backend/contracts/admin-transactions-2026-10.md. */

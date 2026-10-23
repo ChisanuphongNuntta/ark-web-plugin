@@ -1,10 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import { Prisma } from '@prisma/client';
-import prisma from '../config/database.js';
 import { AuthRequest } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import paymentService from '../services/payment.service.js';
-import { emitAdminSlipCreated } from '../realtime/emit.js';
 
 export function sandboxPaymentsAllowedFor(user: AuthRequest['user'] | undefined, env: NodeJS.ProcessEnv = process.env): boolean {
   if (env.PAYMENT_SANDBOX_ENABLED !== 'true') return false;
@@ -39,55 +36,16 @@ export class PaymentController {
 
   submitSlip = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const userId = req.user!.id;
-      const {
-        packageId,
-        packageName,
-        amountThb,
-        pointsToCredit,
+      // Only packageId + slip evidence are read from the body. amountThb / pointsToCredit /
+      // packageName are deliberately ignored: they come from the server-side package.
+      const { packageId, transferBank, transferRef, slipImageUrl, notes } = req.body ?? {};
+      const intent = await paymentService.submitTopupSlip(req.user!.id, packageId, {
         transferBank,
         transferRef,
         slipImageUrl,
         notes,
-      } = req.body;
-
-      let pkg = packageId ? await prisma.paymentPackage.findUnique({ where: { id: packageId } }) : null;
-      if (!pkg && packageId) {
-        pkg = await prisma.paymentPackage.findFirst({ where: { slug: packageId } });
-      }
-      if (!pkg) {
-        pkg = await prisma.paymentPackage.findFirst({ where: { isActive: true } });
-      }
-
-      const finalPackageId = pkg ? pkg.id : (await prisma.paymentPackage.findFirst())?.id || 'pkg-4';
-      const points = BigInt(pointsToCredit || (pkg ? Number(pkg.points + pkg.bonusPoints) : 100));
-      const amount = new Prisma.Decimal(amountThb || (pkg ? Number(pkg.priceThb) : 35));
-      const reference = transferRef || `SLIP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-
-      const intent = await prisma.paymentIntent.create({
-        data: {
-          userId,
-          packageId: finalPackageId,
-          provider: 'bank_slip',
-          reference,
-          idempotencyKey: `slip-${userId}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-          amountThb: amount,
-          pointsAmount: points,
-          status: 'pending',
-          paymentUrl: slipImageUrl || null,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          metadata: {
-            packageName: packageName || pkg?.name || 'Coin Package',
-            transferBank: transferBank || 'KBANK',
-            transferRef: reference,
-            slipImageUrl: slipImageUrl || '/images/mock/slips/sample-slip-01.svg',
-            notes: notes || '',
-            submittedAt: new Date().toISOString(),
-          },
-        },
-        include: { user: true, package: true },
       });
-      emitAdminSlipCreated(intent.id);
+      const meta = (intent.metadata as any) || {};
 
       res.status(201).json({
         success: true,
@@ -98,12 +56,12 @@ export class PaymentController {
           userDiscordId: intent.user?.discordId,
           userAvatar: intent.user?.discordAvatar,
           packageId: intent.packageId,
-          packageName: (intent.metadata as any)?.packageName || intent.package?.name || 'Coin Package',
+          packageName: intent.package?.name || meta.packageName,
           amountThb: Number(intent.amountThb),
           pointsToCredit: Number(intent.pointsAmount),
-          slipImageUrl: (intent.metadata as any)?.slipImageUrl || intent.paymentUrl || '/images/mock/slips/sample-slip-01.svg',
-          transferBank: (intent.metadata as any)?.transferBank || 'KBANK',
-          transferRef: intent.reference,
+          slipImageUrl: meta.slipImageUrl ?? null,
+          transferBank: meta.transferBank ?? null,
+          transferRef: meta.transferRef || intent.reference,
           transferredAt: intent.createdAt.toISOString(),
           status: 'pending_approval',
           createdAt: intent.createdAt.toISOString(),

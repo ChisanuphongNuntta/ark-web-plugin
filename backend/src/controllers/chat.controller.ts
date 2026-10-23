@@ -2,8 +2,35 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { emitChatMessage } from '../websocket/index.js';
 import { sendToDiscord } from '../discord/bot.js';
+import vipService from '../services/vip.service.js';
 
 const prisma = new PrismaClient();
+
+/** One message of GET /chat/plugin/messages (additive fields: vip, rankTag). */
+export function buildPluginChatMessage(
+  m: {
+    id: string; source: string; senderName: string; content: string; createdAt: Date;
+    server?: { name: string; chatTag: string | null; chatColor: string | null; chatIcon: string | null } | null;
+  },
+  badge: { tierRank: number; frameStyle: string; label: string } | null,
+) {
+  return {
+    id: m.id,
+    source: m.source,
+    senderName: m.senderName,
+    content: m.content,
+    serverName: m.server?.name || null,
+    serverStyle: m.server ? {
+      chatTag: m.server.chatTag,
+      chatColor: m.server.chatColor,
+      chatIcon: m.server.chatIcon,
+    } : null,
+    vip: badge,
+    // Plain tag text for the in-game line; null when the sender is not VIP.
+    rankTag: badge ? badge.label : null,
+    createdAt: m.createdAt.toISOString(),
+  };
+}
 
 // Get messages for plugin polling
 export async function getMessagesForPlugin(req: Request, res: Response) {
@@ -26,21 +53,13 @@ export async function getMessagesForPlugin(req: Request, res: Response) {
       take: limit,
     });
 
+    // VIP tag for web senders, shown in game as "[Web] [VIP] Name: text" (HeartShop
+    // BroadcastChatMessage). Discord senders never carry one.
+    const badgeOf = await vipService.chatBadgeResolver(messages);
+
     res.json({
       success: true,
-      messages: messages.map((m) => ({
-        id: m.id,
-        source: m.source,
-        senderName: m.senderName,
-        content: m.content,
-        serverName: m.server?.name || null,
-        serverStyle: m.server ? {
-          chatTag: m.server.chatTag,
-          chatColor: m.server.chatColor,
-          chatIcon: m.server.chatIcon,
-        } : null,
-        createdAt: m.createdAt.toISOString(),
-      })),
+      messages: messages.map((m) => buildPluginChatMessage(m, badgeOf(m))),
       lastTimestamp: messages.length > 0 ? messages[messages.length - 1].createdAt.toISOString() : null,
     });
   } catch (error) {
@@ -129,12 +148,24 @@ export async function createMessageFromPlugin(req: Request, res: Response) {
       serverStyle = server ? { chatTag: server.chatTag, chatColor: server.chatColor, chatIcon: server.chatIcon } : null;
     }
 
-    // Get player's chat rank (highest priority from their groups)
+    // Get player's chat rank (highest priority from their groups). The plugin reports the
+    // Permissions groups it sees; VIP groups the web knows about (VipMembership) are added so
+    // a VIP shows the VIP chat rank even before the in-game group sync lands.
+    const reportedGroups = Array.isArray(playerGroups)
+      ? playerGroups.filter((group: unknown): group is string => typeof group === 'string' && group.length > 0 && group.length <= 64).slice(0, 50)
+      : [];
+    let vipGroups: string[] = [];
+    try {
+      vipGroups = await vipService.heldGroupsForSteamId(String(steamId));
+    } catch (error) {
+      console.error('VIP group lookup for chat failed:', error);
+    }
+    const groups = [...new Set([...reportedGroups, ...vipGroups])];
     let playerRank: { name: string; color: string; icon: string | null } | null = null;
-    if (playerGroups && Array.isArray(playerGroups) && playerGroups.length > 0) {
+    if (groups.length > 0) {
       const ranks = await prisma.chatRank.findMany({
         where: {
-          groupKey: { in: playerGroups },
+          groupKey: { in: groups },
           isActive: true,
           OR: [
             { serverId: null }, // Global ranks
@@ -160,6 +191,8 @@ export async function createMessageFromPlugin(req: Request, res: Response) {
       },
     });
 
+    const badgeOf = await vipService.chatBadgeResolver([message]);
+
     // Emit to WebSocket clients
     emitChatMessage({
       id: message.id,
@@ -172,6 +205,7 @@ export async function createMessageFromPlugin(req: Request, res: Response) {
       senderName: message.senderName,
       senderAvatar: message.senderAvatar,
       playerRank,
+      vip: badgeOf(message),
       content: message.content,
       createdAt: message.createdAt,
     });
@@ -213,11 +247,13 @@ export async function getChatHistory(req: Request, res: Response) {
       },
     });
 
+    const badgeOf = await vipService.chatBadgeResolver(messages);
     res.json({
       success: true,
       messages: messages.reverse().map((m) => ({
         id: m.id,
         source: m.source,
+        vip: badgeOf(m),
         serverId: m.serverId,
         serverName: m.server?.name || null,
         serverStyle: m.server ? {

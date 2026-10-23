@@ -13,6 +13,12 @@ import { canTransition } from '../services/orderState.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
 import serverQueryService from '../services/serverQuery.service.js';
 import { releaseBackoffMs, releaseStreaks } from '../services/deliveryRelease.service.js';
+import vipService, {
+  PERMISSIONS_CAPABILITY,
+  PERMISSION_DELIVERY_TYPES,
+  PERMISSION_DELIVERY_TYPE_LIST,
+  permissionKeyAffinityMs,
+} from '../services/vip.service.js';
 import { afterCommit } from '../realtime/afterCommit.js';
 import {
   ORDER_BACKED_DELIVERY_TYPES,
@@ -459,10 +465,14 @@ export class PluginController {
       // Fetch claimable jobs: pending jobs past their backoff window, or leased jobs whose
       // lease has expired (worker went offline / crashed). dead_letter, completed and failed
       // jobs are never re-claimed. See delivery.service.claimWhere.
+      // Permissions-group jobs (VIP) are excluded here: they are not bound to a server and are
+      // handed only to servers that advertise PERMISSIONS_CAPABILITY (claimablePermissionJobs).
       const now = new Date();
-      const jobs = await prisma.deliveryJob.findMany({
-        where: claimWhere(Number(serverId), now),
+      const ownJobs = await prisma.deliveryJob.findMany({
+        where: { AND: [claimWhere(Number(serverId), now), { deliveryType: { notIn: [...PERMISSION_DELIVERY_TYPE_LIST] } }] },
       });
+      const permissionJobs = await this.claimablePermissionJobs(Number(serverId), now);
+      const jobs = [...(ownJobs ?? []), ...permissionJobs];
 
       const leaseExpiresAt = new Date(now.getTime() + LEASE_DURATION_MS);
       const claimed = [];
@@ -492,6 +502,8 @@ export class PluginController {
           : job.nextRetryAt != null);
 
         const leaseToken = crypto.randomUUID();
+        // A permission job moves to the claiming server (any capable server may run it).
+        const permissionJob = PERMISSION_DELIVERY_TYPES.has(job.deliveryType);
         // Conditional update guards against two plugins racing for the same job: only the
         // claimant whose update matches the pre-claim status wins (count === 1).
         const updateRes = await prisma.deliveryJob.updateMany({
@@ -499,6 +511,7 @@ export class PluginController {
             id: job.id,
             status: job.status,
             leaseToken: job.leaseToken,
+            ...(permissionJob ? { serverId: job.serverId } : {}),
           },
           data: {
             status: 'leased',
@@ -506,6 +519,7 @@ export class PluginController {
             leaseExpiresAt,
             attempts: { increment: 1 },
             nextRetryAt: probe ? (job.nextRetryAt ?? now) : null,
+            ...(permissionJob ? { serverId: Number(serverId) } : {}),
           },
         });
         if (updateRes.count !== 1) continue; // lost the race; skip
@@ -539,6 +553,90 @@ export class PluginController {
       next(error);
     }
   };
+
+  // VIP Permissions-group jobs claimable by `serverId` (contracts/vip-2026-10.md §Plugin):
+  //   * only when this server is active, not draining and advertises PERMISSIONS_CAPABILITY;
+  //   * from ANY server (the group store is cluster-shared MySQL; the player may be offline);
+  //   * per (user+group, steamId) key only the NEWEST candidate is handed out, older expired
+  //     leases for that key are superseded, and a key with a live lease elsewhere is skipped, so
+  //     an add and a remove for one player can never be applied out of order.
+  async claimablePermissionJobs(serverId: number, now: Date): Promise<any[]> {
+    try {
+      const server = await prisma.server.findUnique({
+        where: { id: serverId },
+        select: { isActive: true, drainMode: true, capabilities: true },
+      });
+      if (!server || !server.isActive || server.drainMode || !server.capabilities?.includes(PERMISSIONS_CAPABILITY)) return [];
+
+      const { serverId: _anyServer, ...claimable } = claimWhere(serverId, now);
+      const candidates = (await prisma.deliveryJob.findMany({
+        where: { AND: [claimable, { deliveryType: { in: [...PERMISSION_DELIVERY_TYPE_LIST] } }] },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: 50,
+      })) ?? [];
+      if (candidates.length === 0) return [];
+
+      const keyOf = (job: { referenceId: string; playerSteamId: string }) => `${job.referenceId}|${job.playerSteamId}`;
+      const live = (await prisma.deliveryJob.findMany({
+        where: {
+          deliveryType: { in: [...PERMISSION_DELIVERY_TYPE_LIST] },
+          status: 'leased',
+          leaseExpiresAt: { gte: now },
+          referenceId: { in: [...new Set(candidates.map((job: any) => job.referenceId))] },
+        },
+        select: { referenceId: true, playerSteamId: true },
+      })) ?? [];
+      const busy = new Set(live.map(keyOf));
+
+      // Cache-staleness affinity (Permissions V2 caches groups per server for ClusterSyncTime):
+      // the next job for a key whose previous job completed recently stays on the server that
+      // completed it; any other server waits until the window has passed. Otherwise a revoke run
+      // on a stale server reports "not in group" (AlreadyInState) while MySQL still holds the
+      // timed VIP, and an add/remove rewrites the group columns from a stale cache.
+      const affinitySince = new Date(now.getTime() - permissionKeyAffinityMs());
+      const recentDone = (await prisma.deliveryJob.findMany({
+        where: {
+          deliveryType: { in: [...PERMISSION_DELIVERY_TYPE_LIST] },
+          status: 'completed',
+          updatedAt: { gte: affinitySince },
+          referenceId: { in: [...new Set(candidates.map((job: any) => job.referenceId))] },
+        },
+        select: { referenceId: true, playerSteamId: true, serverId: true, updatedAt: true, receiptId: true },
+        orderBy: { updatedAt: 'desc' },
+      })) ?? [];
+      const pinnedTo = new Map<string, number>();
+      for (const done of recentDone) {
+        // A superseded lease was never applied by its server: it does not pin the key.
+        if (typeof done.receiptId === 'string' && done.receiptId.startsWith('superseded:')) continue;
+        const key = keyOf(done);
+        if (!pinnedTo.has(key)) pinnedTo.set(key, done.serverId);
+      }
+      const pinnedElsewhere = (job: any) => {
+        const pinned = pinnedTo.get(keyOf(job));
+        return pinned !== undefined && pinned !== serverId;
+      };
+
+      const newest = new Map<string, any>();
+      const superseded: Array<{ id: string; newer: string }> = [];
+      for (const job of candidates) {
+        const key = keyOf(job);
+        const kept = newest.get(key);
+        if (!kept) newest.set(key, job);
+        else if (job.status === 'leased') superseded.push({ id: job.id, newer: kept.id });
+      }
+      for (const old of superseded) {
+        await prisma.deliveryJob.updateMany({
+          where: { id: old.id, status: 'leased', leaseExpiresAt: { lt: now } },
+          data: { status: 'completed', receiptId: `superseded:${old.newer}`, error: `superseded by ${old.newer}`, leaseToken: null, leaseExpiresAt: null },
+        });
+      }
+      return [...newest.values()].filter((job) => !busy.has(keyOf(job)) && !pinnedElsewhere(job)).slice(0, 20);
+    } catch (error) {
+      // Never break the item/dino claim cycle because of VIP sync.
+      console.error('[delivery] permission job claim failed:', error);
+      return [];
+    }
+  }
 
   // Complete a delivery (CR-PLUGIN-002 / CR-PLUGIN-003).
   //
@@ -644,6 +742,9 @@ export class PluginController {
               { accountKey: SYSTEM_ACCOUNTS.revenue, amount: BigInt(platformFee) },
             ],
           }, tx);
+        } else if (PERMISSION_DELIVERY_TYPES.has(job.deliveryType)) {
+          // VIP group applied in the cluster Permissions DB: mark the memberships synced.
+          await vipService.onPermissionJobFinished(tx, job, 'completed', now);
         }
         return { duplicate: false, receiptId: localJournalReceiptId };
       }, { isolationLevel: 'Serializable' });
@@ -779,6 +880,11 @@ export class PluginController {
         where: { orderId: job.referenceId },
         data: { status: 'failed', failedAt: new Date(), attempts, lastError: errorMessage },
       });
+      return;
+    }
+    if (PERMISSION_DELIVERY_TYPES.has(job.deliveryType)) {
+      // No money involved: flag the memberships so admins can resync (admin:vip status=failed).
+      await vipService.onPermissionJobFinished(tx, job, 'dead_letter');
       return;
     }
     if (job.deliveryType !== 'dino_marketplace') return;
@@ -1140,6 +1246,17 @@ export class PluginController {
     try {
       const { steamId } = req.params;
       const result = await pluginCompanionService.getPendingDeliveries(steamId, req.serverId!);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // GET /api/plugin/player/:steamId/vip -> compact VIP status for the in-game /vip command
+  getPlayerVip = async (req: PluginRequest, res: Response, next: NextFunction) => {
+    try {
+      const result = await vipService.getPluginVipStatus(String(req.params.steamId));
+      res.setHeader('Cache-Control', 'no-store');
       res.json(result);
     } catch (error) {
       next(error);

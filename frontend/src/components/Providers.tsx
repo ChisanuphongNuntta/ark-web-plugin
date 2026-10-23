@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect, useRef } from 'react';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore, userFromMe } from '@/lib/store';
 import { authApi } from '@/lib/api';
 import { applyRealtimeFallbackDefaults } from '@/lib/realtime/queryKeys';
 import { RealtimeProvider } from '@/components/realtime/RealtimeProvider';
@@ -36,14 +36,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const checkAuth = async () => {
       try {
         const { data } = await authApi.getMe();
-        if (data.user) {
-          setUser({
-            ...data.user,
-            pointsBalance: Number(data.user.pointsBalance),
-          });
-        } else {
-          setUser(null);
-        }
+        setUser(userFromMe(data));
       } catch (error) {
         // 401 is expected when not logged in
         setUser(null);

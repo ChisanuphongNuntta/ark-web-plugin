@@ -6,6 +6,8 @@
 #include "CatalogDino.h"
 #include "ItemDelivery.h"
 #include "RequestSigning.h"
+#include "PermissionSync.h"
+#include "PermissionsBridge.h"
 #include <algorithm>
 #include <Logger/Logger.h>
 #include <Windows.h>
@@ -22,78 +24,147 @@ namespace HeartShop
     std::unique_ptr<DeliveryJournal> Journal;
     bool LicenseVerified = false;
 
-    // Permissions plugin dynamic loading
-    typedef TArray<FString>(__cdecl* GetPlayerGroupsFunc)(uint64);
-    static GetPlayerGroupsFunc PermissionsGetPlayerGroups = nullptr;
-    static bool PermissionsChecked = false;
-
-    // Try to get Permissions API function dynamically
-    void TryLoadPermissionsAPI()
-    {
-        if (PermissionsChecked)
-            return;
-
-        PermissionsChecked = true;
-
-        // Try to find the Permissions plugin DLL
-        HMODULE hPermissions = GetModuleHandleA("Permissions.dll");
-        if (!hPermissions)
-        {
-            hPermissions = GetModuleHandleA("ArkPermissions.dll");
-        }
-
-        if (hPermissions)
-        {
-            // Get the function pointer - the mangled name may vary
-            // Try common name patterns
-            PermissionsGetPlayerGroups = (GetPlayerGroupsFunc)GetProcAddress(hPermissions, "?GetPlayerGroups@Permissions@@YA?AV?$TArray@VFString@@VFDefaultAllocator@@@@_K@Z");
-
-            if (PermissionsGetPlayerGroups)
-            {
-                Log::GetLog()->info("HeartShop: Permissions plugin detected and linked!");
-            }
-            else
-            {
-                Log::GetLog()->warn("HeartShop: Permissions DLL found but API not compatible");
-            }
-        }
-        else
-        {
-            Log::GetLog()->info("HeartShop: Permissions plugin not detected, groups will be empty");
-        }
-    }
-
-    // Get player groups from Permissions plugin (if available)
+    // Player groups from the Permissions plugin (empty when it is not loaded).
+    // Resolved on every call through PermissionsBridge, so a Permissions plugin
+    // that loads after HeartShop (or is reloaded) is picked up.
     std::vector<std::string> GetPlayerPermissionGroups(uint64 SteamId)
     {
-        std::vector<std::string> Groups;
+        return PermissionsBridge::GetPlayerGroups(SteamId);
+    }
 
-        TryLoadPermissionsAPI();
-
-        if (PermissionsGetPlayerGroups)
+    // AShooterGameMode.SendChatMessage hands the sender id over as a 32-bit int.
+    // A SteamID64 of an individual account is 0x0110000100000000 | accountId, so
+    // the low 32 bits are the account id: rebuild the SteamID64 and accept it
+    // only when that player is online here. Otherwise keep the raw value.
+    static uint64 ResolveChatSenderSteamId(int SenderSteamID)
+    {
+        const uint64 Raw = static_cast<uint64>(static_cast<uint32>(SenderSteamID));
+        if (Raw == 0)
         {
-            try
+            return 0;
+        }
+        const uint64 Rebuilt = 0x0110000100000000ull | Raw;
+        try
+        {
+            if (ArkApi::GetApiUtils().FindPlayerFromSteamId(Rebuilt))
             {
-                TArray<FString> PermGroups = PermissionsGetPlayerGroups(SteamId);
-                for (int i = 0; i < PermGroups.Num(); i++)
-                {
-                    Groups.push_back(PermGroups[i].ToString());
-                }
-            }
-            catch (...)
-            {
-                Log::GetLog()->warn("HeartShop: Exception calling Permissions API");
+                return Rebuilt;
             }
         }
-
-        return Groups;
+        catch (...)
+        {
+        }
+        return static_cast<uint64>(SenderSteamID);
     }
+
     HandleNewPlayer_t AShooterGameMode_HandleNewPlayer_original = nullptr;
     Logout_t AShooterGameMode_Logout_original = nullptr;
 
     // Chat state
     std::string LastChatTimestamp = "";
     bool ChatEnabled = true;
+
+    // Chat Ranks (web admin) mapped to Permissions groups, refreshed from
+    // GET /chat/plugin/config. Read and written on the game thread only (HTTP
+    // callbacks are dispatched there, as is the chat callback).
+    std::vector<PermissionSync::ChatRank> ChatRanks;
+    const FString ChatRankCallbackId = L"HeartShop_ChatRank";
+
+    void RefreshChatRanks()
+    {
+        if (!Http)
+        {
+            return;
+        }
+        Http->GetChatConfig([](bool Success, const nlohmann::json& Response) {
+            if (!Success || !Response.is_object())
+            {
+                return; // keep the last known ranks
+            }
+            if (Response.contains("success") && Response["success"].is_boolean() && !Response["success"].get<bool>())
+            {
+                return;
+            }
+            const size_t Before = ChatRanks.size();
+            ChatRanks = PermissionSync::ParseChatRanks(Response);
+            if (ChatRanks.size() != Before)
+            {
+                Log::GetLog()->info("HeartShop: {} chat rank(s) loaded", ChatRanks.size());
+            }
+        });
+    }
+
+    // In-game chat rank (VIP): a global chat line from a player whose Permissions
+    // groups match a web Chat Rank is re-sent to every player as "[VIP] Name"
+    // and the default line is suppressed. ArkApi runs this after its spam check
+    // and after chat commands, so commands and spam never reach it. Because the
+    // default path is skipped, the line is forwarded to cross-chat here.
+    bool OnChatRankMessage(AShooterPlayerController* Player, FString* Message, EChatSendMode::Type Mode, bool SpamCheck, bool CommandExecuted)
+    {
+        try
+        {
+            if (!PluginConfig || !PluginConfig->GetVipChatRankPrefix() || !LicenseVerified)
+                return false;
+            if (!Player || !Message || CommandExecuted || SpamCheck || Mode != EChatSendMode::GlobalChat)
+                return false;
+            if (ChatRanks.empty())
+                return false;
+
+            const std::string Content = Message->ToString();
+            if (Content.empty() || Content[0] == '/')
+                return false;
+
+            const uint64 SteamId = GetSteamId(Player);
+            if (SteamId == 0)
+                return false;
+            const std::vector<std::string> Groups = GetPlayerPermissionGroups(SteamId);
+            const std::string Rank = PermissionSync::PickChatRankName(ChatRanks, Groups);
+            if (Rank.empty())
+                return false;
+
+            const FString CharacterName = ArkApi::IApiUtils::GetCharacterName(Player);
+            const std::string Sender = PermissionSync::FormatRankedSender(Rank, CharacterName.ToString());
+
+            FChatMessage Chat = FChatMessage();
+            Chat.SenderName = FString(ArkApi::Tools::Utf8Decode(Sender).c_str());
+            Chat.SenderSteamName = ArkApi::IApiUtils::GetSteamName(Player);
+            Chat.SenderId = static_cast<unsigned int>(Player->LinkedPlayerIDField());
+            Chat.SenderTeamIndex = Player->TargetingTeamField();
+            Chat.Message = *Message;
+            Chat.SendMode = EChatSendMode::GlobalChat;
+            Chat.UserId = FString(std::to_string(SteamId).c_str());
+
+            auto& Players = ArkApi::GetApiUtils().GetWorld()->PlayerControllerListField();
+            for (int i = 0; i < Players.Num(); i++)
+            {
+                AShooterPlayerController* PC = static_cast<AShooterPlayerController*>(Players[i].Get());
+                if (PC)
+                {
+                    PC->ClientChatMessage(Chat);
+                }
+            }
+
+            if (ChatEnabled && Http)
+            {
+                Http->SendChatMessage(std::to_string(SteamId), CharacterName.ToString(), Content, Groups, [](bool Success, const nlohmann::json&) {
+                    if (!Success)
+                    {
+                        Log::GetLog()->warn("Failed to send chat message to cross-chat API");
+                    }
+                });
+            }
+            return true;
+        }
+        catch (const std::exception& e)
+        {
+            Log::GetLog()->warn("HeartShop chat rank failed, using default chat: {}", e.what());
+        }
+        catch (...)
+        {
+            Log::GetLog()->warn("HeartShop chat rank failed, using default chat");
+        }
+        return false;
+    }
 
     int CountOnlinePlayers()
     {
@@ -159,12 +230,14 @@ namespace HeartShop
         if (Content[0] == '/')
             return;
 
-        // Get player's permission groups (uses dynamic loading)
-        uint64 SteamId64 = static_cast<uint64>(SenderSteamID);
+        // Player's permission groups drive the web chat rank (VIP group -> Chat Rank).
+        const uint64 SteamId64 = ResolveChatSenderSteamId(SenderSteamID);
         std::vector<std::string> PlayerGroups = GetPlayerPermissionGroups(SteamId64);
 
         // Send to cross-chat API with groups
-        std::string SteamIdStr = std::to_string(SenderSteamID);
+        std::string SteamIdStr = SteamId64 == static_cast<uint64>(SenderSteamID)
+            ? std::to_string(SenderSteamID)
+            : std::to_string(SteamId64);
         Http->SendChatMessage(SteamIdStr, SenderName, Content, PlayerGroups, [](bool Success, const nlohmann::json&) {
             if (!Success)
             {
@@ -449,13 +522,23 @@ namespace HeartShop
                 L"HeartShop_PollChat",
                 [](){
                     static int chatCounter = 0;
+                    static int rankCounter = 290; // first refresh ~10s after load
                     chatCounter++;
+                    rankCounter++;
                     if (chatCounter >= 3) // Every 3 seconds
                     {
                         chatCounter = 0;
                         if (LicenseVerified && ChatEnabled)
                         {
                             PollChatMessages();
+                        }
+                    }
+                    if (rankCounter >= 300) // Chat Ranks every 5 minutes
+                    {
+                        rankCounter = 0;
+                        if (LicenseVerified && PluginConfig && PluginConfig->GetVipChatRankPrefix())
+                        {
+                            RefreshChatRanks();
                         }
                     }
                 }
@@ -525,6 +608,9 @@ namespace HeartShop
                         // Game thread: resolve the cryopod class before the heartbeat so the
                         // cryopod capability is only advertised when this server can make pods.
                         RefreshCryopodCapability();
+                        // Game thread: (re)resolve the Permissions plugin so
+                        // permissions.group.v1 is advertised only while usable.
+                        PermissionsBridge::Refresh();
 
                         Http->SendHeartbeat(CountOnlinePlayers(), [](bool Success, const nlohmann::json&) {
                             static bool LoggedSuccess = false;
@@ -566,6 +652,18 @@ namespace HeartShop
         catch (const std::exception& e)
         {
             Log::GetLog()->error("Chat hook exception: {}", e.what());
+        }
+
+        // STEP 7b: In-game chat rank prefix (VIP)
+        try
+        {
+            ArkApi::GetCommands().AddOnChatMessageCallback(ChatRankCallbackId, &OnChatRankMessage);
+            Log::GetLog()->info("HeartShop: Chat rank prefix {}",
+                PluginConfig && PluginConfig->GetVipChatRankPrefix() ? "enabled" : "disabled (HeartShop.Vip.ChatRankPrefix)");
+        }
+        catch (const std::exception& e)
+        {
+            Log::GetLog()->error("Chat rank callback exception: {}", e.what());
         }
 
         // STEP 8: Protection System
@@ -635,6 +733,12 @@ namespace HeartShop
             ArkApi::GetCommands().RemoveOnTimerCallback(L"HeartShop_PollChat");
             ArkApi::GetCommands().RemoveOnTimerCallback(L"HeartShop_PollWalletEvents");
             Log::GetLog()->info("HeartShop: Timers removed");
+        }
+        catch (...) {}
+
+        try
+        {
+            ArkApi::GetCommands().RemoveOnChatMessageCallback(ChatRankCallbackId);
         }
         catch (...) {}
 
@@ -1526,6 +1630,206 @@ namespace HeartShop
             Attempts);
     }
 
+    // ---- VIP / Permissions group sync (permission_grant / permission_revoke) ----
+    // Applied through the ArkApi Permissions plugin, whose groups live in the
+    // cluster-shared database: one server applying it is enough, and the target
+    // player does not need to be online. The operations are convergent (they set
+    // the group to the requested state), so an uncertain journal record from a
+    // crash is simply re-run instead of being parked for manual reconciliation.
+
+    static long long UnixNowSeconds()
+    {
+        return std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    }
+
+    static void ReleasePermissionLease(
+        const std::string& DeliveryKey,
+        const std::string& LeaseToken,
+        const std::string& Reason)
+    {
+        Http->ReleaseDelivery(DeliveryKey, LeaseToken, [DeliveryKey, Reason](bool Success, const nlohmann::json&) {
+            if (Success)
+            {
+                Log::GetLog()->info("Permission job {} released (no attempt consumed): {}", DeliveryKey, Reason);
+            }
+            else
+            {
+                Log::GetLog()->warn("Failed to release permission job {} ({})", DeliveryKey, Reason);
+            }
+        });
+    }
+
+    static void FailPermissionJob(
+        const std::string& DeliveryKey,
+        const std::string& LeaseToken,
+        const std::string& Error)
+    {
+        Log::GetLog()->warn("Permission job {} failed: {}", DeliveryKey, Error);
+        Http->FailDelivery(DeliveryKey, LeaseToken, Error, [DeliveryKey](bool, const nlohmann::json& Response) {
+            LogFailOutcome(DeliveryKey, Response);
+        });
+    }
+
+    static void AcknowledgePermissionJob(
+        const std::string& DeliveryKey,
+        const std::string& LeaseToken,
+        const std::string& SteamIdStr,
+        const std::string& PayloadHash,
+        const std::string& DeliveryType)
+    {
+        const std::string ReceiptId = DeliveryJournal::MakeKey(DeliveryType, DeliveryKey);
+        Http->CompleteDelivery(DeliveryKey, LeaseToken, SteamIdStr, PayloadHash, ReceiptId,
+            [DeliveryKey](bool Success, const nlohmann::json& Response) {
+                if (!Success)
+                {
+                    // Journal says completed: a later claim re-acknowledges only.
+                    Log::GetLog()->warn("Permission job {} applied but acknowledgement failed; will re-ack", DeliveryKey);
+                    return;
+                }
+                const bool Duplicate = Response.is_object() && Response.value("duplicate", false);
+                Log::GetLog()->info("Permission job {} acknowledged (duplicate={})", DeliveryKey, Duplicate ? "true" : "false");
+            });
+    }
+
+    static void NotifyPermissionChange(const PermissionSync::Request& Request, long long NowUnix)
+    {
+        auto* Player = ArkApi::GetApiUtils().FindPlayerFromSteamId(Request.SteamId);
+        if (!Player)
+        {
+            return;
+        }
+        std::string Message;
+        if (Request.Kind == PermissionSync::Action::Add)
+        {
+            if (Request.HasExpiry && Request.ExpiresAtUnix <= NowUnix)
+            {
+                return;
+            }
+            Message = "[VIP] " + Request.Group + " is now active";
+            if (Request.HasExpiry)
+            {
+                Message += " until " + PermissionSync::FormatUtc(Request.ExpiresAtUnix);
+            }
+            Message += ". Type /vip for details.";
+        }
+        else
+        {
+            Message = "[VIP] Your " + Request.Group + " status has ended. Thank you for supporting IRIS!";
+        }
+        SendMessage(Player, FString(ArkApi::Tools::Utf8Decode(Message).c_str()));
+    }
+
+    static void ProcessPermissionDelivery(
+        const nlohmann::json& Delivery,
+        const std::string& DeliveryKey,
+        const std::string& LeaseToken,
+        const std::string& ClaimedSteamId,
+        const std::string& DeliveryType,
+        const std::string& PayloadHash)
+    {
+        if (!Journal)
+        {
+            ReleasePermissionLease(DeliveryKey, LeaseToken, "local idempotency journal unavailable");
+            return;
+        }
+        if (!PermissionsBridge::Refresh())
+        {
+            // Another server advertising permissions.group.v1 can apply it.
+            ReleasePermissionLease(DeliveryKey, LeaseToken, "Permissions plugin unavailable on this server");
+            return;
+        }
+
+        const nlohmann::json Payload = Delivery.contains("payload") ? Delivery["payload"] : nlohmann::json();
+        PermissionSync::Request Request;
+        std::string ParseError;
+        if (!PermissionSync::ParseRequest(DeliveryType, ClaimedSteamId, Payload, {}, Request, ParseError))
+        {
+            FailPermissionJob(DeliveryKey, LeaseToken, "Rejected permission payload: " + ParseError);
+            return;
+        }
+        const std::vector<std::string> AllowedGroups = PluginConfig
+            ? PluginConfig->GetPermissionAllowedGroups()
+            : std::vector<std::string>{};
+        if (!PermissionSync::IsGroupAllowed(Request.Group, AllowedGroups))
+        {
+            // Server-local policy, not a bad job: leave it for a server that allows it.
+            static CatalogDino::NoticeThrottle AllowListNotices(std::chrono::seconds(300));
+            if (AllowListNotices.ShouldNotify(Request.Group, CatalogDino::NoticeThrottle::Clock::now()))
+            {
+                Log::GetLog()->warn(
+                    "Permission group '{}' is not in HeartShop.Permissions.AllowedGroups on this server; "
+                    "jobs for it are released", Request.Group);
+            }
+            ReleasePermissionLease(DeliveryKey, LeaseToken, "group not allowed on this server");
+            return;
+        }
+
+        // The backend compares playerSteamId on /complete with the job's own value.
+        const std::string AckSteamId = ClaimedSteamId.empty() ? Request.SteamIdText : ClaimedSteamId;
+        const std::string PayloadStr = Payload.dump();
+
+        bool ReRun = false;
+        switch (PermissionSync::BeginJournal(*Journal, DeliveryType, DeliveryKey, PayloadStr, &ReRun))
+        {
+            case PermissionSync::JournalDecision::Execute:
+                if (ReRun)
+                {
+                    Log::GetLog()->warn(
+                        "Permission job {} had an unfinished journal record; re-running it (group sync is convergent)",
+                        DeliveryKey);
+                }
+                break;
+            case PermissionSync::JournalDecision::AcknowledgeOnly:
+                AcknowledgePermissionJob(DeliveryKey, LeaseToken, AckSteamId, PayloadHash, DeliveryType);
+                return;
+            case PermissionSync::JournalDecision::FailPayloadMismatch:
+                FailPermissionJob(DeliveryKey, LeaseToken,
+                    "Delivery blocked by local idempotency journal (payload mismatch)");
+                return;
+            case PermissionSync::JournalDecision::Release:
+            default:
+                ReleasePermissionLease(DeliveryKey, LeaseToken, "journal record could not be persisted");
+                return;
+        }
+
+        const long long Now = UnixNowSeconds();
+        const auto Result = PermissionsBridge::Execute(Request, Now);
+        switch (Result.Status)
+        {
+            case PermissionsBridge::ExecResult::Kind::Success:
+                if (!Journal->Complete(DeliveryType, DeliveryKey))
+                {
+                    // Applied but not durably recorded: hand the job back. A re-run
+                    // converges on the same state, so no double grant is possible.
+                    Log::GetLog()->critical(
+                        "Permission job {} applied but journal completion failed; lease released for a re-run",
+                        DeliveryKey);
+                    ReleasePermissionLease(DeliveryKey, LeaseToken, "journal completion failed");
+                    return;
+                }
+                Log::GetLog()->info("Permission job {} ({} {} for {}) applied{}",
+                    DeliveryKey,
+                    DeliveryType,
+                    Request.Group,
+                    Request.SteamIdText,
+                    Result.Message.empty() ? "" : ": " + Result.Message);
+                AcknowledgePermissionJob(DeliveryKey, LeaseToken, AckSteamId, PayloadHash, DeliveryType);
+                NotifyPermissionChange(Request, Now);
+                return;
+            case PermissionsBridge::ExecResult::Kind::Error:
+                Journal->Abort(DeliveryType, DeliveryKey);
+                FailPermissionJob(DeliveryKey, LeaseToken, Result.Message);
+                return;
+            case PermissionsBridge::ExecResult::Kind::Unavailable:
+            case PermissionsBridge::ExecResult::Kind::Faulted:
+            default:
+                Journal->Abort(DeliveryType, DeliveryKey);
+                ReleasePermissionLease(DeliveryKey, LeaseToken, Result.Message);
+                return;
+        }
+    }
+
     void PollPendingOrders()
     {
         int ServerId = PluginConfig ? PluginConfig->GetServerId() : 1;
@@ -1553,6 +1857,17 @@ namespace HeartShop
                     std::string SteamIdStr = Delivery.value("playerSteamId", "");
                     std::string DeliveryType = Delivery.value("deliveryType", "");
                     std::string PayloadHash = Delivery.value("payloadHash", "");
+
+                    // VIP / Permissions group sync: not bound to the player being
+                    // online, so it is handled before the online lookup below.
+                    if (PermissionSync::IsPermissionDeliveryType(DeliveryType))
+                    {
+                        if (!DeliveryKey.empty() && !LeaseToken.empty())
+                        {
+                            ProcessPermissionDelivery(Delivery, DeliveryKey, LeaseToken, SteamIdStr, DeliveryType, PayloadHash);
+                        }
+                        continue;
+                    }
 
                     if (DeliveryKey.empty() || LeaseToken.empty() || SteamIdStr.empty())
                     {
@@ -1977,10 +2292,17 @@ namespace HeartShop
                     std::string Source = Msg.value("source", "");
                     std::string SenderName = Msg.value("senderName", "Unknown");
                     std::string Content = Msg.value("content", "");
+                    // VIP tag of a web sender (additive field; null / absent = none).
+                    std::string RankTag;
+                    const auto TagIt = Msg.find("rankTag");
+                    if (TagIt != Msg.end() && TagIt->is_string())
+                    {
+                        RankTag = TagIt->get<std::string>();
+                    }
 
                     if (!Content.empty())
                     {
-                        BroadcastChatMessage(Source, SenderName, Content);
+                        BroadcastChatMessage(Source, SenderName, Content, RankTag);
                     }
                 }
 
@@ -2078,11 +2400,10 @@ namespace HeartShop
         });
     }
 
-    void BroadcastChatMessage(const std::string& Source, const std::string& SenderName, const std::string& Content)
+    void BroadcastChatMessage(const std::string& Source, const std::string& SenderName, const std::string& Content, const std::string& RankTag)
     {
-        // Format: [Source] SenderName: Content
-        std::string SourceTag = (Source == "web") ? "[Web]" : (Source == "discord") ? "[Discord]" : "[" + Source + "]";
-        std::string FullMessage = SourceTag + " " + SenderName + ": " + Content;
+        // Format: [Source] [Rank] SenderName: Content
+        std::string FullMessage = PermissionSync::FormatCrossChatLine(Source, RankTag, SenderName, Content);
 
         FString MessageFS = FString(ArkApi::Tools::Utf8Decode(FullMessage).c_str());
         FString SenderFS = FString(ArkApi::Tools::Utf8Decode("CrossChat").c_str());
@@ -2096,7 +2417,8 @@ namespace HeartShop
                 AShooterPlayerController* PC = static_cast<AShooterPlayerController*>(Players[i].Get());
                 if (PC)
                 {
-                    ArkApi::GetApiUtils().SendChatMessage(PC, *SenderFS, *MessageFS);
+                    // The text is user content: pass it as an argument, never as the format string.
+                    ArkApi::GetApiUtils().SendChatMessage(PC, SenderFS, L"{}", *MessageFS);
                 }
             }
         }

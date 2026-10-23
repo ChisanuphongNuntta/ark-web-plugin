@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore, userFromMe } from '@/lib/store';
 import { authApi } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 
@@ -23,10 +23,7 @@ function AuthCallbackContent() {
         try {
           const { data } = await authApi.getMe();
           if (data.user) {
-            setUser({
-              ...data.user,
-              pointsBalance: Number(data.user.pointsBalance),
-            });
+            setUser(userFromMe(data));
 
             // Check if Steam is linked
             if (!data.user.steamId) {

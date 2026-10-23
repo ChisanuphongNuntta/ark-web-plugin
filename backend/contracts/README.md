@@ -21,7 +21,7 @@ HTTP (`openapi.yaml`):
 - Catalog (public, read-only): `GET /products`, `GET /products/featured`, `GET /products/categories`, `GET /products/{id}`, `GET /servers`
 - Auth/IRIS ID: account linking (proof-of-control, no auto-merge by email/name), `GET /auth/me`, `GET /auth/identities` (LinkedIdentitiesResponse), `GET /auth/sessions` (with risk flags), `DELETE /auth/sessions/{id}`, `POST /auth/recovery` (proof-of-control challenge stub)
 - Plugin (signed): heartbeat/delivery/market signed with `hmacAuth` — `X-Plugin-Key-Id` is a rotatable key id, separate from the HMAC secret (see `securitySchemes.hmacAuth`). The live verifier resolves `keyId -> secret` server-side (a `ServerCredential` whose keyId != secret) and verifies `X-Signature` against the resolved secret; the credential is bound to one server scope.
-- Plugin (companion, signed, read-only, server-scoped) — for the in-game `/iris`: `GET /plugin/player/{steamId}/wallet` (WalletBalance), `GET /plugin/player/{steamId}/pending-deliveries` (`{ pending }`), `GET /plugin/wallet/events?cursor=` (`{ success, events, lastCursor }`, events carry additive `playerSteamId`+`userId`)
+- Plugin (companion, signed, read-only, server-scoped) — for the in-game `/iris`: `GET /plugin/player/{steamId}/wallet` (WalletBalance), `GET /plugin/player/{steamId}/pending-deliveries` (`{ pending }`), `GET /plugin/wallet/events?cursor=` (`{ success, events, lastCursor }`, events carry additive `playerSteamId`+`userId`); VIP for `/vip`: `GET /plugin/player/{steamId}/vip` (cluster-wide, not server-scoped; `vip-2026-10.md` §4)
 - Plugin (legacy, CR-PLUGIN-006): `/plugin/verify`, `/plugin/orders/pending`, `/plugin/stats`, `/plugin/player/{steamId}`, plus `protection/**`, `chat/plugin`, `market/plugin` now declare `hmacAuth` as the target. During the migration overlap window the legacy `X-API-Key` (`legacyApiKeyAuth`) is still accepted and logged as a deprecation (`authenticatePluginFlexible`).
 
 ### Issuing / rotating signed-plugin credentials
@@ -38,6 +38,8 @@ tsx scripts/issue-plugin-credential.ts revoke <keyId>                 # revoke a
 `npm run db:seed` also issues a dev credential for the seeded server and prints `{ keyId, secret }` once. Rotation supports a zero-downtime overlap window: a new keyId can be issued while the old one stays active until the plugin switches.
 
 UI redesign 2026-10 (`ui-redesign-2026-10.md`): `GET /servers` (ServerSummary, `?deliverable=true`), `GET /servers/directory`, `GET /site/settings`, `PUT /admin/site/settings`, admin clusters/deliveries/audit-logs/market/categories/promotions, extended `/admin/stats` and `/admin/servers`. Fixtures: `fixtures/server-directory.json`, `fixtures/site-settings.json`.
+
+VIP + admin console gaps 2026-10 (`vip-2026-10.md`): `/vip/packages|me|badges|checkout`, VIP payment completion (never IC), Permissions-plugin sync jobs (`permission_grant`/`permission_revoke`, capability `permissions.group.v1`), `/admin/vip/**`, `/admin/plugin-keys/**` (root), `/admin/orders/:id`, `/admin/payments`, extended deliveries/audit/market filters, realtime `vip:updated` / `admin:vip`.
 
 Events (`events/`):
 

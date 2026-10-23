@@ -27,12 +27,14 @@ import cartRoutes from './routes/cart.routes.js';
 import checkoutRoutes from './routes/checkout.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import promotionRoutes from './routes/promotion.routes.js';
+import vipRoutes from './routes/vip.routes.js';
 import { setupSocketIO } from './websocket/index.js';
 import { startDiscordBot, registerCommands, sendToDiscord } from './discord/bot.js';
 import { startDiscordRelaySubscriber } from './discord/relay.js';
 import { getServiceRole, servesPlugin, servesWeb } from './config/serviceRole.js';
 import serverQueryService from './services/serverQuery.service.js';
 import { ledgerReconcileScheduler } from './services/ledgerReconcile.service.js';
+import { vipExpiryScheduler } from './services/vipScheduler.service.js';
 
 dotenv.config();
 
@@ -120,6 +122,7 @@ if (servesWeb(SERVICE_ROLE)) {
   app.use('/api/checkout', checkoutRoutes);
   app.use('/api/payments', paymentRoutes);
   app.use('/api/promotions', promotionRoutes);
+  app.use('/api/vip', vipRoutes); // VIP packages / me / badges / checkout (contracts/vip-2026-10.md)
   app.use('/api/admin', adminRoutes);
   app.use('/api/pdpa', pdpaRoutes);
   app.use('/api/audit', auditRoutes);
@@ -171,11 +174,15 @@ async function startServer() {
       // Ledger reconciliation every 15 min (Redis lock: one replica per window). Emits
       // admin:ledger:mismatch to room admin when cached balances drift from the ledger.
       ledgerReconcileScheduler.start();
+      // VIP expiry every minute (Redis lock: one replica per window). Expires memberships and
+      // queues the Permissions-group removal when nothing else keeps the group.
+      vipExpiryScheduler.start();
       // Release the poller lock on shutdown so the next instance takes over immediately, then
       // re-raise the signal for the default exit (listeners are one-shot).
       for (const signal of ['SIGTERM', 'SIGINT'] as const) {
         process.once(signal, () => {
           ledgerReconcileScheduler.stop();
+          vipExpiryScheduler.stop();
           void serverQueryService.stop().finally(() => process.kill(process.pid, signal));
         });
       }

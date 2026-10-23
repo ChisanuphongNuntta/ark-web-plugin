@@ -4,7 +4,9 @@ import { PaymentIntentStatus, Prisma } from '@prisma/client';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService from './wallet.service.js';
+import vipService, { formatThb, isSellablePrice } from './vip.service.js';
 import { getPaymentProvider } from './payment-provider.service.js';
+import { emitAdminSlipCreated } from '../realtime/emit.js';
 
 const asCents = (value: string | number | Prisma.Decimal) => {
   const text = String(value);
@@ -15,9 +17,81 @@ const asCents = (value: string | number | Prisma.Decimal) => {
 
 const serializeIntent = (intent: any) => ({
   ...intent,
+  kind: intent.vipPackageId ? 'vip' : 'topup',
   amountThb: String(intent.amountThb),
   pointsAmount: intent.pointsAmount.toString(),
 });
+
+export type PaidIntent = {
+  id: string;
+  userId: string;
+  vipPackageId?: string | null;
+  pointsAmount: bigint;
+  metadata?: unknown;
+  provider?: string;
+  amountThb?: unknown;
+};
+
+export type FulfillmentResult =
+  | { kind: 'topup'; points: string }
+  | { kind: 'vip'; membershipId: string; duplicate: boolean };
+
+/**
+ * The ONE completion step shared by every payment path (Stripe webhook, Stripe verify-session,
+ * admin bank-slip approval). Callers flip the intent pending|processing -> completed in the same
+ * transaction, which is what makes completion happen once per intent.
+ *   - VIP intent (vipPackageId set): grant VIP. Never credits IC, whatever pointsAmount says.
+ *   - Top-up intent: credit IC through walletService.creditUser with the caller's ledger key.
+ */
+export async function fulfillPaidIntent(
+  tx: Prisma.TransactionClient,
+  intent: PaidIntent,
+  credit: {
+    idempotencyKey: string;
+    type: string;
+    options: { referenceType?: string; description?: string; createdBy?: string };
+    approvedBy?: string | null;
+  },
+): Promise<FulfillmentResult> {
+  if (intent.vipPackageId) {
+    const granted = await vipService.grantFromPaymentIntent(tx, {
+      id: intent.id,
+      userId: intent.userId,
+      vipPackageId: intent.vipPackageId,
+      metadata: intent.metadata,
+      provider: intent.provider,
+      amountThb: intent.amountThb,
+    }, { approvedBy: credit.approvedBy ?? null });
+    return { kind: 'vip', membershipId: granted.membership.id, duplicate: granted.duplicate };
+  }
+  await walletService.creditUser(
+    intent.userId,
+    intent.pointsAmount,
+    credit.idempotencyKey,
+    credit.type,
+    intent.id,
+    tx,
+    credit.options,
+  );
+  return { kind: 'topup', points: intent.pointsAmount.toString() };
+}
+
+const SLIP_URL_PATTERN = /^(\/(?!\/)[^\s]{0,1023}|https:\/\/[^\s]{1,1016})$/i;
+
+export interface VipSlipInput {
+  slipImageUrl?: unknown;
+  transferBank?: unknown;
+  transferRef?: unknown;
+  notes?: unknown;
+}
+
+function optionalText(value: unknown, max: number, label: string): string | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value !== 'string') throw new AppError(`${label} must be a string`, 400);
+  const trimmed = value.trim();
+  if (trimmed.length > max) throw new AppError(`${label} must be at most ${max} characters`, 400);
+  return trimmed || undefined;
+}
 
 const canonicalJson = (value: any): string => {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
@@ -122,6 +196,180 @@ export class PaymentService {
   }
 
   /**
+   * POST /vip/checkout — a VIP purchase paid with REAL MONEY (contracts/vip-2026-10.md).
+   * Creates a PaymentIntent with vipPackageId, pointsAmount 0 and a snapshot of what is being
+   * bought (duration/group/tier at checkout time). Completion goes through fulfillPaidIntent.
+   *   - stripe: hosted Checkout Session returning to /vip (verify with POST /payments/verify-session)
+   *   - bank_slip: pending until an admin approves the slip (POST /admin/payments/approve/:id)
+   * Idempotent per (user, Idempotency-Key) exactly like POST /payments/intents.
+   */
+  async createVipIntent(userId: string, vipPackageId: string, idempotencyKey: string, providerName: string, slip: VipSlipInput = {}) {
+    if (providerName !== 'stripe' && providerName !== 'bank_slip') {
+      throw new AppError('provider must be stripe or bank_slip', 400);
+    }
+    if (!idempotencyKey?.trim()) throw new AppError('Idempotency-Key header is required', 400);
+    if (idempotencyKey.length > 255) throw new AppError('Idempotency-Key must not exceed 255 characters', 400);
+    if (typeof vipPackageId !== 'string' || !vipPackageId.trim()) throw new AppError('packageId is required', 400);
+
+    const existing = await prisma.paymentIntent.findUnique({
+      where: { userId_idempotencyKey: { userId, idempotencyKey } },
+    });
+    if (existing) {
+      if (existing.vipPackageId !== vipPackageId || existing.provider !== providerName) {
+        throw new AppError('Idempotency key was already used for a different payment', 409);
+      }
+      return { intent: serializeIntent(existing), replayed: true };
+    }
+
+    const pkg = await prisma.vipPackage.findUnique({ where: { id: vipPackageId } });
+    if (!pkg || !pkg.isActive) throw new AppError('VIP package not found', 404);
+    if (!isSellablePrice(pkg.priceThb)) throw new AppError('VIP package is not priced yet', 409);
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { steamId: true } });
+    if (!user?.steamId) {
+      throw new AppError('Link your Steam account before buying VIP (VIP is applied to your Steam ID in game)', 409);
+    }
+
+    const slipImageUrl = optionalText(slip.slipImageUrl, 1024, 'slipImageUrl');
+    const transferRef = optionalText(slip.transferRef, 120, 'transferRef');
+    const transferBank = optionalText(slip.transferBank, 60, 'transferBank');
+    const notes = optionalText(slip.notes, 500, 'notes');
+    if (providerName === 'bank_slip') {
+      if (!slipImageUrl && !transferRef) throw new AppError('slipImageUrl or transferRef is required for bank_slip', 400);
+      if (slipImageUrl && !SLIP_URL_PATTERN.test(slipImageUrl)) throw new AppError('slipImageUrl must be an https:// URL or a /path', 400);
+    }
+
+    const stableKey = `${userId}:${idempotencyKey}`;
+    const reference = `IRIS-VIP-${crypto.createHash('sha256').update(stableKey).digest('hex').slice(0, 28).toUpperCase()}`;
+    const vipSnapshot = {
+      key: pkg.key,
+      name: pkg.name,
+      permissionGroup: pkg.permissionGroup,
+      tierRank: pkg.tierRank,
+      frameStyle: pkg.frameStyle,
+      durationDays: pkg.durationDays ?? null,
+      priceThb: formatThb(pkg.priceThb),
+    };
+
+    let providerIntentId: string | null = null;
+    let paymentUrl: string | null = null;
+    let qrPayload: string | null = null;
+    let expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    if (providerName === 'stripe') {
+      const provider = getPaymentProvider('stripe');
+      const created = await provider.createIntent({
+        idempotencyKey: stableKey,
+        reference,
+        amountThb: String(pkg.priceThb),
+        expiresAt,
+        returnPath: '/vip',
+        productName: `IRIS VIP — ${pkg.name}`,
+      });
+      providerIntentId = created.providerIntentId;
+      paymentUrl = created.paymentUrl;
+      qrPayload = created.qrPayload || null;
+      expiresAt = created.expiresAt || expiresAt;
+    } else {
+      expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      paymentUrl = slipImageUrl ?? null;
+    }
+
+    try {
+      const intent = await prisma.paymentIntent.create({
+        data: {
+          userId,
+          packageId: null,
+          vipPackageId: pkg.id,
+          provider: providerName,
+          providerIntentId,
+          reference,
+          idempotencyKey,
+          amountThb: pkg.priceThb,
+          pointsAmount: 0n,
+          paymentUrl,
+          qrPayload,
+          expiresAt,
+          metadata: {
+            kind: 'vip',
+            vipSnapshot,
+            packageName: pkg.name,
+            ...(providerName === 'bank_slip'
+              ? {
+                  slipImageUrl: slipImageUrl ?? null,
+                  transferBank: transferBank ?? null,
+                  transferRef: transferRef ?? null,
+                  notes: notes ?? '',
+                  submittedAt: new Date().toISOString(),
+                }
+              : {}),
+          },
+        },
+      });
+      if (providerName === 'bank_slip') emitAdminSlipCreated(intent.id);
+      return { intent: serializeIntent(intent), replayed: false };
+    } catch (error: any) {
+      if (error?.code !== 'P2002') throw error;
+      const raced = await prisma.paymentIntent.findUnique({
+        where: { userId_idempotencyKey: { userId, idempotencyKey } },
+      });
+      if (!raced || raced.vipPackageId !== vipPackageId || raced.provider !== providerName) {
+        throw new AppError('Idempotency key conflict', 409);
+      }
+      return { intent: serializeIntent(raced), replayed: true };
+    }
+  }
+
+  /**
+   * POST /payments/slips — a bank-transfer slip for an IC top-up, pending admin approval.
+   * Price, IC amount and package name come ONLY from the server-side PaymentPackage; any
+   * client-sent amountThb / pointsToCredit / packageName is ignored (approval credits
+   * intent.pointsAmount, so a client-chosen value would be a money hole).
+   */
+  async submitTopupSlip(userId: string, packageId: unknown, slip: VipSlipInput = {}) {
+    if (typeof packageId !== 'string' || !packageId.trim()) throw new AppError('packageId is required', 400);
+    const pkg = (await prisma.paymentPackage.findUnique({ where: { id: packageId } }))
+      ?? (await prisma.paymentPackage.findUnique({ where: { slug: packageId } }));
+    if (!pkg || !pkg.isActive) throw new AppError('Payment package not found', 404);
+    if (!isSellablePrice(pkg.priceThb)) throw new AppError('Payment package is not priced', 409);
+
+    const slipImageUrl = optionalText(slip.slipImageUrl, 1024, 'slipImageUrl');
+    const transferRef = optionalText(slip.transferRef, 120, 'transferRef');
+    const transferBank = optionalText(slip.transferBank, 60, 'transferBank');
+    const notes = optionalText(slip.notes, 500, 'notes');
+    if (!slipImageUrl && !transferRef) throw new AppError('slipImageUrl or transferRef is required for bank_slip', 400);
+    if (slipImageUrl && !SLIP_URL_PATTERN.test(slipImageUrl)) throw new AppError('slipImageUrl must be an https:// URL or a /path', 400);
+
+    // reference is unique and server-generated; the payer's transfer reference lives in metadata.
+    const nonce = crypto.randomBytes(12).toString('hex');
+    const reference = `IRIS-SLIP-${crypto.createHash('sha256').update(`${userId}:${nonce}`).digest('hex').slice(0, 26).toUpperCase()}`;
+    const intent = await prisma.paymentIntent.create({
+      data: {
+        userId,
+        packageId: pkg.id,
+        provider: 'bank_slip',
+        reference,
+        idempotencyKey: `slip-${nonce}`,
+        amountThb: pkg.priceThb,
+        pointsAmount: pkg.points + pkg.bonusPoints,
+        status: 'pending',
+        paymentUrl: slipImageUrl ?? null,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        metadata: {
+          kind: 'topup',
+          packageName: pkg.name,
+          transferBank: transferBank ?? null,
+          transferRef: transferRef ?? null,
+          slipImageUrl: slipImageUrl ?? null,
+          notes: notes ?? '',
+          submittedAt: new Date().toISOString(),
+        },
+      },
+      include: { user: true, package: true },
+    });
+    emitAdminSlipCreated(intent.id);
+    return intent;
+  }
+
+  /**
    * Success-page sync for a Stripe Checkout Session. Credits ONLY a PaymentIntent the caller
    * owns (provider 'stripe'), after validating the session the same way the webhook parser
    * does. The credit uses the SAME idempotency key and request shape as the webhook
@@ -160,8 +408,11 @@ export class PaymentService {
       throw new AppError('Invalid Stripe payment details', 400);
     }
 
+    const kind = intent.vipPackageId ? 'vip' : 'topup';
+    // VIP intents never report IC: points is '0' and `kind` tells the client what was granted.
+    const points = kind === 'vip' ? '0' : intent.pointsAmount.toString();
     if (intent.status === PaymentIntentStatus.completed) {
-      return { success: true, alreadyCredited: true, points: intent.pointsAmount.toString(), intentId: intent.id };
+      return { success: true, alreadyCredited: true, kind, points, intentId: intent.id };
     }
     if (intent.status !== PaymentIntentStatus.pending && intent.status !== PaymentIntentStatus.processing) {
       throw new AppError(`Payment intent is ${intent.status}`, 409);
@@ -181,24 +432,20 @@ export class PaymentService {
         },
       });
       if (flipped.count !== 1) return false;
-      await walletService.creditUser(
-        intent.userId,
-        intent.pointsAmount,
-        `payment:${intent.id}:credit`,
-        'payment_topup',
-        intent.id,
-        tx,
+      await fulfillPaidIntent(tx, intent, {
+        idempotencyKey: `payment:${intent.id}:credit`,
+        type: 'payment_topup',
         // Must stay byte-identical to processWebhook's credit so a concurrent webhook posting
         // under the same key replays instead of 409-ing.
-        { referenceType: 'payment_intent' },
-      );
+        options: { referenceType: 'payment_intent' },
+      });
       return true;
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       try {
         const credited = await credit();
-        if (credited) return { success: true, credited: true, points: intent.pointsAmount.toString(), intentId: intent.id };
+        if (credited) return { success: true, credited: kind === 'topup', kind, points, intentId: intent.id };
         break;
       } catch (error) {
         const code = (error as { code?: string }).code;
@@ -212,7 +459,7 @@ export class PaymentService {
 
     const current = await prisma.paymentIntent.findUnique({ where: { id: intent.id } });
     if (current?.status === PaymentIntentStatus.completed) {
-      return { success: true, alreadyCredited: true, points: intent.pointsAmount.toString(), intentId: intent.id };
+      return { success: true, alreadyCredited: true, kind, points, intentId: intent.id };
     }
     throw new AppError(`Payment intent is ${current?.status ?? 'missing'}`, 409);
   }
@@ -336,17 +583,13 @@ export class PaymentService {
       for (let attempt = 1; attempt <= 3; attempt += 1) {
         try {
           await prisma.$transaction(async (tx) => {
-            await walletService.creditUser(
-              intent.userId,
-              intent.pointsAmount,
-              `payment:${intent.id}:credit`,
-              'payment_topup',
-              intent.id,
-              tx,
-              // Replay-safe: the intent is claimed pending -> processing before this and
-              // completed in the same transaction.
-              { referenceType: 'payment_intent' },
-            );
+            // Replay-safe: the intent is claimed pending -> processing before this and
+            // completed in the same transaction. VIP intents grant VIP here instead of IC.
+            await fulfillPaidIntent(tx, intent, {
+              idempotencyKey: `payment:${intent.id}:credit`,
+              type: 'payment_topup',
+              options: { referenceType: 'payment_intent' },
+            });
             await tx.paymentIntent.update({
               where: { id: intent.id },
               data: { status: PaymentIntentStatus.completed, completedAt: new Date() },
@@ -361,6 +604,7 @@ export class PaymentService {
           throw error;
         }
       }
+      if (intent.vipPackageId) return { accepted: true, credited: false, vipGranted: true, kind: 'vip', intentId: intent.id };
       return { accepted: true, credited: true, points: intent.pointsAmount.toString(), intentId: intent.id };
     } catch (error: any) {
       await prisma.paymentWebhookEvent.update({

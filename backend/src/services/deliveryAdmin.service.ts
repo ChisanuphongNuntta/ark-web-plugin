@@ -19,6 +19,7 @@ import { canTransition } from './orderState.js';
 import { paginateQuery } from '../utils/pagination.js';
 import { afterCommit } from '../realtime/afterCommit.js';
 import { emitDeliveryUpdated, emitOrderUpdated } from '../realtime/emit.js';
+import { PERMISSION_DELIVERY_TYPES, PERMISSION_DELIVERY_TYPE_LIST } from './vip.service.js';
 
 export const DELIVERY_JOB_STATUSES = ['pending', 'leased', 'completed', 'failed', 'dead_letter'] as const;
 export type DeliveryJobStatusValue = (typeof DELIVERY_JOB_STATUSES)[number];
@@ -77,9 +78,12 @@ export type RetryDecision =
   | { kind: 'reject'; status: number; message: string };
 
 // Pure guard: may this job be retried, given its order (if any)?
+// `newerPermissionJob`: a VIP permission job is retried only while it is still the newest job
+// for its (user+group, steamId) key; otherwise re-running it could undo a later add/remove.
 export function decideRetry(
   job: { status: string; deliveryType: string },
   order: { status: string } | null | undefined,
+  context: { newerPermissionJob?: boolean } = {},
 ): RetryDecision {
   if ((QUEUED_STATUSES as readonly string[]).includes(job.status)) return { kind: 'already_queued' };
   if (job.status === 'completed') {
@@ -102,12 +106,22 @@ export function decideRetry(
     }
     return { kind: 'retry' };
   }
+  if (PERMISSION_DELIVERY_TYPES.has(job.deliveryType)) {
+    if (context.newerPermissionJob) {
+      return { kind: 'reject', status: 409, message: 'A newer VIP permission job exists for this player; use VIP resync instead' };
+    }
+    return { kind: 'retry' };
+  }
   return { kind: 'reject', status: 409, message: `Unsupported delivery type "${job.deliveryType}"` };
 }
 
 export interface ListDeliveriesQuery {
   status?: DeliveryJobStatusValue;
   serverId?: number;
+  /** Exact deliveryType (order, dino_catalog, dino_marketplace, permission_grant, permission_revoke). */
+  deliveryType?: string;
+  /** Job id / reference id prefix or exact Steam ID. */
+  search?: string;
   page: number;
   pageSize: number;
 }
@@ -117,6 +131,14 @@ class DeliveryAdminService {
     const where: Record<string, unknown> = {};
     if (query.status) where.status = query.status;
     if (query.serverId !== undefined) where.serverId = query.serverId;
+    if (query.deliveryType) where.deliveryType = query.deliveryType;
+    if (query.search) {
+      where.OR = [
+        { id: { startsWith: query.search } },
+        { referenceId: { startsWith: query.search } },
+        { playerSteamId: query.search },
+      ];
+    }
 
     // Count + rows from one snapshot; the served page is clamped to [1, totalPages].
     const { result, pagination } = await paginateQuery(
@@ -147,7 +169,17 @@ class DeliveryAdminService {
         ? await tx.order.findUnique({ where: { id: job.referenceId }, select: { id: true, status: true, userId: true } })
         : null;
 
-      const decision = decideRetry(job, order);
+      const newerPermissionJob = PERMISSION_DELIVERY_TYPES.has(job.deliveryType)
+        ? (await tx.deliveryJob.count({
+            where: {
+              deliveryType: { in: [...PERMISSION_DELIVERY_TYPE_LIST] },
+              referenceId: job.referenceId,
+              playerSteamId: job.playerSteamId,
+              createdAt: { gt: job.createdAt },
+            },
+          })) > 0
+        : false;
+      const decision = decideRetry(job, order, { newerPermissionJob });
       if (decision.kind === 'reject') throw new AppError(decision.message, decision.status);
 
       if (decision.kind === 'retry') {

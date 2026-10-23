@@ -44,6 +44,8 @@ namespace HeartShop
         // caches balances locally.
         void GetWalletBalance(const std::string& SteamId, HttpCallback Callback);
         void GetPendingDeliveries(const std::string& SteamId, HttpCallback Callback);
+        // VIP status (backend/contracts/vip-2026-10.md): GET /player/{steamId}/vip. Read-only.
+        void GetPlayerVip(const std::string& SteamId, HttpCallback Callback);
         void GetCatalog(const std::string& SteamId, const std::string& Search, HttpCallback Callback);
         void CreatePurchaseQuote(
             const std::string& SteamId,
@@ -89,6 +91,8 @@ namespace HeartShop
 
         // Cross-Chat API
         void GetChatMessages(const std::string& Since, HttpCallback Callback);
+        // GET /chat/plugin/config: server chat style + Chat Ranks (groupKey -> tag).
+        void GetChatConfig(HttpCallback Callback);
         void SendChatMessage(const std::string& SteamId, const std::string& PlayerName, const std::string& Content, const std::vector<std::string>& PlayerGroups, HttpCallback Callback);
 
     private:

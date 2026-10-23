@@ -28,14 +28,16 @@ export class StripePaymentProvider implements PaymentProvider {
     const [whole, fraction = ''] = request.amountThb.split('.');
     const cents = BigInt(whole) * 100n + BigInt((fraction + '00').slice(0, 2));
     if (cents < 1n || cents > 99_999_999n) throw new AppError('Payment amount is out of range', 400);
+    // Only fixed same-site return pages; never a caller-supplied URL.
+    const returnPath = request.returnPath === '/vip' ? '/vip' : '/topup';
     const session = await this.stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       client_reference_id: request.reference,
       metadata: { iris_reference: request.reference },
-      line_items: [{ quantity: 1, price_data: { currency: 'thb', unit_amount: Number(cents), product_data: { name: 'IRIS Coin — sandbox top-up' } } }],
-      success_url: `${origin.origin}/topup?checkout=returned&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin.origin}/topup?checkout=cancelled`,
+      line_items: [{ quantity: 1, price_data: { currency: 'thb', unit_amount: Number(cents), product_data: { name: (request.productName || 'IRIS Coin — sandbox top-up').slice(0, 120) } } }],
+      success_url: `${origin.origin}${returnPath}?checkout=returned&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin.origin}${returnPath}?checkout=cancelled`,
       // Stripe defaults to 24 hours; a stable request also makes retries deterministic.
     }, { idempotencyKey: crypto.createHash('sha256').update(request.idempotencyKey).digest('hex') });
     if (session.livemode || !session.url) throw new AppError('Invalid Stripe sandbox session', 502);

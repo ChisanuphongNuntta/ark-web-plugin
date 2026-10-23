@@ -8,6 +8,7 @@ import { AuthRequest } from '../middlewares/auth.js';
 import auditService, { AuditActions, AuditResources } from '../services/audit.service.js';
 import securityService from '../services/security.service.js';
 import { disconnectSessionSockets } from '../realtime/sessionControl.js';
+import vipService from '../services/vip.service.js';
 
 // Proof-of-control validation for account linking.
 // IRIS ID rule: an account is linked ONLY when the caller proves control of the provider
@@ -308,6 +309,7 @@ export class AuthController {
       if (existingUser && existingUser.id !== req.user!.id) {
         throw new AppError('This Steam account is already linked to another user', 400);
       }
+      const previousSteamId = req.user!.steamId ?? null;
 
       // Link the verified Steam identity and atomically claim any deduplicated
       // legacy ArkShop balance. A failed wallet post rolls the identity update
@@ -322,6 +324,8 @@ export class AuthController {
       });
 
       res.clearCookie(STEAM_PROOF_COOKIE, { path: '/api/auth' });
+      // VIP: move the Permissions group to the newly linked Steam ID (best effort, never throws).
+      void vipService.onSteamLinkChanged(user.id, previousSteamId, verifiedSteamId);
 
       res.json({
         success: true,
@@ -361,11 +365,15 @@ export class AuthController {
         throw new AppError('User not found', 404);
       }
 
+      // VIP badge for the navbar avatar frame (contracts/vip-2026-10.md); null = not VIP.
+      const vip = await vipService.badgeForUser(user.id);
+
       // Convert BigInt to string for JSON serialization
       res.json({
         user: {
           ...user,
           pointsBalance: user.pointsBalance.toString(),
+          vip,
         },
       });
     } catch (error) {
@@ -479,6 +487,8 @@ export class AuthController {
         where: { id: req.user!.id },
         data: { steamId: null },
       });
+      // VIP: the unlinked Steam ID loses the Permissions group (best effort, never throws).
+      if (user.steamId) void vipService.onSteamLinkChanged(user.id, user.steamId, null);
       res.json({ success: true, message: 'Steam account unlinked successfully', user: { id: updated.id, steamId: updated.steamId } });
     } catch (error) { next(error); }
   };

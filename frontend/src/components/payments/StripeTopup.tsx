@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Check, Coins, CreditCard, ExternalLink, Loader2, ShieldCheck, Wallet, AlertCircle } from 'lucide-react';
 import { api, authApi } from '@/lib/api';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore, userFromMe } from '@/lib/store';
 import type { PaymentIntent, PaymentPackage } from '@/lib/contracts/types';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
@@ -48,7 +48,7 @@ export function StripeTopup() {
     if (payment.data?.status === 'completed') {
       void syncWalletNow(cache);
       void cache.invalidateQueries({ queryKey: ['user'] });
-      void authApi.getMe().then(({ data }) => { if (data.user) setUser(data.user); }).catch(() => undefined);
+      void authApi.getMe().then(({ data }) => { const next = userFromMe(data); if (next) setUser(next); }).catch(() => undefined);
     }
   }, [payment.data?.status, cache, setUser]);
 

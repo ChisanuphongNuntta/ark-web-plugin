@@ -1,6 +1,9 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { VipAvatar, VipBadgePill } from '@/components/vip/VipAvatar';
+import { useVipBadges } from '@/hooks/useVipBadges';
+import { toVipBadge } from '@/lib/vip';
 import { useParams, useRouter } from 'next/navigation';
 import { dinoMarketApi, authApi } from '@/lib/api';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -127,6 +130,9 @@ export default function DinoDetailPage() {
     queryFn: () => dinoMarketApi.getListingById(params.id as string).then((res) => res.data),
     enabled: !!params.id,
   });
+  const sellerRef = (listingData?.listing?.seller ?? null) as { id?: string; vip?: unknown } | null;
+  const sellerBadges = useVipBadges([sellerRef?.vip === undefined ? sellerRef?.id : null]);
+  const sellerVip = sellerRef?.vip !== undefined ? toVipBadge(sellerRef.vip) : (sellerRef?.id ? sellerBadges.get(sellerRef.id) ?? null : null);
 
   const { data: serverData } = useQuery({
     queryKey: ['dinoDeliveryServers'],
@@ -245,7 +251,8 @@ export default function DinoDetailPage() {
               <div>
                 <p className="text-base font-semibold text-iris-cyan">{listing.species}</p>
                 <p className="text-xs text-iris-muted mt-0.5">
-                  ลงทะเบียนวางขายโดย: <span className="font-bold text-iris-pearl">{listing.seller?.discordUsername || 'UNKNOWN'}</span>
+                  ลงทะเบียนวางขายโดย: <span className="font-bold text-iris-pearl">{listing.seller?.discordUsername || 'UNKNOWN'}</span>{' '}
+                  <VipBadgePill vip={sellerVip} />
                 </p>
               </div>
             </div>
@@ -345,7 +352,11 @@ export default function DinoDetailPage() {
             <div className="rounded-xl border border-white/5 bg-black/40 p-3 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-iris-muted">ผู้เพาะพันธุ์:</span>
-                <span className="font-bold text-iris-cyan">{listing.seller?.discordUsername || 'Verified Breeder'}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <VipAvatar size={24} src={listing.seller?.discordAvatar} name={listing.seller?.discordUsername} vip={sellerVip} showLabel={false} />
+                  <span className="font-bold text-iris-cyan">{listing.seller?.discordUsername || 'Verified Breeder'}</span>
+                  <VipBadgePill vip={sellerVip} />
+                </span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-iris-muted">ระดับความน่าเชื่อถือ:</span>

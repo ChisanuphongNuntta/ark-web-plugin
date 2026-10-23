@@ -11,6 +11,7 @@
  *   servers:status   -> live server status cache (room 'servers')
  *   admin:*          -> admin slip / delivery queues (staff sockets only)
  *   admin:ledger:mismatch -> persistent warning banner on admin pages
+ *   vip:updated      -> navbar/profile VIP frame (auth store) + /vip status + Thai toast
  *   (admin:transaction is consumed by /admin/transactions and the dashboard's
  *    latest-transactions panel directly; it does not trigger the admin:* refetch)
  *
@@ -20,7 +21,8 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ensureSocket, getSocket, onSocketEvent, reauthenticateSocket, useSocketStatus } from '@/lib/socket';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore, userFromMe } from '@/lib/store';
+import { authApi } from '@/lib/api';
 import {
   REALTIME_EVENTS,
   type AdminLedgerMismatchEvent,
@@ -28,10 +30,13 @@ import {
   type DeliveryUpdatedEvent,
   type OrderUpdatedEvent,
   type ServersStatusEvent,
+  type VipUpdatedEvent,
   type WalletUpdatedEvent,
 } from '@/lib/realtime/events';
+import { toVipBadge } from '@/lib/vip';
 import {
   SERVERS_STATUS_KEY,
+  VIP_ME_KEY,
   isAdminOpsQuery,
   isCatalogQuery,
   isLegacyServerListQuery,
@@ -129,6 +134,31 @@ function deliveryToast(event: DeliveryUpdatedEvent) {
   }
 }
 
+function vipToast(event: VipUpdatedEvent) {
+  const key = `vip:${event.membershipId ?? ''}:${event.reason ?? ''}:${event.at ?? event.expiresAt ?? ''}`;
+  switch (event.reason) {
+    case 'purchase':
+    case 'grant':
+    case 'admin_grant':
+      pushToast({ tone: 'success', title: 'เปิดใช้งาน VIP แล้ว', description: 'สิทธิ์ในเกมจะซิงก์เข้าเซิร์ฟเวอร์ภายในไม่กี่นาที', href: '/vip', dedupeKey: key, once: true });
+      break;
+    case 'extend':
+    case 'admin_extend':
+      pushToast({ tone: 'success', title: 'ต่ออายุ VIP แล้ว', href: '/vip', dedupeKey: key, once: true });
+      break;
+    case 'revoke':
+    case 'admin_revoke':
+      pushToast({ tone: 'warning', title: 'สิทธิ์ VIP ถูกยกเลิก', description: 'ติดต่อทีมงานหากมีข้อสงสัย', href: '/vip', dedupeKey: key, once: true });
+      break;
+    case 'expire':
+    case 'expired':
+      pushToast({ tone: 'info', title: 'VIP หมดอายุแล้ว', description: 'ต่ออายุได้ที่หน้า VIP', href: '/vip', dedupeKey: key, once: true });
+      break;
+    default:
+      break;
+  }
+}
+
 function walletToast(event: WalletUpdatedEvent) {
   const balance = `ยอดคงเหลือ ${formatIc(event.balance)} IC`;
   switch (event.reason) {
@@ -192,6 +222,19 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         void queryClient.invalidateQueries({ predicate: isOrderQuery });
         deliveryToast(event);
       }),
+      onSocketEvent<VipUpdatedEvent>(REALTIME_EVENTS.vipUpdated, (event) => {
+        if (!event) return;
+        // The event carries the new badge; null/absent vip means "no longer VIP".
+        if ('vip' in event) useAuthStore.getState().setVip(toVipBadge(event.vip ?? null));
+        else
+          void authApi
+            .getMe()
+            .then(({ data }) => useAuthStore.getState().setVip(userFromMe(data)?.vip ?? null))
+            .catch(() => undefined);
+        void queryClient.invalidateQueries({ queryKey: VIP_ME_KEY });
+        void queryClient.invalidateQueries({ queryKey: ['vip-badges'] });
+        vipToast(event);
+      }),
       onSocketEvent<AdminLedgerMismatchEvent>(REALTIME_EVENTS.adminLedgerMismatch, (event) => {
         useLedgerAlert.getState().report(event);
       }),
@@ -231,6 +274,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     void syncWalletNow(queryClient);
     void queryClient.invalidateQueries({ predicate: isOrderQuery });
     void queryClient.invalidateQueries({ queryKey: SERVERS_STATUS_KEY });
+    void queryClient.invalidateQueries({ queryKey: VIP_ME_KEY });
   }, [connectCount, queryClient]);
 
   // Fallback for the navbar pill if the socket is down: re-read the wallet on

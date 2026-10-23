@@ -26,6 +26,8 @@ router.post('/market/confirm-lock', authenticateSignedPlugin as any, pluginContr
 // Game companion (read-only, server-scoped) — CR-PLUGIN-007 / 008
 router.get('/player/:steamId/wallet', authenticateSignedPlugin as any, pluginController.getPlayerWallet as any);
 router.get('/player/:steamId/pending-deliveries', authenticateSignedPlugin as any, pluginController.getPlayerPendingDeliveries as any);
+// VIP status for the in-game /vip command (cluster-wide; contracts/vip-2026-10.md section 4)
+router.get('/player/:steamId/vip', authenticateSignedPlugin as any, pluginController.getPlayerVip as any);
 router.get('/wallet/events', authenticateSignedPlugin as any, pluginController.getWalletEvents as any);
 
 // --- LEGACY SUITE (CR-PLUGIN-006) ---

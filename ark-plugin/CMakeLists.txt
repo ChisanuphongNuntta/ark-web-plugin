@@ -32,6 +32,10 @@ set(SOURCES
     src/ItemDelivery.h
     src/WalletNotifications.cpp
     src/WalletNotifications.h
+    src/PermissionSync.cpp
+    src/PermissionSync.h
+    src/PermissionsBridge.cpp
+    src/PermissionsBridge.h
     src/Config.cpp
     src/Config.h
     src/Protection.cpp
@@ -194,4 +198,21 @@ if(BUILD_TESTING)
         target_link_options(ItemDeliveryTests PRIVATE /Brepro)
     endif()
     add_test(NAME ItemDeliveryTests COMMAND ItemDeliveryTests)
+
+    add_executable(PermissionSyncTests
+        tests/PermissionSyncTests.cpp
+        src/PermissionSync.cpp
+        src/PermissionSync.h
+        src/DeliveryJournal.cpp
+        src/DeliveryJournal.h
+    )
+    target_include_directories(PermissionSyncTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/json-3.12.0/single_include
+    )
+    if(MSVC)
+        target_compile_options(PermissionSyncTests PRIVATE /utf-8)
+        target_link_options(PermissionSyncTests PRIVATE /Brepro)
+    endif()
+    add_test(NAME PermissionSyncTests COMMAND PermissionSyncTests)
 endif()

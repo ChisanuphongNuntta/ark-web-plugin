@@ -96,6 +96,7 @@ model User {
   promotionRedemptions PromotionRedemption[]
   gamePurchaseQuotes   GamePurchaseQuote[]
   legacyBalanceClaims  LegacyBalanceClaim[]
+  vipMemberships       VipMembership[]
 
   @@map("users")
 }
@@ -141,7 +142,10 @@ model PaymentPackage {
 model PaymentIntent {
   id               String              @id @default(cuid())
   userId           String              @map("user_id")
-  packageId        String              @map("package_id")
+  // IC top-up package. NULL for a VIP purchase (vipPackageId set instead) — VIP 2026-10.
+  packageId        String?             @map("package_id")
+  // VIP purchase (real money, never IC). When set, completion grants VIP and pointsAmount is 0.
+  vipPackageId     String?             @map("vip_package_id")
   provider         String
   providerIntentId String?             @map("provider_intent_id")
   reference        String              @unique
@@ -158,13 +162,16 @@ model PaymentIntent {
   updatedAt        DateTime            @updatedAt @map("updated_at")
 
   user          User                  @relation(fields: [userId], references: [id])
-  package       PaymentPackage        @relation(fields: [packageId], references: [id])
+  package       PaymentPackage?       @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  vipPackage    VipPackage?           @relation(fields: [vipPackageId], references: [id], onDelete: Restrict)
   webhookEvents PaymentWebhookEvent[]
+  vipMembership VipMembership?
 
   @@unique([userId, idempotencyKey])
   @@unique([provider, providerIntentId])
   @@index([userId, createdAt])
   @@index([status, expiresAt])
+  @@index([vipPackageId])
   @@map("payment_intents")
 }
 
@@ -1465,4 +1472,76 @@ model SiteSetting {
   updatedById String?  @map("updated_by_id")
 
   @@map("site_settings")
+}
+
+// ==========================================
+// VIP (2026-10) — sold for real money, enforced in game through the ArkApi Permissions
+// plugin group (cluster-shared MySQL). Contract: backend/contracts/vip-2026-10.md.
+// ==========================================
+
+model VipPackage {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  name            String
+  description     String?
+  // ArkApi Permissions group granted while a membership of this package is effective.
+  permissionGroup String   @default("VIP") @map("permission_group")
+  // Higher = better. The badge shows the best effective tier.
+  tierRank        Int      @default(1) @map("tier_rank")
+  // Frontend avatar frame key, e.g. vip-gold / vip-diamond / vip-emerald.
+  frameStyle      String   @default("vip-gold") @map("frame_style")
+  // Short badge label shown next to avatars ("VIP").
+  badgeLabel      String   @default("VIP") @map("badge_label")
+  priceThb        Decimal  @default(0) @map("price_thb") @db.Decimal(10, 2)
+  // NULL = permanent.
+  durationDays    Int?     @map("duration_days")
+  // Sold only while active AND priceThb > 0. The seed row starts inactive.
+  isActive        Boolean  @default(false) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  memberships    VipMembership[]
+  paymentIntents PaymentIntent[]
+
+  @@index([isActive, sortOrder])
+  @@map("vip_packages")
+}
+
+// One row per grant (purchase / admin / legacy). Repeat purchases of the same package chain:
+// the new row starts at the later of now / the current expiry, so history is never rewritten
+// and one PaymentIntent can grant at most one row (unique paymentIntentId).
+model VipMembership {
+  id              String    @id @default(cuid())
+  userId          String    @map("user_id")
+  packageId       String    @map("package_id")
+  // Snapshot of the package group at grant time.
+  permissionGroup String    @map("permission_group")
+  startsAt        DateTime  @map("starts_at")
+  // NULL = permanent.
+  expiresAt       DateTime? @map("expires_at")
+  // active | expired | revoked ("active" with startsAt in the future = scheduled)
+  status          String    @default("active")
+  // purchase | admin | legacy
+  source          String    @default("purchase")
+  paymentIntentId String?   @unique @map("payment_intent_id")
+  grantedBy       String?   @map("granted_by")
+  revokedAt       DateTime? @map("revoked_at")
+  revokedBy       String?   @map("revoked_by")
+  reason          String?
+  // Permissions-plugin sync of the last job for this row: pending | synced | failed | no_steam
+  syncStatus      String    @default("pending") @map("sync_status")
+  syncedAt        DateTime? @map("synced_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  package       VipPackage     @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  paymentIntent PaymentIntent? @relation(fields: [paymentIntentId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([status, expiresAt])
+  @@index([permissionGroup, status])
+  @@index([packageId, status])
+  @@map("vip_memberships")
 }

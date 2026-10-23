@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
+import vipService, { type VipBadge } from '../services/vip.service.js';
 
 // Platform fee percentage (e.g., 5% = 0.05)
 const PLATFORM_FEE_PERCENT = 0.05;
@@ -20,6 +21,11 @@ const withoutNativeSnapshot = <T extends { cryopodData?: unknown }>(listing: T) 
   const { cryopodData: _snapshot, ...safeListing } = listing;
   return safeListing;
 };
+
+function withSellerVip<T extends { seller?: { id: string } | null }>(listing: T, badges: Map<string, VipBadge>): T {
+  if (!listing.seller) return listing;
+  return { ...listing, seller: { ...listing.seller, vip: badges.get(listing.seller.id) ?? null } };
+}
 
 export class DinoMarketController {
   // Get all listings (public)
@@ -98,8 +104,10 @@ export class DinoMarketController {
         prisma.dinoListing.count({ where }),
       ]);
 
+      // Seller VIP frame (contracts/vip-2026-10.md): seller.vip = { tierRank, frameStyle, label } | null.
+      const sellerBadges = await vipService.badgesForUserIds(listings.map((listing: any) => listing.seller?.id).filter(Boolean));
       res.json({
-        listings: listings.map(withoutNativeSnapshot),
+        listings: listings.map((listing: any) => withSellerVip(withoutNativeSnapshot(listing), sellerBadges)),
         pagination: {
           page: parseInt(page as string),
           limit: parseInt(limit as string),
@@ -134,7 +142,8 @@ export class DinoMarketController {
         return res.status(404).json({ error: 'Listing not found' });
       }
 
-      res.json({ listing: withoutNativeSnapshot(listing) });
+      const sellerBadges = await vipService.badgesForUserIds(listing.seller?.id ? [listing.seller.id] : []);
+      res.json({ listing: withSellerVip(withoutNativeSnapshot(listing), sellerBadges) });
     } catch (error) {
       next(error);
     }

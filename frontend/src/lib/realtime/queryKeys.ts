@@ -79,8 +79,12 @@ export function isLegacyServerListQuery(query: Query): boolean {
 
 export function isAdminOpsQuery(query: Query): boolean {
   const r = String(root(query));
-  return r.startsWith('admin') && /(topup|slip|payment|deliver|stats|dashboard|order)/i.test(r);
+  return r.startsWith('admin') && /(topup|slip|payment|deliver|stats|dashboard|order|vip|market|audit)/i.test(r);
 }
+
+/** Player VIP caches (GET /vip/me, /vip/packages) refreshed by 'vip:updated'. */
+export const VIP_ME_KEY = ['vip-me'] as const;
+export const VIP_PACKAGES_KEY = ['vip-packages'] as const;
 
 /**
  * Self-healing defaults: if the socket drops, these caches still refresh on

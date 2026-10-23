@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import { PrismaClient } from '@prisma/client';
 import type { AuthenticatedSocket } from './index.js';
 import { sendToDiscord } from '../discord/bot.js';
+import vipService from '../services/vip.service.js';
 
 const prisma = new PrismaClient();
 
@@ -59,9 +60,11 @@ export function chatHandler(io: Server, socket: AuthenticatedSocket) {
         },
       });
 
-      // Add serverName to each message
+      // Add serverName (and the sender's VIP badge) to each message
+      const badgeOf = await vipService.chatBadgeResolver(messages);
       const messagesWithServerName = messages.reverse().map(msg => ({
         ...msg,
+        vip: badgeOf(msg),
         serverName: msg.server?.name || null,
         server: undefined, // Remove server relation from response
       }));
@@ -141,6 +144,14 @@ export function chatHandler(io: Server, socket: AuthenticatedSocket) {
       },
     });
 
+    // Sender's VIP badge (avatar frame in the web chat). Never fails the send.
+    let vip: Awaited<ReturnType<typeof vipService.badgeForUser>> = null;
+    try {
+      vip = await vipService.badgeForUser(socket.userId);
+    } catch (error) {
+      console.error('VIP badge lookup for chat failed:', error);
+    }
+
     // Broadcast to appropriate room(s)
     io.to(roomFor(serverId)).emit('chat:message', {
       id: message.id,
@@ -151,6 +162,7 @@ export function chatHandler(io: Server, socket: AuthenticatedSocket) {
       senderId: message.senderId,
       senderName: message.senderName,
       senderAvatar: message.senderAvatar,
+      vip,
       content: message.content,
       createdAt: message.createdAt,
     });

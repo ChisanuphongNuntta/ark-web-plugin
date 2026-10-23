@@ -168,7 +168,11 @@ queries.
                            referenceType; referenceId; createdAt }                       // every ledger posting
 'admin:ledger:mismatch'  { at; checkedAccounts; mismatchCount; legacyPointsMismatchCount;
                            unbalancedTransactionCount; sample[] }                       // scheduled reconcile drift
+'admin:vip'              { action; userId|null; membershipId|null; status?; at }        // VIP change (vip-2026-10.md §6)
 ```
+
+User room addition (VIP 2026-10): `'vip:updated' -> user:<id> { vip: VipBadge|null; expiresAt; reason; at }`
+— see `contracts/vip-2026-10.md` §6.
 
 `admin:transaction` is emitted from `walletService.post` only (one place), after the enclosing
 transaction commits, exactly once per newly posted ledger transaction (idempotent replays and

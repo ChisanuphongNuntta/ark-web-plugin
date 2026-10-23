@@ -102,6 +102,23 @@ namespace HeartShop
                 m_DeferWhileCarried = Delivery.value("DeferWhileCarried", true);
             }
 
+            m_PermissionAllowedGroups.clear();
+            const auto Permissions = Config.value("Permissions", nlohmann::json::object());
+            if (Permissions.is_object() && Permissions.contains("AllowedGroups") &&
+                Permissions["AllowedGroups"].is_array())
+            {
+                for (const auto& Group : Permissions["AllowedGroups"])
+                {
+                    if (Group.is_string() && !Group.get<std::string>().empty())
+                    {
+                        m_PermissionAllowedGroups.push_back(Group.get<std::string>());
+                    }
+                }
+            }
+            const auto Vip = Config.value("Vip", nlohmann::json::object());
+            m_VipCommandEnabled = Vip.is_object() ? Vip.value("CommandEnabled", true) : true;
+            m_VipChatRankPrefix = Vip.is_object() ? Vip.value("ChatRankPrefix", true) : true;
+
             Log::GetLog()->info("Config loaded successfully");
             Log::GetLog()->info("  API URL: {}", m_ApiUrl);
             Log::GetLog()->info("  Server ID: {}", m_ServerId);

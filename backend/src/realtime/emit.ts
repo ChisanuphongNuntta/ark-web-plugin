@@ -8,6 +8,8 @@ import {
   type AdminLedgerMismatchEvent,
   type AdminTransactionEvent,
   type AdminSlipCreatedEvent,
+  type AdminVipEvent,
+  type VipUpdatedEvent,
   type CatalogUpdatedEvent,
   type DeliveryUpdatedEvent,
   type OrderUpdatedEvent,
@@ -208,4 +210,14 @@ export async function emitAdminTransaction(posted: AdminTransactionPosted): Prom
 
 export function emitAdminLedgerMismatch(payload: AdminLedgerMismatchEvent): void {
   emitTo(RealtimeRooms.admin, RealtimeEvents.adminLedgerMismatch, payload);
+}
+
+/** vip:updated -> user:<id> (contracts/vip-2026-10.md). Payload is built by the caller. */
+export function emitVipUpdated(userId: string, payload: Omit<VipUpdatedEvent, 'at'>): void {
+  emitTo(RealtimeRooms.user(userId), RealtimeEvents.vipUpdated, { ...payload, at: now() } satisfies VipUpdatedEvent);
+}
+
+/** admin:vip -> room admin. Ids only; admins refetch the list/detail. */
+export function emitAdminVip(payload: Omit<AdminVipEvent, 'at'>): void {
+  emitTo(RealtimeRooms.admin, RealtimeEvents.adminVip, { ...payload, at: now() } satisfies AdminVipEvent);
 }

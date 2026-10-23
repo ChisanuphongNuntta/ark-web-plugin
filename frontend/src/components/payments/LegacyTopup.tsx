@@ -236,7 +236,9 @@ export function LegacyTopupPage() {
         pointsToCredit: totalCoinsToReceive,
         transferBank: selectedBank,
         transferRef: transferRef || generateTransferRef(),
-        slipImageUrl: slipPreviewUrl || '/images/mock/slips/sample-slip-01.svg',
+        // A local blob: preview is not reachable by the admin and is rejected by the server
+        // (https:// or /path only); the transfer reference identifies the payment instead.
+        slipImageUrl: slipPreviewUrl && !slipPreviewUrl.startsWith('blob:') ? slipPreviewUrl : undefined,
       });
 
       void syncWalletNow(queryClient);

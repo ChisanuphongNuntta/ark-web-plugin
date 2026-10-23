@@ -8,6 +8,7 @@ import {
   ChevronDown,
   CircleUserRound,
   Coins,
+  Crown,
   LogOut,
   Menu,
   Search,
@@ -19,6 +20,8 @@ import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authApi } from '@/lib/api';
 import { useAuthStore, useCartStore } from '@/lib/store';
+import { VipAvatar } from '@/components/vip/VipAvatar';
+import { useVipBadges } from '@/hooks/useVipBadges';
 
 const primaryLinks = [
   { href: '/shop', label: 'ร้านค้า', caption: 'Official Store' },
@@ -31,6 +34,7 @@ const primaryLinks = [
 const exploreLinks = [
   { href: '/ranking', label: 'อันดับผู้เล่น', caption: 'Leaderboards' },
   { href: '/packs', label: 'แพ็กเกจพิเศษ', caption: 'Curated Bundles' },
+  { href: '/vip', label: 'สมาชิก VIP', caption: 'VIP Membership' },
   { href: '/orders', label: 'ประวัติคำสั่งซื้อ', caption: 'Order Tracking' },
   { href: '/support', label: 'ศูนย์ช่วยเหลือ', caption: 'Support & FAQ' },
 ];
@@ -74,6 +78,9 @@ export function Navbar() {
   const { user, logout } = useAuthStore();
   const cartCount = useCartStore((state) => state.items.reduce((total, item) => total + item.quantity, 0));
   const setDrawerOpen = useCartStore((state) => state.setDrawerOpen);
+  // VIP frame: from /auth/me (store), else the public badge lookup (backend may not embed it in /me).
+  const fetchedBadges = useVipBadges([user?.vip === undefined ? user?.id : null]);
+  const vipBadge = user ? (user.vip ?? fetchedBadges.get(user.id) ?? null) : null;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -349,7 +356,18 @@ export function Navbar() {
                     aria-expanded={accountOpen}
                     aria-haspopup="menu"
                   >
-                    <CircleUserRound className="h-5 w-5 text-cyan-300" />
+                    {user.discordAvatar || vipBadge ? (
+                      <VipAvatar
+                        size={28}
+                        src={user.discordAvatar}
+                        name={user.discordUsername}
+                        vip={vipBadge}
+                        showLabel={false}
+                        fallback={<CircleUserRound className="h-4 w-4 text-cyan-300" />}
+                      />
+                    ) : (
+                      <CircleUserRound className="h-5 w-5 text-cyan-300" />
+                    )}
                     <span className="hidden max-w-24 truncate text-xs font-semibold sm:block">
                       {user.discordUsername || 'บัญชีของฉัน'}
                     </span>
@@ -368,6 +386,11 @@ export function Navbar() {
                         <div className="border-b border-white/[0.08] px-3.5 py-3">
                           <p className="text-[10px] font-bold uppercase tracking-wider text-cyan-400/70">IRIS ID</p>
                           <p className="truncate text-sm font-extrabold text-white">{user.discordUsername || user.discordId}</p>
+                          {vipBadge && (
+                            <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-iris-gold">
+                              <Crown className="h-3.5 w-3.5" aria-hidden="true" /> สมาชิก {vipBadge.label}
+                            </p>
+                          )}
                         </div>
                         <Link
                           href="/profile"
@@ -384,6 +407,14 @@ export function Navbar() {
                           className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-cyan-500/15 hover:text-white"
                         >
                           <ShoppingBag className="h-4 w-4 text-cyan-300" /> ประวัติคำสั่งซื้อ
+                        </Link>
+                        <Link
+                          href="/vip"
+                          onClick={() => setAccountOpen(false)}
+                          role="menuitem"
+                          className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-cyan-500/15 hover:text-white"
+                        >
+                          <Crown className="h-4 w-4 text-cyan-300" /> {vipBadge ? 'สถานะ VIP' : 'สมัคร VIP'}
                         </Link>
                         {user.role && user.role !== 'user' ? (
                           <Link

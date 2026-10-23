@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 
 import { getProductImageUrl } from '@/lib/productVisuals';
+import { VipBadgePill } from '@/components/vip/VipAvatar';
+import { useVipBadges } from '@/hooks/useVipBadges';
+import { toVipBadge, type VipBadge } from '@/lib/vip';
 
 // Gender icons
 const GenderIcon = ({ gender }: { gender: string }) => {
@@ -29,7 +32,7 @@ const GenderIcon = ({ gender }: { gender: string }) => {
 };
 
 // Dino Card Component
-function DinoCard({ listing }: { listing: any }) {
+function DinoCard({ listing, sellerVip }: { listing: any; sellerVip?: VipBadge | null }) {
   const imageUrl = getProductImageUrl({ name: listing.species || listing.dinoName || 'Dinosaur', imageUrl: listing.imageUrl });
 
   return (
@@ -82,8 +85,11 @@ function DinoCard({ listing }: { listing: any }) {
 
         {/* Footer */}
         <div className="p-4 border-t border-slate-700/30 flex items-center justify-between bg-black/15">
-          <span className="text-xs text-iris-muted font-medium truncate max-w-[110px]">
-            {listing.seller?.discordUsername || 'UNKNOWN'}
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="text-xs text-iris-muted font-medium truncate max-w-[110px]">
+              {listing.seller?.discordUsername || 'UNKNOWN'}
+            </span>
+            <VipBadgePill vip={sellerVip} />
           </span>
           <div className="text-right flex items-center gap-1">
             <span className="text-base font-bold text-iris-gold font-mono tabular-nums">
@@ -150,6 +156,12 @@ function MarketplaceContent() {
         limit: 12,
       }).then((res) => res.data),
   });
+  // P2P seller VIP badge (public lookup; the listing may also carry seller.vip).
+  const sellerBadges = useVipBadges(
+    ((listingsData?.listings ?? []) as Array<{ seller?: { id?: string; vip?: unknown } }>)
+      .filter((l) => l.seller?.vip === undefined)
+      .map((l) => l.seller?.id),
+  );
 
   const { data: speciesData } = useQuery({
     queryKey: ['dinoSpecies'],
@@ -329,7 +341,11 @@ function MarketplaceContent() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
           {listingsData.listings.map((listing: any) => (
-            <DinoCard key={listing.id} listing={listing} />
+            <DinoCard
+              key={listing.id}
+              listing={listing}
+              sellerVip={toVipBadge(listing.seller?.vip) ?? sellerBadges.get(listing.seller?.id) ?? null}
+            />
           ))}
         </div>
       )}

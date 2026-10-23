@@ -1,6 +1,7 @@
 #include "HttpClient.h"
 #include "CatalogDino.h"
 #include "ItemDelivery.h"
+#include "PermissionSync.h"
 #include "GameThreadDispatcher.h"
 #include "RequestSigning.h"
 #include <Logger/Logger.h>
@@ -169,6 +170,14 @@ namespace
         {
             Body["capabilities"].push_back(CatalogDino::CryopodCapability);
         }
+        // Only while the ArkApi Permissions plugin is loaded on this server and its
+        // group API resolved (PermissionsBridge::Refresh runs before each heartbeat).
+        // The backend routes permission_grant / permission_revoke jobs to servers
+        // advertising it; they apply cluster-wide through the shared Permissions DB.
+        if (PermissionSync::IsBridgeAvailable())
+        {
+            Body["capabilities"].push_back(PermissionSync::Capability);
+        }
         // Requests are admitted or rejected immediately; there is deliberately
         // no in-memory mutation queue that could be lost on plugin shutdown.
         Body["queueDepth"] = 0;
@@ -203,6 +212,11 @@ namespace
     void HttpClient::GetPendingDeliveries(const std::string& SteamId, HttpCallback Callback)
     {
         DoGet("/player/" + SteamId + "/pending-deliveries", Callback);
+    }
+
+    void HttpClient::GetPlayerVip(const std::string& SteamId, HttpCallback Callback)
+    {
+        DoGet("/player/" + UrlEncode(SteamId) + "/vip", Callback);
     }
 
     void HttpClient::GetCatalog(const std::string& SteamId, const std::string& Search, HttpCallback Callback)
@@ -340,6 +354,11 @@ namespace
             Endpoint += "?since=" + Since;
         }
         DoGet(Endpoint, Callback);
+    }
+
+    void HttpClient::GetChatConfig(HttpCallback Callback)
+    {
+        DoGet("/chat/plugin/config", Callback);
     }
 
     void HttpClient::SendChatMessage(const std::string& SteamId, const std::string& PlayerName, const std::string& Content, const std::vector<std::string>& PlayerGroups, HttpCallback Callback)

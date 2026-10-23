@@ -129,9 +129,11 @@ test('safeAdminHref / resolveAdminLink', () => {
   assert.equal(m.resolveAdminLink('/admin?tab=slips&intent=pi_1'), '/admin?tab=slips&intent=pi_1');
   // Backend links for order / checkout / quote / listing / delivery (ledgerTypes.referenceLinkFor)
   assert.equal(m.resolveAdminLink('/admin/transactions?q=ord_9'), '/admin/transactions?q=ord_9');
+  // Console pages added 2026-10-23 (orders, market, …): ?search= becomes the kit's ?q=
+  assert.equal(m.resolveAdminLink('/admin/orders?search=ord_9'), '/admin/orders?q=ord_9');
+  assert.equal(m.resolveAdminLink('/admin/market?listing=l1'), '/admin/market?listing=l1');
   // Routes this frontend does not have are not linked
-  assert.equal(m.resolveAdminLink('/admin/orders?search=ord_9'), null);
-  assert.equal(m.resolveAdminLink('/admin/market?listing=l1'), null);
+  assert.equal(m.resolveAdminLink('/admin/quotes?search=q1'), null);
 });
 
 test('redactSecrets drops secret-looking keys at any depth', () => {

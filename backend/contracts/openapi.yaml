@@ -529,6 +529,56 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /plugin/player/{steamId}/vip:
+    get:
+      operationId: getPlayerVip
+      tags: [Plugin]
+      description: >-
+        VIP status for the in-game /vip command (vip-2026-10.md section 4). Cluster-wide (NOT
+        server-scoped), read-only, `Cache-Control: no-store`. Unknown / unlinked Steam IDs answer
+        200 with linked=false. Signed with `hmacAuth`.
+      security: [{ hmacAuth: [] }]
+      parameters:
+        - { in: path, name: steamId, required: true, schema: { type: string, pattern: '^[0-9]{17}$' } }
+      responses:
+        '200':
+          description: VIP status.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [linked, steamLinked, isVip, vip, active, groups]
+                properties:
+                  linked: { type: boolean }
+                  steamLinked: { type: boolean }
+                  isVip: { type: boolean }
+                  vip:
+                    nullable: true
+                    type: object
+                    properties:
+                      tierRank: { type: integer }
+                      frameStyle: { type: string }
+                      label: { type: string }
+                  active:
+                    nullable: true
+                    type: object
+                    properties:
+                      state: { type: string, enum: [active] }
+                      packageName: { type: string, nullable: true }
+                      label: { type: string }
+                      tierRank: { type: integer }
+                      permissionGroup: { type: string }
+                      expiresAt: { type: string, format: date-time, nullable: true }
+                  groups:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        group: { type: string }
+                        expiresAt: { type: string, format: date-time, nullable: true }
+        '400': { description: steamId is not a SteamID64. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /plugin/wallet/events:
     get:
       operationId: getWalletEvents

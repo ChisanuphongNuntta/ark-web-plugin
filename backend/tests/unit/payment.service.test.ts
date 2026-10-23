@@ -161,3 +161,45 @@ describe('Sandbox payments gate', () => {
     expect(sandboxPaymentsAllowedFor({ id: 'r', role: 'root' } as any, {} as NodeJS.ProcessEnv)).toBe(false);
   });
 });
+
+describe('bank slip top-up submission (server-priced)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    db.paymentPackage = { findMany: vi.fn(), findUnique: vi.fn() };
+    db.paymentIntent = { findUnique: vi.fn(), create: vi.fn(async ({ data }: any) => ({ id: 'pi-slip', createdAt: new Date(), ...data })), update: vi.fn(), updateMany: vi.fn() };
+  });
+
+  it('takes amount, IC and name from the package and ignores client-sent values', async () => {
+    db.paymentPackage.findUnique.mockResolvedValueOnce(paymentPackage);
+    const { PaymentController } = await import('../../src/controllers/payment.controller.js');
+    const res: any = { status: vi.fn(() => res), json: vi.fn() };
+    const next = vi.fn();
+    await new PaymentController().submitSlip({
+      user: { id: 'u1' },
+      body: { packageId: 'pkg-100', amountThb: 35, pointsToCredit: 10_000_000, packageName: 'Starter Pack', transferRef: 'KB-1' },
+    } as any, res, next);
+    expect(next).not.toHaveBeenCalled();
+    const data = db.paymentIntent.create.mock.calls[0][0].data;
+    expect(data.pointsAmount).toBe(110n);
+    expect(String(data.amountThb)).toBe('35.00');
+    expect(data.packageId).toBe('pkg-100');
+    expect(data.metadata.packageName).toBe('100 Iris Coin');
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it('404s an unknown or inactive package instead of falling back', async () => {
+    db.paymentPackage.findUnique.mockResolvedValue(null);
+    await expect(paymentService.submitTopupSlip('u1', 'pkg-4', { transferRef: 'x' })).rejects.toMatchObject({ statusCode: 404 });
+    db.paymentPackage.findUnique.mockResolvedValue({ ...paymentPackage, isActive: false });
+    await expect(paymentService.submitTopupSlip('u1', 'pkg-100', { transferRef: 'x' })).rejects.toMatchObject({ statusCode: 404 });
+    expect(db.paymentIntent.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects non https / non /path slip URLs', async () => {
+    db.paymentPackage.findUnique.mockResolvedValue(paymentPackage);
+    for (const url of ['javascript:alert(1)', 'blob:http://x/1', '//evil.example/a.png', 'http://plain.example/a.png']) {
+      await expect(paymentService.submitTopupSlip('u1', 'pkg-100', { slipImageUrl: url })).rejects.toMatchObject({ statusCode: 400 });
+    }
+    expect(db.paymentIntent.create).not.toHaveBeenCalled();
+  });
+});

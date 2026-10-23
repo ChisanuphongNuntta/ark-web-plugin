@@ -570,7 +570,9 @@ export const paymentApi = {
     );
   },
 
-  /** POST /payments/slips -> Submit bank transfer slip for admin approval */
+  /** POST /payments/slips -> Submit bank transfer slip for admin approval.
+   *  The server prices the slip from packageId only; packageName/amountThb/pointsToCredit
+   *  are ignored by the backend (display/fixture use only). */
   submitSlip: (
     payload: {
       packageId: string;

@@ -18,6 +18,8 @@ export const RealtimeEvents = {
   adminDeliveryFailed: 'admin:delivery:failed',
   adminTransaction: 'admin:transaction',
   adminLedgerMismatch: 'admin:ledger:mismatch',
+  vipUpdated: 'vip:updated',
+  adminVip: 'admin:vip',
 } as const;
 
 // Client -> server
@@ -109,6 +111,33 @@ export interface AdminTransactionEvent {
   referenceType: string | null;
   referenceId: string | null;
   createdAt: string;
+}
+
+/** Public VIP badge (contracts/vip-2026-10.md). */
+export interface VipBadgePayload {
+  tierRank: number;
+  frameStyle: string;
+  label: string;
+}
+
+/** vip:updated -> user:<id>. The user's VIP state changed (purchase, admin grant/extend/revoke, expiry). */
+export interface VipUpdatedEvent {
+  /** Current badge, null when the user no longer holds VIP. */
+  vip: VipBadgePayload | null;
+  /** Latest expiry over the user's effective VIP rows; null = permanent or not VIP (see vip). */
+  expiresAt: string | null;
+  reason: 'purchase' | 'admin_grant' | 'admin_extend' | 'admin_revoke' | 'expired' | 'sync' | (string & {});
+  at: string;
+}
+
+/** admin:vip -> room admin. Any VIP membership / permission-sync change. */
+export interface AdminVipEvent {
+  action: 'granted' | 'extended' | 'revoked' | 'expired' | 'sync' | 'resync' | 'package' | (string & {});
+  userId: string | null;
+  membershipId: string | null;
+  /** For action=sync: synced | failed. */
+  status?: string | null;
+  at: string;
 }
 
 /** Scheduled reconciliation found drift between cached balances and the ledger. */

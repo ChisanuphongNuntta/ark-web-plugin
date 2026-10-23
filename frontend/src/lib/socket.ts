@@ -44,6 +44,8 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderAvatar?: string | null;
+  /** VIP badge of the sender when the backend includes it (contracts/vip-2026-10.md). */
+  vip?: { tierRank?: number; frameStyle?: string; label?: string } | null;
   content: string;
   createdAt: string;
 }

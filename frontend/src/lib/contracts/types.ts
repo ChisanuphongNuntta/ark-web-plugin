@@ -407,6 +407,9 @@ export interface CreatePaymentIntentResponse {
 
 export interface SlipTopupSubmission {
   id: string;
+  /** 'vip' slips grant VIP on approval and never credit IC (contracts/vip-2026-10.md). */
+  kind?: 'topup' | 'vip';
+  vipPackageId?: string | null;
   userId: string;
   userName: string;
   userDiscordId?: string;

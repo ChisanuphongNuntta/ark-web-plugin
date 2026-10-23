@@ -6,7 +6,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '@/lib/api';
 import { walletContractApi } from '@/lib/contracts/client';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import {
   User,
   Coins,
@@ -26,6 +25,9 @@ import ProtectionStatus from '@/components/ProtectionStatus';
 import { WalletPanel } from '@/components/account/WalletPanel';
 import { LinkedIdentities } from '@/components/account/LinkedIdentities';
 import { DeviceSessions } from '@/components/account/DeviceSessions';
+import { VipAvatar, VipBadgePill } from '@/components/vip/VipAvatar';
+import { vipApi } from '@/lib/vipApi';
+import { VIP_ME_KEY } from '@/lib/realtime/queryKeys';
 
 type ProfileTab = 'console' | 'wallet' | 'identity';
 
@@ -39,6 +41,15 @@ function ProfileContent() {
   const [activeTab, setActiveTab] = React.useState<ProfileTab>(() =>
     linkSteamRequested ? 'identity' : 'console'
   );
+  // VIP frame: /vip/me is the source of truth (refreshed by 'vip:updated'); the store copy covers the first paint.
+  const { data: vipMe } = useQuery({
+    queryKey: [...VIP_ME_KEY],
+    queryFn: ({ signal }) => vipApi.getMe(signal),
+    enabled: !!user,
+    staleTime: 15_000,
+    retry: false,
+  });
+  const vipBadge = vipMe ? vipMe.vip : (user?.vip ?? null);
   const [claimMessage, setClaimMessage] = React.useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: profileData } = useQuery({
@@ -170,23 +181,27 @@ function ProfileContent() {
           <GlassCard variant="prism" hasLattice className="p-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-5">
-                {user.discordAvatar ? (
-                  <div className="relative h-20 w-20 rounded-full border-2 border-iris-cyan/30 overflow-hidden shadow-lg">
-                    <Image src={user.discordAvatar} alt={user.discordUsername || 'User Avatar'} width={80} height={80} />
-                    <div className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-iris-cyan text-iris-ink font-mono font-black text-[10px] flex items-center justify-center border border-iris-ink">
+                <div className="relative">
+                  <VipAvatar
+                    size={80}
+                    src={user.discordAvatar}
+                    name={user.discordUsername}
+                    vip={vipBadge}
+                    plainClassName="border-2 border-iris-cyan/30 shadow-lg"
+                    fallback={<span className="text-xl font-bold text-iris-cyan">{userLevel}</span>}
+                  />
+                  {user.discordAvatar && (
+                    <div className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border border-iris-ink bg-iris-cyan font-mono text-[10px] font-black text-iris-ink">
                       {userLevel}
                     </div>
-                  </div>
-                ) : (
-                  <div className="h-20 w-20 rounded-full bg-black/40 border-2 border-iris-cyan/30 flex items-center justify-center text-iris-cyan font-bold text-xl">
-                    {userLevel}
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <div className="space-y-1 text-left">
                   <h2 className="text-xl font-extrabold text-iris-pearl flex items-center gap-2">
                     {user.discordUsername}
                     <Badge variant="cyan">Survivor</Badge>
+                    <VipBadgePill vip={vipBadge} />
                   </h2>
                   <p className="font-mono text-xs text-iris-muted">
                     Discord ID: <span className="text-iris-pearl/80">{user.discordId}</span>

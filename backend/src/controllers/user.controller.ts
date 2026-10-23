@@ -4,6 +4,7 @@ import prisma from '../config/database.js';
 import { AuthRequest } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
+import vipService from '../services/vip.service.js';
 
 export class UserController {
   // Get user profile
@@ -25,10 +26,13 @@ export class UserController {
         throw new AppError('User not found', 404);
       }
 
+      const vip = await vipService.badgeForUser(user.id);
+
       // Convert BigInt values for JSON serialization
       res.json({
         user: {
           ...user,
+          vip,
           pointsBalance: user.pointsBalance.toString(),
           totalSpent: user.totalSpent.toString(),
           playerStats: user.playerStats.map((stat) => ({

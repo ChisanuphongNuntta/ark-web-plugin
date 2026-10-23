@@ -2,6 +2,10 @@ import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService from './wallet.service.js';
 import { ledgerTypeLabelEn } from './ledgerTypes.js';
+import { PERMISSION_DELIVERY_TYPE_LIST } from './vip.service.js';
+
+// Deliveries that are not items for the player (VIP Permissions-group sync).
+const NON_PLAYER_DELIVERY_TYPES = [...PERMISSION_DELIVERY_TYPE_LIST];
 
 type WalletEventCursor = { postedAt: string; id: string };
 
@@ -47,7 +51,8 @@ export class PluginCompanionService {
 
     const [orderCount, jobCount] = await Promise.all([
       prisma.order.count({ where: { userId: user.id, serverId } }),
-      prisma.deliveryJob.count({ where: { playerSteamId: steamId, serverId } }),
+      // VIP permission jobs run on ANY capable server, so they never associate a player with it.
+      prisma.deliveryJob.count({ where: { playerSteamId: steamId, serverId, deliveryType: { notIn: NON_PLAYER_DELIVERY_TYPES } } }),
     ]);
     if (orderCount === 0 && jobCount === 0) {
       throw new AppError('Player is not associated with this server', 403);
@@ -72,6 +77,7 @@ export class PluginCompanionService {
         serverId,
         playerSteamId: steamId,
         status: { in: ['pending', 'leased', 'failed'] },
+        deliveryType: { notIn: NON_PLAYER_DELIVERY_TYPES },
       },
     });
     return { pending };
@@ -93,7 +99,7 @@ export class PluginCompanionService {
     // Players associated with this server (have at least one delivery job there). The steamId
     // set bounds which users' ledger entries this server is allowed to observe.
     const serverPlayers = await prisma.deliveryJob.findMany({
-      where: { serverId },
+      where: { serverId, deliveryType: { notIn: NON_PLAYER_DELIVERY_TYPES } },
       select: { playerSteamId: true },
       distinct: ['playerSteamId'],
     });
