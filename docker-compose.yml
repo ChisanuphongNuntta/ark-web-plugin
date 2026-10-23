@@ -24,7 +24,7 @@ services:
   # REVERSE PROXY - Nginx (Production only)
   # ===========================================
   nginx:
-    image: nginx:1.28-alpine # Stable version
+    image: nginx:1.30.6-alpine # stable branch; 1.28 is legacy with 22 open 2026 CVEs
     container_name: heartshop-nginx
     restart: unless-stopped
     profiles: [ "prod" ]

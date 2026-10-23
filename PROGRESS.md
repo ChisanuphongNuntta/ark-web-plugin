@@ -13,6 +13,14 @@
   - Admin rows `balanceAfter` fallback ordered by `postedAt`. CSV export uses keyset pagination with a 5s settle snapshot and adds a truncation marker row. Reconcile logs Redis-lock skips and, after 2 windows, runs without the lock (audit `ledger_reconcile_degraded`).
 - Verified: backend `tsc` + `vitest run tests/unit` (561 tests), frontend `tsc` + `eslint` (0 errors), `heart-plugin-backend:tx-check` and `heart-plugin-frontend:tx-check` Docker builds. Not deployed and no containers restarted.
 
+## Ops — 2026-10-23
+
+- nginx upgraded from 1.28.2 to 1.30.6 (`docker-compose.yml`). The config was tested, and the site and gateway are verified.
+- Legacy items fixed (audited):
+  - #212 "Chibi-Doedicurus" (delivered the Direbear chibi, a duplicate of #209) and #267 "Chibi-Skeletal Jerboa" (delivered the Skeletal Bronto chibi, a duplicate of #264) are deactivated. The real items are sold as #2479 and #2521.
+  - #810 is renamed to "Tek Tapejara Saddle" to match what it delivers, and it now has an icon. The real Stego Saddle is #797.
+- IrisDefender still rubberbanded riders every second, because the teleport check reads a 0,0,0 position while mounted. Set `Speedhack.MaxTeleportDelta` from 8000 to 100000000 on both servers; backups are in `C:smdata\Backups\IrisDefender\`. The speedhack check and its rubberband are unchanged. Apply it with the in-game admin console command `cheat IrisDefender.Reload` (found in the DLL; untested) or a server restart.
+
 ## Security fixes — 2026-10-23 (commit e6cfa90)
 
 - CRITICAL: `POST /payments/intents {provider:"sandbox"}` credited IC instantly for ANY logged-in user. Only osv1 ever used it (3 intents, 11,700 IC). Sandbox now needs `PAYMENT_SANDBOX_ENABLED=true` (unset in prod) AND an admin/root caller. Verified in prod: user→403, root→403, no provider→400.
