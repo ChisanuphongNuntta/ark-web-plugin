@@ -13,6 +13,24 @@
   - Admin rows `balanceAfter` fallback ordered by `postedAt`. CSV export uses keyset pagination with a 5s settle snapshot and adds a truncation marker row. Reconcile logs Redis-lock skips and, after 2 windows, runs without the lock (audit `ledger_reconcile_degraded`).
 - Verified: backend `tsc` + `vitest run tests/unit` (561 tests), frontend `tsc` + `eslint` (0 errors), `heart-plugin-backend:tx-check` and `heart-plugin-frontend:tx-check` Docker builds. Not deployed and no containers restarted.
 
+## Pre-restart audit — 2026-10-23
+
+- Plugin configs on both servers:
+  - all 6 configs parse;
+  - HeartShop.dll matches artifact 7dc0dae6;
+  - IrisDefender: ServerId set, PointsTeleport 0, MaxTeleportDelta 1e8, Undermesh off, no Thai text.
+- Web stack:
+  - all containers are healthy and 26 pages/APIs return 200/308;
+  - no backend or gateway errors in the last 2h and no nginx 5xx in the last 1h;
+  - certs are valid until 2027-01 (nginx) and 2027-07 (CA);
+  - 19/19 migrations applied;
+  - ledger reconcile is OK (0 mismatches, 0 unbalanced).
+- Fixed:
+  - order 55ccf53b (Tiktaalik, 2026-10-18) was stuck as queued after its job completed. Marked delivered and audited; this came from the pre-d7c7c15 bug.
+  - 4 active multi-dino kits (#984, #988, #990, #993) were shown in the shop but are not buyable (checkout and the game shop only deliver single item/dino products). Deactivated and audited. #984 also contained Reaper King, and #990 had a malformed blueprint.
+- All 2,088 active products (1,674 items, 414 dinos) have a valid blueprint, a price above 0 and a category.
+- Docker Desktop starts from the HKCU Run key at login: after the 23 Oct 11:01 boot the containers came back on their own. It does not start before someone logs in.
+
 ## Ops — 2026-10-23
 
 - nginx upgraded from 1.28.2 to 1.30.6 (`docker-compose.yml`). The config was tested, and the site and gateway are verified.
