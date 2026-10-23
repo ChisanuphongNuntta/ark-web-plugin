@@ -24,6 +24,16 @@
   - Admin rows `balanceAfter` fallback ordered by `postedAt`. CSV export uses keyset pagination with a 5s settle snapshot and adds a truncation marker row. Reconcile logs Redis-lock skips and, after 2 windows, runs without the lock (audit `ledger_reconcile_degraded`).
 - Verified: backend `tsc` + `vitest run tests/unit` (561 tests), frontend `tsc` + `eslint` (0 errors), `heart-plugin-backend:tx-check` and `heart-plugin-frontend:tx-check` Docker builds. Not deployed and no containers restarted.
 
+## IrisDefender source fix — 2026-10-24
+
+- The owner supplied the source (`iris-ark-plugin.zip`, gitignored). IrisDefender sources now live in `iris-plugins/IrisDefender/`; build with `build-local.ps1`. Do NOT use the original `build.bat`, which auto-deploys to C:\Arkdata.
+- Root cause of the riding rubberband: positions came from the root component's `RelativeLocation`, which reads about 0,0,0 for an attached (mounted or passenger) player. Fixed to read world location from `ComponentToWorld`.
+  - Resets on respawn, mount/dismount, reconnect, unconscious and gaps longer than 5s.
+  - While mounted it only logs (no SetPlayerPos); on-foot detection is unchanged.
+  - The same bug also affected melee reach and turret-stacking checks.
+- New DLL fcefca84… installed on Server1/2 while stopped. The old 752b8812 DLL is in `C:smdata\Backups\IrisDefender-dll\` and `iris-plugins/IrisDefender/artifacts/rollback-752b8812/`.
+- Config reverted to `MaxTeleportDelta` 8000. Raising it to 1e8 had turned riders into Speedhack kicks; it was never run live. Keep `PointsTeleport` 0 for 24–48 h, then restore it to 5. Undermesh stays off until per-map floor Z and safe coords are set.
+
 ## VIP + complete admin — 2026-10-24 (commit 333893a)
 
 - VIP is bought with real money (Stripe or bank slip), never IC. Migration `20261023010000_vip_memberships` is applied (20/20). Backup: `backups/postgres/heartshop-pre-vip-20261024-001803.dump`.

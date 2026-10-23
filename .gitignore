@@ -103,3 +103,7 @@ Release/
 *.ipdb
 *.pdb
 *.dll
+
+# Owner source bundle (95 MB, includes prebuilt binaries); sources live in iris-plugins/
+iris-ark-plugin.zip
+iris-plugins/*/artifacts/
