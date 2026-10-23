@@ -1,5 +1,16 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## VIP (real money) + Permissions sync + admin "see everything" — 2026-10-23 (uncommitted, not deployed)
+
+- Contract: `backend/contracts/vip-2026-10.md` (reconciled against code by the integration pass). Migration `backend/prisma/migrations/20261023010000_vip_memberships/` (+ `rollback.sql`) is written, NOT applied anywhere real. Seeds `vip-30d` (price 0, inactive) and a `VIP` chat rank.
+- Backend: `/api/vip/{packages,me,badges,checkout}`; one idempotent completion path (Stripe webhook / verify-session / slip approval) grants VIP and never credits IC; expiry scheduler (Redis lock); `permission_grant|permission_revoke` DeliveryJobs claimable by any non-draining server advertising `permissions.group.v1`; `/admin/vip/**`, `/admin/plugin-keys/**` (root), `/admin/orders/:id`, `/admin/payments`, extended deliveries/audit/market filters; VIP badge on `/auth/me`, profile, market seller, chat.
+- Plugin: `PermissionSync.*` / `PermissionsBridge.*` (runtime-resolved Permissions exports), `/vip` + `/iris vip`, chat-rank SteamID64 fix. Timed adds: an `add` with `expiresAt` = Remove(permanent) + Remove(timed) + AddTimed(remaining), so the in-game group ends on time even if the web is down.
+- Frontend: admin pages orders / deliveries / payments / audit / market / settings / plugin-keys / vip; player `/vip`; VIP avatar frames (navbar, profile, rankings, chat, market seller).
+- Integration fixes: added `GET /api/plugin/player/:steamId/vip` (the plugin's `/vip` called it, the backend lacked it); revoking a row while another still holds the group re-queues an `add` with the shortened hold (needed because adds are timed in game); package `permissionGroup` may not be `Admins`/`Default`; a timed add also drops a stale permanent membership. Contract §4/§7, `openapi.yaml`, contracts README and `ark-plugin/BUILD.md` updated.
+- Verified (integration): backend `tsc` + `vitest run tests/unit` (46 files / 623 tests), frontend `tsc` + `eslint` (0 errors) + `node --test` VIP/transactions helpers (21), plugin `Build-Plugin.ps1` + CTest (8/8 incl. PermissionSyncTests), Docker `heart-plugin-backend:vip-check` and `heart-plugin-frontend:vip-check` built. HeartShop.dll SHA-256 `ac4d79e7d82055a540619dae12f20d5d5ced1b9f1ea15e20e00ab895252ceb5f`. Not deployed and no containers restarted.
+- Review-fix pass (2026-10-24): slip list/approve/reject now `requireWebsiteAdmin` + no self-approval (403); `POST /payments/slips` priced only from the active package (client amount/IC ignored, 404 no fallback, slip URL validated); permission jobs pinned to the server that completed the previous job for the key for `ClusterSyncTime+30s` (`PERMISSIONS_CLUSTER_SYNC_SECONDS`); renewals chain per permission group (same/higher tier); revoking a chain row shifts later rows earlier and re-queues the shorter add; only the newest job updates sync status; no-server -> `syncStatus='unqueued'`, re-queued by the scheduler; in-game chat rank prefix `[VIP] Name` (HeartShop chat callback, `HeartShop.Vip.ChatRankPrefix`, default on) and `[Web] [VIP] Name` for web VIPs (`rankTag` on `GET /chat/plugin/messages`). Verified: backend tsc + 47 files / 638 tests, frontend tsc + eslint 0 errors, plugin build + CTest 8/8, both `:vip-check` images. HeartShop.dll SHA-256 `c7f10f28319c3af31544215b5d839c308ae9a7977752000bf5dd7c1b2251811a`. Before deploy: audit pending bank_slip top-up intents whose points/amount differ from their package.
+- Owner/ops before go-live: DB backup → `prisma migrate deploy`; rebuild backend + gateway + frontend; ship HeartShop.dll (see artifact SHA256SUMS) to at least one server running Permissions with the `VIP` group present; set the `vip-30d` price and activate it in `/admin/vip`; import legacy VIPs via admin grant (source `legacy`) because a web `remove` also strips in-game-only memberships.
+
 ## Admin "every transaction" + review fixes — 2026-10-18 (uncommitted)
 
 - Contract: `backend/contracts/admin-transactions-2026-10.md` (list/detail/summary/CSV export/reconcile, `admin:transaction`, `admin:ledger:mismatch`). UI: `/admin/transactions` + `/admin/transactions/reconcile`.
@@ -12,6 +23,23 @@
   - Delivery: a release no longer counts as an attempt. Release backoff runs 30s up to 5 min. The streak is incremented only after the release wins. Visibility comes from a DB probe marker (not Redis). An expired lease with no attempts left is dead-lettered (order -> failed / escrow refund).
   - Admin rows `balanceAfter` fallback ordered by `postedAt`. CSV export uses keyset pagination with a 5s settle snapshot and adds a truncation marker row. Reconcile logs Redis-lock skips and, after 2 windows, runs without the lock (audit `ledger_reconcile_degraded`).
 - Verified: backend `tsc` + `vitest run tests/unit` (561 tests), frontend `tsc` + `eslint` (0 errors), `heart-plugin-backend:tx-check` and `heart-plugin-frontend:tx-check` Docker builds. Not deployed and no containers restarted.
+
+## VIP + complete admin — 2026-10-24 (commit 333893a)
+
+- VIP is bought with real money (Stripe or bank slip), never IC. Migration `20261023010000_vip_memberships` is applied (20/20). Backup: `backups/postgres/heartshop-pre-vip-20261024-001803.dump`.
+- Package `vip-30d` "VIP 30 วัน" (Permissions group `VIP`, 30 days) is **inactive at price 0**. The owner must set a price in /admin/vip, then activate it.
+- Permissions sync: `permission_grant`/`permission_revoke` delivery jobs, run by any server advertising `permissions.group.v1` (offline players OK). Plugin c7f10f28 is installed on Server1/2 while stopped; backups are in `C:smdata\Backups\HeartShop-plugin\Server{1,2}-20261024-001918`.
+  - In-game `[VIP]` chat prefix: config `HeartShop.Vip.ChatRankPrefix`, default true. Turn it off if another plugin already prefixes chat by group.
+  - `PERMISSIONS_CLUSTER_SYNC_SECONDS` defaults to 60, which matches Permissions `ClusterSyncTime`.
+- New admin pages: orders, payments, deliveries, audit, market, settings, plugin-keys (root), vip. All return 200.
+- Security fixes:
+  - slip approve/reject is admin/root only, with no self-approval;
+  - top-up slips take their amounts only from an active package.
+- First-start checks:
+  - the heartbeat lists `permissions.group.v1`;
+  - `/vip` works in game;
+  - an admin grant from /admin/vip puts the player in the Permissions `VIP` group;
+  - a VIP chat message reaches web/Discord exactly once.
 
 ## Pre-restart audit — 2026-10-23
 
