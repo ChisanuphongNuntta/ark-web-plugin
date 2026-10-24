@@ -480,12 +480,19 @@ export const authenticateSignedPlugin = async (
       throw new AppError('Unknown or revoked plugin credential', 401);
     }
 
-    // Validate body SHA256
-    const hasBody = req.body && Object.keys(req.body).length > 0;
-    const rawBody = hasBody ? JSON.stringify(req.body) : '';
-    const calculatedHash = crypto.createHash('sha256').update(rawBody).digest('hex');
+    // Validate body SHA256 against exact wire bytes (req.rawBody)
+    const rawBuffer = (req as any).rawBody as Buffer | undefined;
+    let calculatedHash: string;
+    if (rawBuffer && rawBuffer.length > 0) {
+      calculatedHash = crypto.createHash('sha256').update(rawBuffer).digest('hex');
+    } else {
+      const hasBody = req.body && Object.keys(req.body).length > 0;
+      const rawBody = hasBody ? JSON.stringify(req.body) : '';
+      calculatedHash = crypto.createHash('sha256').update(rawBody).digest('hex');
+    }
 
     if (calculatedHash !== contentSha) {
+      console.warn(`[Signed Plugin Auth] Content SHA256 mismatch: calculated=${calculatedHash}, header=${contentSha}`);
       throw new AppError('Content SHA256 mismatch', 401);
     }
 

@@ -5,12 +5,13 @@
 import { describe, it, expect } from 'vitest';
 
 const BASE_URL = process.env.TEST_API_URL || 'https://localhost';
+const PLUGIN_BASE_URL = process.env.TEST_PLUGIN_URL || 'https://localhost:8443';
 
 // Disable TLS verification for localhost self-signed cert
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-async function api(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${BASE_URL}${path}`, {
+async function api(path: string, options: RequestInit = {}, baseUrl: string = BASE_URL) {
+  const res = await fetch(`${baseUrl}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -112,24 +113,28 @@ describe('Auth-protected Endpoints (must return 401)', () => {
 
 describe('Plugin API', () => {
   it('GET /api/plugin/orders/pending without API key returns 401', async () => {
-    const { status } = await api('/api/plugin/orders/pending');
+    const { status } = await api('/api/plugin/orders/pending', {}, PLUGIN_BASE_URL);
     expect(status).toBe(401);
   });
 
   it('GET /api/plugin/orders/pending with wrong API key returns 401', async () => {
-    const { status } = await api('/api/plugin/orders/pending', {
-      headers: { 'x-api-key': 'invalid-key', 'x-server-id': '1' },
-    });
+    const { status } = await api(
+      '/api/plugin/orders/pending',
+      {
+        headers: { 'x-api-key': 'invalid-key', 'x-server-id': '1' },
+      },
+      PLUGIN_BASE_URL,
+    );
     expect(status).toBe(401);
   });
 
   it('POST /api/plugin/heartbeat without API key returns 401', async () => {
-    const { status } = await api('/api/plugin/heartbeat', { method: 'POST' });
+    const { status } = await api('/api/plugin/heartbeat', { method: 'POST' }, PLUGIN_BASE_URL);
     expect(status).toBe(401);
   });
 
   it('POST /api/plugin/stats without API key returns 401', async () => {
-    const { status } = await api('/api/plugin/stats', { method: 'POST' });
+    const { status } = await api('/api/plugin/stats', { method: 'POST' }, PLUGIN_BASE_URL);
     expect(status).toBe(401);
   });
 });

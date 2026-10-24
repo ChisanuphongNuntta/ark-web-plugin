@@ -22,12 +22,14 @@ import contentRoutes from './routes/content.routes.js';
 import { protectionPluginRoutes, protectionUserRoutes, protectionAdminRoutes } from './routes/protection.routes.js';
 import dinoMarketRoutes from './routes/dino-market.routes.js';
 import chatRoutes from './routes/chat.routes.js';
+import adminChatRoutes from './routes/adminChat.routes.js';
 import walletRoutes from './routes/wallet.routes.js';
 import cartRoutes from './routes/cart.routes.js';
 import checkoutRoutes from './routes/checkout.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import promotionRoutes from './routes/promotion.routes.js';
 import vipRoutes from './routes/vip.routes.js';
+import {perksRoutes,adminPerksRoutes,pluginPerksRoutes} from './routes/perks.routes.js';
 import { setupSocketIO } from './websocket/index.js';
 import { startDiscordBot, registerCommands, sendToDiscord } from './discord/bot.js';
 import { startDiscordRelaySubscriber } from './discord/relay.js';
@@ -97,7 +99,14 @@ app.use('/api/', generalLimiter);
 app.use('/api/payments/webhooks', express.raw({ type: 'application/json', limit: '256kb' }));
 // Native ARK dino snapshots are base64 encoded and signed by the server plugin.
 // Keep a bounded limit that accommodates them without accepting unbounded bodies.
-app.use(express.json({ limit: '2mb' }));
+app.use(
+  express.json({
+    limit: '2mb',
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -123,6 +132,8 @@ if (servesWeb(SERVICE_ROLE)) {
   app.use('/api/payments', paymentRoutes);
   app.use('/api/promotions', promotionRoutes);
   app.use('/api/vip', vipRoutes); // VIP packages / me / badges / checkout (contracts/vip-2026-10.md)
+  app.use('/api/perks', perksRoutes);
+  app.use('/api/admin/perks', adminPerksRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/pdpa', pdpaRoutes);
   app.use('/api/audit', auditRoutes);
@@ -131,11 +142,13 @@ if (servesWeb(SERVICE_ROLE)) {
   app.use('/api/admin/protection', protectionAdminRoutes);   // Admin API (JWT + Admin role)
   app.use('/api/market', dinoMarketRoutes);
   app.use('/api/chat', chatRoutes);
+  app.use('/api/admin/chat', adminChatRoutes);
 }
 
 // Signed game-server API. In production it runs in the separate plugin-gateway process,
 // which nginx exposes only on a host-loopback port (see docker/nginx/conf.d/heartshop.conf).
 if (servesPlugin(SERVICE_ROLE)) {
+  app.use('/api/plugin/entitlements', pluginPerksRoutes);
   app.use('/api/plugin', pluginRoutes);
   app.use('/api/plugin/protection', protectionPluginRoutes); // Plugin API (API Key auth)
   app.use('/api/plugin/market', dinoMarketRoutes); // Also mount under /api/plugin for plugin compatibility
