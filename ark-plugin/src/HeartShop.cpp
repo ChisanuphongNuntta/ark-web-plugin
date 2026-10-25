@@ -368,13 +368,15 @@ namespace HeartShop
         }
 
         // STEP 1: Load Config
+        bool ConfigValid = false;
         try
         {
             Log::GetLog()->info("HeartShop: Loading config...");
             PluginConfig = std::make_unique<Config>();
-            if (!PluginConfig->Load())
+            ConfigValid = PluginConfig->Load();
+            if (!ConfigValid)
             {
-                Log::GetLog()->error("Failed to load config!");
+                Log::GetLog()->error("Failed to load config! Shop disabled until config.json is fixed and the plugin reloaded.");
             }
             Log::GetLog()->info("HeartShop: Config loaded");
         }
@@ -410,6 +412,11 @@ namespace HeartShop
         // STEP 3: Verify License
         try
         {
+            if (!ConfigValid || !Http)
+            {
+                // Fail closed: LicenseVerified stays false, so no polling or deliveries run.
+                throw std::runtime_error("skipped: config invalid or HTTP client missing");
+            }
             Log::GetLog()->info("HeartShop: Verifying license...");
             Http->VerifyLicense([](bool Success, const nlohmann::json& Response) {
                 if (Success)
@@ -1874,20 +1881,24 @@ namespace HeartShop
                         continue;
                     }
 
-                    uint64 SteamId = std::stoull(SteamIdStr);
+                    // A malformed record must not abort the batch and strand the
+                    // remaining leases until they expire.
+                    uint64 SteamId = 0;
+                    if (SteamIdStr.find_first_not_of("0123456789") == std::string::npos && SteamIdStr.size() <= 20)
+                    {
+                        try { SteamId = std::stoull(SteamIdStr); } catch (const std::exception&) { SteamId = 0; }
+                    }
+                    if (SteamId == 0)
+                    {
+                        Log::GetLog()->error("Delivery {} has invalid playerSteamId '{}'; releasing lease", DeliveryKey, SteamIdStr);
+                        Http->ReleaseDelivery(DeliveryKey, LeaseToken, [](bool, const nlohmann::json&) {});
+                        continue;
+                    }
 
                     // Find online player with this Steam ID
-                    AShooterPlayerController* TargetPC = nullptr;
-                    auto& Players = ArkApi::GetApiUtils().GetWorld()->PlayerControllerListField();
-                    for (int i = 0; i < Players.Num(); i++)
-                    {
-                        AShooterPlayerController* PC = static_cast<AShooterPlayerController*>(Players[i].Get());
-                        if (PC && GetSteamId(PC) == SteamId)
-                        {
-                            TargetPC = PC;
-                            break;
-                        }
-                    }
+                    AShooterPlayerController* TargetPC = ArkApi::GetApiUtils().GetWorld()
+                        ? ArkApi::GetApiUtils().FindPlayerFromSteamId(SteamId)
+                        : nullptr;
 
                     if (!TargetPC)
                     {

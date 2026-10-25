@@ -1,6 +1,9 @@
 #include "Protection.h"
 #include "HeartShop.h"
 #include <Logger/Logger.h>
+#include <ctime>
+#include <string>
+#include <unordered_map>
 
 namespace HeartShop
 {
@@ -18,6 +21,70 @@ namespace Protection
     JoinTribe_t JoinTribe_Original = nullptr;
     LeaveTribe_t LeaveTribe_Original = nullptr;
 
+    namespace
+    {
+        // Damage hooks fire many times per second. A refresh is started at most once per
+        // window per id, and blocked-damage logs are throttled per attacker/target pair,
+        // so a raid cannot exhaust the HTTP slots that deliveries depend on.
+        constexpr auto REFRESH_IN_FLIGHT_WINDOW = std::chrono::seconds(10);
+        constexpr auto DAMAGE_LOG_WINDOW = std::chrono::seconds(30);
+        constexpr size_t DAMAGE_LOG_MAX_KEYS = 4096;
+
+        std::unordered_map<uint64, std::chrono::steady_clock::time_point> PlayerRefreshStarted;
+        std::unordered_map<uint64, std::chrono::steady_clock::time_point> TribeRefreshStarted;
+        std::unordered_map<std::string, std::chrono::steady_clock::time_point> DamageLogLastSent;
+
+        // Caller must hold CacheMutex.
+        bool TryBeginRefresh(std::unordered_map<uint64, std::chrono::steady_clock::time_point>& Started, uint64 Id)
+        {
+            const auto Now = std::chrono::steady_clock::now();
+            auto It = Started.find(Id);
+            if (It != Started.end() && Now - It->second < REFRESH_IN_FLIGHT_WINDOW)
+            {
+                return false;
+            }
+            Started[Id] = Now;
+            return true;
+        }
+
+        // Backend timestamps are UTC ("YYYY-MM-DDTHH:MM:SS.sssZ").
+        std::chrono::system_clock::time_point ParseUtcTimestamp(const std::string& Value)
+        {
+            std::tm tm = {};
+            int ms = 0;
+            sscanf(Value.c_str(), "%d-%d-%dT%d:%d:%d.%dZ",
+                &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
+                &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &ms);
+            tm.tm_year -= 1900;
+            tm.tm_mon -= 1;
+            return std::chrono::system_clock::from_time_t(_mkgmtime(&tm));
+        }
+
+        // EventInstigator may be an AI or dino controller, so it is only treated as a
+        // player after an IsA check; otherwise only its team is read.
+        void ResolveAttacker(AController* EventInstigator, uint64& AttackerSteamId, uint64& AttackerTribeId)
+        {
+            AttackerSteamId = 0;
+            AttackerTribeId = 0;
+            if (!EventInstigator)
+                return;
+
+            if (EventInstigator->IsA(AShooterPlayerController::GetPrivateStaticClass()))
+            {
+                AShooterPlayerController* AttackerPC = static_cast<AShooterPlayerController*>(EventInstigator);
+                AttackerSteamId = GetSteamId(AttackerPC);
+                AShooterPlayerState* AttackerPS = static_cast<AShooterPlayerState*>(AttackerPC->PlayerStateField());
+                if (AttackerPS)
+                {
+                    AttackerTribeId = AttackerPS->TargetingTeamField();
+                }
+                return;
+            }
+
+            AttackerTribeId = static_cast<uint64>(EventInstigator->TargetingTeamField());
+        }
+    }
+
     void Init()
     {
         Log::GetLog()->info("Protection system initializing...");
@@ -25,6 +92,9 @@ namespace Protection
         std::lock_guard<std::mutex> lock(CacheMutex);
         PlayerCache.clear();
         TribeCache.clear();
+        PlayerRefreshStarted.clear();
+        TribeRefreshStarted.clear();
+        DamageLogLastSent.clear();
 
         Log::GetLog()->info("Protection system initialized");
     }
@@ -36,6 +106,9 @@ namespace Protection
         std::lock_guard<std::mutex> lock(CacheMutex);
         PlayerCache.clear();
         TribeCache.clear();
+        PlayerRefreshStarted.clear();
+        TribeRefreshStarted.clear();
+        DamageLogLastSent.clear();
 
         Log::GetLog()->info("Protection system cleaned up");
     }
@@ -125,6 +198,12 @@ namespace Protection
         if (!Http)
             return;
 
+        {
+            std::lock_guard<std::mutex> lock(CacheMutex);
+            if (!TryBeginRefresh(PlayerRefreshStarted, SteamId))
+                return;
+        }
+
         std::string SteamIdStr = std::to_string(SteamId);
 
         Http->Request("GET", "/protection/player/" + SteamIdStr, "",
@@ -147,17 +226,7 @@ namespace Protection
 
                         // Parse ISO8601 date
                         std::string endAtStr = player["protectionEndAt"].get<std::string>();
-                        // Simple parsing - assume format "YYYY-MM-DDTHH:MM:SS.sssZ"
-                        std::tm tm = {};
-                        int ms = 0;
-                        sscanf(endAtStr.c_str(), "%d-%d-%dT%d:%d:%d.%dZ",
-                            &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
-                            &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &ms);
-                        tm.tm_year -= 1900;
-                        tm.tm_mon -= 1;
-
-                        auto time = std::mktime(&tm);
-                        status.protectionEndAt = std::chrono::system_clock::from_time_t(time);
+                        status.protectionEndAt = ParseUtcTimestamp(endAtStr);
                         status.protectionType = player["protectionType"].get<std::string>();
                     }
 
@@ -181,6 +250,12 @@ namespace Protection
         if (!Http)
             return;
 
+        {
+            std::lock_guard<std::mutex> lock(CacheMutex);
+            if (!TryBeginRefresh(TribeRefreshStarted, TribeId))
+                return;
+        }
+
         std::string TribeIdStr = std::to_string(TribeId);
 
         Http->Request("GET", "/protection/tribe/" + TribeIdStr, "",
@@ -202,16 +277,7 @@ namespace Protection
                         auto tribe = Response["tribe"];
 
                         std::string endAtStr = tribe["protectionEndAt"].get<std::string>();
-                        std::tm tm = {};
-                        int ms = 0;
-                        sscanf(endAtStr.c_str(), "%d-%d-%dT%d:%d:%d.%dZ",
-                            &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
-                            &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &ms);
-                        tm.tm_year -= 1900;
-                        tm.tm_mon -= 1;
-
-                        auto time = std::mktime(&tm);
-                        status.protectionEndAt = std::chrono::system_clock::from_time_t(time);
+                        status.protectionEndAt = ParseUtcTimestamp(endAtStr);
                         status.protectionType = tribe["protectionType"].get<std::string>();
                         status.ownerSteamId = tribe["ownerSteamId"].get<std::string>();
                     }
@@ -261,8 +327,12 @@ namespace Protection
         body["playerName"] = PlayerNameStr;
 
         Http->Request("POST", "/protection/player/register", body.dump(),
-            [Player, SteamId](bool Success, const nlohmann::json& Response) {
-                if (!Success || !Player)
+            [SteamId](bool Success, const nlohmann::json& Response) {
+                if (!Success)
+                    return;
+                // The player may have logged out while the request was in flight.
+                auto* Player = ArkApi::GetApiUtils().FindPlayerFromSteamId(SteamId);
+                if (!Player)
                     return;
 
                 try
@@ -380,6 +450,19 @@ namespace Protection
         if (!Http)
             return;
 
+        {
+            const std::string Key = std::to_string(AttackerSteamId) + ":" + std::to_string(AttackerTribeId) + ">" +
+                std::to_string(TargetSteamId) + ":" + std::to_string(TargetTribeId) + ":" + Details;
+            const auto Now = std::chrono::steady_clock::now();
+            std::lock_guard<std::mutex> lock(CacheMutex);
+            auto It = DamageLogLastSent.find(Key);
+            if (It != DamageLogLastSent.end() && Now - It->second < DAMAGE_LOG_WINDOW)
+                return;
+            if (DamageLogLastSent.size() >= DAMAGE_LOG_MAX_KEYS)
+                DamageLogLastSent.clear();
+            DamageLogLastSent[Key] = Now;
+        }
+
         nlohmann::json body;
         body["targetSteamId"] = std::to_string(TargetSteamId);
         body["targetTribeId"] = std::to_string(TargetTribeId);
@@ -416,20 +499,7 @@ namespace Protection
             // Get attacker info
             uint64 AttackerSteamId = 0;
             uint64 AttackerTribeId = 0;
-
-            if (EventInstigator)
-            {
-                AShooterPlayerController* AttackerPC = static_cast<AShooterPlayerController*>(EventInstigator);
-                if (AttackerPC)
-                {
-                    AttackerSteamId = GetSteamId(AttackerPC);
-                    AShooterPlayerState* AttackerPS = static_cast<AShooterPlayerState*>(AttackerPC->PlayerStateField());
-                    if (AttackerPS)
-                    {
-                        AttackerTribeId = AttackerPS->TargetingTeamField();
-                    }
-                }
-            }
+            ResolveAttacker(EventInstigator, AttackerSteamId, AttackerTribeId);
 
             // Don't block friendly fire
             if (AttackerTribeId == TargetTribeId)
@@ -462,20 +532,7 @@ namespace Protection
         {
             uint64 AttackerSteamId = 0;
             uint64 AttackerTribeId = 0;
-
-            if (EventInstigator)
-            {
-                AShooterPlayerController* AttackerPC = static_cast<AShooterPlayerController*>(EventInstigator);
-                if (AttackerPC)
-                {
-                    AttackerSteamId = GetSteamId(AttackerPC);
-                    AShooterPlayerState* AttackerPS = static_cast<AShooterPlayerState*>(AttackerPC->PlayerStateField());
-                    if (AttackerPS)
-                    {
-                        AttackerTribeId = AttackerPS->TargetingTeamField();
-                    }
-                }
-            }
+            ResolveAttacker(EventInstigator, AttackerSteamId, AttackerTribeId);
 
             // Don't block friendly fire
             if (AttackerTribeId == TargetTribeId)
@@ -513,20 +570,7 @@ namespace Protection
         {
             uint64 AttackerSteamId = 0;
             uint64 AttackerTribeId = 0;
-
-            if (EventInstigator)
-            {
-                AShooterPlayerController* AttackerPC = static_cast<AShooterPlayerController*>(EventInstigator);
-                if (AttackerPC)
-                {
-                    AttackerSteamId = GetSteamId(AttackerPC);
-                    AShooterPlayerState* AttackerPS = static_cast<AShooterPlayerState*>(AttackerPC->PlayerStateField());
-                    if (AttackerPS)
-                    {
-                        AttackerTribeId = AttackerPS->TargetingTeamField();
-                    }
-                }
-            }
+            ResolveAttacker(EventInstigator, AttackerSteamId, AttackerTribeId);
 
             // Don't block friendly fire or self damage
             if (AttackerSteamId == TargetSteamId || (AttackerTribeId != 0 && AttackerTribeId == TargetTribeId))

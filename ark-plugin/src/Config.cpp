@@ -36,20 +36,22 @@ namespace HeartShop
 
             auto& Config = m_ConfigJson["HeartShop"];
 
-            m_ApiUrl = Config.value("ApiUrl", "https://localhost/api/plugin");
-            while (!m_ApiUrl.empty() && m_ApiUrl.back() == '/')
+            // Connection settings are validated in locals and only committed once all
+            // checks pass, so a rejected config never reaches the HttpClient.
+            std::string ApiUrl = Config.value("ApiUrl", "https://localhost/api/plugin");
+            while (!ApiUrl.empty() && ApiUrl.back() == '/')
             {
-                m_ApiUrl.pop_back();
+                ApiUrl.pop_back();
             }
 
-            if (m_ApiUrl.rfind("https://", 0) != 0)
+            if (ApiUrl.rfind("https://", 0) != 0)
             {
-                Log::GetLog()->error("HeartShop ApiUrl must use HTTPS: {}", m_ApiUrl);
+                Log::GetLog()->error("HeartShop ApiUrl must use HTTPS: {}", ApiUrl);
                 return false;
             }
 
-            m_ApiKey = Config.value("ApiKey", "");
-            m_ServerId = Config.value("ServerId", 1);
+            const std::string ApiKey = Config.value("ApiKey", "");
+            const int ServerId = Config.value("ServerId", 1);
 
             // X-Plugin-Key-Id is a rotatable, loggable credential identifier that is
             // strictly separate from the HMAC secret (ApiKey). The secret must NEVER be
@@ -57,17 +59,17 @@ namespace HeartShop
             // non-secret, stable placeholder from the server id instead of falling back to
             // the secret value. Operators should configure an explicit KeyId issued with the
             // credential so the backend can resolve keyId -> secret and support rotation.
-            m_KeyId = Config.value("KeyId", "");
-            if (m_KeyId.empty())
+            std::string KeyId = Config.value("KeyId", "");
+            if (KeyId.empty())
             {
-                m_KeyId = "server-" + std::to_string(m_ServerId);
+                KeyId = "server-" + std::to_string(ServerId);
                 Log::GetLog()->warn(
                     "HeartShop KeyId is not configured; using non-secret placeholder '{}'. "
                     "Configure a backend-issued KeyId to enable credential rotation. "
                     "The HMAC secret is never sent on the wire.",
-                    m_KeyId);
+                    KeyId);
             }
-            if (m_KeyId == m_ApiKey && !m_ApiKey.empty())
+            if (KeyId == ApiKey && !ApiKey.empty())
             {
                 // Guard against an operator pasting the secret into KeyId, which would
                 // leak the secret in every signed request and in logs.
@@ -76,19 +78,25 @@ namespace HeartShop
                     "refusing to transmit the secret as a key id");
                 return false;
             }
-            m_AllowInvalidCertificates = Config.value("Security", nlohmann::json::object())
+            const bool AllowInvalidCertificates = Config.value("Security", nlohmann::json::object())
                 .value("AllowInvalidCertificates", false);
 
             const bool IsLocalApi =
-                m_ApiUrl.rfind("https://localhost", 0) == 0 ||
-                m_ApiUrl.rfind("https://127.0.0.1", 0) == 0 ||
-                m_ApiUrl.rfind("https://[::1]", 0) == 0;
-            if (m_AllowInvalidCertificates && !IsLocalApi)
+                ApiUrl.rfind("https://localhost", 0) == 0 ||
+                ApiUrl.rfind("https://127.0.0.1", 0) == 0 ||
+                ApiUrl.rfind("https://[::1]", 0) == 0;
+            if (AllowInvalidCertificates && !IsLocalApi)
             {
                 Log::GetLog()->error(
                     "AllowInvalidCertificates is restricted to localhost development endpoints");
                 return false;
             }
+
+            m_ApiUrl = std::move(ApiUrl);
+            m_ApiKey = ApiKey;
+            m_ServerId = ServerId;
+            m_KeyId = std::move(KeyId);
+            m_AllowInvalidCertificates = AllowInvalidCertificates;
             m_PollInterval = Config.value("PollInterval", 30);
             m_StatsInterval = Config.value("StatsInterval", 300);
             m_HeartbeatInterval = Config.value("HeartbeatInterval", 60);
@@ -166,7 +174,7 @@ namespace HeartShop
     {
         try
         {
-            return m_ConfigJson["HeartShop"]["Messages"].value("Prefix", "[HeartShop]");
+            return m_ConfigJson.at("HeartShop").at("Messages").value("Prefix", "[HeartShop]");
         }
         catch (...)
         {
@@ -178,7 +186,7 @@ namespace HeartShop
     {
         try
         {
-            return m_ConfigJson["HeartShop"]["Messages"].value(Key, "");
+            return m_ConfigJson.at("HeartShop").at("Messages").value(Key, "");
         }
         catch (...)
         {

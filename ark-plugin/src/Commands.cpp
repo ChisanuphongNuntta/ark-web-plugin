@@ -114,7 +114,9 @@ namespace Commands
 
         Log::GetLog()->info("Player {} used /points command", SteamIdStr);
 
-        Http->GetPlayerInfo(SteamIdStr, [Player](bool Success, const nlohmann::json& Response) {
+        Http->GetPlayerInfo(SteamIdStr, [SteamId](bool Success, const nlohmann::json& Response) {
+            // The player may have logged out while the request was in flight.
+            auto* Player = ArkApi::GetApiUtils().FindPlayerFromSteamId(SteamId);
             if (!Player)
                 return;
 
