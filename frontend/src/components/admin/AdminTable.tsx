@@ -41,7 +41,7 @@ export function AdminTable({
 }: AdminTableProps) {
   return (
     <div
-      className={cn('relative w-full overflow-auto overscroll-x-contain bg-iris-midnight/40', containerClassName)}
+      className={cn('tek-panel relative w-full overflow-auto overscroll-x-contain bg-iris-midnight/40', containerClassName)}
       style={maxHeight === 'none' ? undefined : { maxHeight }}
       aria-busy={busy || undefined}
       // Focusable so keyboard users can scroll a wide table horizontally.

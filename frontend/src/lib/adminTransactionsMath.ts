@@ -383,6 +383,8 @@ export const ADMIN_ROUTES: readonly string[] = [
   '/admin/plugin-keys',
   '/admin/vip',
   '/admin/payments',
+  '/admin/perks',
+  '/admin/chat',
 ];
 
 /**

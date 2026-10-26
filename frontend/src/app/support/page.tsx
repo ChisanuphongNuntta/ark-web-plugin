@@ -2,25 +2,8 @@
 
 import { FormEvent, useMemo, useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import {
-  AlertTriangle,
-  ArrowRight,
-  CheckCircle2,
-  ChevronDown,
-  Clock3,
-  CreditCard,
-  FileText,
-  HelpCircle,
-  LockKeyhole,
-  MessageSquare,
-  PackageCheck,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  TicketCheck,
-  Zap,
-  Loader2,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, CreditCard, FileText, HelpCircle, LockKeyhole, MessageSquare, PackageCheck, Search, ShieldCheck, Sparkles, TicketCheck, Zap, Loader2 } from 'lucide-react';
+import { ArrowRight } from '@/components/tek/arrows';
 import { Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
 

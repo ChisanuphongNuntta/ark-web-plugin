@@ -8,10 +8,10 @@
    Space-separated RGB triplets so Tailwind can apply <alpha-value>.
    ---------------------------------------------------------------------
    Brand name     | Hex      | RGB triplet   | token
-   Obsidian Navy  | #05070D  | 5 7 13        | --iris-ink
-   Deep River     | #071A24  | 7 26 36       | --iris-river
-   Iris Cyan      | #37E5D2  | 55 229 210    | --iris-cyan
-   Royal Orchid   | #A77BFF  | 167 123 255   | --iris-orchid
+   Obsidian Navy  | #05070D | 5 7 13        | --iris-ink
+   Deep River     | #071A24 | 7 26 36       | --iris-river
+   Iris Cyan      | #37E5D2 | 55 229 210    | --iris-cyan
+   Royal Orchid   | #A77BFF | 167 123 255   | --iris-orchid
    Champagne Gold | #DDBB72  | 221 187 114   | --iris-gold
    ===================================================================== */
 :root {
@@ -69,9 +69,9 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at 16% -8%, rgba(55, 229, 210, 0.12), transparent 34rem),
-    radial-gradient(circle at 88% 16%, rgba(167, 123, 255, 0.1), transparent 30rem),
-    linear-gradient(180deg, #0d091a 0%, #07121a 48%, #05070d 100%);
+    radial-gradient(circle at 16% -8%, rgb(var(--acc-300) / 0.12), transparent 34rem),
+    radial-gradient(circle at 88% 16%, rgb(var(--acc-700) / 0.10), transparent 30rem),
+    linear-gradient(180deg, rgb(var(--s-0)) 0%, rgb(var(--s-1)) 48%, rgb(var(--s-0)) 100%);
   font-family: var(--font-iris-sans), sans-serif;
 }
 
@@ -80,6 +80,7 @@ body {
 
 a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { touch-action: manipulation; }
 
 :focus-visible {
   outline: 2px solid var(--focus);
@@ -105,7 +106,7 @@ button, input, select, textarea { font: inherit; }
   .eyebrow { @apply text-[0.68rem] font-bold uppercase tracking-[0.24em] text-iris-cyan; }
   .display-title { @apply font-display font-semibold leading-[1.02] tracking-[-0.035em] text-iris-pearl; }
   .glass-card {
-    background: linear-gradient(145deg, rgba(17, 34, 44, 0.82), rgba(7, 16, 24, 0.7));
+    background: linear-gradient(145deg, rgb(var(--s-3) / 0.82), rgb(var(--s-1) / 0.70));
     border: 1px solid var(--line);
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28), inset 0 1px rgba(255,255,255,0.035);
     @apply relative overflow-hidden rounded-[1.65rem] backdrop-blur-xl;
@@ -120,10 +121,10 @@ button, input, select, textarea { font: inherit; }
   .prism-border {
     border: 1px solid transparent;
     background: linear-gradient(rgb(var(--iris-midnight)), rgb(var(--iris-midnight))) padding-box,
-      linear-gradient(120deg, rgba(55,229,210,.65), rgba(221,187,114,.24), rgba(167,123,255,.6)) border-box;
+      linear-gradient(120deg, rgb(var(--acc-300) / 0.65), rgba(221,187,114,.24), rgb(var(--acc-700) / 0.60)) border-box;
   }
-  .btn-primary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-iris-pearl px-5 py-2.5 text-sm font-bold text-iris-ink transition hover:-translate-y-0.5 hover:bg-white disabled:pointer-events-none disabled:opacity-50; }
-  .btn-secondary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.035] px-5 py-2.5 text-sm font-bold text-iris-pearl transition hover:-translate-y-0.5 hover:border-iris-cyan/50 hover:bg-iris-cyan/10 disabled:pointer-events-none disabled:opacity-50; }
+  .btn-primary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-iris-pearl px-5 py-2.5 text-sm font-bold text-iris-ink transition duration-200 hover:bg-white hover:shadow-[0_0_20px_rgba(245,241,232,0.4)] disabled:pointer-events-none disabled:opacity-50; }
+  .btn-secondary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.035] px-5 py-2.5 text-sm font-bold text-iris-pearl transition duration-200 hover:border-iris-cyan/50 hover:bg-iris-cyan/10 hover:shadow-[0_0_15px_rgb(var(--acc-300)_/_0.20)] disabled:pointer-events-none disabled:opacity-50; }
   .status-pill { @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md; }
   .input { @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:border-iris-cyan/60 focus:outline-none focus:ring-2 focus:ring-iris-cyan/20; }
   .glass-input { @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:border-iris-cyan/60 focus:outline-none focus:ring-2 focus:ring-iris-cyan/20; }
@@ -157,12 +158,33 @@ button, input, select, textarea { font: inherit; }
 .content-auto { content-visibility: auto; contain-intrinsic-size: 700px; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #05070d; }
+::-webkit-scrollbar-track { background: rgb(var(--s-0)); }
 ::-webkit-scrollbar-thumb { background: rgba(221,187,114,.28); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(55,229,210,.45); }
-::selection { background: rgba(55,229,210,.3); color: white; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--acc-300) / 0.45); }
+::selection { background: rgb(var(--acc-300) / 0.30); color: white; }
 
-select option { background: #07121a; color: white; }
+select option { background: rgb(var(--s-1)); color: white; }
+
+.iris-loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 42%, rgb(var(--s-3)) 0%, rgb(var(--s-1)) 65%);
+  opacity: 1;
+  transition: opacity 260ms ease;
+}
+.iris-loading-screen[data-leaving=true] { opacity: 0; pointer-events: none; }
+.iris-loading-content { display: flex; align-items: center; flex-direction: column; padding: 32px; text-align: center; }
+.iris-loading-mark { width: 92px; height: 92px; object-fit: contain; margin-bottom: 24px; }
+.iris-loading-brand { color: rgb(var(--acc-200)); font-family: var(--font-iris-display), serif; font-size: 24px; font-weight: 600; letter-spacing: .07em; }
+.iris-loading-caption { margin-top: 8px; color: rgb(var(--ink-faint)); font-size: 12px; }
+.iris-loading-track { position: relative; overflow: hidden; width: 144px; height: 2px; margin-top: 28px; border-radius: 99px; background: rgb(var(--acc-300) / 0.13); }
+.iris-loading-track > span { position: absolute; width: 45%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, transparent, rgb(var(--acc-300)), transparent); animation: iris-loading-travel 1.5s ease-in-out infinite; }
+.iris-route-loading { min-height: 55vh; display: grid; place-items: center; animation: iris-loading-reveal 180ms ease both; }
+@keyframes iris-loading-travel { from { transform: translateX(-110%); } to { transform: translateX(330%); } }
+@keyframes iris-loading-reveal { from { opacity: 0; } to { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

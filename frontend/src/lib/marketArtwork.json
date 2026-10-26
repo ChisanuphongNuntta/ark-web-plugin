@@ -1,0 +1,1146 @@
+{
+  "/game/aberration/dinos/basilisk/basilisk_character_bp.basilisk_character_bp": {
+    "name": "Basilisk",
+    "imageUrl": "/images/catalog/ark/dossiers/basilisk_character_bp.webp"
+  },
+  "/game/aberration/dinos/cavewolf/cavewolf_character_bp.cavewolf_character_bp": {
+    "name": "Ravager",
+    "imageUrl": "/images/catalog/ark/dossiers/cavewolf_character_bp.webp"
+  },
+  "/game/aberration/dinos/crab/crab_character_bp.crab_character_bp": {
+    "name": "Karkinos",
+    "imageUrl": "/images/catalog/ark/dossiers/crab_character_bp.webp"
+  },
+  "/game/aberration/dinos/lamprey/lamprey_character.lamprey_character": {
+    "name": "Lamprey",
+    "imageUrl": "/images/catalog/ark/dossiers/lamprey_character.webp"
+  },
+  "/game/aberration/dinos/lanternbird/lanternbird_character_bp.lanternbird_character_bp": {
+    "name": "Featherlight",
+    "imageUrl": "/images/catalog/ark/dossiers/lanternbird_character_bp.webp"
+  },
+  "/game/aberration/dinos/lanterngoat/lanterngoat_character_bp.lanterngoat_character_bp": {
+    "name": "Shinehorn",
+    "imageUrl": "/images/catalog/ark/dossiers/lanterngoat_character_bp.webp"
+  },
+  "/game/aberration/dinos/lanternlizard/lanternlizard_character_bp.lanternlizard_character_bp": {
+    "name": "Glowtail",
+    "imageUrl": "/images/catalog/ark/dossiers/lanternlizard_character_bp.webp"
+  },
+  "/game/aberration/dinos/lanternpug/lanternpug_character_bp.lanternpug_character_bp": {
+    "name": "Bulbdog",
+    "imageUrl": "/images/catalog/ark/dossiers/lanternpug_character_bp.webp"
+  },
+  "/game/aberration/dinos/molerat/molerat_character_bp.molerat_character_bp": {
+    "name": "Roll Rat",
+    "imageUrl": "/images/catalog/ark/dossiers/molerat_character_bp.webp"
+  },
+  "/game/aberration/dinos/rockdrake/rockdrake_character_bp.rockdrake_character_bp": {
+    "name": "Rock Drake",
+    "imageUrl": "/images/catalog/ark/dossiers/rockdrake_character_bp.webp"
+  },
+  "/game/abyss/dinos/abyssal/ankylosaurus/ankylo_character_bp_abyssal.ankylo_character_bp_abyssal": {
+    "name": "Abyssal Ankylosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/ankylo_character_bp_abyssal.webp"
+  },
+  "/game/abyss/dinos/abyssal/moschops/moschops_character_bp_abyssal.moschops_character_bp_abyssal": {
+    "name": "Abyssal Moschops",
+    "imageUrl": "/images/catalog/ark/dossiers/moschops_character_bp_abyssal.webp"
+  },
+  "/game/abyss/dinos/abyssal/procoptodon/procoptodon_character_bp_abyssal.procoptodon_character_bp_abyssal": {
+    "name": "Abyssal Procoptodon",
+    "imageUrl": "/images/catalog/ark/dossiers/procoptodon_character_bp_abyssal.webp"
+  },
+  "/game/abyss/dinos/abyssal/rex/rex_character_bp_abyssal.rex_character_bp_abyssal": {
+    "name": "Abyssal Rex",
+    "imageUrl": "/images/catalog/ark/dossiers/rex_character_bp_abyssal.webp"
+  },
+  "/game/abyss/dinos/abyssal/stego/stego_character_bp_abyssal.stego_character_bp_abyssal": {
+    "name": "Abyssal Stegosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/stego_character_bp_abyssal.webp"
+  },
+  "/game/abyss/dinos/abyssal/therizinosaurus/therizino_character_bp_abyssal.therizino_character_bp_abyssal": {
+    "name": "Abyssal Therizinosaur",
+    "imageUrl": "/images/catalog/ark/dossiers/therizino_character_bp_abyssal.webp"
+  },
+  "/game/abyss/dinos/abyssal/thylacoleo/thylacoleo_character_bp_abyssal.thylacoleo_character_bp_abyssal": {
+    "name": "Abyssal Thylacoleo",
+    "imageUrl": "/images/catalog/ark/dossiers/thylacoleo_character_bp_abyssal.webp"
+  },
+  "/game/abyss/dinos/abyssal/yutyrannus/yutyrannus_character_bp_abyssal.yutyrannus_character_bp_abyssal": {
+    "name": "Abyssal Yutyrannus",
+    "imageUrl": "/images/catalog/ark/dossiers/yutyrannus_character_bp_abyssal.webp"
+  },
+  "/game/abyss/dinos/chrysaora/chrysaora_character_bp.chrysaora_character_bp": {
+    "name": "Chrysaora",
+    "imageUrl": "/images/catalog/ark/dossiers/chrysaora_character_bp.webp"
+  },
+  "/game/abyss/dinos/dakosaurus/dakosaurus_character_bp.dakosaurus_character_bp": {
+    "name": "Dakosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/dakosaurus_character_bp.webp"
+  },
+  "/game/abyss/dinos/homarus/homarus_character_bp.homarus_character_bp": {
+    "name": "Homarus",
+    "imageUrl": "/images/catalog/ark/dossiers/homarus_character_bp.webp"
+  },
+  "/game/abyss/dinos/istiophorus/istiophorus_character_bp.istiophorus_character_bp": {
+    "name": "Istiophorus",
+    "imageUrl": "/images/catalog/ark/dossiers/istiophorus_character_bp.webp"
+  },
+  "/game/abyss/dinos/kathreptis/kathreptis_character_bp.kathreptis_character_bp": {
+    "name": "Kathreptis",
+    "imageUrl": "/images/catalog/ark/dossiers/kathreptis_character_bp.webp"
+  },
+  "/game/abyss/dinos/malleocephalus/malleocephalus_character_bp.malleocephalus_character_bp": {
+    "name": "Malleocephalus",
+    "imageUrl": "/images/catalog/ark/dossiers/malleocephalus_character_bp.webp"
+  },
+  "/game/abyss/dinos/mantisshrimp/mantisshrimp_character_bp.mantisshrimp_character_bp": {
+    "name": "Mantis Shrimp",
+    "imageUrl": "/images/catalog/ark/dossiers/mantisshrimp_character_bp.webp"
+  },
+  "/game/abyss/dinos/monodon/monodon_character_bp.monodon_character_bp": {
+    "name": "Monodon",
+    "imageUrl": "/images/catalog/ark/dossiers/monodon_character_bp.webp"
+  },
+  "/game/abyss/dinos/mudpuppy/mudpuppy_character_bp.mudpuppy_character_bp": {
+    "name": "Mudpuppy",
+    "imageUrl": "/images/catalog/ark/dossiers/mudpuppy_character_bp.webp"
+  },
+  "/game/abyss/dinos/ocepechelon/ocepechelon_character_bp.ocepechelon_character_bp": {
+    "name": "Ocepechelon",
+    "imageUrl": "/images/catalog/ark/dossiers/ocepechelon_character_bp.webp"
+  },
+  "/game/abyss/dinos/onchopristis/onchopristis_character_bp.onchopristis_character_bp": {
+    "name": "Onchopristis",
+    "imageUrl": "/images/catalog/ark/dossiers/onchopristis_character_bp.webp"
+  },
+  "/game/abyss/dinos/qarmoutus/qarmoutus_character_bp.qarmoutus_character_bp": {
+    "name": "Qarmoutus",
+    "imageUrl": "/images/catalog/ark/dossiers/qarmoutus_character_bp.webp"
+  },
+  "/game/abyss/dinos/riftcrawler/riftcrawler_character_bp.riftcrawler_character_bp": {
+    "name": "Riftcrawler",
+    "imageUrl": "/images/catalog/ark/dossiers/riftcrawler_character_bp.webp"
+  },
+  "/game/abyss/dinos/seahorse/seahorse_character_bp.seahorse_character_bp": {
+    "name": "Seahorse",
+    "imageUrl": "/images/catalog/ark/dossiers/seahorse_character_bp.webp"
+  },
+  "/game/abyss/dinos/stereolepis/stereolepis_character_bp.stereolepis_character_bp": {
+    "name": "Stereolepis",
+    "imageUrl": "/images/catalog/ark/dossiers/stereolepis_character_bp.webp"
+  },
+  "/game/abyss/dinos/thunnus/thunnus_character_bp.thunnus_character_bp": {
+    "name": "Thunnus",
+    "imageUrl": "/images/catalog/ark/dossiers/thunnus_character_bp.webp"
+  },
+  "/game/abyss/dinos/tiktaalik/tiktaalik_character_bp.tiktaalik_character_bp": {
+    "name": "Tiktaalik",
+    "imageUrl": "/images/catalog/ark/dossiers/tiktaalik_character_bp.webp"
+  },
+  "/game/abyss/dinos/tridacna/tridacna_character_bp.tridacna_character_bp": {
+    "name": "Tridacna",
+    "imageUrl": "/images/catalog/ark/dossiers/tridacna_character_bp.webp"
+  },
+  "/game/abyss/dinos/waterwyvern/wyvern_character_bp_water.wyvern_character_bp_water": {
+    "name": "Water Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_water.webp"
+  },
+  "/game/extinction/dinos/desertkaiju/desertkaiju_character_bp.desertkaiju_character_bp": {
+    "name": "Desert Titan",
+    "imageUrl": "/images/catalog/ark/dossiers/desertkaiju_character_bp.webp"
+  },
+  "/game/extinction/dinos/enforcer/enforcer_character_bp.enforcer_character_bp": {
+    "name": "Enforcer",
+    "imageUrl": "/images/catalog/ark/dossiers/enforcer_character_bp.webp"
+  },
+  "/game/extinction/dinos/forestkaiju/forestkaiju_character_bp.forestkaiju_character_bp": {
+    "name": "Forest Titan",
+    "imageUrl": "/images/catalog/ark/dossiers/forestkaiju_character_bp.webp"
+  },
+  "/game/extinction/dinos/gacha/gacha_character_bp.gacha_character_bp": {
+    "name": "Gacha",
+    "imageUrl": "/images/catalog/ark/dossiers/gacha_character_bp.webp"
+  },
+  "/game/extinction/dinos/gasbag/gasbags_character_bp.gasbags_character_bp": {
+    "name": "Gasbags",
+    "imageUrl": "/images/catalog/ark/dossiers/gasbags_character_bp.webp"
+  },
+  "/game/extinction/dinos/icejumper/icejumper_character_bp.icejumper_character_bp": {
+    "name": "Managarmr",
+    "imageUrl": "/images/catalog/ark/dossiers/icejumper_character_bp.webp"
+  },
+  "/game/extinction/dinos/icekaiju/icekaiju_character_bp.icekaiju_character_bp": {
+    "name": "Ice Titan",
+    "imageUrl": "/images/catalog/ark/dossiers/icekaiju_character_bp.webp"
+  },
+  "/game/extinction/dinos/mek/megamek_character_bp.megamek_character_bp": {
+    "name": "Mega Mek",
+    "imageUrl": "/images/catalog/ark/dossiers/megamek_character_bp.webp"
+  },
+  "/game/extinction/dinos/mek/mek_character_bp.mek_character_bp": {
+    "name": "Mek",
+    "imageUrl": "/images/catalog/ark/dossiers/mek_character_bp.webp"
+  },
+  "/game/extinction/dinos/owl/owl_character_bp.owl_character_bp": {
+    "name": "Snow Owl",
+    "imageUrl": "/images/catalog/ark/dossiers/owl_character_bp.webp"
+  },
+  "/game/extinction/dinos/spindles/spindles_character_bp.spindles_character_bp": {
+    "name": "Velonasaur",
+    "imageUrl": "/images/catalog/ark/dossiers/spindles_character_bp.webp"
+  },
+  "/game/fjordur/dinos/andrewsarchus/andrewsarchus_character_bp.andrewsarchus_character_bp": {
+    "name": "Andrewsarchus",
+    "imageUrl": "/images/catalog/ark/dossiers/andrewsarchus_character_bp.webp"
+  },
+  "/game/fjordur/dinos/desmodus/desmodus_character_bp.desmodus_character_bp": {
+    "name": "Desmodus",
+    "imageUrl": "/images/catalog/ark/dossiers/desmodus_character_bp.webp"
+  },
+  "/game/fjordur/dinos/fenrir/fenrir_character_bp.fenrir_character_bp": {
+    "name": "Fenrir",
+    "imageUrl": "/images/catalog/ark/dossiers/fenrir_character_bp.webp"
+  },
+  "/game/fjordur/dinos/fjordhawk/fjordhawk_character_bp.fjordhawk_character_bp": {
+    "name": "Fjordhawk",
+    "imageUrl": "/images/catalog/ark/dossiers/fjordhawk_character_bp.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/allo_character_bp_rockwell.allo_character_bp_rockwell": {
+    "name": "R-Allosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/allo_character_bp_rockwell.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/carno_character_bp_rockwell.carno_character_bp_rockwell": {
+    "name": "R-Carnotaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/carno_character_bp_rockwell.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/daeodon_character_bp_eden.daeodon_character_bp_eden": {
+    "name": "R-Daeodon",
+    "imageUrl": "/images/catalog/ark/dossiers/daeodon_character_bp_eden.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/dilo_character_bp_rockwell.dilo_character_bp_rockwell": {
+    "name": "R-Dilophosaur",
+    "imageUrl": "/images/catalog/ark/dossiers/dilo_character_bp_rockwell.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/direwolf_character_bp_eden.direwolf_character_bp_eden": {
+    "name": "R-Direwolf",
+    "imageUrl": "/images/catalog/ark/dossiers/direwolf_character_bp_eden.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/equus_character_bp_eden.equus_character_bp_eden": {
+    "name": "R-Equus",
+    "imageUrl": "/images/catalog/ark/dossiers/equus_character_bp_eden.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/gasbags_character_bp_eden.gasbags_character_bp_eden": {
+    "name": "R-Gasbags",
+    "imageUrl": "/images/catalog/ark/dossiers/gasbags_character_bp_eden.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/gigant_character_bp_rockwell.gigant_character_bp_rockwell": {
+    "name": "R-Giganotosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/gigant_character_bp_rockwell.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/megatherium_character_bp_eden.megatherium_character_bp_eden": {
+    "name": "R-Megatherium",
+    "imageUrl": "/images/catalog/ark/dossiers/megatherium_character_bp_eden.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/owl_character_bp_eden.owl_character_bp_eden": {
+    "name": "R-Snow Owl",
+    "imageUrl": "/images/catalog/ark/dossiers/owl_character_bp_eden.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/para_character_bp_eden.para_character_bp_eden": {
+    "name": "R-Parasaur",
+    "imageUrl": "/images/catalog/ark/dossiers/para_character_bp_eden.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/procoptodon_character_bp_eden.procoptodon_character_bp_eden": {
+    "name": "R-Procoptodon",
+    "imageUrl": "/images/catalog/ark/dossiers/procoptodon_character_bp_eden.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/quetz_character_bp_rockwell.quetz_character_bp_rockwell": {
+    "name": "R-Quetzal",
+    "imageUrl": "/images/catalog/ark/dossiers/quetz_character_bp_rockwell.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/sauropod_character_bp_rockwell.sauropod_character_bp_rockwell": {
+    "name": "R-Brontosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/sauropod_character_bp_rockwell.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/spindles_character_bp_rockwell.spindles_character_bp_rockwell": {
+    "name": "R-Velonasaur",
+    "imageUrl": "/images/catalog/ark/dossiers/spindles_character_bp_rockwell.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/thylacoleo_character_bp_eden.thylacoleo_character_bp_eden": {
+    "name": "R-Thylacoleo",
+    "imageUrl": "/images/catalog/ark/dossiers/thylacoleo_character_bp_eden.webp"
+  },
+  "/game/genesis2/dinos/biomevariants/turtle_character_bp_rockwell.turtle_character_bp_rockwell": {
+    "name": "R-Carbonemys",
+    "imageUrl": "/images/catalog/ark/dossiers/turtle_character_bp_rockwell.webp"
+  },
+  "/game/genesis2/dinos/brainslug/brainslug_character_bp.brainslug_character_bp": {
+    "name": "Noglin",
+    "imageUrl": "/images/catalog/ark/dossiers/brainslug_character_bp.webp"
+  },
+  "/game/genesis2/dinos/lionfishlion/lionfishlion_character_bp.lionfishlion_character_bp": {
+    "name": "BigAL's Meraxes TLC",
+    "imageUrl": "/images/catalog/ark/dossiers/lionfishlion_character_bp.webp"
+  },
+  "/game/genesis2/dinos/milkglider/milkglider_character_bp.milkglider_character_bp": {
+    "name": "Maewing",
+    "imageUrl": "/images/catalog/ark/dossiers/milkglider_character_bp.webp"
+  },
+  "/game/genesis2/dinos/spacedolphin/spacedolphin_character_bp.spacedolphin_character_bp": {
+    "name": "Astrodelphis",
+    "imageUrl": "/images/catalog/ark/dossiers/spacedolphin_character_bp.webp"
+  },
+  "/game/genesis2/dinos/tekstrider/tekstrider_character_bp.tekstrider_character_bp": {
+    "name": "Tek Stryder",
+    "imageUrl": "/images/catalog/ark/dossiers/tekstrider_character_bp.webp"
+  },
+  "/game/genesis2/dinos/tekwyvern/tekwyvern_character_bp.tekwyvern_character_bp": {
+    "name": "Voidwyrm",
+    "imageUrl": "/images/catalog/ark/dossiers/tekwyvern_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/bogpara/bog_para_character_bp.bog_para_character_bp": {
+    "name": "X-Parasaur",
+    "imageUrl": "/images/catalog/ark/dossiers/bog_para_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/bogparaceratherium/bog_paracer_character_bp.bog_paracer_character_bp": {
+    "name": "X-Paraceratherium",
+    "imageUrl": "/images/catalog/ark/dossiers/bog_paracer_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/bog_raptor/bog_raptor_character_bp.bog_raptor_character_bp": {
+    "name": "X-Raptor",
+    "imageUrl": "/images/catalog/ark/dossiers/bog_raptor_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/bog_spino/bog_spino_character_bp.bog_spino_character_bp": {
+    "name": "X-Spino",
+    "imageUrl": "/images/catalog/ark/dossiers/bog_spino_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/bog_tapejara/bog_tapejara_character_bp.bog_tapejara_character_bp": {
+    "name": "X-Tapejara",
+    "imageUrl": "/images/catalog/ark/dossiers/bog_tapejara_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/lava_golem/volcano_golem_character_bp.volcano_golem_character_bp": {
+    "name": "X-Rock Elemental",
+    "imageUrl": "/images/catalog/ark/dossiers/volcano_golem_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/lunar_salmon/lunar_salmon_character_bp.lunar_salmon_character_bp": {
+    "name": "X-Sabertooth Salmon",
+    "imageUrl": "/images/catalog/ark/dossiers/lunar_salmon_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/lunar_salmon/rare_lunar_salmon_character_bp.rare_lunar_salmon_character_bp": {
+    "name": "Rare X-Sabertooth Salmon",
+    "imageUrl": "/images/catalog/ark/dossiers/rare_lunar_salmon_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/ocean_basilosaurus/ocean_basilosaurus_character_bp.ocean_basilosaurus_character_bp": {
+    "name": "X-Basilosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/ocean_basilosaurus_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/ocean_dolphin/ocean_dolphin_character_bp.ocean_dolphin_character_bp": {
+    "name": "X-Ichthyosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/ocean_dolphin_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/ocean_dunkleosteus/ocean_dunkle_character_bp.ocean_dunkle_character_bp": {
+    "name": "X-Dunkeosteus",
+    "imageUrl": "/images/catalog/ark/dossiers/ocean_dunkle_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/ocean_megalodon/ocean_megalodon_character_bp.ocean_megalodon_character_bp": {
+    "name": "X-Megalodon",
+    "imageUrl": "/images/catalog/ark/dossiers/ocean_megalodon_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/ocean_mosasaurus/ocean_mosa_character_bp.ocean_mosa_character_bp": {
+    "name": "X-Mosasaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/ocean_mosa_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/snow_argentavis/snow_argent_character_bp.snow_argent_character_bp": {
+    "name": "X-Argentavis",
+    "imageUrl": "/images/catalog/ark/dossiers/snow_argent_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/snow_otter/snow_otter_character_bp.snow_otter_character_bp": {
+    "name": "X-Otter",
+    "imageUrl": "/images/catalog/ark/dossiers/snow_otter_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/snow_saber/snow_saber_character_bp.snow_saber_character_bp": {
+    "name": "X-Sabertooth",
+    "imageUrl": "/images/catalog/ark/dossiers/snow_saber_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/snow_woollyrhino/snow_rhino_character_bp.snow_rhino_character_bp": {
+    "name": "X-Woolly Rhino",
+    "imageUrl": "/images/catalog/ark/dossiers/snow_rhino_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/snow_yutyrannus/snow_yutyrannus_character_bp.snow_yutyrannus_character_bp": {
+    "name": "X-Yutyrannus",
+    "imageUrl": "/images/catalog/ark/dossiers/snow_yutyrannus_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/volcano_allosaurus/volcano_allo_character_bp.volcano_allo_character_bp": {
+    "name": "X-Allosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/volcano_allo_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/volcano_ankylosaurus/volcano_ankylo_character_bp.volcano_ankylo_character_bp": {
+    "name": "X-Ankylosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/volcano_ankylo_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/volcano_rex/volcano_rex_character_bp.volcano_rex_character_bp": {
+    "name": "X-Rex",
+    "imageUrl": "/images/catalog/ark/dossiers/volcano_rex_character_bp.webp"
+  },
+  "/game/genesis/dinos/biomevariants/volcano_trike/volcano_trike_character_bp.volcano_trike_character_bp": {
+    "name": "X-Triceratops",
+    "imageUrl": "/images/catalog/ark/dossiers/volcano_trike_character_bp.webp"
+  },
+  "/game/genesis/dinos/bogspider/bogspider_character_bp.bogspider_character_bp": {
+    "name": "Bloodstalker",
+    "imageUrl": "/images/catalog/ark/dossiers/bogspider_character_bp.webp"
+  },
+  "/game/genesis/dinos/cherufe/cherufe_character_bp.cherufe_character_bp": {
+    "name": "Magmasaur",
+    "imageUrl": "/images/catalog/ark/dossiers/cherufe_character_bp.webp"
+  },
+  "/game/genesis/dinos/giantturtle/giantturtle_character_bp.giantturtle_character_bp": {
+    "name": "Megachelon",
+    "imageUrl": "/images/catalog/ark/dossiers/giantturtle_character_bp.webp"
+  },
+  "/game/genesis/dinos/shapeshifter/shapeshifter_large/shapeshifter_large_character_bp.shapeshifter_large_character_bp": {
+    "name": "Ferox",
+    "imageUrl": "/images/catalog/ark/dossiers/shapeshifter_large_character_bp.webp"
+  },
+  "/game/genesis/dinos/shapeshifter/shapeshifter_small/shapeshifter_small_character_bp.shapeshifter_small_character_bp": {
+    "name": "Ferox",
+    "imageUrl": "/images/catalog/ark/dossiers/shapeshifter_small_character_bp.webp"
+  },
+  "/game/genesis/dinos/spacewhale/spacewhale_character_bp.spacewhale_character_bp": {
+    "name": "Astrocetus",
+    "imageUrl": "/images/catalog/ark/dossiers/spacewhale_character_bp.webp"
+  },
+  "/game/lostisland/dinos/amargasaurus/amargasaurus_character_bp.amargasaurus_character_bp": {
+    "name": "Amargasaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/amargasaurus_character_bp.webp"
+  },
+  "/game/lostisland/dinos/dinopithecus/dinopithecus_character_bp.dinopithecus_character_bp": {
+    "name": "Dinopithecus",
+    "imageUrl": "/images/catalog/ark/dossiers/dinopithecus_character_bp.webp"
+  },
+  "/game/lostisland/dinos/sinomacrops/sinomacrops_character_bp.sinomacrops_character_bp": {
+    "name": "Sinomacrops",
+    "imageUrl": "/images/catalog/ark/dossiers/sinomacrops_character_bp.webp"
+  },
+  "/game/mods/astraeos/assets/coreblueprints/creatures/kraken/shark/shark_character_bp.shark_character_bp": {
+    "name": "Megalodon",
+    "imageUrl": "/images/catalog/ark/dossiers/shark_character_bp.webp"
+  },
+  "/game/mods/astraeos/assets/coreblueprints/creatures/kraken/squid/squid_character_bp.squid_character_bp": {
+    "name": "Tusoteuthis",
+    "imageUrl": "/images/catalog/ark/dossiers/squid_character_bp.webp"
+  },
+  "/game/mods/ragnarok/custom_assets/bosses/lifelabyrinth/bear/direbear_ll_character_bp.direbear_ll_character_bp": {
+    "name": "Dire Bear",
+    "imageUrl": "/images/catalog/ark/dossiers/direbear_ll_character_bp.webp"
+  },
+  "/game/mods/ragnarok/custom_assets/bosses/lifelabyrinth/wolf/direwolf_ll_character_bp.direwolf_ll_character_bp": {
+    "name": "Direwolf",
+    "imageUrl": "/images/catalog/ark/dossiers/direwolf_ll_character_bp.webp"
+  },
+  "/game/mods/ragnarok/custom_assets/dinos/polar_bear/polar_bear.polar_bear": {
+    "name": "Dire Polar Bear",
+    "imageUrl": "/images/catalog/ark/dossiers/polar_bear.webp"
+  },
+  "/game/mods/ragnarok/custom_assets/dinos/wyvern/ice_wyvern/ragnarok_wyvern_override_ice.ragnarok_wyvern_override_ice": {
+    "name": "Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/ragnarok_wyvern_override_ice.webp"
+  },
+  "/game/mods/valguero/assets/dinos/rockgolem/chalkgolem/chalkgolem_character_bp.chalkgolem_character_bp": {
+    "name": "Rock Elemental",
+    "imageUrl": "/images/catalog/ark/dossiers/chalkgolem_character_bp.webp"
+  },
+  "/game/primalearth/dinos/achatina/achatina_character_bp_aberrant.achatina_character_bp_aberrant": {
+    "name": "Aberrant Achatina",
+    "imageUrl": "/images/catalog/ark/dossiers/achatina_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/achatina/achatina_character_bp.achatina_character_bp": {
+    "name": "Achatina",
+    "imageUrl": "/images/catalog/ark/dossiers/achatina_character_bp.webp"
+  },
+  "/game/primalearth/dinos/allosaurus/allo_character_bp.allo_character_bp": {
+    "name": "Allosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/allo_character_bp.webp"
+  },
+  "/game/primalearth/dinos/anglerfish/angler_character_bp_aberrant.angler_character_bp_aberrant": {
+    "name": "Aberrant Anglerfish",
+    "imageUrl": "/images/catalog/ark/dossiers/angler_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/anglerfish/angler_character_bp.angler_character_bp": {
+    "name": "Anglerfish",
+    "imageUrl": "/images/catalog/ark/dossiers/angler_character_bp.webp"
+  },
+  "/game/primalearth/dinos/ankylo/ankylo_character_bp_aberrant.ankylo_character_bp_aberrant": {
+    "name": "Aberrant Ankylosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/ankylo_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/ankylo/ankylo_character_bp.ankylo_character_bp": {
+    "name": "Ankylosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/ankylo_character_bp.webp"
+  },
+  "/game/primalearth/dinos/archaeopteryx/archa_character_bp.archa_character_bp": {
+    "name": "Archaeopteryx",
+    "imageUrl": "/images/catalog/ark/dossiers/archa_character_bp.webp"
+  },
+  "/game/primalearth/dinos/argentavis/argent_character_bp.argent_character_bp": {
+    "name": "Argentavis",
+    "imageUrl": "/images/catalog/ark/dossiers/argent_character_bp.webp"
+  },
+  "/game/primalearth/dinos/arthropluera/arthro_character_bp_aberrant.arthro_character_bp_aberrant": {
+    "name": "Aberrant Arthropluera",
+    "imageUrl": "/images/catalog/ark/dossiers/arthro_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/arthropluera/arthro_character_bp.arthro_character_bp": {
+    "name": "Arthropluera",
+    "imageUrl": "/images/catalog/ark/dossiers/arthro_character_bp.webp"
+  },
+  "/game/primalearth/dinos/baryonyx/baryonyx_character_bp_aberrant.baryonyx_character_bp_aberrant": {
+    "name": "Aberrant Baryonyx",
+    "imageUrl": "/images/catalog/ark/dossiers/baryonyx_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/baryonyx/baryonyx_character_bp.baryonyx_character_bp": {
+    "name": "Baryonyx",
+    "imageUrl": "/images/catalog/ark/dossiers/baryonyx_character_bp.webp"
+  },
+  "/game/primalearth/dinos/basilosaurus/basilosaurus_character_bp.basilosaurus_character_bp": {
+    "name": "Basilosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/basilosaurus_character_bp.webp"
+  },
+  "/game/primalearth/dinos/bat/bat_character_bp.bat_character_bp": {
+    "name": "Onyc",
+    "imageUrl": "/images/catalog/ark/dossiers/bat_character_bp.webp"
+  },
+  "/game/primalearth/dinos/beaver/beaver_character_bp.beaver_character_bp": {
+    "name": "Castoroides",
+    "imageUrl": "/images/catalog/ark/dossiers/beaver_character_bp.webp"
+  },
+  "/game/primalearth/dinos/bee/bee_character_bp.bee_character_bp": {
+    "name": "Giant Bee",
+    "imageUrl": "/images/catalog/ark/dossiers/bee_character_bp.webp"
+  },
+  "/game/primalearth/dinos/bee/bee_queen_character_bp.bee_queen_character_bp": {
+    "name": "Giant Queen Bee",
+    "imageUrl": "/images/catalog/ark/dossiers/bee_queen_character_bp.webp"
+  },
+  "/game/primalearth/dinos/bigfoot/bigfoot_character_bp_aberrant.bigfoot_character_bp_aberrant": {
+    "name": "Aberrant Gigantopithecus",
+    "imageUrl": "/images/catalog/ark/dossiers/bigfoot_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/bigfoot/bigfoot_character_bp.bigfoot_character_bp": {
+    "name": "Gigantopithecus",
+    "imageUrl": "/images/catalog/ark/dossiers/bigfoot_character_bp.webp"
+  },
+  "/game/primalearth/dinos/boafrill/boafrill_character_bp_aberrant.boafrill_character_bp_aberrant": {
+    "name": "Aberrant Titanoboa",
+    "imageUrl": "/images/catalog/ark/dossiers/boafrill_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/boafrill/boafrill_character_bp.boafrill_character_bp": {
+    "name": "Titanoboa",
+    "imageUrl": "/images/catalog/ark/dossiers/boafrill_character_bp.webp"
+  },
+  "/game/primalearth/dinos/carcharodontosaurus/carcha_character_bp.carcha_character_bp": {
+    "name": "Carcharodontosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/carcha_character_bp.webp"
+  },
+  "/game/primalearth/dinos/carno/carno_character_bp_aberrant.carno_character_bp_aberrant": {
+    "name": "Aberrant Carnotaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/carno_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/carno/carno_character_bp.carno_character_bp": {
+    "name": "Carnotaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/carno_character_bp.webp"
+  },
+  "/game/primalearth/dinos/chalicotherium/chalico_character_bp.chalico_character_bp": {
+    "name": "Chalicotherium",
+    "imageUrl": "/images/catalog/ark/dossiers/chalico_character_bp.webp"
+  },
+  "/game/primalearth/dinos/coelacanth/coel_character_bp_aberrant.coel_character_bp_aberrant": {
+    "name": "Aberrant Coelacanth",
+    "imageUrl": "/images/catalog/ark/dossiers/coel_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/coelacanth/coel_character_bp.coel_character_bp": {
+    "name": "Coelacanth",
+    "imageUrl": "/images/catalog/ark/dossiers/coel_character_bp.webp"
+  },
+  "/game/primalearth/dinos/compy/compy_character_bp.compy_character_bp": {
+    "name": "Compy",
+    "imageUrl": "/images/catalog/ark/dossiers/compy_character_bp.webp"
+  },
+  "/game/primalearth/dinos/crystalwyvern/crystalwyvern_character_bp_blood.crystalwyvern_character_bp_blood": {
+    "name": "Blood Crystal Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/crystalwyvern_character_bp_blood.webp"
+  },
+  "/game/primalearth/dinos/crystalwyvern/crystalwyvern_character_bp.crystalwyvern_character_bp": {
+    "name": "Crystal Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/crystalwyvern_character_bp.webp"
+  },
+  "/game/primalearth/dinos/crystalwyvern/crystalwyvern_character_bp_ember.crystalwyvern_character_bp_ember": {
+    "name": "Ember Crystal Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/crystalwyvern_character_bp_ember.webp"
+  },
+  "/game/primalearth/dinos/crystalwyvern/crystalwyvern_character_bp_ws.crystalwyvern_character_bp_ws": {
+    "name": "Tropical Crystal Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/crystalwyvern_character_bp_ws.webp"
+  },
+  "/game/primalearth/dinos/daeodon/daeodon_character_bp.daeodon_character_bp": {
+    "name": "Daeodon",
+    "imageUrl": "/images/catalog/ark/dossiers/daeodon_character_bp.webp"
+  },
+  "/game/primalearth/dinos/dilo/dilo_character_bp.dilo_character_bp": {
+    "name": "Dilophosaur",
+    "imageUrl": "/images/catalog/ark/dossiers/dilo_character_bp.webp"
+  },
+  "/game/primalearth/dinos/dimetrodon/dimetro_character_bp_aberrant.dimetro_character_bp_aberrant": {
+    "name": "Aberrant Dimetrodon",
+    "imageUrl": "/images/catalog/ark/dossiers/dimetro_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/dimetrodon/dimetro_character_bp.dimetro_character_bp": {
+    "name": "Dimetrodon",
+    "imageUrl": "/images/catalog/ark/dossiers/dimetro_character_bp.webp"
+  },
+  "/game/primalearth/dinos/dimorphodon/dimorph_character_bp_aberrant.dimorph_character_bp_aberrant": {
+    "name": "Aberrant Dimorphodon",
+    "imageUrl": "/images/catalog/ark/dossiers/dimorph_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/dimorphodon/dimorph_character_bp.dimorph_character_bp": {
+    "name": "Dimorphodon",
+    "imageUrl": "/images/catalog/ark/dossiers/dimorph_character_bp.webp"
+  },
+  "/game/primalearth/dinos/diplocaulus/diplocaulus_character_bp_aberrant.diplocaulus_character_bp_aberrant": {
+    "name": "Aberrant Diplocaulus",
+    "imageUrl": "/images/catalog/ark/dossiers/diplocaulus_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/diplocaulus/diplocaulus_character_bp.diplocaulus_character_bp": {
+    "name": "Diplocaulus",
+    "imageUrl": "/images/catalog/ark/dossiers/diplocaulus_character_bp.webp"
+  },
+  "/game/primalearth/dinos/diplodocus/diplodocus_character_bp_aberrant.diplodocus_character_bp_aberrant": {
+    "name": "Aberrant Diplodocus",
+    "imageUrl": "/images/catalog/ark/dossiers/diplodocus_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/diplodocus/diplodocus_character_bp.diplodocus_character_bp": {
+    "name": "Diplodocus",
+    "imageUrl": "/images/catalog/ark/dossiers/diplodocus_character_bp.webp"
+  },
+  "/game/primalearth/dinos/direbear/direbear_character_bp_aberrant.direbear_character_bp_aberrant": {
+    "name": "Aberrant Dire Bear",
+    "imageUrl": "/images/catalog/ark/dossiers/direbear_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/direbear/direbear_character_bp.direbear_character_bp": {
+    "name": "Dire Bear",
+    "imageUrl": "/images/catalog/ark/dossiers/direbear_character_bp.webp"
+  },
+  "/game/primalearth/dinos/direwolf/direwolf_character_bp.direwolf_character_bp": {
+    "name": "Direwolf",
+    "imageUrl": "/images/catalog/ark/dossiers/direwolf_character_bp.webp"
+  },
+  "/game/primalearth/dinos/dodo/dodo_character_bp_aberrant.dodo_character_bp_aberrant": {
+    "name": "Aberrant Dodo",
+    "imageUrl": "/images/catalog/ark/dossiers/dodo_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/dodo/dodo_character_bp.dodo_character_bp": {
+    "name": "Dodo",
+    "imageUrl": "/images/catalog/ark/dossiers/dodo_character_bp.webp"
+  },
+  "/game/primalearth/dinos/dodorex/dodorex_character_bp.dodorex_character_bp": {
+    "name": "DodoRex",
+    "imageUrl": "/images/catalog/ark/dossiers/dodorex_character_bp.webp"
+  },
+  "/game/primalearth/dinos/dodo/zombiedodo_character_bp.zombiedodo_character_bp": {
+    "name": "Zomdodo",
+    "imageUrl": "/images/catalog/ark/dossiers/zombiedodo_character_bp.webp"
+  },
+  "/game/primalearth/dinos/doedicurus/doed_character_bp_aberrant.doed_character_bp_aberrant": {
+    "name": "Aberrant Doedicurus",
+    "imageUrl": "/images/catalog/ark/dossiers/doed_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/doedicurus/doed_character_bp.doed_character_bp": {
+    "name": "Doedicurus",
+    "imageUrl": "/images/catalog/ark/dossiers/doed_character_bp.webp"
+  },
+  "/game/primalearth/dinos/dolphin/dolphin_character_bp.dolphin_character_bp": {
+    "name": "Ichthyosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/dolphin_character_bp.webp"
+  },
+  "/game/primalearth/dinos/dungbeetle/dungbeetle_character_bp_aberrant.dungbeetle_character_bp_aberrant": {
+    "name": "Aberrant Dung Beetle",
+    "imageUrl": "/images/catalog/ark/dossiers/dungbeetle_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/dungbeetle/dungbeetle_character_bp.dungbeetle_character_bp": {
+    "name": "Dung Beetle",
+    "imageUrl": "/images/catalog/ark/dossiers/dungbeetle_character_bp.webp"
+  },
+  "/game/primalearth/dinos/dunkleosteus/dunkle_character_bp.dunkle_character_bp": {
+    "name": "Dunkleosteus",
+    "imageUrl": "/images/catalog/ark/dossiers/dunkle_character_bp.webp"
+  },
+  "/game/primalearth/dinos/eel/eel_character_bp_aberrant.eel_character_bp_aberrant": {
+    "name": "Aberrant Electrophorus",
+    "imageUrl": "/images/catalog/ark/dossiers/eel_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/eel/eel_character_bp.eel_character_bp": {
+    "name": "Electrophorus",
+    "imageUrl": "/images/catalog/ark/dossiers/eel_character_bp.webp"
+  },
+  "/game/primalearth/dinos/equus/equus_character_bp_aberrant.equus_character_bp_aberrant": {
+    "name": "Aberrant Equus",
+    "imageUrl": "/images/catalog/ark/dossiers/equus_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/equus/equus_character_bp.equus_character_bp": {
+    "name": "Equus",
+    "imageUrl": "/images/catalog/ark/dossiers/equus_character_bp.webp"
+  },
+  "/game/primalearth/dinos/equus/equus_character_bp_unicorn.equus_character_bp_unicorn": {
+    "name": "Unicorn",
+    "imageUrl": "/images/catalog/ark/dossiers/equus_character_bp_unicorn.webp"
+  },
+  "/game/primalearth/dinos/gallimimus/galli_character_bp.galli_character_bp": {
+    "name": "Gallimimus",
+    "imageUrl": "/images/catalog/ark/dossiers/galli_character_bp.webp"
+  },
+  "/game/primalearth/dinos/giganotosaurus/gigant_character_bp.gigant_character_bp": {
+    "name": "Giganotosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/gigant_character_bp.webp"
+  },
+  "/game/primalearth/dinos/griffin/griffin_character_bp.griffin_character_bp": {
+    "name": "Griffin",
+    "imageUrl": "/images/catalog/ark/dossiers/griffin_character_bp.webp"
+  },
+  "/game/primalearth/dinos/hesperornis/hesperornis_character_bp.hesperornis_character_bp": {
+    "name": "Hesperornis",
+    "imageUrl": "/images/catalog/ark/dossiers/hesperornis_character_bp.webp"
+  },
+  "/game/primalearth/dinos/hyaenodon/hyaenodon_character_bp.hyaenodon_character_bp": {
+    "name": "Hyaenodon",
+    "imageUrl": "/images/catalog/ark/dossiers/hyaenodon_character_bp.webp"
+  },
+  "/game/primalearth/dinos/icegolem/icegolem_character_bp.icegolem_character_bp": {
+    "name": "Rock Elemental",
+    "imageUrl": "/images/catalog/ark/dossiers/icegolem_character_bp.webp"
+  },
+  "/game/primalearth/dinos/ichthyornis/ichthyornis_character_bp.ichthyornis_character_bp": {
+    "name": "Ichthyornis",
+    "imageUrl": "/images/catalog/ark/dossiers/ichthyornis_character_bp.webp"
+  },
+  "/game/primalearth/dinos/iguanodon/iguanodon_character_bp_aberrant.iguanodon_character_bp_aberrant": {
+    "name": "Aberrant Iguanodon",
+    "imageUrl": "/images/catalog/ark/dossiers/iguanodon_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/iguanodon/iguanodon_character_bp.iguanodon_character_bp": {
+    "name": "Iguanodon",
+    "imageUrl": "/images/catalog/ark/dossiers/iguanodon_character_bp.webp"
+  },
+  "/game/primalearth/dinos/kairuku/kairuku_character_bp.kairuku_character_bp": {
+    "name": "Kairuku",
+    "imageUrl": "/images/catalog/ark/dossiers/kairuku_character_bp.webp"
+  },
+  "/game/primalearth/dinos/kaprosuchus/kaprosuchus_character_bp.kaprosuchus_character_bp": {
+    "name": "Kaprosuchus",
+    "imageUrl": "/images/catalog/ark/dossiers/kaprosuchus_character_bp.webp"
+  },
+  "/game/primalearth/dinos/kentrosaurus/kentro_character_bp.kentro_character_bp": {
+    "name": "Kentrosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/kentro_character_bp.webp"
+  },
+  "/game/primalearth/dinos/leech/leech_character_diseased.leech_character_diseased": {
+    "name": "Leech",
+    "imageUrl": "/images/catalog/ark/dossiers/leech_character_diseased.webp"
+  },
+  "/game/primalearth/dinos/leech/leech_character.leech_character": {
+    "name": "Leech",
+    "imageUrl": "/images/catalog/ark/dossiers/leech_character.webp"
+  },
+  "/game/primalearth/dinos/liopleurodon/liopleurodon_character_bp.liopleurodon_character_bp": {
+    "name": "Liopleurodon",
+    "imageUrl": "/images/catalog/ark/dossiers/liopleurodon_character_bp.webp"
+  },
+  "/game/primalearth/dinos/lystrosaurus/lystro_character_bp_aberrant.lystro_character_bp_aberrant": {
+    "name": "Aberrant Lystrosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/lystro_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/lystrosaurus/lystro_character_bp.lystro_character_bp": {
+    "name": "Lystrosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/lystro_character_bp.webp"
+  },
+  "/game/primalearth/dinos/mammoth/mammoth_character_bp.mammoth_character_bp": {
+    "name": "Mammoth",
+    "imageUrl": "/images/catalog/ark/dossiers/mammoth_character_bp.webp"
+  },
+  "/game/primalearth/dinos/manta/manta_character_bp_aberrant.manta_character_bp_aberrant": {
+    "name": "Aberrant Manta",
+    "imageUrl": "/images/catalog/ark/dossiers/manta_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/manta/manta_character_bp.manta_character_bp": {
+    "name": "Manta",
+    "imageUrl": "/images/catalog/ark/dossiers/manta_character_bp.webp"
+  },
+  "/game/primalearth/dinos/megalania/megalania_character_bp_aberrant.megalania_character_bp_aberrant": {
+    "name": "Aberrant Megalania",
+    "imageUrl": "/images/catalog/ark/dossiers/megalania_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/megalania/megalania_character_bp.megalania_character_bp": {
+    "name": "Megalania",
+    "imageUrl": "/images/catalog/ark/dossiers/megalania_character_bp.webp"
+  },
+  "/game/primalearth/dinos/megalodon/megalodon_character_bp.megalodon_character_bp": {
+    "name": "Megalodon",
+    "imageUrl": "/images/catalog/ark/dossiers/megalodon_character_bp.webp"
+  },
+  "/game/primalearth/dinos/megalosaurus/megalosaurus_character_bp_aberrant.megalosaurus_character_bp_aberrant": {
+    "name": "Aberrant Megalosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/megalosaurus_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/megalosaurus/megalosaurus_character_bp.megalosaurus_character_bp": {
+    "name": "Megalosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/megalosaurus_character_bp.webp"
+  },
+  "/game/primalearth/dinos/megatherium/megatherium_character_bp.megatherium_character_bp": {
+    "name": "Megatherium",
+    "imageUrl": "/images/catalog/ark/dossiers/megatherium_character_bp.webp"
+  },
+  "/game/primalearth/dinos/microraptor/microraptor_character_bp.microraptor_character_bp": {
+    "name": "Microraptor",
+    "imageUrl": "/images/catalog/ark/dossiers/microraptor_character_bp.webp"
+  },
+  "/game/primalearth/dinos/monkey/monkey_character_bp.monkey_character_bp": {
+    "name": "Mesopithecus",
+    "imageUrl": "/images/catalog/ark/dossiers/monkey_character_bp.webp"
+  },
+  "/game/primalearth/dinos/mosasaurus/mosa_character_bp.mosa_character_bp": {
+    "name": "Mosasaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/mosa_character_bp.webp"
+  },
+  "/game/primalearth/dinos/moschops/moschops_character_bp_aberrant.moschops_character_bp_aberrant": {
+    "name": "Aberrant Moschops",
+    "imageUrl": "/images/catalog/ark/dossiers/moschops_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/moschops/moschops_character_bp.moschops_character_bp": {
+    "name": "Moschops",
+    "imageUrl": "/images/catalog/ark/dossiers/moschops_character_bp.webp"
+  },
+  "/game/primalearth/dinos/otter/otter_character_bp_aberrant.otter_character_bp_aberrant": {
+    "name": "Aberrant Otter",
+    "imageUrl": "/images/catalog/ark/dossiers/otter_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/otter/otter_character_bp.otter_character_bp": {
+    "name": "Otter",
+    "imageUrl": "/images/catalog/ark/dossiers/otter_character_bp.webp"
+  },
+  "/game/primalearth/dinos/oviraptor/oviraptor_character_bp_aberrant.oviraptor_character_bp_aberrant": {
+    "name": "Aberrant Oviraptor",
+    "imageUrl": "/images/catalog/ark/dossiers/oviraptor_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/oviraptor/oviraptor_character_bp.oviraptor_character_bp": {
+    "name": "Oviraptor",
+    "imageUrl": "/images/catalog/ark/dossiers/oviraptor_character_bp.webp"
+  },
+  "/game/primalearth/dinos/pachy/pachy_character_bp.pachy_character_bp": {
+    "name": "Pachy",
+    "imageUrl": "/images/catalog/ark/dossiers/pachy_character_bp.webp"
+  },
+  "/game/primalearth/dinos/pachyrhinosaurus/pachyrhino_character_bp.pachyrhino_character_bp": {
+    "name": "Pachyrhinosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/pachyrhino_character_bp.webp"
+  },
+  "/game/primalearth/dinos/para/bionicpara_character_bp.bionicpara_character_bp": {
+    "name": "Tek Parasaur",
+    "imageUrl": "/images/catalog/ark/dossiers/bionicpara_character_bp.webp"
+  },
+  "/game/primalearth/dinos/paraceratherium/paracer_character_bp_aberrant.paracer_character_bp_aberrant": {
+    "name": "Aberrant Paraceratherium",
+    "imageUrl": "/images/catalog/ark/dossiers/paracer_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/paraceratherium/paracer_character_bp.paracer_character_bp": {
+    "name": "Paraceratherium",
+    "imageUrl": "/images/catalog/ark/dossiers/paracer_character_bp.webp"
+  },
+  "/game/primalearth/dinos/para/para_character_bp_aberrant.para_character_bp_aberrant": {
+    "name": "Aberrant Parasaur",
+    "imageUrl": "/images/catalog/ark/dossiers/para_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/para/para_character_bp.para_character_bp": {
+    "name": "Parasaur",
+    "imageUrl": "/images/catalog/ark/dossiers/para_character_bp.webp"
+  },
+  "/game/primalearth/dinos/pegomastax/pegomastax_character_bp.pegomastax_character_bp": {
+    "name": "Pegomastax",
+    "imageUrl": "/images/catalog/ark/dossiers/pegomastax_character_bp.webp"
+  },
+  "/game/primalearth/dinos/pelagornis/pela_character_bp.pela_character_bp": {
+    "name": "Pelagornis",
+    "imageUrl": "/images/catalog/ark/dossiers/pela_character_bp.webp"
+  },
+  "/game/primalearth/dinos/phiomia/phiomia_character_bp.phiomia_character_bp": {
+    "name": "Phiomia",
+    "imageUrl": "/images/catalog/ark/dossiers/phiomia_character_bp.webp"
+  },
+  "/game/primalearth/dinos/piranha/piranha_character_bp_aberrant.piranha_character_bp_aberrant": {
+    "name": "Aberrant Piranha",
+    "imageUrl": "/images/catalog/ark/dossiers/piranha_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/piranha/piranha_character_bp.piranha_character_bp": {
+    "name": "Piranha",
+    "imageUrl": "/images/catalog/ark/dossiers/piranha_character_bp.webp"
+  },
+  "/game/primalearth/dinos/plesiosaur/plesiosaur_character_bp.plesiosaur_character_bp": {
+    "name": "Plesiosaur",
+    "imageUrl": "/images/catalog/ark/dossiers/plesiosaur_character_bp.webp"
+  },
+  "/game/primalearth/dinos/procoptodon/procoptodon_character_bp.procoptodon_character_bp": {
+    "name": "Procoptodon",
+    "imageUrl": "/images/catalog/ark/dossiers/procoptodon_character_bp.webp"
+  },
+  "/game/primalearth/dinos/ptero/ptero_character_bp.ptero_character_bp": {
+    "name": "Pteranodon",
+    "imageUrl": "/images/catalog/ark/dossiers/ptero_character_bp.webp"
+  },
+  "/game/primalearth/dinos/purlovia/purlovia_character_bp_aberrant.purlovia_character_bp_aberrant": {
+    "name": "Aberrant Purlovia",
+    "imageUrl": "/images/catalog/ark/dossiers/purlovia_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/purlovia/purlovia_character_bp.purlovia_character_bp": {
+    "name": "Purlovia",
+    "imageUrl": "/images/catalog/ark/dossiers/purlovia_character_bp.webp"
+  },
+  "/game/primalearth/dinos/quetzalcoatlus/bionicquetz_character_bp.bionicquetz_character_bp": {
+    "name": "Tek Quetzal",
+    "imageUrl": "/images/catalog/ark/dossiers/bionicquetz_character_bp.webp"
+  },
+  "/game/primalearth/dinos/quetzalcoatlus/quetz_character_bp.quetz_character_bp": {
+    "name": "Quetzal",
+    "imageUrl": "/images/catalog/ark/dossiers/quetz_character_bp.webp"
+  },
+  "/game/primalearth/dinos/raptor/bionicraptor_character_bp.bionicraptor_character_bp": {
+    "name": "Tek Raptor",
+    "imageUrl": "/images/catalog/ark/dossiers/bionicraptor_character_bp.webp"
+  },
+  "/game/primalearth/dinos/raptor/raptor_character_bp_aberrant.raptor_character_bp_aberrant": {
+    "name": "Aberrant Raptor",
+    "imageUrl": "/images/catalog/ark/dossiers/raptor_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/raptor/raptor_character_bp.raptor_character_bp": {
+    "name": "Raptor",
+    "imageUrl": "/images/catalog/ark/dossiers/raptor_character_bp.webp"
+  },
+  "/game/primalearth/dinos/raptor/uberraptor/deinonychus_character_bp.deinonychus_character_bp": {
+    "name": "Deinonychus",
+    "imageUrl": "/images/catalog/ark/dossiers/deinonychus_character_bp.webp"
+  },
+  "/game/primalearth/dinos/rex/bionicrex_character_bp.bionicrex_character_bp": {
+    "name": "Tek Rex",
+    "imageUrl": "/images/catalog/ark/dossiers/bionicrex_character_bp.webp"
+  },
+  "/game/primalearth/dinos/rex/rex_character_bp.rex_character_bp": {
+    "name": "Rex",
+    "imageUrl": "/images/catalog/ark/dossiers/rex_character_bp.webp"
+  },
+  "/game/primalearth/dinos/saber/saber_character_bp.saber_character_bp": {
+    "name": "Sabertooth",
+    "imageUrl": "/images/catalog/ark/dossiers/saber_character_bp.webp"
+  },
+  "/game/primalearth/dinos/salmon/salmon_character_aberrant.salmon_character_aberrant": {
+    "name": "Aberrant Salmon",
+    "imageUrl": "/images/catalog/ark/dossiers/salmon_character_aberrant.webp"
+  },
+  "/game/primalearth/dinos/salmon/salmon_character_bp.salmon_character_bp": {
+    "name": "Sabertooth Salmon",
+    "imageUrl": "/images/catalog/ark/dossiers/salmon_character_bp.webp"
+  },
+  "/game/primalearth/dinos/sarco/sarco_character_bp_aberrant.sarco_character_bp_aberrant": {
+    "name": "Aberrant Sarco",
+    "imageUrl": "/images/catalog/ark/dossiers/sarco_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/sarco/sarco_character_bp.sarco_character_bp": {
+    "name": "Sarco",
+    "imageUrl": "/images/catalog/ark/dossiers/sarco_character_bp.webp"
+  },
+  "/game/primalearth/dinos/sauropod/sauropod_character_bp.sauropod_character_bp": {
+    "name": "Brontosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/sauropod_character_bp.webp"
+  },
+  "/game/primalearth/dinos/scorpion/scorpion_character_bp_aberrant.scorpion_character_bp_aberrant": {
+    "name": "Aberrant Pulmonoscorpius",
+    "imageUrl": "/images/catalog/ark/dossiers/scorpion_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/scorpion/scorpion_character_bp.scorpion_character_bp": {
+    "name": "Pulmonoscorpius",
+    "imageUrl": "/images/catalog/ark/dossiers/scorpion_character_bp.webp"
+  },
+  "/game/primalearth/dinos/sheep/sheep_character_bp_aberrant.sheep_character_bp_aberrant": {
+    "name": "Aberrant Ovis",
+    "imageUrl": "/images/catalog/ark/dossiers/sheep_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/sheep/sheep_character_bp.sheep_character_bp": {
+    "name": "Ovis",
+    "imageUrl": "/images/catalog/ark/dossiers/sheep_character_bp.webp"
+  },
+  "/game/primalearth/dinos/spider-small/spiders_character_bp_aberrant.spiders_character_bp_aberrant": {
+    "name": "Aberrant Araneo",
+    "imageUrl": "/images/catalog/ark/dossiers/spiders_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/spider-small/spiders_character_bp.spiders_character_bp": {
+    "name": "Araneo",
+    "imageUrl": "/images/catalog/ark/dossiers/spiders_character_bp.webp"
+  },
+  "/game/primalearth/dinos/spino/spino_character_bp_aberrant.spino_character_bp_aberrant": {
+    "name": "Aberrant Spino",
+    "imageUrl": "/images/catalog/ark/dossiers/spino_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/spino/spino_character_bp.spino_character_bp": {
+    "name": "Spino",
+    "imageUrl": "/images/catalog/ark/dossiers/spino_character_bp.webp"
+  },
+  "/game/primalearth/dinos/stag/stag_character_bp.stag_character_bp": {
+    "name": "Megaloceros",
+    "imageUrl": "/images/catalog/ark/dossiers/stag_character_bp.webp"
+  },
+  "/game/primalearth/dinos/stego/bionicstego_character_bp.bionicstego_character_bp": {
+    "name": "Tek Stegosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/bionicstego_character_bp.webp"
+  },
+  "/game/primalearth/dinos/stego/stego_character_bp_aberrant.stego_character_bp_aberrant": {
+    "name": "Aberrant Stegosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/stego_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/stego/stego_character_bp.stego_character_bp": {
+    "name": "Stegosaurus",
+    "imageUrl": "/images/catalog/ark/dossiers/stego_character_bp.webp"
+  },
+  "/game/primalearth/dinos/tapejara/tapejara_character_bp.tapejara_character_bp": {
+    "name": "Tapejara",
+    "imageUrl": "/images/catalog/ark/dossiers/tapejara_character_bp.webp"
+  },
+  "/game/primalearth/dinos/terrorbird/terrorbird_character_bp.terrorbird_character_bp": {
+    "name": "Terror Bird",
+    "imageUrl": "/images/catalog/ark/dossiers/terrorbird_character_bp.webp"
+  },
+  "/game/primalearth/dinos/therizinosaurus/therizino_character_bp.therizino_character_bp": {
+    "name": "Therizinosaur",
+    "imageUrl": "/images/catalog/ark/dossiers/therizino_character_bp.webp"
+  },
+  "/game/primalearth/dinos/thylacoleo/thylacoleo_character_bp.thylacoleo_character_bp": {
+    "name": "Thylacoleo",
+    "imageUrl": "/images/catalog/ark/dossiers/thylacoleo_character_bp.webp"
+  },
+  "/game/primalearth/dinos/titanosaur/titanosaur_character_bp.titanosaur_character_bp": {
+    "name": "Titanosaur",
+    "imageUrl": "/images/catalog/ark/dossiers/titanosaur_character_bp.webp"
+  },
+  "/game/primalearth/dinos/toad/toad_character_bp_aberrant.toad_character_bp_aberrant": {
+    "name": "Aberrant Beelzebufo",
+    "imageUrl": "/images/catalog/ark/dossiers/toad_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/toad/toad_character_bp.toad_character_bp": {
+    "name": "Beelzebufo",
+    "imageUrl": "/images/catalog/ark/dossiers/toad_character_bp.webp"
+  },
+  "/game/primalearth/dinos/trike/bionictrike_character_bp.bionictrike_character_bp": {
+    "name": "Tek Triceratops",
+    "imageUrl": "/images/catalog/ark/dossiers/bionictrike_character_bp.webp"
+  },
+  "/game/primalearth/dinos/trike/trike_character_bp_aberrant.trike_character_bp_aberrant": {
+    "name": "Aberrant Triceratops",
+    "imageUrl": "/images/catalog/ark/dossiers/trike_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/trike/trike_character_bp.trike_character_bp": {
+    "name": "Triceratops",
+    "imageUrl": "/images/catalog/ark/dossiers/trike_character_bp.webp"
+  },
+  "/game/primalearth/dinos/trilobite/trilobite_character_aberrant.trilobite_character_aberrant": {
+    "name": "Aberrant Trilobite",
+    "imageUrl": "/images/catalog/ark/dossiers/trilobite_character_aberrant.webp"
+  },
+  "/game/primalearth/dinos/trilobite/trilobite_character.trilobite_character": {
+    "name": "Trilobite",
+    "imageUrl": "/images/catalog/ark/dossiers/trilobite_character.webp"
+  },
+  "/game/primalearth/dinos/troodon/troodon_character_bp.troodon_character_bp": {
+    "name": "Troodon",
+    "imageUrl": "/images/catalog/ark/dossiers/troodon_character_bp.webp"
+  },
+  "/game/primalearth/dinos/tropeognathus/tropeognathus_character_bp.tropeognathus_character_bp": {
+    "name": "Tropeognathus",
+    "imageUrl": "/images/catalog/ark/dossiers/tropeognathus_character_bp.webp"
+  },
+  "/game/primalearth/dinos/turtle/turtle_character_bp_aberrant.turtle_character_bp_aberrant": {
+    "name": "Aberrant Carbonemys",
+    "imageUrl": "/images/catalog/ark/dossiers/turtle_character_bp_aberrant.webp"
+  },
+  "/game/primalearth/dinos/turtle/turtle_character_bp.turtle_character_bp": {
+    "name": "Carbonemys",
+    "imageUrl": "/images/catalog/ark/dossiers/turtle_character_bp.webp"
+  },
+  "/game/primalearth/dinos/tusoteuthis/tusoteuthis_character_bp.tusoteuthis_character_bp": {
+    "name": "Tusoteuthis",
+    "imageUrl": "/images/catalog/ark/dossiers/tusoteuthis_character_bp.webp"
+  },
+  "/game/primalearth/dinos/woollyrhino/rhino_character_bp.rhino_character_bp": {
+    "name": "Woolly Rhino",
+    "imageUrl": "/images/catalog/ark/dossiers/rhino_character_bp.webp"
+  },
+  "/game/primalearth/dinos/yutyrannus/yutyrannus_character_bp.yutyrannus_character_bp": {
+    "name": "Yutyrannus",
+    "imageUrl": "/images/catalog/ark/dossiers/yutyrannus_character_bp.webp"
+  },
+  "/game/scorchedearth/dinos/camelsaurus/camelsaurus_character_bp.camelsaurus_character_bp": {
+    "name": "Morellatops",
+    "imageUrl": "/images/catalog/ark/dossiers/camelsaurus_character_bp.webp"
+  },
+  "/game/scorchedearth/dinos/jerboa/jerboa_character_bp.jerboa_character_bp": {
+    "name": "Jerboa",
+    "imageUrl": "/images/catalog/ark/dossiers/jerboa_character_bp.webp"
+  },
+  "/game/scorchedearth/dinos/mantis/mantis_character_bp.mantis_character_bp": {
+    "name": "Mantis",
+    "imageUrl": "/images/catalog/ark/dossiers/mantis_character_bp.webp"
+  },
+  "/game/scorchedearth/dinos/moth/moth_character_bp.moth_character_bp": {
+    "name": "Lymantria",
+    "imageUrl": "/images/catalog/ark/dossiers/moth_character_bp.webp"
+  },
+  "/game/scorchedearth/dinos/phoenix/phoenix_character_bp.phoenix_character_bp": {
+    "name": "Phoenix",
+    "imageUrl": "/images/catalog/ark/dossiers/phoenix_character_bp.webp"
+  },
+  "/game/scorchedearth/dinos/rockgolem/rockgolem_character_bp.rockgolem_character_bp": {
+    "name": "Rock Elemental",
+    "imageUrl": "/images/catalog/ark/dossiers/rockgolem_character_bp.webp"
+  },
+  "/game/scorchedearth/dinos/spineylizard/spineylizard_character_bp.spineylizard_character_bp": {
+    "name": "Thorny Dragon",
+    "imageUrl": "/images/catalog/ark/dossiers/spineylizard_character_bp.webp"
+  },
+  "/game/scorchedearth/dinos/vulture/vulture_character_bp.vulture_character_bp": {
+    "name": "Vulture",
+    "imageUrl": "/images/catalog/ark/dossiers/vulture_character_bp.webp"
+  },
+  "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_fire.wyvern_character_bp_fire": {
+    "name": "Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_fire.webp"
+  },
+  "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_lightning.wyvern_character_bp_lightning": {
+    "name": "Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_lightning.webp"
+  },
+  "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_poison.wyvern_character_bp_poison": {
+    "name": "Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_poison.webp"
+  },
+  "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_zombiebase.wyvern_character_bp_zombiebase": {
+    "name": "Zombie Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_zombiebase.webp"
+  },
+  "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_zombiefire.wyvern_character_bp_zombiefire": {
+    "name": "Zombie Fire Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_zombiefire.webp"
+  },
+  "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_zombielightning.wyvern_character_bp_zombielightning": {
+    "name": "Zombie Lightning Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_zombielightning.webp"
+  },
+  "/game/scorchedearth/dinos/wyvern/wyvern_character_bp_zombiepoison.wyvern_character_bp_zombiepoison": {
+    "name": "Zombie Poison Wyvern",
+    "imageUrl": "/images/catalog/ark/dossiers/wyvern_character_bp_zombiepoison.webp"
+  }
+}

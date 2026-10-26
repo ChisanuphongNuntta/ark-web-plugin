@@ -8,7 +8,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, CheckCircle2, Loader2, RefreshCw, XCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, RefreshCw, XCircle } from 'lucide-react';
+import { ArrowLeft } from '@/components/tek/arrows';
 import {
   AdminButton,
   AdminNotice,

@@ -118,7 +118,7 @@ function SecretDialog({ issued, onClose }: { issued: (IssuedCredential & { title
           <label className="flex items-start gap-3 text-sm text-iris-pearl">
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-[#37E5D2]"
+              className="mt-0.5 h-4 w-4 accent-cyan-400"
               checked={acknowledged}
               onChange={(e) => setAcknowledged(e.target.checked)}
             />
@@ -398,7 +398,7 @@ function PluginKeysAdmin() {
         <label className="flex items-start gap-3 text-sm text-iris-pearl">
           <input
             type="checkbox"
-            className="mt-0.5 h-4 w-4 accent-[#37E5D2]"
+            className="mt-0.5 h-4 w-4 accent-cyan-400"
             checked={revokePrevious}
             onChange={(e) => setRevokePrevious(e.target.checked)}
           />

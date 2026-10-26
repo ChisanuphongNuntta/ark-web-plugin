@@ -86,6 +86,10 @@ export function isAdminOpsQuery(query: Query): boolean {
 export const VIP_ME_KEY = ['vip-me'] as const;
 export const VIP_PACKAGES_KEY = ['vip-packages'] as const;
 
+/** Player perks caches (GET /perks/me, /perks/catalog) refreshed by 'perks:updated'. */
+export const PERKS_ME_KEY = ['perks-me'] as const;
+export const PERKS_CATALOG_KEY = ['perks-catalog'] as const;
+
 /**
  * Self-healing defaults: if the socket drops, these caches still refresh on
  * window focus and every 60 s while the tab is visible. Per-query options win.

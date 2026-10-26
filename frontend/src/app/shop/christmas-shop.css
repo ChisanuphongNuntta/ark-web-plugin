@@ -1,0 +1,136 @@
+/* Christmas supply depot: scene supplied by the owner, interface remains live HTML. */
+body:has(.tk-christmas-shop) {
+  background-color: #080508;
+  background-image: radial-gradient(ellipse at 10% 30%, #64111e33, transparent 42%), radial-gradient(ellipse at 95% 40%, #64111e33, transparent 40%);
+}
+.tk-christmas-shop {
+  --tk-cyan: #ff4056;
+  --tk-line: #a92d414d;
+  --tk-line-strong: #e84b6370;
+  --tk-panel: #100a0f;
+  --tk-muted: #b7aeb8;
+  --tk-faint: #92838c;
+  --tk-text: #f6edf1;
+  --tk-gold: #ffcf70;
+  padding-bottom: 40px;
+}
+body:has(.tk-christmas-shop) .tk-top {
+  --tk-cyan: #ff4056;
+  --tk-line: #c6324652;
+  background: linear-gradient(180deg, #08070afb, #08070aee);
+  border-bottom-color: #b5394b;
+}
+body:has(.tk-christmas-shop) .tk-top::after { background: linear-gradient(90deg, transparent, #ff354e, #ffd48a, #ff354e, transparent); }
+body:has(.tk-christmas-shop) .tk-brand img { filter: hue-rotate(145deg) saturate(.9); }
+body:has(.tk-christmas-shop) .tk-brand b { color: #ff6375; text-shadow: 0 0 20px #ff3e5555; }
+body:has(.tk-christmas-shop) .tk-brand small { color: #d8c8cc; }
+body:has(.tk-christmas-shop) .tk-event { background: linear-gradient(90deg, #520a17, #18080d 45%, #520a17); border-bottom-color: #b46746; }
+body:has(.tk-christmas-shop) .tk-top .tk-btn { --bg: #e92943; --fg: #fff; }
+body:has(.tk-christmas-shop) .frozen-wayfinding { color: #c7b9c0; }
+body:has(.tk-christmas-shop) .frozen-wayfinding > span { color: #f5b9bd; }
+body:has(.tk-christmas-shop) .frozen-page-shop { background: #080508; }
+body:has(.tk-christmas-shop) .tk-top > .tk-wrap { width: min(1460px, calc(100% - 64px)); }
+.frozen-page .tk-christmas-shop .shop-catalog-shell { max-width: 1460px; padding-inline: 0; }
+.tk-christmas-shop .tk-shop-hero {
+  min-height: 500px;
+  padding: 100px 0 88px;
+  border: 0;
+  background: #0b070b;
+  isolation: isolate;
+}
+.tk-shop-scene { position: absolute; inset: 0; z-index: -3; }
+.tk-shop-scene img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.tk-shop-scene-shade {
+  position: absolute; inset: 0; z-index: -2; pointer-events: none;
+  background: linear-gradient(90deg, #03060ce6, #05060c99 33%, #05060c10 62%, transparent), linear-gradient(0deg, #080508 0%, transparent 25%);
+}
+.tk-christmas-shop .tk-wrap, .tk-christmas-shop .shop-catalog-shell { width: min(1460px, calc(100% - 64px)); max-width: 1460px; }
+.tk-christmas-shop .tk-shop-hero-in { max-width: 1460px; }
+.tk-christmas-shop .tk-shop-hero .tk-kicker { color: #ff9da6; font-size: 14px; letter-spacing: .26em; }
+.tk-christmas-shop .tk-shop-hero .tk-kicker::before { display: none; }
+.tk-christmas-shop .tk-shop-hero h1 {
+  margin-top: 18px; font-family: var(--font-iris-sans), sans-serif;
+  font-size: clamp(38px, 4.4vw, 76px); font-weight: 700; line-height: 1.3;
+  color: #e9f6ff; text-shadow: 0 2px 0 #49768b, 0 4px 0 #183244, 0 5px 8px #000, 0 0 22px #99d8ff55;
+}
+.tk-christmas-shop .tk-shop-hero h1 span { color: #fff2f1; text-shadow: 0 2px 0 #f75d70, 0 4px 0 #9b1224, 0 0 28px #e32d3b99; }
+.tk-christmas-shop .tk-shop-hero p { max-width: 545px; color: #dce1e6; font-size: 17px; line-height: 1.85; margin: 16px 0 25px; text-shadow: 0 2px 5px #000; }
+.tk-christmas-shop .tk-shop-hero .tk-btn { min-height: 60px; min-width: 235px; font-size: 17px; --bg: linear-gradient(180deg, #ff4558, #ea0e2c 55%, #a90924); --fg: #fff; box-shadow: inset 0 2px 1px #ffd7ba; }
+.tk-christmas-shop .tk-shop-hero .tk-btn.ghost { --bg: linear-gradient(180deg,#25242d,#0a0a12); box-shadow: inset 0 1px 1px #b4b9c7; }
+.tk-christmas-shop .shop-catalog-shell { position: relative; margin-top: -32px; z-index: 3; }
+.tk-depot-catalog {
+  position: relative; border: 1px solid #c52b42; border-radius: 10px; padding: 28px 34px 36px;
+  background: linear-gradient(125deg, #6a0b1b2e, transparent 48%), url('/images/tek/hex-panel.svg') 0 0 / 64px auto, #0c080df5;
+  box-shadow: 0 -1px 16px #f33b5244, 0 24px 80px #0009;
+}
+.tk-depot-catalog::before { content: ''; position: absolute; height: 2px; left: 20px; right: 20px; top: -1px; pointer-events: none; background: linear-gradient(90deg,#ffd2b2,transparent 30%,transparent 70%,#ffd2b2); }
+.tk-depot-title { display: flex; gap: 22px; align-items: center; min-width: 0; }
+.tk-depot-title > div { min-width: 0; }
+.tk-depot-gift { flex: none; color: #ffd790; filter: drop-shadow(0 0 10px #ef2447); }
+.tk-depot-heading .eyebrow { color: #ff5f77; font-family: var(--font-iris-display),sans-serif; font-size: 11px; letter-spacing: .2em; }
+.tk-depot-heading h2 { color: #ffd26c; font-size: clamp(22px,2vw,30px); font-weight: 600; line-height: 1.5; }
+.tk-depot-heading > a { color: #d7ccd1; font-size: 12px; }
+.tk-christmas-shop .tk-chip { min-height: 44px; padding-inline: 22px; background: linear-gradient(180deg,#28222a,#0c0a10); color: #e5dfe5; box-shadow: inset 0 1px #81717a; }
+.tk-christmas-shop .tk-chip.on { color: #fff; background: linear-gradient(180deg,#ff5364,#ed1738 65%,#b20d28); box-shadow: inset 0 1px #ffcfa5; }
+.tk-christmas-shop .tk-chip.sm { min-height: 34px; padding-inline: 16px; }
+.tk-depot-search.tk-panel {
+  border-color: #ca324b; border-radius: 8px; background: radial-gradient(ellipse at top right,#8c0e2f35,transparent 65%), #18090ff2;
+  box-shadow: inset 0 1px #ffbca222, 0 0 18px #e3233e16;
+}
+.tk-depot-search .tk-input { height: 48px; background: #09060bd9; border-color: #b72d44; border-radius: 8px; }
+.tk-depot-search .tk-input.plain { height: 44px; width: 106px; }
+.tk-depot-search label, .tk-depot-search form > div > span { color: #f5ce7a; }
+.tk-depot-search .tk-input:focus { border-color: #ff7889; box-shadow: 0 0 0 2px #ff405633; }
+.tk-depot-search .tk-chip.sm { background: #0c070d; box-shadow: inset 0 1px #a53045; }
+.tk-christmas-shop .frozen-category-list { border-color: #8d263b; background: #140c14; }
+.tk-christmas-shop .frozen-category-list button[aria-pressed='true'] { background: linear-gradient(90deg,#a2153140,transparent); }
+.tk-christmas-shop .tk-card { background: linear-gradient(160deg,#35141f33,transparent 65%),#100c14; border-color: #63303d; }
+.tk-price { display: inline-flex; align-items: center; gap: 5px; }
+.iris-coin { filter: drop-shadow(0 1px 2px #0009); }
+.tk-christmas-shop :is(button,a,input):focus-visible { outline: 2px solid #ffd27b; outline-offset: 4px; }
+@media(min-width:1600px) { .tk-christmas-shop .tk-shop-hero { min-height: 510px; } }
+@media(max-width:1599px) {
+  body:has(.tk-christmas-shop) .tk-nav { display: none; }
+  body:has(.tk-christmas-shop) .tk-burger { display: grid; }
+  body:has(.tk-christmas-shop) .tk-top-in { justify-content: space-between; }
+}
+@media(max-width:900px) {
+  .tk-christmas-shop .tk-shop-hero { min-height: 500px; padding-top: 85px; }
+  .tk-christmas-shop .tk-shop-hero p { max-width: 470px; }
+  .tk-depot-catalog { padding: 24px 20px; }
+  .tk-depot-gift { width: 42px; height: 42px; }
+}
+@media(max-width:640px) {
+  body:has(.tk-christmas-shop) .tk-top > .tk-wrap { width: calc(100% - 28px); }
+  body:has(.tk-christmas-shop) .tk-brand > span,
+  body:has(.tk-christmas-shop) .tk-top .tk-wallet,
+  body:has(.tk-christmas-shop) .tk-top .tk-bell { display: none; }
+  body:has(.tk-christmas-shop) .tk-hud { gap: 4px; }
+  .tk-christmas-shop .tk-wrap, .tk-christmas-shop .shop-catalog-shell { width: calc(100% - 28px); }
+  .tk-christmas-shop .tk-shop-hero { min-height: 670px; padding: 290px 0 65px; background: #080508; }
+  .tk-shop-scene img { object-position: 56% top; object-fit: contain; }
+  .tk-shop-scene-shade { background: linear-gradient(180deg,transparent 15%,#08050870 32%,#080508 46%); }
+  .tk-christmas-shop .tk-shop-hero h1 { font-size: clamp(31px,8.4vw,46px); line-height: 1.4; margin-top: 12px; }
+  .tk-christmas-shop .tk-shop-hero p { font-size: 14px; margin: 15px 0 20px; }
+  .tk-christmas-shop .tk-shop-hero .tk-kicker { font-size: 11px; }
+  .tk-christmas-shop .tk-shop-hero .tk-cta { gap: 10px; }
+  .tk-christmas-shop .tk-shop-hero .tk-btn { width: 100%; min-width: 0; min-height: 52px; font-size: 15px; }
+  .tk-christmas-shop .shop-catalog-shell { margin-top: -25px; }
+  .tk-depot-catalog { padding: 20px 12px; }
+  .tk-depot-title { gap: 10px; }
+  .tk-depot-gift { width: 32px; height: 32px; }
+  .tk-depot-heading h2 { font-size: 21px; }
+  .tk-depot-heading .eyebrow { font-size: 9px; letter-spacing: .1em; }
+  .tk-christmas-shop .tk-chip { padding-inline: 16px; font-size: 12px; }
+  .tk-depot-search { padding: 14px 10px; }
+  .tk-depot-search .tk-input.plain { width: 78px; }
+  .tk-depot-search form { min-width: 0; }
+  .tk-depot-search form > div { width: 100%; }
+  .tk-depot-search form > div > div { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); }
+  .tk-depot-search form .tk-input.plain { width: 100%; font-size: 16px; }
+  .tk-depot-search form > div > div > button { grid-column: 1 / -1; min-height: 44px; }
+  .tk-depot-search #shop-search-input { font-size: 16px; }
+  .tk-depot-search form .tk-chip { padding-inline: 12px; }
+  .tk-christmas-shop .tk-price { font-size: 16px; gap: 3px; }
+  .tk-christmas-shop .tk-price .iris-coin { width: 18px !important; height: 18px !important; }
+}

@@ -137,7 +137,7 @@ function RefundSection({ order, onDone }: { order: AdminOrderRow; onDone: (amoun
           <label className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-sm text-iris-pearl">
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[#37E5D2]"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-cyan-400"
               checked={reclaimed}
               onChange={(e) => setReclaimed(e.target.checked)}
               aria-invalid={reclaimError ? true : undefined}

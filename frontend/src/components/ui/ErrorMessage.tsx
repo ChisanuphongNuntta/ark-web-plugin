@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { T } from '@/components/i18n/LanguageProvider';
 import { AlertCircle, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
@@ -37,10 +38,10 @@ export function ErrorMessage({
         
         <div className="flex-1">
           <h4 className="font-display font-bold text-rose-200 text-sm md:text-base uppercase tracking-wide">
-            {title}
+            <T text={title} />
           </h4>
           <p className="text-xs md:text-sm text-rose-300/80 mt-1 leading-relaxed">
-            {message}
+            <T text={message} />
           </p>
           {errorCode && (
             <span className="inline-block mt-2 font-mono text-[10px] font-bold tracking-widest text-rose-400/50 bg-rose-950/40 px-2 py-0.5 rounded">
@@ -58,7 +59,7 @@ export function ErrorMessage({
           className="border border-rose-500/20 text-rose-300 hover:bg-rose-500/10 hover:text-white shrink-0"
         >
           <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-          {retryText}
+          <T text={retryText} />
         </Button>
       )}
     </div>

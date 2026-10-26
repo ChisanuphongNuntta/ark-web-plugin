@@ -1,5 +1,7 @@
+import { IrisCoin } from '@/components/ui/IrisCoin';
+import { T } from '@/components/i18n/LanguageProvider';
 import Link from 'next/link';
-import { ArrowUpRight, Coins, PawPrint, Sparkles } from 'lucide-react';
+import { ShoppingCart,  PawPrint, Sparkles } from 'lucide-react';
 import type { Product } from '@/lib/contracts/types';
 import { ProductArtwork } from '@/components/ProductArtwork';
 import { Badge } from '@/components/ui/Badge';
@@ -79,9 +81,9 @@ export function ProductCard({ product }: { product: ProductCardProduct }) {
 
       <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-2 border-t border-slate-700/30">
         <div>
-          <span className="sr-only">ราคาต่อหน่วย</span>
+          <span className="sr-only"><T text={"ราคาต่อหน่วย"} /></span>
           <div className="flex items-center gap-1.5">
-            <Coins className="h-4 w-4 text-iris-gold" />
+            <IrisCoin className="h-4 w-4 text-iris-gold" />
             <span className="text-lg font-semibold tabular-nums text-iris-pearl">
               {product.price.toLocaleString()}
             </span>
@@ -93,7 +95,7 @@ export function ProductCard({ product }: { product: ProductCardProduct }) {
           className="frozen-product-buy"
           aria-label={`เลือกเซิร์ฟเวอร์และซื้อ ${product.name}`}
         >
-          <ArrowUpRight size={18} />
+          <ShoppingCart size={19} aria-hidden="true" />
         </Link>
       </div>
     </article>

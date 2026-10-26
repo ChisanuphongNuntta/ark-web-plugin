@@ -1,33 +1,15 @@
 'use client';
+import { IrisCoin } from '@/components/ui/IrisCoin';
+import { T } from '@/components/i18n/LanguageProvider';
+
 
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import {
-  ArrowRight,
-  Coins,
-  Gamepad2,
-  Gem,
-  Loader2,
-  RefreshCw,
-  Search,
-  ShieldCheck,
-  ShoppingBag,
-  Store,
-  WalletCards,
-  Wifi,
-  WifiOff,
-  ChevronRight,
-  Package,
-  Activity,
-  Users,
-  Server,
-  Swords,
-  Trophy,
-  MessageCircle,
-} from 'lucide-react';
+import {  Gamepad2, Gem, Loader2, RefreshCw, Search, ShieldCheck, ShoppingBag, Store, WalletCards, Wifi, WifiOff, ChevronRight, Package, Activity, Users, Server, Swords, Trophy, MessageCircle } from 'lucide-react';
+import { ArrowRight } from '@/components/tek/arrows';
 import { api, orderApi, walletApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { ProductCard } from '@/components/ProductCard';
@@ -89,13 +71,13 @@ function ServerStatusSection() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div>
           <span className="eyebrow text-cyan-300">Live Server Status</span>
-          <h2 className="font-serif text-2xl md:text-3xl font-normal text-iris-pearl mt-1">สถานะเซิร์ฟเวอร์ IRIS</h2>
+          <h2 className="font-serif text-2xl md:text-3xl font-normal text-iris-pearl mt-1"><T text={"สถานะเซิร์ฟเวอร์ IRIS"} /></h2>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-xs font-bold text-iris-muted">
             <Users className="h-4 w-4 text-iris-cyan" />
             <span className="font-mono text-iris-pearl">{onlineCount} / {servers.length}</span>
-            <span>เซิร์ฟเวอร์ออนไลน์</span>
+            <span><T text={"เซิร์ฟเวอร์ออนไลน์"} /></span>
           </div>
           <button
             type="button"
@@ -156,7 +138,7 @@ function ServerStatusSection() {
                 {svr.isOnline && svr.maxPlayers ? (
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[9px] font-mono text-iris-muted">
-                      <span>{svr.playerCount ?? 0} ผู้เล่น</span>
+                      <span>{svr.playerCount ?? 0}<T text={" ผู้เล่น"} /></span>
                       <span>{svr.maxPlayers} slots</span>
                     </div>
                     <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -174,7 +156,7 @@ function ServerStatusSection() {
                   </div>
                 ) : (
                   <div className="text-[9px] font-bold text-rose-400/70 uppercase tracking-wider">
-                    {svr.isOnline ? 'พร้อมเข้าเล่น' : 'ออฟไลน์'}
+                    <T text={svr.isOnline ? 'พร้อมเข้าเล่น' : 'ออฟไลน์'} />
                   </div>
                 )}
               </GlassCard>
@@ -222,7 +204,7 @@ function CommunitySection() {
     <section className="page-shell" aria-label="ชุมชน IRIS">
       <div className="mb-8">
         <span className="eyebrow text-cyan-300">IRIS Community</span>
-        <h2 className="font-serif text-2xl md:text-3xl font-normal text-iris-pearl mt-1">ร่วมชุมชน IRIS Thailand</h2>
+        <h2 className="font-serif text-2xl md:text-3xl font-normal text-iris-pearl mt-1"><T text={"ร่วมชุมชน IRIS Thailand"} /></h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -240,7 +222,7 @@ function CommunitySection() {
               </h3>
               <p className="text-xs text-iris-muted leading-relaxed">{description}</p>
               <div className={`flex items-center gap-1.5 mt-4 text-[10px] font-bold ${color} uppercase tracking-wider`}>
-                <span>เข้าร่วม</span>
+                <span><T text={"เข้าร่วม"} /></span>
                 <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
               </div>
             </GlassCard>
@@ -256,7 +238,7 @@ export function HomeExperience() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading } = useAuthStore();
   const [searchQuery, setSearchQuery] = React.useState('');
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
   const {
     data: featuredData,
@@ -305,7 +287,7 @@ export function HomeExperience() {
 
       {/* ═══ SECTION 1: Prismatic River Gate Hero — Frozen Winter Expedition ═══ */}
       <section
-        className="relative isolate min-h-[560px] md:min-h-[640px] overflow-hidden flex items-center border-b border-cyan-400/20 bg-[#030915]"
+        className="relative isolate min-h-[560px] md:min-h-[640px] overflow-hidden flex items-center border-b border-cyan-400/20 bg-surface-0"
         aria-label="ยินดีต้อนรับสู่ IRIS Thailand"
       >
         {/* Frozen Background art with parallax scaling */}
@@ -318,8 +300,8 @@ export function HomeExperience() {
           className="object-cover object-center opacity-65 transition-transform duration-1000"
           aria-hidden="true"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#030915] via-[#030915]/85 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#030915] via-transparent to-[#030915]/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-surface-0 via-surface-0/85 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-0 via-transparent to-surface-0/40" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(75,228,255,0.12),transparent_60%)] pointer-events-none" aria-hidden="true" />
         <div className="iris-grid absolute inset-0 opacity-25 pointer-events-none" aria-hidden="true" />
 
@@ -335,25 +317,20 @@ export function HomeExperience() {
                 <span className="font-bold tracking-wider text-cyan-200">FROZEN EXPEDITION</span>
               </Badge>
               <span className="inline-flex items-center gap-1.5 text-xs text-cyan-300/80 font-medium">
-                <Wifi className="h-3.5 w-3.5 text-cyan-400 animate-pulse" aria-hidden="true" />
-                ร้านค้าและชุมชน ARK
-              </span>
+                <Wifi className="h-3.5 w-3.5 text-cyan-400 animate-pulse" aria-hidden="true" /><T text={"ร้านค้าและชุมชน ARK"} /></span>
             </div>
 
             <p className="eyebrow text-cyan-300 tracking-[0.25em] font-semibold">
               ARK · IRIS THAILAND
             </p>
 
-            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl font-normal leading-[1.38] tracking-tight text-iris-pearl">
-              เหมันต์นิรันดร์<br />
+            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl font-normal leading-[1.38] tracking-tight text-iris-pearl"><T text={"เหมันต์นิรันดร์"} /><br />
               <span className="text-cyan-300">
                 FROZEN EXPEDITION
               </span>
             </h1>
 
-            <p className="max-w-xl text-sm sm:text-base text-cyan-100/80 leading-relaxed">
-              ออกสำรวจโลก ARK ต้อนรับฤดูหนาว เลือกไดโนเสาร์คู่ใจ เตรียมอุปกรณ์ และพบเพื่อนร่วมทางในชุมชน IRIS
-            </p>
+            <p className="max-w-xl text-sm sm:text-base text-cyan-100/80 leading-relaxed"><T text={"ออกสำรวจโลก ARK ต้อนรับฤดูหนาว เลือกไดโนเสาร์คู่ใจ เตรียมอุปกรณ์ และพบเพื่อนร่วมทางในชุมชน IRIS"} /></p>
 
             {/* Universal Search */}
             <form onSubmit={handleSearchSubmit} className="max-w-md" role="search">
@@ -364,23 +341,17 @@ export function HomeExperience() {
                 aria-label="ค้นหาสินค้าและบริการ"
                 leftIcon={<Search className="h-4 w-4 text-cyan-400" aria-hidden="true" />}
                 rightIcon={
-                  <Button type="submit" size="sm" variant="cyan" className="h-8 min-h-[32px] px-3 py-1 font-bold text-xs rounded-full shadow-[0_0_10px_rgba(75,228,255,0.4)]">
-                    ค้นหา
-                  </Button>
+                  <Button type="submit" size="sm" variant="cyan" className="h-8 min-h-[32px] px-3 py-1 font-bold text-xs rounded-full shadow-[0_0_10px_rgba(75,228,255,0.4)]"><T text={"ค้นหา"} /></Button>
                 }
               />
             </form>
 
             <div className="flex flex-wrap gap-4 pt-2">
               <Link href="/shop">
-                <Button variant="primary" rightIcon={<ArrowRight className="h-4 w-4" aria-hidden="true" />} className="bg-[#d8f3fc] text-[#092331] font-bold hover:bg-white transition border border-cyan-300/30">
-                  เข้าสู่ร้านค้าเหมันต์
-                </Button>
+                <Button variant="primary" rightIcon={<ArrowRight className="h-4 w-4" aria-hidden="true" />} className="bg-cyan-100 text-surface-0 font-bold hover:bg-white transition border border-cyan-300/30"><T text={"เข้าสู่ร้านค้าเหมันต์"} /></Button>
               </Link>
               <Link href="/market">
-                <Button variant="secondary" leftIcon={<Store className="h-4 w-4" aria-hidden="true" />} className="border-slate-700/50 bg-[#102637]/80 hover:border-cyan-400/40 text-iris-pearl">
-                  สำรวจตลาดผู้เล่น
-                </Button>
+                <Button variant="secondary" leftIcon={<Store className="h-4 w-4" aria-hidden="true" />} className="border-slate-700/50 bg-surface-3/80 hover:border-cyan-400/40 text-iris-pearl"><T text={"สำรวจตลาดผู้เล่น"} /></Button>
               </Link>
             </div>
           </div>
@@ -393,7 +364,7 @@ export function HomeExperience() {
           <GlassCard className="p-8">
             <div className="flex items-center gap-3 text-sm text-iris-muted">
               <Loader2 className="h-5 w-5 animate-spin text-iris-cyan" aria-hidden="true" />
-              <span>กำลังตรวจสอบสถานะบัญชี...</span>
+              <span><T text={"กำลังตรวจสอบสถานะบัญชี..."} /></span>
             </div>
           </GlassCard>
         ) : !user ? (
@@ -401,17 +372,11 @@ export function HomeExperience() {
             <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
               <div className="space-y-2">
                 <span className="eyebrow">Continue in IRIS</span>
-                <h2 className="font-display text-2xl md:text-3xl font-bold text-iris-pearl">
-                  เชื่อมบัญชีครั้งเดียว แล้วรับสิทธิ์ซื้อได้ทุกบริการ
-                </h2>
-                <p className="text-xs sm:text-sm text-iris-muted max-w-2xl leading-relaxed">
-                  เชื่อมโยง Discord และ Steam ID เพื่อปลดล็อกประวัติการรับสินค้า กระเป๋า IRIS Coins และการติดตามสถานะจัดส่ง
-                </p>
+                <h2 className="font-display text-2xl md:text-3xl font-bold text-iris-pearl"><T text={"เชื่อมบัญชีครั้งเดียว แล้วรับสิทธิ์ซื้อได้ทุกบริการ"} /></h2>
+                <p className="text-xs sm:text-sm text-iris-muted max-w-2xl leading-relaxed"><T text={"เชื่อมโยง Discord และ Steam ID เพื่อปลดล็อกประวัติการรับสินค้า กระเป๋า IRIS Coins และการติดตามสถานะจัดส่ง"} /></p>
               </div>
               <a href={`${apiUrl}/auth/discord`} className="shrink-0">
-                <Button variant="cyan" rightIcon={<ArrowRight className="h-4 w-4" />}>
-                  เชื่อมต่อ Discord ID
-                </Button>
+                <Button variant="cyan" rightIcon={<ArrowRight className="h-4 w-4" />}><T text={"เชื่อมต่อ Discord ID"} /></Button>
               </a>
             </div>
           </GlassCard>
@@ -447,9 +412,7 @@ export function HomeExperience() {
                     </div>
                   </div>
                   <Link href="/profile">
-                    <Button variant="ghost" size="sm" rightIcon={<ChevronRight className="h-4 w-4" />}>
-                      จัดการไอดี
-                    </Button>
+                    <Button variant="ghost" size="sm" rightIcon={<ChevronRight className="h-4 w-4" />}><T text={"จัดการไอดี"} /></Button>
                   </Link>
                 </div>
               </GlassCard>
@@ -458,17 +421,13 @@ export function HomeExperience() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center px-1">
                   <h3 className="text-sm font-bold text-iris-pearl uppercase tracking-wider flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-iris-cyan" aria-hidden="true" />
-                    รายการนำส่งเข้าเกมเวลานี้
-                  </h3>
-                  <span className="font-mono text-xs text-iris-muted">{activeDeliveries.length} รายการกำลังส่ง</span>
+                    <Activity className="h-4 w-4 text-iris-cyan" aria-hidden="true" /><T text={"รายการนำส่งเข้าเกมเวลานี้"} /></h3>
+                  <span className="font-mono text-xs text-iris-muted">{activeDeliveries.length}<T text={" รายการกำลังส่ง"} /></span>
                 </div>
 
                 {activeDeliveries.length === 0 ? (
                   <GlassCard variant="flat" className="p-8 text-center text-xs text-iris-muted">
-                    <Package className="h-8 w-8 mx-auto mb-2 text-iris-muted/40" aria-hidden="true" />
-                    ไม่มีสินค้าค้างส่งในขณะนี้ — สินค้าที่ซื้อสำเร็จจะถูกส่งเข้าตัวละครเกมผ่านระบบอัตโนมัติ
-                  </GlassCard>
+                    <Package className="h-8 w-8 mx-auto mb-2 text-iris-muted/40" aria-hidden="true" /><T text={"ไม่มีสินค้าค้างส่งในขณะนี้ — สินค้าที่ซื้อสำเร็จจะถูกส่งเข้าตัวละครเกมผ่านระบบอัตโนมัติ"} /></GlassCard>
                 ) : (
                   <div className="space-y-4">
                     {activeDeliveries.map((order: any) => (
@@ -476,13 +435,12 @@ export function HomeExperience() {
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                           <div className="space-y-1">
                             <h4 className="font-bold text-xs text-iris-pearl uppercase">{order.product?.name}</h4>
-                            <p className="text-[10px] text-iris-muted">
-                              เซิร์ฟเวอร์: {order.server?.name} · จำนวน: x{order.quantity}
+                            <p className="text-[10px] text-iris-muted"><T text={"เซิร์ฟเวอร์:"} />{order.server?.name}<T text={" · จำนวน: x"} />{order.quantity}
                             </p>
                           </div>
                           <div className="flex items-center gap-3 text-[10px] font-bold text-iris-muted uppercase">
                             <span className="h-2 w-2 rounded-full bg-iris-cyan animate-ping" />
-                            <span className="text-iris-cyan">กำลังส่ง</span>
+                            <span className="text-iris-cyan"><T text={"กำลังส่ง"} /></span>
                             <code className="bg-black/40 text-iris-cyan px-2 py-0.5 rounded font-mono">/claim</code>
                           </div>
                         </div>
@@ -498,7 +456,7 @@ export function HomeExperience() {
               <GlassCard variant="gold" className="p-6 bg-gradient-to-b from-iris-gold/5 to-transparent">
                 <p className="text-[10px] text-iris-muted font-black uppercase tracking-wider">IRIS Wallet Balance</p>
                 <div className="flex items-baseline gap-2 mt-2">
-                  <Coins className="h-5 w-5 text-iris-gold self-center" aria-hidden="true" />
+                  <IrisCoin className="h-5 w-5 text-iris-gold self-center" />
                   <span className="text-3xl font-mono font-black text-gradient-gold">
                     {walletData
                       ? Number(walletData.accounts?.available ?? 0).toLocaleString()
@@ -510,13 +468,13 @@ export function HomeExperience() {
                 {walletData && (
                   <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/5 text-[10px] text-iris-muted">
                     <div>
-                      <p>เงินประกัน P2P:</p>
+                      <p><T text={"เงินประกัน P2P:"} /></p>
                       <p className="font-mono font-bold text-white mt-0.5">
                         {Number(walletData.accounts?.held ?? 0).toLocaleString()} IC
                       </p>
                     </div>
                     <div>
-                      <p>โบนัสเครดิต:</p>
+                      <p><T text={"โบนัสเครดิต:"} /></p>
                       <p className="font-mono font-bold text-white mt-0.5">
                         {Number(walletData.accounts?.promotional ?? 0).toLocaleString()} IC
                       </p>
@@ -526,16 +484,16 @@ export function HomeExperience() {
 
                 <div className="mt-6 flex gap-2.5">
                   <Link href="/topup" className="flex-1">
-                    <Button variant="gold" className="w-full text-xs py-2 min-h-[38px]">เติมเงิน</Button>
+                    <Button variant="gold" className="w-full text-xs py-2 min-h-[38px]"><T text={"เติมเงิน"} /></Button>
                   </Link>
                   <Link href="/profile" className="flex-1">
-                    <Button variant="secondary" className="w-full text-xs py-2 min-h-[38px]">สมุดบัญชี</Button>
+                    <Button variant="secondary" className="w-full text-xs py-2 min-h-[38px]"><T text={"สมุดบัญชี"} /></Button>
                   </Link>
                 </div>
               </GlassCard>
 
               <GlassCard className="p-5 space-y-3">
-                <h4 className="text-xs font-bold text-iris-pearl uppercase tracking-wider border-b border-white/5 pb-2">คำสั่งเกมที่ใช้บ่อย</h4>
+                <h4 className="text-xs font-bold text-iris-pearl uppercase tracking-wider border-b border-white/5 pb-2"><T text={"คำสั่งเกมที่ใช้บ่อย"} /></h4>
                 <div className="space-y-2 text-[11px] text-iris-muted">
                   {[
                     { label: 'รับของขวัญเข้าตัวละคร:', cmd: '/claim' },
@@ -562,15 +520,11 @@ export function HomeExperience() {
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <span className="eyebrow text-cyan-300">Curated for your survivor</span>
-            <h2 id="catalog-title" className="font-serif text-3xl md:text-4xl font-normal text-iris-pearl mt-2">ยอดนิยมจาก IRIS Store</h2>
-            <p className="text-xs sm:text-sm text-iris-muted mt-2 max-w-xl">
-              สินค้าและสัตว์เลี้ยงคุณภาพยอดนิยมที่พร้อมส่งตรงลงตัวละครของคุณ
-            </p>
+            <h2 id="catalog-title" className="font-serif text-3xl md:text-4xl font-normal text-iris-pearl mt-2"><T text={"ยอดนิยมจาก IRIS Store"} /></h2>
+            <p className="text-xs sm:text-sm text-iris-muted mt-2 max-w-xl"><T text={"สินค้าและสัตว์เลี้ยงคุณภาพยอดนิยมที่พร้อมส่งตรงลงตัวละครของคุณ"} /></p>
           </div>
           <Link href="/shop">
-            <Button variant="secondary" rightIcon={<ArrowRight className="h-4 w-4" />}>
-              ดูทั้งหมด
-            </Button>
+            <Button variant="secondary" rightIcon={<ArrowRight className="h-4 w-4" />}><T text={"ดูทั้งหมด"} /></Button>
           </Link>
         </div>
 
@@ -631,13 +585,8 @@ export function HomeExperience() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center relative z-10">
             <div className="space-y-4">
               <span className="eyebrow text-cyan-300">The IRIS promise</span>
-              <h2 className="font-serif text-3xl sm:text-4xl font-normal leading-snug text-iris-pearl">
-                โปร่งใส ปลอดภัย<br />ตรวจสอบธุรกรรมได้จริง
-              </h2>
-              <p className="text-xs sm:text-sm text-iris-muted leading-relaxed">
-                IRIS Thailand นำระบบตรวจสอบความถูกต้องแบบอัตโนมัติมาสู่ e-commerce ของเซิร์ฟเวอร์เกม
-                ทุกคะแนนพ้อยต์ ยอดการค้ำประกัน และคิวการส่งของในเกมถูกบันทึกและติดตามผลได้แบบวินาทีต่อวินาที
-              </p>
+              <h2 className="font-serif text-3xl sm:text-4xl font-normal leading-snug text-iris-pearl"><T text={"โปร่งใส ปลอดภัย"} /><br /><T text={"ตรวจสอบธุรกรรมได้จริง"} /></h2>
+              <p className="text-xs sm:text-sm text-iris-muted leading-relaxed"><T text={"IRIS Thailand นำระบบตรวจสอบความถูกต้องแบบอัตโนมัติมาสู่ e-commerce ของเซิร์ฟเวอร์เกม ทุกคะแนนพ้อยต์ ยอดการค้ำประกัน และคิวการส่งของในเกมถูกบันทึกและติดตามผลได้แบบวินาทีต่อวินาที"} /></p>
             </div>
 
             <div className="space-y-3">

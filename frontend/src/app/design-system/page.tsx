@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Search, User, ShoppingBag, Send, HelpCircle, ArrowRight } from 'lucide-react';
+import { Search, User, ShoppingBag, Send, HelpCircle } from 'lucide-react';
+import { ArrowRight } from '@/components/tek/arrows';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -70,45 +71,21 @@ export default function DesignSystemPage() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="p-4 rounded-2xl bg-[#06111D] border border-white/10 flex flex-col justify-between h-36">
-              <span className="font-mono text-xs text-white/50">#06111D</span>
-              <div>
-                <p className="font-bold text-sm">Obsidian Navy</p>
-                <p className="text-xs text-iris-muted">สีพื้นหลัก / ราตรีนิล</p>
+            {[
+              { name: 'Surface 0', hex: '#0A0709', note: 'พื้นหลังหน้าเว็บ', bg: 'bg-surface-0', fg: 'text-ink', sub: 'text-ink-muted' },
+              { name: 'Surface 1', hex: '#15111A', note: 'การ์ดและแผงเนื้อหา', bg: 'bg-surface-1', fg: 'text-ink', sub: 'text-ink-muted' },
+              { name: 'Surface 2', hex: '#1D1824', note: 'ป๊อปอัปและเมนูลอย', bg: 'bg-surface-2', fg: 'text-ink', sub: 'text-ink-muted' },
+              { name: 'Accent', hex: '#FFA3B2', note: 'ปุ่ม ลิงก์ และจุดเน้น', bg: 'bg-cyan-400', fg: 'text-surface-0', sub: 'text-surface-0' },
+              { name: 'Gold', hex: '#FFE3A6', note: 'IC, VIP และรางวัล', bg: 'bg-iris-gold', fg: 'text-surface-0', sub: 'text-surface-0' },
+            ].map((c) => (
+              <div key={c.name} className={`p-4 rounded-2xl ${c.bg} border border-white/20 flex flex-col justify-between h-36`}>
+                <span className={`font-mono text-xs ${c.sub}`}>{c.hex}</span>
+                <div>
+                  <p className={`font-bold text-sm ${c.fg}`}>{c.name}</p>
+                  <p className={`text-xs ${c.sub}`}>{c.note}</p>
+                </div>
               </div>
-            </div>
-            
-            <div className="p-4 rounded-2xl bg-[#102637] border border-white/10 flex flex-col justify-between h-36">
-              <span className="font-mono text-xs text-white/50">#102637</span>
-              <div>
-                <p className="font-bold text-sm">Deep River</p>
-                <p className="text-xs text-iris-muted">แผ่นน้ำลึก / ชลธารคราม</p>
-              </div>
-            </div>
-            
-            <div className="p-4 rounded-2xl bg-[#A0E0F4] text-[#06111D] border border-white/10 flex flex-col justify-between h-36">
-              <span className="font-mono text-xs text-[#06111D]/60">#A0E0F4</span>
-              <div>
-                <p className="font-bold text-sm">Glacier Blue</p>
-                <p className="text-xs text-[#06111D]/75">แสงสีฟ้าปริซึม / นิลบลู</p>
-              </div>
-            </div>
-            
-            <div className="p-4 rounded-2xl bg-[#93B9D6] text-white border border-white/10 flex flex-col justify-between h-36">
-              <span className="font-mono text-xs text-white/60">#93B9D6</span>
-              <div>
-                <p className="font-bold text-sm">Frost Silver</p>
-                <p className="text-xs text-white/75">ม่วงกลีบกล้วยไม้หลวง</p>
-              </div>
-            </div>
-            
-            <div className="p-4 rounded-2xl bg-[#DDBB72] text-[#06111D] border border-white/10 flex flex-col justify-between h-36">
-              <span className="font-mono text-xs text-[#06111D]/60">#DDBB72</span>
-              <div>
-                <p className="font-bold text-sm">Champagne Gold</p>
-                <p className="text-xs text-[#06111D]/75">ทองนพคุณหรูหรา / สุวรรณรัตน์</p>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
@@ -144,13 +121,13 @@ export default function DesignSystemPage() {
                 <div>
                   <p className="text-xs text-iris-muted mb-1">Primary Gradient (.text-gradient-primary)</p>
                   <p className="text-3xl font-extrabold text-gradient-primary">
-                    IRIS CYAN → ROYAL ORCHID
+                    IRIS CYAN + ROYAL ORCHID
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-iris-muted mb-1">Luxury Gold Gradient (.text-gradient-gold)</p>
                   <p className="text-3xl font-extrabold text-gradient-gold">
-                    CHAMPAGNE GOLD → AMBER GLOW
+                    CHAMPAGNE GOLD + AMBER GLOW
                   </p>
                 </div>
               </div>
@@ -171,10 +148,10 @@ export default function DesignSystemPage() {
                 <span className="text-xs font-bold uppercase text-iris-muted">ตัวนำการทดสอบ</span>
                 <div className="flex gap-2">
                   <Button id="sim-success-btn" size="sm" variant="cyan" onClick={triggerLoading}>
-                    จำลองโหลด → สำเร็จ
+                    จำลองโหลดแล้วสำเร็จ
                   </Button>
                   <Button id="sim-error-btn" size="sm" variant="gold" onClick={triggerError}>
-                    จำลองโหลด → ล้มเหลว
+                    จำลองโหลดแล้วล้มเหลว
                   </Button>
                 </div>
               </div>

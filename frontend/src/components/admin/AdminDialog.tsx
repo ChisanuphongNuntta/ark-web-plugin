@@ -143,7 +143,7 @@ export function AdminDialog({
       )}
     >
       <div
-        className="fixed inset-0 bg-[#020c18b3] backdrop-blur-[5px]"
+        className="fixed inset-0 bg-surface-0/70 backdrop-blur-[5px]"
         aria-hidden="true"
         onClick={() => {
           if (!busy) onClose();
@@ -157,7 +157,7 @@ export function AdminDialog({
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
         className={cn(
-          'relative z-10 flex w-full flex-col overflow-hidden border border-[color:var(--line)] text-iris-pearl shadow-[0_24px_60px_rgba(0,0,0,0.45)] focus:outline-none',
+          'tek-frame relative z-10 flex w-full flex-col overflow-hidden border border-[color:var(--line)] text-iris-pearl shadow-[0_24px_60px_rgba(0,0,0,0.45)] focus:outline-none',
           drawer
             ? 'h-[100dvh] max-h-[100dvh] rounded-none border-y-0 border-r-0 bg-[var(--surface-2)] sm:rounded-l-[20px]'
             : 'max-h-[calc(100dvh-2rem)] rounded-[20px] bg-[var(--surface-1)]',

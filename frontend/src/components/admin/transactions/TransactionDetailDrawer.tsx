@@ -3,7 +3,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Copy, ExternalLink, Filter, Loader2 } from 'lucide-react';
+import { Copy, Filter, Loader2 } from 'lucide-react';
+import { ExternalLink } from '@/components/tek/arrows';
 import {
   AdminButton,
   AdminDialog,

@@ -21,16 +21,16 @@ export function GlassCard({
   hasLattice = false,
   ...props
 }: GlassCardProps) {
-  const baseCardStyles = 'relative overflow-hidden rounded-[1.65rem] backdrop-blur-xl transition-all duration-300';
+  const baseCardStyles = 'tek-panel relative overflow-hidden rounded-[1.65rem] backdrop-blur-xl transition-all duration-300';
   
   const variants = {
-    default: 'bg-gradient-to-br from-iris-river/80 to-iris-ink/90 border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.3)]',
-    prism: 'bg-gradient-to-br from-iris-river/90 to-iris-ink/90 shadow-[0_24px_80px_rgba(0,0,0,0.35)] prism-border',
-    gold: 'bg-gradient-to-br from-iris-river/80 to-iris-ink/90 border border-iris-gold/25 shadow-[0_24px_80px_rgba(221,187,114,0.05)]',
-    cyan: 'bg-gradient-to-br from-iris-river/80 to-iris-ink/90 border border-iris-cyan/30 shadow-[0_24px_80px_rgba(55,229,210,0.1)]',
-    glow: 'bg-gradient-to-br from-iris-river/90 to-iris-ink/95 border border-iris-cyan/40 shadow-[0_0_50px_rgba(55,229,210,0.15)]',
-    danger: 'bg-gradient-to-br from-iris-river/80 to-iris-ink/90 border border-rose-500/30 shadow-[0_24px_80px_rgba(244,63,94,0.1)]',
-    flat: 'bg-black/40 border border-white/5',
+    default: 'bg-gradient-to-br from-surface-2 to-surface-1 border border-slate-700/70 shadow-[0_24px_80px_rgba(0,0,0,0.5)]',
+    prism: 'bg-gradient-to-br from-surface-3 to-surface-1 shadow-[0_24px_80px_rgba(0,0,0,0.6)] prism-border',
+    gold: 'bg-gradient-to-br from-surface-3 to-surface-1 border border-amber-500/35 shadow-[0_24px_80px_rgba(221,187,114,0.08)]',
+    cyan: 'bg-gradient-to-br from-surface-3 to-surface-1 border border-cyan-500/35 shadow-[0_24px_80px_rgba(55,229,210,0.12)]',
+    glow: 'bg-gradient-to-br from-surface-3 to-surface-1 border border-cyan-400/50 shadow-[0_0_50px_rgba(55,229,210,0.18)]',
+    danger: 'bg-gradient-to-br from-surface-1 to-surface-0 border border-rose-500/40 shadow-[0_24px_80px_rgba(244,63,94,0.12)]',
+    flat: 'bg-surface-1 border border-slate-800',
   };
 
   const hovers = {

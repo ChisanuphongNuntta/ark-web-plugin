@@ -6,6 +6,8 @@ import { useAuthStore, userFromMe } from '@/lib/store';
 import { authApi } from '@/lib/api';
 import { applyRealtimeFallbackDefaults } from '@/lib/realtime/queryKeys';
 import { RealtimeProvider } from '@/components/realtime/RealtimeProvider';
+import { LoadingBoundary } from '@/components/LoadingBoundary';
+import { LanguageProvider } from '@/components/i18n/LanguageProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => {
@@ -49,8 +51,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []); // Empty dependency - run once on mount
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <RealtimeProvider>{children}</RealtimeProvider>
-    </QueryClientProvider>
+    <LanguageProvider><QueryClientProvider client={queryClient}>
+      <RealtimeProvider><LoadingBoundary>{children}</LoadingBoundary></RealtimeProvider>
+    </QueryClientProvider></LanguageProvider>
   );
 }

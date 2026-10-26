@@ -12,6 +12,9 @@
  *   admin:*          -> admin slip / delivery queues (staff sockets only)
  *   admin:ledger:mismatch -> persistent warning banner on admin pages
  *   vip:updated      -> navbar/profile VIP frame (auth store) + /vip status + Thai toast
+ *   perks:updated    -> /perks status (subscriptions, token balance, quotas) + Thai toast
+ *   (admin:perks / admin:chat can be high volume, one per in-game command use or chat
+ *    line: /admin/perks and /admin/chat refresh themselves with useAdminLiveRefresh)
  *   (admin:transaction is consumed by /admin/transactions and the dashboard's
  *    latest-transactions panel directly; it does not trigger the admin:* refetch)
  *
@@ -29,12 +32,15 @@ import {
   type CatalogUpdatedEvent,
   type DeliveryUpdatedEvent,
   type OrderUpdatedEvent,
+  type PerksUpdatedEvent,
   type ServersStatusEvent,
   type VipUpdatedEvent,
   type WalletUpdatedEvent,
 } from '@/lib/realtime/events';
 import { toVipBadge } from '@/lib/vip';
 import {
+  PERKS_CATALOG_KEY,
+  PERKS_ME_KEY,
   SERVERS_STATUS_KEY,
   VIP_ME_KEY,
   isAdminOpsQuery,
@@ -159,6 +165,21 @@ function vipToast(event: VipUpdatedEvent) {
   }
 }
 
+function perksToast(event: PerksUpdatedEvent) {
+  // Plan purchases / grants / expiry also fire 'vip:updated' (a plan is a VIP package), which
+  // toasts already, and purchases are tracked on /perks itself: only a staff token adjustment
+  // needs its own toast. 'consume' (a command used in game) just refreshes the status.
+  if (event.reason !== 'admin_tokens') return;
+  pushToast({
+    tone: 'info',
+    title: 'ยอด Perk Token ได้รับการปรับปรุง',
+    description: typeof event.tokens === 'number' ? `คงเหลือ ${event.tokens.toLocaleString('th-TH')} Token` : undefined,
+    href: '/perks',
+    dedupeKey: `perks:admin_tokens:${event.at ?? event.tokens ?? ''}`,
+    once: true,
+  });
+}
+
 function walletToast(event: WalletUpdatedEvent) {
   const balance = `ยอดคงเหลือ ${formatIc(event.balance)} IC`;
   switch (event.reason) {
@@ -235,6 +256,15 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         void queryClient.invalidateQueries({ queryKey: ['vip-badges'] });
         vipToast(event);
       }),
+      onSocketEvent<PerksUpdatedEvent>(REALTIME_EVENTS.perksUpdated, (event) => {
+        void queryClient.invalidateQueries({ queryKey: PERKS_ME_KEY });
+        if (event?.reason && event.reason !== 'consume') {
+          // A plan is a VIP package: its frame / status lives in the VIP caches too.
+          void queryClient.invalidateQueries({ queryKey: VIP_ME_KEY });
+          void queryClient.invalidateQueries({ queryKey: PERKS_CATALOG_KEY });
+        }
+        if (event) perksToast(event);
+      }),
       onSocketEvent<AdminLedgerMismatchEvent>(REALTIME_EVENTS.adminLedgerMismatch, (event) => {
         useLedgerAlert.getState().report(event);
       }),
@@ -257,7 +287,13 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       if (!event.startsWith('admin:')) return;
       // One per ledger posting (high volume) / reconcile alert: handled by their own listeners,
       // never a reason to refetch every admin queue.
-      if (event === REALTIME_EVENTS.adminTransaction || event === REALTIME_EVENTS.adminLedgerMismatch) return;
+      if (
+        event === REALTIME_EVENTS.adminTransaction ||
+        event === REALTIME_EVENTS.adminLedgerMismatch ||
+        event === REALTIME_EVENTS.adminPerks ||
+        event === REALTIME_EVENTS.adminChat
+      )
+        return;
       void queryClient.invalidateQueries({ predicate: isAdminOpsQuery });
     };
     socket?.onAny(onAdminEvent);
@@ -275,6 +311,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     void queryClient.invalidateQueries({ predicate: isOrderQuery });
     void queryClient.invalidateQueries({ queryKey: SERVERS_STATUS_KEY });
     void queryClient.invalidateQueries({ queryKey: VIP_ME_KEY });
+    void queryClient.invalidateQueries({ queryKey: PERKS_ME_KEY });
   }, [connectCount, queryClient]);
 
   // Fallback for the navbar pill if the socket is down: re-read the wallet on

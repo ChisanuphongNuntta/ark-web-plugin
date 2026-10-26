@@ -1,141 +1,90 @@
 'use client';
+import { T } from '@/components/i18n/LanguageProvider';
+
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ArrowUpRight, ShieldCheck, Sparkles, ShoppingBag, User, HelpCircle } from 'lucide-react';
+import Image from 'next/image';
+import { ShoppingBag, User, HelpCircle, Gamepad2 } from 'lucide-react';
 
 const footerGroups = [
   {
     title: 'ซื้อขาย',
+    subtitle: 'Commerce',
     icon: ShoppingBag,
     links: [
-      { href: '/shop', label: 'ร้านค้าทางการ' },
-      { href: '/market', label: 'ตลาดผู้เล่น' },
-      { href: '/promotion', label: 'โปรโมชั่น' },
-      { href: '/packs', label: 'แพ็กเกจ' },
+      { href: '/shop', label: 'ร้านค้าทางการ', sub: 'Official Store' },
+      { href: '/market', label: 'ตลาดผู้เล่น', sub: 'Player Market' },
+      { href: '/packs', label: 'แพ็กเกจพิเศษ', sub: 'Bundles' },
+      { href: '/promotion', label: 'โปรโมชั่น', sub: 'Promotions' },
+    ],
+  },
+  {
+    title: 'ระบบเกมและกิจกรรม',
+    subtitle: 'Features',
+    icon: Gamepad2,
+    links: [
+      { href: '/servers', label: 'เซิร์ฟเวอร์', sub: 'Server Directory' },
+      { href: '/event', label: 'กิจกรรมและปฏิทิน', sub: 'Event Calendar' },
+      { href: '/pass', label: 'เควส & Iris Pass', sub: 'Missions & Pass' },
+      { href: '/rewards', label: 'รับของรายวัน', sub: 'Daily Rewards' },
     ],
   },
   {
     title: 'ผู้เล่น',
+    subtitle: 'Player ID',
     icon: User,
     links: [
-      { href: '/profile', label: 'IRIS ID' },
-      { href: '/orders', label: 'คำสั่งซื้อ' },
-      { href: '/topup', label: 'กระเป๋าและเติมเงิน' },
-      { href: '/ranking', label: 'อันดับผู้เล่น' },
+      { href: '/profile', label: 'โปรไฟล์ IRIS', sub: 'Account Profile' },
+      { href: '/orders', label: 'คำสั่งซื้อของฉัน', sub: 'Order History' },
+      { href: '/topup', label: 'กระเป๋าและเติมเงิน', sub: 'Wallet & Topup' },
+      { href: '/ranking', label: 'อันดับผู้เล่น', sub: 'Leaderboards' },
     ],
   },
   {
     title: 'ช่วยเหลือ',
+    subtitle: 'Support',
     icon: HelpCircle,
     links: [
-      { href: '/support', label: 'ศูนย์ช่วยเหลือ' },
-      { href: '/privacy', label: 'ความเป็นส่วนตัว' },
-      { href: '/terms', label: 'ข้อกำหนดบริการ' },
-      { href: '/profile/data', label: 'จัดการข้อมูลส่วนบุคคล' },
+      { href: '/support', label: 'ศูนย์ช่วยเหลือ', sub: 'Help Center' },
+      { href: '/privacy', label: 'นโยบายความเป็นส่วนตัว', sub: 'Privacy Policy' },
+      { href: '/terms', label: 'ข้อกำหนดการให้บริการ', sub: 'Terms of Service' },
+      { href: '/profile/data', label: 'จัดการข้อมูลส่วนบุคคล', sub: 'PDPA Management' },
     ],
   },
 ];
 
 export function Footer() {
-
-
   return (
-    <footer className="relative mt-20 overflow-hidden border-t border-cyan-500/20 bg-gradient-to-b from-[#081523] via-[#050e18] to-[#02070c] text-slate-300">
-      {/* Aurora Ambient Frost Glow */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(ellipse_at_top,rgba(56,189,248,0.14),transparent_70%)]" />
-      
-      <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-12 pb-14">
-        <div className="grid gap-10 border-b border-white/10 pb-12 lg:grid-cols-12 items-start">
-          
-          {/* Brand & Mission Column (6 cols) */}
-          <div className="space-y-4 lg:col-span-6 max-w-xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-950/60 px-3 py-1 text-xs font-semibold text-cyan-300 shadow-[0_0_12px_rgba(56,189,248,0.2)]">
-              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              <span>IRIS · Frozen Expedition</span>
-            </div>
-
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold leading-snug text-white">
-              โลกของผู้เล่น เชื่อมถึงกันโดยไม่สะดุด
-            </h2>
-
-            <p className="text-sm leading-relaxed text-slate-400 max-w-lg">
-              ร้านค้า ตลาดผู้เล่น กระเป๋าเงิน การส่งของเข้าเกม และ Support อยู่ภายใต้ IRIS ID เดียวกัน
-              ดูแลทุกขั้นตอนตั้งแต่เลือกซื้อจนถึงรับของในเกม
+    <footer className="tk-footer">
+      <div className="tk-wrap">
+        <div className="tk-footer-grid">
+          <div>
+            <Link href="/" aria-label="IRIS Thailand หน้าแรก" className="tk-brand">
+              <Image src="/images/brand/iris-emblem-v1.webp" width={40} height={40} alt="" />
+              <span><b>IRIS</b><small>TEK NETWORK</small></span>
+            </Link>
+            <p className="tk-muted" style={{ maxWidth: 340, marginTop: 16, fontSize: 14 }}>
+              <T text={"ชุมชน ARK ของคนไทย ร้านค้า ตลาดผู้เล่น กระเป๋า IRIS Coin และการส่งของเข้าเกมที่ตรวจสอบย้อนหลังได้ทุกขั้นตอน"} />
             </p>
-
-            <div className="pt-2">
-              <Link
-                href="/support"
-                className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-950/50 hover:bg-cyan-900/60 px-4 py-2.5 text-xs font-bold text-cyan-300 hover:text-cyan-200 transition-all shadow-[0_0_15px_rgba(56,189,248,0.15)]"
-              >
-                <span>ติดต่อศูนย์ช่วยเหลือ</span>
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
+          </div>
+          {footerGroups.map((group) => (
+            <div key={group.title}>
+              <h4><T text={group.title} /></h4>
+              {group.links.map((link) => (
+                <Link key={link.href} href={link.href}><T text={link.label} /></Link>
+              ))}
             </div>
-          </div>
-
-          {/* Navigation Links Columns (6 cols) */}
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:col-span-6">
-            {footerGroups.map((group) => {
-              const Icon = group.icon;
-              return (
-                <div key={group.title} className="space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-200/90 border-b border-white/5 pb-2 flex items-center gap-1.5">
-                    <Icon className="h-3.5 w-3.5 text-cyan-400" />
-                    <span>{group.title}</span>
-                  </h3>
-                  <ul className="space-y-2">
-                    {group.links.map((link) => (
-                      <li key={link.href}>
-                        <Link
-                          href={link.href}
-                          className="text-xs sm:text-sm text-slate-400 hover:text-cyan-300 transition-colors duration-150 inline-block py-0.5 hover:translate-x-0.5 transform"
-                        >
-                          {link.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
+          ))}
         </div>
-
-        {/* Bottom Bar: Copyright & Security SLA */}
-        <div className="flex flex-col gap-4 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-slate-300 font-medium">
-              © {new Date().getFullYear()} IRIS Thailand · HeartShop Ecosystem. All rights reserved.
-            </p>
-            <p className="text-[11px] text-slate-500">
-              ภาพสัตว์และไอเทม:{' '}
-              <a
-                className="underline underline-offset-4 hover:text-cyan-300 transition-colors"
-                href="https://ark.wiki.gg/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                ark.wiki.gg
-              </a>{' '}
-              (
-              <a
-                className="underline underline-offset-4 hover:text-cyan-300 transition-colors"
-                href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                CC BY-NC-SA
-              </a>
-              ) · ARK © Studio Wildcard · คลังภาพ IRIS
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-1.5 text-[11px] text-emerald-400 font-medium shadow-sm">
-            <ShieldCheck className="h-4 w-4 shrink-0" />
-            <span>ธุรกรรมสำคัญตรวจสอบสิทธิ์และบันทึกประวัติทุกขั้นตอน</span>
-          </div>
+      </div>
+      <div className="tk-legal">
+        <div className="tk-wrap">
+          <p style={{ margin: 0 }}>
+            © {new Date().getFullYear()} IRIS Thailand · <T text={"ภาพสัตว์และไอเทม:"} />{' '}
+            <a style={{ display: 'inline', padding: 0, textDecoration: 'underline' }} href="https://ark.wiki.gg/" target="_blank" rel="noreferrer">ark.wiki.gg</a>{' '}
+            (CC BY-NC-SA) · ARK © Studio Wildcard · IRIS Thailand <T text={"ไม่ได้เป็นส่วนหนึ่งของ Studio Wildcard"} />
+            <br /><T text="เพลง ARK IRIS Happy Xmas Remix · เพลงบรรเลงต้นฉบับโดย IRIS Thailand" en="ARK IRIS Happy Xmas Remix · Original instrumental by IRIS Thailand" />
+          </p>
         </div>
       </div>
     </footer>

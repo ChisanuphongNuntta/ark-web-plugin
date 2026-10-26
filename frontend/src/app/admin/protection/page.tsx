@@ -29,6 +29,7 @@ import {
   type PageRequest,
   type StatusTone,
 } from '@/components/admin';
+import { AdminAccessGate } from '@/components/admin/console/ConsoleBits';
 import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
 import { protectionAdminApi, type AdminProtectionLogRow, type AdminProtectionRow } from '@/lib/api';
 
@@ -536,7 +537,9 @@ function ProtectionAdmin() {
 export default function ProtectionAdminPage() {
   return (
     <AdminSuspense>
-      <ProtectionAdmin />
+      <AdminAccessGate allow={['admin', 'root']}>
+        <ProtectionAdmin />
+      </AdminAccessGate>
     </AdminSuspense>
   );
 }

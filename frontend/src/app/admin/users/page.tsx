@@ -347,7 +347,7 @@ function UsersAdmin() {
         title="เปลี่ยนสิทธิ์ผู้ใช้?"
         description={
           roleChange
-            ? `${roleChange.target.discordUsername || roleChange.target.discordId}: ${roleMeta(roleChange.target.role).label} → ${roleMeta(roleChange.role).label}`
+            ? `${roleChange.target.discordUsername || roleChange.target.discordId}: ${roleMeta(roleChange.target.role).label} เป็น ${roleMeta(roleChange.role).label}`
             : undefined
         }
         confirmText="เปลี่ยนสิทธิ์"

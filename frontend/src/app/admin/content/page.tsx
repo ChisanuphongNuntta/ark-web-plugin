@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowLeft, Copy, ExternalLink, Eye, EyeOff, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Copy, Eye, EyeOff, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from '@/components/tek/arrows';
 import {
   AdminButton,
   AdminDialog,
@@ -27,6 +28,7 @@ import {
   StatusBadge,
   adminInputClass,
 } from '@/components/admin';
+import { AdminAccessGate } from '@/components/admin/console/ConsoleBits';
 import { usePaginatedQuery } from '@/hooks/usePaginatedQuery';
 import { contentApi, type AdminContentPageRow } from '@/lib/api';
 
@@ -391,7 +393,9 @@ function ContentAdmin() {
 export default function AdminContentPage() {
   return (
     <AdminSuspense>
-      <ContentAdmin />
+      <AdminAccessGate allow={['admin', 'root']}>
+        <ContentAdmin />
+      </AdminAccessGate>
     </AdminSuspense>
   );
 }

@@ -46,7 +46,7 @@ export function AppleCategoryBar({
             className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
               selectedCategoryId === null
                 ? 'bg-white text-black shadow-md shadow-white/10'
-                : 'bg-white/[0.06] text-[#86868b] hover:text-white hover:bg-white/[0.1]'
+                : 'bg-white/[0.06] text-ink-faint hover:text-white hover:bg-white/[0.1]'
             }`}
           >
             <span>สินค้าทั้งหมด</span>
@@ -63,7 +63,7 @@ export function AppleCategoryBar({
                 className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 ${
                   isSelected
                     ? 'bg-white text-black shadow-md shadow-white/10'
-                    : 'bg-white/[0.06] text-[#86868b] hover:text-white hover:bg-white/[0.1]'
+                    : 'bg-white/[0.06] text-ink-faint hover:text-white hover:bg-white/[0.1]'
                 }`}
               >
                 {cat.icon && <span>{cat.icon}</span>}
@@ -81,14 +81,14 @@ export function AppleCategoryBar({
         {/* Search & Reset Controls (Apple Spotlight Style) */}
         <form onSubmit={onSearchSubmit} className="flex items-center gap-2 shrink-0">
           <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-faint" />
             <input
               type="text"
               name="search"
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="ค้นหาชื่อสินค้า..."
-              className="w-full pl-9 pr-8 py-2 rounded-full bg-white/[0.06] border border-white/[0.1] text-xs text-white placeholder-[#86868b] focus:outline-none focus:border-white/30 focus:bg-white/[0.09] transition-colors"
+              className="w-full pl-9 pr-8 py-2 rounded-full bg-white/[0.06] border border-white/[0.1] text-xs text-white placeholder-ink-faint focus:outline-none focus:border-white/30 focus:bg-white/[0.09] transition-colors"
             />
             {search && (
               <button
@@ -97,7 +97,7 @@ export function AppleCategoryBar({
                   onSearchChange('');
                   onResetFilters();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-white"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -115,7 +115,7 @@ export function AppleCategoryBar({
             <button
               type="button"
               onClick={onResetFilters}
-              className="p-2 rounded-full text-[#86868b] hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+              className="p-2 rounded-full text-ink-faint hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
               title="ล้างการค้นหา"
             >
               <RotateCcw className="w-3.5 h-3.5" />

@@ -1,4 +1,6 @@
 'use client';
+import { T } from '@/components/i18n/LanguageProvider';
+
 
 import { useRef } from 'react';
 import { cn } from '@/lib/utils';
@@ -79,9 +81,7 @@ export function ModeTabs({ value, onChange, options, panelId }: ModeTabsProps) {
                 {option.servers.toLocaleString('th-TH')}
               </span>
             </span>
-            <span className="text-[11px] tabular-nums text-iris-muted">
-              ออนไลน์ {option.online.toLocaleString('th-TH')} · ผู้เล่น {option.players.toLocaleString('th-TH')} คน
-            </span>
+            <span className="text-[11px] tabular-nums text-iris-muted"><T text={"ออนไลน์"} />{option.online.toLocaleString('th-TH')}<T text={" · ผู้เล่น "} />{option.players.toLocaleString('th-TH')}<T text={"คน"} /></span>
           </button>
         );
       })}

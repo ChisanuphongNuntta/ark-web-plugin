@@ -1,24 +1,12 @@
 'use client';
+import { IrisCoin } from '@/components/ui/IrisCoin';
 
 import * as React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Coins,
-  Copy,
-  FileText,
-  Package,
-  ReceiptText,
-  RotateCcw,
-  Server,
-  ShieldCheck,
-  Truck,
-  ShoppingCart,
-  HelpCircle,
-} from 'lucide-react';
+import { AlertTriangle,  Copy, FileText, Package, ReceiptText, RotateCcw, Server, ShieldCheck, Truck, ShoppingCart, HelpCircle } from 'lucide-react';
+import { ArrowLeft } from '@/components/tek/arrows';
 import { orderContractApi, toContractError } from '@/lib/contracts/client';
 import type { DeliverySummary, TimelineEvent } from '@/lib/contracts/types';
 import { isOrderActive, isRefundable, statusOf, timelineStepOf } from '@/lib/orderStatus';
@@ -196,7 +184,7 @@ export default function OrderDetailPage() {
             <div className="rounded-[2rem] border border-iris-gold/20 bg-iris-gold/[0.06] p-5 lg:min-w-[230px]">
               <p className="text-[10px] uppercase tracking-[0.3em] text-iris-gold">Backend charged amount</p>
               <div className="mt-3 flex items-center gap-2 font-mono text-3xl font-black text-iris-gold">
-                <Coins className="h-7 w-7" />
+                <IrisCoin className="h-7 w-7" />
                 {order.totalPrice.toLocaleString()} IC
               </div>
               <p className="mt-2 text-[11px] leading-relaxed text-iris-muted">

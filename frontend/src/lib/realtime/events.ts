@@ -18,6 +18,12 @@ export const REALTIME_EVENTS = {
   vipUpdated: 'vip:updated',
   /** Room 'admin': any VIP membership / package change (refreshes /admin/vip). */
   adminVip: 'admin:vip',
+  /** Room user:<id>: subscription / token balance / quota changed (contracts/entitlements-2026-10.md). */
+  perksUpdated: 'perks:updated',
+  /** Room 'admin': any perks catalog / subscription / token / usage change (refreshes /admin/perks). */
+  adminPerks: 'admin:perks',
+  /** Room 'admin': chat moderation / channel mapping / bot status changed (refreshes /admin/chat). */
+  adminChat: 'admin:chat',
 } as const;
 
 /** Client -> server: join / leave the public `servers` room. */
@@ -83,6 +89,14 @@ export interface VipUpdatedEvent {
   reason?: 'purchase' | 'admin_grant' | 'admin_extend' | 'admin_revoke' | 'expired' | (string & {});
   expiresAt?: string | null;
   membershipId?: string;
+  at?: string;
+}
+
+/** 'perks:updated' (room user:<id>) — see backend/contracts/entitlements-2026-10.md. */
+export interface PerksUpdatedEvent {
+  reason?: 'consume' | 'purchase' | 'admin_grant' | 'admin_tokens' | 'expired' | (string & {});
+  /** Token balance after the change (null when not reported). */
+  tokens?: number | null;
   at?: string;
 }
 

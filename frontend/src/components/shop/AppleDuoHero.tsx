@@ -123,7 +123,7 @@ export function AppleDuoHero({ onOpenSpecs }: AppleDuoHeroProps) {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-[2.5rem] bg-[#000000] border border-white/[0.08] shadow-2xl p-6 sm:p-10 lg:p-14 mb-16">
+    <section className="relative overflow-hidden rounded-[2.5rem] bg-surface-0 border border-white/[0.08] shadow-2xl p-6 sm:p-10 lg:p-14 mb-16">
       {/* Subtle Ambient Radial Lighting */}
       <div
         className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full blur-[140px] opacity-30 transition-colors duration-700"
@@ -143,12 +143,12 @@ export function AppleDuoHero({ onOpenSpecs }: AppleDuoHeroProps) {
           {activeModel.name}
         </h2>
 
-        <p className="text-base sm:text-xl font-normal text-[#86868b] max-w-2xl">
+        <p className="text-base sm:text-xl font-normal text-ink-faint max-w-2xl">
           {activeModel.tagline}
         </p>
 
         {/* Apple-Style Model Segmented Switcher */}
-        <div className="pt-2 flex items-center p-1 rounded-full bg-[#161617] border border-white/[0.08]">
+        <div className="pt-2 flex items-center p-1 rounded-full bg-surface-1 border border-white/[0.08]">
           {DUO_MODELS.map((model, idx) => {
             const isSelected = selectedModelIndex === idx;
             return (
@@ -158,7 +158,7 @@ export function AppleDuoHero({ onOpenSpecs }: AppleDuoHeroProps) {
                 className={`relative px-5 sm:px-7 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${
                   isSelected
                     ? 'text-white'
-                    : 'text-[#86868b] hover:text-white/90'
+                    : 'text-ink-faint hover:text-white/90'
                 }`}
               >
                 {isSelected && (
@@ -207,7 +207,7 @@ export function AppleDuoHero({ onOpenSpecs }: AppleDuoHeroProps) {
 
           {/* Finish Trait Callout */}
           <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-auto max-w-md p-4 rounded-2xl bg-black/70 border border-white/10 backdrop-blur-2xl">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b]">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
               ฟินิช: {activeFinish.name}
             </p>
             <p className="text-xs sm:text-sm font-medium text-white/95 mt-0.5">
@@ -218,7 +218,7 @@ export function AppleDuoHero({ onOpenSpecs }: AppleDuoHeroProps) {
 
         {/* Color Finish Dots Selector */}
         <div className="mt-6 flex flex-col items-center gap-2">
-          <div className="flex items-center gap-3 p-2 rounded-full bg-[#161617]/80 border border-white/[0.08] backdrop-blur-md">
+          <div className="flex items-center gap-3 p-2 rounded-full bg-surface-1/80 border border-white/[0.08] backdrop-blur-md">
             {activeModel.finishes.map((finish, idx) => {
               const isSelected = selectedFinishIndex === idx;
               return (
@@ -245,7 +245,7 @@ export function AppleDuoHero({ onOpenSpecs }: AppleDuoHeroProps) {
               );
             })}
           </div>
-          <span className="text-[12px] font-medium text-[#86868b]">
+          <span className="text-[12px] font-medium text-ink-faint">
             {activeFinish.name}
           </span>
         </div>
@@ -261,7 +261,7 @@ export function AppleDuoHero({ onOpenSpecs }: AppleDuoHeroProps) {
             <span className="text-xs sm:text-sm font-medium text-white/90">
               {spec.label}
             </span>
-            <span className="text-[11px] text-[#86868b]">
+            <span className="text-[11px] text-ink-faint">
               {spec.subtext}
             </span>
           </div>
@@ -271,14 +271,14 @@ export function AppleDuoHero({ onOpenSpecs }: AppleDuoHeroProps) {
       {/* Action Bar & Pricing (Apple Pill CTAs) */}
       <div className="relative z-10 mt-6 sm:mt-10 flex flex-col sm:flex-row items-center justify-between gap-6 max-w-4xl mx-auto pt-6 border-t border-white/[0.08]">
         <div className="flex flex-col items-center sm:items-start">
-          <span className="text-xs uppercase tracking-wider text-[#86868b] font-medium">
+          <span className="text-xs uppercase tracking-wider text-ink-faint font-medium">
             ราคาเปิดตัวแบบคอมพลีท
           </span>
           <div className="flex items-baseline gap-2 mt-0.5">
             <span className="text-2xl sm:text-3xl font-semibold tracking-tight text-white font-mono">
               {activeModel.priceIC.toLocaleString()} IC
             </span>
-            <span className="text-sm text-[#86868b]">
+            <span className="text-sm text-ink-faint">
               (฿{activeModel.priceTHB.toLocaleString()})
             </span>
           </div>
@@ -302,7 +302,7 @@ export function AppleDuoHero({ onOpenSpecs }: AppleDuoHeroProps) {
             className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
               justAdded
                 ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 scale-105'
-                : 'bg-white text-black hover:bg-[#e8e8ed] shadow-lg shadow-white/10'
+                : 'bg-white text-black hover:bg-ink shadow-lg shadow-white/10'
             }`}
           >
             {justAdded ? (

@@ -1,13 +1,16 @@
 'use client';
+import { T } from '@/components/i18n/LanguageProvider';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronRight, Snowflake } from 'lucide-react';
+import { Snowflake } from 'lucide-react';
 import { useAuthStore, type UserRole } from '@/lib/store';
 import { LedgerMismatchBanner } from '@/components/admin/transactions/LedgerMismatchBanner';
 
 const titles: Record<string, string> = {
   shop: 'ร้านค้า',
   market: 'ตลาดผู้เล่น',
+  pass: 'ไอริสพาส',
+  rewards: 'รับของรายวัน',
   cart: 'ตะกร้าสินค้า',
   topup: 'เติมเหรียญ',
   orders: 'คำสั่งซื้อ',
@@ -44,6 +47,8 @@ const titles: Record<string, string> = {
   settings: 'ตั้งค่าเว็บ',
   'plugin-keys': 'คีย์ปลั๊กอิน',
   vip: 'VIP',
+  perks: 'สิทธิ์พิเศษ',
+  chat: 'แชท',
   reconcile: 'ตรวจสอบยอดบัญชี',
   callback: 'เข้าสู่ระบบ',
   'link-steam': 'เชื่อม Steam',
@@ -64,6 +69,8 @@ export const adminLinks: [string, string, UserRole[]?][] = [
   ['/admin/payments', 'การชำระเงิน', ADMIN_ONLY],
   ['/admin/transactions', 'ธุรกรรม', ADMIN_ONLY],
   ['/admin/vip', 'VIP', ADMIN_ONLY],
+  ['/admin/perks', 'สิทธิ์และแพ็กเกจ', ADMIN_ONLY],
+  ['/admin/chat', 'แชทข้ามแพลตฟอร์ม', ADMIN_ONLY],
   ['/admin/market', 'ตลาดผู้เล่น', ADMIN_ONLY],
   ['/admin/products', 'สินค้า', ADMIN_ONLY],
   ['/admin/categories', 'หมวดหมู่', ADMIN_ONLY],
@@ -83,6 +90,7 @@ const accountLinks: [string, string][] = [
   ['/profile', 'บัญชีของฉัน'],
   ['/topup', 'เติมเหรียญ'],
   ['/vip', 'VIP'],
+  ['/perks', 'สิทธิ์พิเศษ'],
   ['/orders', 'คำสั่งซื้อ'],
   ['/profile/data', 'ข้อมูลส่วนบุคคล'],
 ];
@@ -97,7 +105,7 @@ export function FrozenPageFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const parts = pathname.split('/').filter(Boolean);
   const section = parts[0] || 'home';
-  const isAccount = ['profile', 'orders', 'topup', 'vip'].includes(section);
+  const isAccount = ['profile', 'orders', 'topup', 'vip', 'perks'].includes(section);
   const role = useAuthStore((state) => state.user?.role ?? 'user');
   const links: [string, string][] =
     section === 'admin'
@@ -139,19 +147,19 @@ export function FrozenPageFrame({ children }: { children: React.ReactNode }) {
             </Link>
             {breadcrumbSegments.map((seg, i) => (
               <span key={i} className="inline-flex items-center gap-2">
-                <ChevronRight size={12} />
+                <span aria-hidden="true" className="opacity-60">/</span>
                 {seg.isCurrent ? (
-                  <span aria-current="page">{seg.label}</span>
+                  <span aria-current="page"><T text={seg.label} /></span>
                 ) : (
                   <Link href={seg.href} className="hover:text-white">
-                    {seg.label}
+                    <T text={seg.label} />
                   </Link>
                 )}
               </span>
             ))}
           </nav>
           <span className="hidden sm:inline-flex items-center gap-2 tracking-widest text-[10px]">
-            <Snowflake size={12} /> FROZEN EXPEDITION
+            <Snowflake size={12} /> IRIS TEK NETWORK
           </span>
         </div>
       )}
@@ -161,9 +169,9 @@ export function FrozenPageFrame({ children }: { children: React.ReactNode }) {
             <Link
               key={href}
               href={href}
-              aria-current={pathname === href || (href !== '/admin' && pathname.startsWith(`${href}/`)) ? 'page' : undefined}
+              aria-current={pathname === href ? 'page' : undefined}
             >
-              {label}
+              <T text={label} />
             </Link>
           ))}
         </nav>

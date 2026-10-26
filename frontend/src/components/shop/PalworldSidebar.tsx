@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Snowflake, ArrowUpRight } from 'lucide-react';
+import { Snowflake } from 'lucide-react';
+import { ArrowUpRight } from '@/components/tek/arrows';
 
 const links = [
   ['/shop', 'ร้านค้าทางการ'], ['/market', 'ตลาดผู้เล่น'], ['/packs', 'แพ็กเกจ'],

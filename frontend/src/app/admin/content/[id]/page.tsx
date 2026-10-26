@@ -4,33 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Code,
-  ExternalLink,
-  Eye,
-  EyeOff,
-  FileText,
-  Grid3X3,
-  Image as ImageIcon,
-  Layout,
-  List,
-  Loader2,
-  MessageSquare,
-  Minus,
-  Pencil,
-  Plus,
-  Save,
-  Settings,
-  ShoppingCart,
-  Trash2,
-  Type,
-  Video,
-  type LucideIcon,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, Code, Eye, EyeOff, FileText, Grid3X3, Image as ImageIcon, Layout, List, Loader2, MessageSquare, Minus, Pencil, Plus, Save, Settings, ShoppingCart, Trash2, Type, Video, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from '@/components/tek/arrows';
 import {
   AdminButton,
   AdminDialog,
@@ -44,6 +19,7 @@ import {
   StatusBadge,
   adminInputClass,
 } from '@/components/admin';
+import { AdminAccessGate } from '@/components/admin/console/ConsoleBits';
 import { contentApi } from '@/lib/api';
 
 interface ContentBlock {
@@ -157,6 +133,14 @@ function settingsFromPage(page: any): PageSettings {
 }
 
 export default function PageEditorPage() {
+  return (
+    <AdminAccessGate allow={['admin', 'root']}>
+      <PageEditor />
+    </AdminAccessGate>
+  );
+}
+
+function PageEditor() {
   const params = useParams();
   const queryClient = useQueryClient();
   const pageId = parseInt(String(params.id ?? ''), 10);

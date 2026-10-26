@@ -1,4 +1,6 @@
 'use client';
+import { T } from '@/components/i18n/LanguageProvider';
+
 
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2, RotateCcw, UserRound } from 'lucide-react';
@@ -45,12 +47,11 @@ export function PlayerList({ view, id }: PlayerListProps) {
 
   let body: React.ReactNode;
   if (!view.online) {
-    body = <p className="text-sm text-iris-muted">เซิร์ฟเวอร์ออฟไลน์อยู่ จึงยังไม่มีรายชื่อผู้เล่น</p>;
+    body = <p className="text-sm text-iris-muted"><T text={"เซิร์ฟเวอร์ออฟไลน์อยู่ จึงยังไม่มีรายชื่อผู้เล่น"} /></p>;
   } else if (query.isLoading) {
     body = (
       <p className="flex items-center gap-2 text-sm text-iris-muted">
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> กำลังโหลดรายชื่อผู้เล่น…
-      </p>
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /><T text={"กำลังโหลดรายชื่อผู้เล่น…"} /></p>
     );
   } else if (query.isError && !query.data) {
     const status = errorStatus(query.error);
@@ -69,8 +70,7 @@ export function PlayerList({ view, id }: PlayerListProps) {
             onClick={() => void query.refetch()}
             className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-semibold text-iris-pearl transition-colors hover:border-iris-cyan/30 hover:bg-iris-cyan/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris-cyan"
           >
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> ลองใหม่
-          </button>
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /><T text={"ลองใหม่"} /></button>
         ) : null}
       </div>
     );
@@ -96,7 +96,7 @@ export function PlayerList({ view, id }: PlayerListProps) {
                 </span>
               </span>
               <span className="shrink-0 text-xs tabular-nums text-iris-muted">
-                <span className="sr-only">ออนไลน์มาแล้ว </span>
+                <span className="sr-only"><T text={"ออนไลน์มาแล้ว "} /></span>
                 {formatDuration(row.durationSec)}
               </span>
             </li>
@@ -110,9 +110,7 @@ export function PlayerList({ view, id }: PlayerListProps) {
     <div id={id} className="border-t border-white/[0.07] px-4 pb-4 pt-3 sm:px-5" aria-busy={query.isFetching}>
       {body}
       {fetchedLabel && view.online ? (
-        <p className="mt-3 text-[11px] text-iris-muted/80">
-          อัปเดตล่าสุด {fetchedLabel} · รีเฟรชอัตโนมัติขณะเปิดรายการนี้
-        </p>
+        <p className="mt-3 text-[11px] text-iris-muted/80"><T text={"อัปเดตล่าสุด"} />{fetchedLabel}<T text={"· รีเฟรชอัตโนมัติขณะเปิดรายการนี้"} /></p>
       ) : null}
     </div>
   );

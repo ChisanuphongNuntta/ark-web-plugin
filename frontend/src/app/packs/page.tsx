@@ -4,19 +4,8 @@ import * as React from 'react';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import {
-  Package,
-  Sparkles,
-  Zap,
-  ShieldCheck,
-  Crown,
-  Flame,
-  CheckCircle,
-  HelpCircle,
-  Clock,
-  ArrowRight,
-  Info,
-} from 'lucide-react';
+import { Package, Sparkles, Zap, ShieldCheck, Crown, Flame, CheckCircle, HelpCircle, Clock, Info } from 'lucide-react';
+import { ArrowRight } from '@/components/tek/arrows';
 import { shopApi } from '@/lib/contracts/client';
 import { ProductBuyModal } from '@/components/shop/ProductBuyModal';
 import type { Product } from '@/lib/contracts/types';
@@ -38,7 +27,7 @@ const PACK_VISUAL_MAP: Record<
 > = {
   4: {
     bgImage: '/images/packages/pkg-starter.jpg',
-    tierBadge: '🟢 SURVIVAL ESSENTIAL',
+    tierBadge: 'SURVIVAL ESSENTIAL',
     tierColor: 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300',
     valueOriginal: 80,
     savingsPct: 37,
@@ -51,7 +40,7 @@ const PACK_VISUAL_MAP: Record<
   },
   988: {
     bgImage: '/images/packages/pkg-explorer.jpg',
-    tierBadge: '❄️ DUO APEX EXPEDITION',
+    tierBadge: 'DUO APEX EXPEDITION',
     tierColor: 'border-cyan-400/40 bg-cyan-500/20 text-cyan-200',
     valueOriginal: 320,
     savingsPct: 38,
@@ -64,7 +53,7 @@ const PACK_VISUAL_MAP: Record<
   },
   990: {
     bgImage: '/images/store_artwork.png',
-    tierBadge: '🔥 POPULAR · COMBAT TRIO',
+    tierBadge: 'POPULAR · COMBAT TRIO',
     tierColor: 'border-amber-400/50 bg-amber-500/20 text-amber-300',
     valueOriginal: 650,
     savingsPct: 39,
@@ -77,7 +66,7 @@ const PACK_VISUAL_MAP: Record<
   },
   984: {
     bgImage: '/images/packages/pkg-alpha.png',
-    tierBadge: '⚡ TEK & REAPER WARPACK',
+    tierBadge: 'TEK & REAPER WARPACK',
     tierColor: 'border-purple-400/50 bg-purple-500/20 text-purple-200',
     valueOriginal: 800,
     savingsPct: 38,
@@ -90,7 +79,7 @@ const PACK_VISUAL_MAP: Record<
   },
   993: {
     bgImage: '/images/login_wallpaper.png',
-    tierBadge: '👑 ASCENDANT VAULT · BEST VALUE',
+    tierBadge: 'ASCENDANT VAULT · BEST VALUE',
     tierColor: 'border-amber-300 bg-amber-400/25 text-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.3)]',
     valueOriginal: 1600,
     savingsPct: 40,
@@ -163,7 +152,7 @@ export default function PacksPage() {
     <>
       <div className="page-shell pb-20 space-y-12">
         {/* 1. Cinematic Hero Banner */}
-        <section className="relative overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-[#061726] via-[#0b2135] to-[#040d16] p-8 sm:p-12 shadow-[0_0_50px_rgba(6,182,212,0.15)]">
+        <section className="relative overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-surface-1 via-surface-3 to-surface-0 p-8 sm:p-12 shadow-[0_0_50px_rgba(6,182,212,0.15)]">
         {/* Background glow effects */}
         <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-cyan-500/15 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-indigo-500/15 blur-3xl" />
@@ -290,7 +279,7 @@ export default function PacksPage() {
           onRetry={refetch}
         />
       ) : filteredProducts.length === 0 ? (
-        <div className="rounded-3xl border border-slate-800 bg-[#081827] p-12 text-center">
+        <div className="rounded-3xl border border-slate-800 bg-surface-1 p-12 text-center">
           <Package className="mx-auto h-12 w-12 text-slate-600 mb-3" />
           <h2 className="text-xl font-bold text-white">ไม่พบแพ็กเกจในหมวดหมู่นี้</h2>
           <p className="text-xs text-slate-400 mt-2">โปรดเลือกดูหมวดหมู่อื่น หรือดูสินค้าทั้งหมดในร้านค้า</p>
@@ -307,7 +296,7 @@ export default function PacksPage() {
           {filteredProducts.map((p) => {
             const visual = PACK_VISUAL_MAP[p.id] || {
               bgImage: '/images/packages/pkg-tribesman.png',
-              tierBadge: '⭐ SPECIAL KIT',
+              tierBadge: 'SPECIAL KIT',
               tierColor: 'border-cyan-400/40 bg-cyan-500/20 text-cyan-200',
               highlights: [p.description || 'ชุดแพ็กเกจพิเศษจากร้านค้า IRIS'],
             };
@@ -319,8 +308,8 @@ export default function PacksPage() {
                 key={p.id}
                 className={`group relative flex flex-col justify-between overflow-hidden rounded-3xl border transition-all duration-500 hover:-translate-y-1.5 ${
                   isHero
-                    ? 'border-amber-400/60 bg-[#0c1f30] shadow-[0_0_35px_rgba(251,191,36,0.2)] md:col-span-2 lg:col-span-2'
-                    : 'border-slate-700/60 bg-[#091b2c] hover:border-cyan-400/60 hover:shadow-[0_0_30px_rgba(6,182,212,0.2)]'
+                    ? 'border-amber-400/60 bg-surface-2 shadow-[0_0_35px_rgba(251,191,36,0.2)] md:col-span-2 lg:col-span-2'
+                    : 'border-slate-700/60 bg-surface-2 hover:border-cyan-400/60 hover:shadow-[0_0_30px_rgba(6,182,212,0.2)]'
                 }`}
               >
                 {/* Visual Header with Thematic Background Artwork */}
@@ -332,8 +321,8 @@ export default function PacksPage() {
                     className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
                   />
                   {/* Cinematic gradient overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#091b2c] via-[#091b2c]/60 to-transparent" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#091b2c]/80 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-surface-2 via-surface-2/60 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-surface-2/80 via-transparent to-transparent" />
 
                   {/* Badges Top Bar */}
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between gap-2">
@@ -416,7 +405,7 @@ export default function PacksPage() {
       )}
 
       {/* 4. Trust & Delivery Guarantee Cockpit */}
-      <section className="rounded-3xl border border-slate-700/50 bg-[#071725]/80 backdrop-blur-md p-6 sm:p-8 space-y-6">
+      <section className="rounded-3xl border border-slate-700/50 bg-surface-1/80 backdrop-blur-md p-6 sm:p-8 space-y-6">
         <div className="flex items-center gap-3">
           <ShieldCheck className="h-6 w-6 text-emerald-400" />
           <h3 className="font-display text-lg sm:text-xl font-bold text-white">

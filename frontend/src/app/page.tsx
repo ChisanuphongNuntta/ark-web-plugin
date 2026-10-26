@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { HomeExperience } from '@/components/home/HomeExperience';
+import { TekHome } from '@/components/tek/TekHome';
 
 export const metadata: Metadata = {
   title: 'IRIS Thailand — โลกที่เว็บและเกมเป็นหนึ่งเดียว',
@@ -19,7 +19,7 @@ export default function HomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
-      <HomeExperience />
+      <TekHome />
     </>
   );
 }

@@ -1,0 +1,112 @@
+/* One site-wide Christmas identity. Status/rarity colours and map photos remain semantic. */
+body.iris-xmas {
+  --iris-ink: 8 5 8; --iris-midnight: 16 8 14; --iris-river: 30 13 22;
+  --iris-cyan: 255 104 126; --iris-gold: 255 207 112;
+  --tk-void: #080508; --tk-panel: #130c12; --tk-cyan: #ff687e;
+  --tk-line: #b33e5145; --tk-line-strong: #e85e7575;
+  --tk-muted: #c0afb8; --tk-faint: #a08c98; --tk-text: #f8eef2; --tk-gold: #ffcf70;
+  --tek-energy: #ff7187; --tek-metal: #170b12; --tek-line: #df50626b;
+  --focus: #ffcf70;
+  background-color: #080508;
+  background-image: radial-gradient(ellipse at 0% 20%,#780e2029,transparent 45%),radial-gradient(ellipse at 100% 65%,#780e2026,transparent 45%),url('/images/ui/tek-xmas-weave.svg');
+  background-size: auto,auto,150px 86px;
+}
+.iris-snow-foreground { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 45; pointer-events: none; }
+.iris-xmas .tk-top { background: linear-gradient(180deg,#08070afb,#08070af2); border-bottom-color: #a62f43; }
+.iris-xmas .tk-top::after { background: linear-gradient(90deg,transparent,#ff354e,#ffd48a,#ff354e,transparent); }
+.iris-xmas .tk-top > .tk-wrap { width: min(1460px,calc(100% - 64px)); }
+.iris-xmas .tk-brand img { filter: hue-rotate(145deg) saturate(.9); }
+.iris-xmas .tk-brand b { color: #ff7183; text-shadow: 0 0 20px #f43c5540; }
+.iris-xmas .tk-brand small { color: #d8c8cc; }
+.iris-xmas .tk-event { background: linear-gradient(90deg,#520a17,#18080d 45%,#520a17); border-color: #b46746; }
+.iris-xmas .tk-menu,.iris-xmas .tk-drawer { background: #160b13; border-color: #8c3148; }
+.iris-xmas .tk-search { background: #21101b; box-shadow: inset 0 0 0 1px #9c4a5c66; color: #be9fae; }
+.iris-xmas .tk-wallet { background: #b7892a19; }
+.iris-xmas .tk-ib { --hx-line: #a65a6c88; color: #e4d2d9; }
+.iris-xmas .tk-ib::after { background: #180e15; }
+.iris-xmas .tk-av::before { background: linear-gradient(135deg,#81344b,#1e101b); }
+.iris-xmas .tk-btn { --bg: linear-gradient(180deg,#ff5268,#eb2442 65%,#ba122f); --fg: #fff; }
+.iris-xmas .tk-btn.ghost { --bg: linear-gradient(180deg,#29212a,#130c15); --fg: #f8edf1; }
+.iris-xmas .tk-btn.gold { --bg: linear-gradient(180deg,#ffe7a0,#d9a144); --fg: #251505; }
+.iris-xmas .tk-panel { border-color: #9e3b514f; background: url('/images/ui/tek-xmas-weave.svg') 0 0/112px 64px,linear-gradient(155deg,#43142540,transparent 55%),#130c12; }
+.iris-xmas :is(.glass-card,.frozen-product,.frozen-toolbar,.frozen-category-list,.tek-panel,.tek-frame) { border-color: #a53c555e; }
+.iris-xmas :is(.glass-card,.frozen-product,.frozen-toolbar,.frozen-category-list) { background-color: #180e17; }
+.iris-xmas .tek-panel { background-image: linear-gradient(135deg,#351728b0,#140c15); }
+.iris-xmas .tek-panel[class*="border-amber"] { border-color: #d7a64185; }
+.iris-xmas .frozen-page :where(div,section,article,aside,form)[class*="rounded"][class*="border"]:not([class*="rounded-full"]):not(.frozen-artwork):not(.frozen-product-art):not([role="tablist"])::after {
+  border-color: #e7576c45;
+  background: linear-gradient(135deg,transparent 7px,#ffd58b 7px,#ffd58b 8px,transparent 8px) 10px 10px/25px 25px no-repeat,
+    linear-gradient(315deg,transparent 7px,#fa536f 7px,#fa536f 8px,transparent 8px) calc(100% - 10px) calc(100% - 10px)/25px 25px no-repeat,
+    url('/images/ui/tek-xmas-weave.svg') 0 0/112px 64px;
+  box-shadow: inset 0 1px #ffe7b433;
+}
+/* Established neutral navy surfaces; badges and rarity/status colours are excluded. */
+.iris-xmas :is([class*="bg-[#102637]"],[class*="bg-[#081523]"],[class*="bg-[#081826]"],[class*="bg-[#0a1b28]"],[class*="bg-[#06111d]"],[class*="bg-[#06121e]"],[class*="bg-[#07101a]"]) { background-color: #1b0e18; }
+.iris-xmas :is(.tek-panel,.tek-frame,.glass-card,.frozen-product,.frozen-category-list,.frozen-toolbar,.server-card)::after {
+  border-color: #e7576c45;
+  background: linear-gradient(135deg,transparent 7px,#ffd58b 7px,#ffd58b 8px,transparent 8px) 10px 10px/25px 25px no-repeat,
+    linear-gradient(315deg,transparent 7px,#fa536f 7px,#fa536f 8px,transparent 8px) calc(100% - 10px) calc(100% - 10px)/25px 25px no-repeat,
+    linear-gradient(90deg,#df315d80,transparent 24%,transparent 76%,#eeb96070) 0 0/100% 1px no-repeat,
+    url('/images/ui/tek-xmas-weave.svg') 0 0/112px 64px;
+  box-shadow: inset 0 1px #ffe7b433,inset 0 0 24px #c7203b0d;
+}
+.iris-xmas .frozen-page { background-color: transparent; }
+.iris-xmas .frozen-wayfinding { color: #c9b2be; }
+.iris-xmas .frozen-section-nav { border-color: #ad395451; }
+.iris-xmas .frozen-section-nav a[aria-current=page] { color: #ffe2ad; background: #6b17323a; border-color: #cb49645e; }
+.iris-xmas .tk-home .tk-hero {
+  background-image: url('/images/seasonal/christmas-depot-v2.webp');
+  background-position: 60% center; background-size: cover;
+}
+.iris-xmas .tk-home .tk-hero::before { background: linear-gradient(90deg,#080508ee,#080508af 32%,#08050810 72%),linear-gradient(0deg,#080508,transparent 28%); }
+.iris-xmas .tk-home .tk-hero::after { background: radial-gradient(ellipse at 65% 40%,#ff456c0b,transparent 65%); animation: none; }
+.iris-xmas .tk-home .tk-hero h1 { text-shadow: 0 3px 0 #6c152d,0 0 25px #e8425b35; }
+.iris-xmas .tk-home .tk-hero h1 .tk-shine { color: #ffdf9c; -webkit-text-fill-color: #ffdf9c; background: none; text-shadow: 0 3px #602035,0 0 22px #f68c4f33; }
+.iris-xmas .tk-shine { background-image: linear-gradient(100deg,#fff4d3,#ffbdb8 38%,#fff0be 65%,#ff8e9f); }
+.iris-xmas .tk-lead { color: #eddae3; }
+.iris-xmas .tk-countdown,.iris-xmas .tk-telemetry { background: #150a12c9; }
+.iris-xmas .tk-dock .ico,.iris-xmas .tk-links .ico { --hx-line: #dd536c88; --hx-bg: #2e101ef5; }
+.iris-xmas .tk-winter { background: radial-gradient(ellipse at right,#7b123829,transparent 65%); }
+.iris-xmas .tk-more { border-bottom-color: #c35a6a66; }
+.iris-xmas .tk-footer { background: linear-gradient(180deg,#180b13e8,#080508); border-color: #a43a4f66; }
+.iris-xmas .tk-legal { border-color: #a43a4f44; }
+.iris-xmas .tk-tabbar { border-color: #b9445f88; background: #150b13f5; }
+.iris-xmas .tk-music-panel { background: #180c16f5; border-color: #a03e57; max-width: calc(100vw - 40px); }
+.iris-xmas .tk-music-title { align-items: flex-start; }
+.iris-xmas .tk-music-title b { font-size: 11px; }
+.iris-xmas .tk-music-title small { white-space: nowrap; }
+.iris-xmas .tk-music-btn::after { background: #1a0e17; }
+.iris-xmas .pass-page .tek-panel { background: linear-gradient(135deg,#301423,#140c16); }
+.iris-xmas .pass-page .pass-hero { background: radial-gradient(ellipse at 90% 30%,#8c204f40,transparent 55%),linear-gradient(125deg,#301425,#120a13 70%); }
+.iris-xmas .pass-heading span,.iris-xmas .pass-level-number,.iris-xmas .pass-summary strong { color: #ffe0a7; }
+.iris-xmas .pass-meter > span { background: linear-gradient(90deg,#c82f56,#f8c977); }
+.iris-xmas .pass-quest-tabs { background: #170c14; border-color: #a03e574a; }
+.iris-xmas .pass-quest-tabs button[aria-pressed=true] { background: #5d2038; color: #ffe6be; }
+.iris-xmas .pass-track-controls button { background: #291322; border-color: #a34e6266; color: #ffdfaa; }
+.iris-xmas .server-card { border-color: #aa4d655a; }
+.iris-xmas .iris-loading-screen { background: radial-gradient(ellipse at center,#47142b,#080508 65%); }
+.iris-xmas .iris-loading-track > span { background: linear-gradient(90deg,transparent,#ffd18c,transparent); }
+.iris-xmas :is(button,a,input,select,textarea):focus-visible { outline-color: #ffcf70; }
+@media(max-width:1599px) {
+  .iris-xmas .tk-nav { display: none; }
+  .iris-xmas .tk-burger { display: grid; }
+  .iris-xmas .tk-top-in { justify-content: space-between; }
+}
+@media(max-width:1100px) {
+  .iris-xmas .tk-winter { grid-template-columns: minmax(0,1fr); }
+}
+@media(max-width:640px) {
+  .iris-xmas .tk-top > .tk-wrap { width: calc(100% - 28px); }
+  .iris-xmas .tk-brand > span,.iris-xmas .tk-top .tk-wallet,.iris-xmas .tk-top .tk-bell { display: none; }
+  .iris-xmas .tk-hud { gap: 4px; }
+  
+  .iris-xmas .tk-home .tk-hero { background: #080508 url('/images/seasonal/christmas-depot-v2-mobile.webp') top center/100% auto no-repeat; }
+  .iris-xmas .tk-home .tk-hero::before { background: linear-gradient(180deg,transparent 10%,#08050888 25%,#080508 40%); }
+  .iris-xmas .tk-home .tk-hero-in { padding-top: 300px; padding-bottom: 110px; }
+  .iris-xmas .tk-home .tk-hero h1 { font-size: clamp(35px,10vw,52px); line-height: 1.25; }
+  .iris-xmas .tk-home .tk-lead { font-size: 15px; }
+  .iris-xmas .tk-advent-wrap,.iris-xmas .tk-gift { min-width: 0; padding: 18px; }
+  .iris-xmas .tk-countdown { width: 100%; max-width: 100%; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; padding: 12px 10px; }
+  .iris-xmas .tk-countdown .tk-hex { width: 100%; max-width: 62px; height: 46px; }
+  .iris-xmas .tk-advent-wrap header,.iris-xmas .tk-gift header { gap: 10px; flex-wrap: wrap; }
+}

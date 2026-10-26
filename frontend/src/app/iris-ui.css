@@ -1,0 +1,296 @@
+/* =====================================================================
+   IRIS UI: the one design system. Loaded after every legacy theme file.
+
+   Rules this file enforces
+   - Calm backgrounds: flat surfaces, no wallpaper pattern. Hexagons live in controls,
+     slots, icons and gauges, not behind text.
+   - WCAG 2.2 AAA: text >= 7:1 (large text >= 4.5:1) on every surface token, visible focus
+     ring (3px gold, 3:1+), 44px targets for controls, motion off on request.
+   - One surface scale (s-0..s-3), one accent scale (acc-*), one neutral scale (n-*).
+     Tailwind cyan/sky/teal and slate/gray are bound to these in tailwind.config.ts.
+   Contrast table (verified with scratchpad/contrast.py):
+     ink on s-1 16.4, ink-muted 11.1, ink-faint 8.8, acc-400 text 7.7+, gold text 13.8.
+   ===================================================================== */
+:root {
+  color-scheme: dark;
+  /* accent: default (non-seasonal) = Tek cyan */
+  --acc-50: 236 254 255; --acc-100: 207 250 254; --acc-200: 165 243 252; --acc-300: 103 232 249; --acc-400: 34 211 238;
+  --acc-500: 6 182 212; --acc-600: 8 145 178; --acc-700: 14 116 144; --acc-800: 21 94 117; --acc-900: 22 78 99; --acc-950: 8 51 68;
+  /* neutrals (warm graphite) */
+  --n-50: 250 247 249; --n-100: 243 237 241; --n-200: 230 221 227; --n-300: 214 202 210; --n-400: 209 196 205; --n-500: 203 190 199;
+  --n-600: 154 139 150; --n-700: 90 78 96; --n-800: 52 45 58; --n-900: 34 29 41; --n-950: 22 18 27;
+  /* surfaces */
+  --s-0: 10 7 9; --s-1: 21 17 26; --s-2: 29 24 36; --s-3: 38 32 47;
+  /* text */
+  --ink: 247 238 242; --ink-muted: 211 196 204; --ink-faint: 196 182 191;
+  /* lines: b-1 decorative hairline, b-2 control boundary (>= 3:1) */
+  --b-1: rgba(255, 255, 255, 0.13); --b-2: #8b7885;
+  --focus: #ffe3a6;
+  --gold: 255 227 166;
+  --btn-bg: #22d3ee; --btn-fg: #021014;
+  --r-ui: 8px;
+}
+body.iris-xmas {
+  --acc-50: 255 241 243; --acc-100: 255 224 229; --acc-200: 255 206 214; --acc-300: 255 188 199; --acc-400: 255 163 178;
+  --acc-500: 255 93 115; --acc-600: 229 51 79; --acc-700: 179 18 44; --acc-800: 138 14 34; --acc-900: 92 10 23; --acc-950: 56 6 14;
+  --btn-bg: #a8112b; --btn-fg: #ffffff;
+}
+
+/* ---- legacy token bridge: every old variable resolves into the one system ---- */
+body, body.iris-xmas {
+  --iris-ink: var(--s-0); --iris-midnight: 15 11 18; --iris-river: var(--s-1); --iris-slate: var(--s-2); --iris-violet: var(--s-1);
+  --iris-cyan: var(--acc-300); --iris-orchid: 196 170 255; --iris-magenta: var(--acc-500); --iris-gold: var(--gold);
+  --iris-pearl: var(--ink); --iris-muted: var(--ink-muted);
+  --surface-1: rgb(var(--s-1)); --surface-2: rgb(var(--s-2)); --line: var(--b-1);
+  --tk-void: rgb(var(--s-0)); --tk-panel: rgb(var(--s-1)); --tk-line: var(--b-1); --tk-line-strong: var(--b-2);
+  --focus: #ffe3a6;
+  --tk-cyan: rgb(var(--acc-400)); --tk-gold: rgb(var(--gold)); --tk-text: rgb(var(--ink)); --tk-muted: rgb(var(--ink-muted)); --tk-faint: rgb(var(--ink-faint));
+  --tek-energy: rgb(var(--acc-400)); --tek-metal: rgb(var(--s-1)); --tek-line: var(--b-1);
+}
+
+/* ---- calm page background: flat colour + two very soft glows, nothing repeating ---- */
+html { background: rgb(var(--s-0)); }
+body, body.iris-xmas {
+  background-color: rgb(var(--s-0));
+  background-image:
+    radial-gradient(1100px 520px at 8% -8%, rgb(var(--acc-800) / 0.20), transparent 62%),
+    radial-gradient(900px 520px at 100% 42%, rgb(var(--acc-900) / 0.16), transparent 64%);
+  background-attachment: scroll;
+  background-size: auto;
+  color: rgb(var(--ink));
+}
+
+/* ---- remove every decorative texture layer from legacy components ---- */
+.iris-xmas :is(.tek-panel, .tek-frame, .glass-card, .frozen-product, .frozen-category-list, .frozen-toolbar, .server-card, .magic-nav-dock)::after,
+.iris-xmas .frozen-page :where(div, section, article, aside, form)[class*="rounded"][class*="border"]:not([class*="rounded-full"])::after,
+.glass-card::before { content: none !important; display: none !important; }
+.iris-grid, .thai-lattice, .thai-lattice-bg, .hex-pattern { background-image: none !important; }
+
+/* ---- surfaces: three elevations, opaque, one hairline border, one radius ---- */
+.iris-xmas :is(.tk-panel, .glass-card, .frozen-product, .frozen-toolbar, .frozen-category-list, .tek-panel, .tek-frame, .server-card, .magic-nav-dock),
+.iris-xmas .tk-shop :is(.frozen-category-list) {
+  background: rgb(var(--s-1)) !important;
+  background-image: none !important;
+  border: 1px solid var(--b-1) !important;
+  border-radius: var(--r-ui);
+  box-shadow: none;
+}
+.iris-xmas :is(.tk-panel, .glass-card, .frozen-product, .tek-panel, .server-card):hover { border-color: rgb(var(--acc-400) / 0.55) !important; }
+.iris-xmas :is(.frozen-product, .tk-card, .server-card, .tek-panel):focus-within { border-color: rgb(var(--acc-400) / 0.7) !important; }
+.iris-xmas :is([class*="rounded-2xl"], [class*="rounded-3xl"], [class*="rounded-xl"], [class*="rounded-[1"], [class*="rounded-[2"]):not([class*="rounded-full"]) { border-radius: var(--r-ui); }
+.iris-xmas [class*="rounded-lg"]:not([class*="rounded-full"]) { border-radius: 6px; }
+.iris-xmas .tk-brackets::before, .iris-xmas .tk-brackets::after { display: none; }
+
+/* popups and floating panels share the raised surface */
+.iris-xmas :is(dialog, [role="dialog"], [role="alertdialog"], .tk-menu, .tk-drawer, .frozen-shop-dialog, .tk-music-panel) {
+  background: rgb(var(--s-2)) !important;
+  background-image: none !important;
+  color: rgb(var(--ink));
+  border: 1px solid var(--b-2) !important;
+  border-radius: var(--r-ui);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.65);
+}
+.iris-xmas dialog::backdrop { background: rgb(5 3 6 / 0.78); backdrop-filter: blur(6px); }
+.iris-xmas :is([class*="bg-black/"], [class*="bg-slate-950/"])[class*="fixed"] { backdrop-filter: blur(6px); }
+
+/* ---- text floors: AAA on s-0..s-3 ---- */
+.iris-xmas { --text-floor: rgb(var(--ink-faint)); }
+.iris-xmas ::placeholder { color: rgb(var(--ink-faint)) !important; opacity: 1; }
+
+/* ---- controls: shared hex-ended button system (pseudo layers keep the focus ring visible) ---- */
+.tk-btn, .btn-primary, .btn-secondary {
+  --hx: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
+  --bd: transparent; --bw: 0px; --bg: var(--btn-bg); --fg: var(--btn-fg);
+  position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 44px; padding: 0 30px; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; clip-path: none !important;
+  background: transparent !important; color: var(--fg) !important; font-weight: 700; letter-spacing: 0.02em; cursor: pointer;
+  transition: filter 0.15s;
+}
+.tk-btn::before, .btn-primary::before, .btn-secondary::before,
+.tk-btn::after, .btn-primary::after, .btn-secondary::after { content: ''; position: absolute; z-index: -1; clip-path: var(--hx); }
+.tk-btn::before, .btn-primary::before, .btn-secondary::before { inset: 0; background: var(--bd); }
+.tk-btn::after, .btn-primary::after, .btn-secondary::after { inset: var(--bw); background: var(--bg); }
+.tk-btn.sm { min-height: 44px; padding: 0 22px; font-size: 13px; }
+.tk-btn.ghost, .btn-secondary { --bd: var(--b-2); --bw: 1px; --bg: rgb(var(--s-2)); --fg: rgb(var(--ink)); }
+.tk-btn.gold { --bg: rgb(var(--gold)); --fg: #221405; }
+.tk-btn.festive { --bg: var(--btn-bg); --fg: var(--btn-fg); }
+.btn-primary { --bg: var(--btn-bg); --fg: var(--btn-fg); }
+.tk-btn:hover, .btn-primary:hover, .btn-secondary:hover { filter: brightness(1.14); }
+.tk-btn:disabled, .btn-primary:disabled, .btn-secondary:disabled, .tk-btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+/* focus: a 4px gold hex ring drawn outside the shape (never clipped) */
+.tk-btn:focus-visible, .btn-primary:focus-visible, .btn-secondary:focus-visible { outline: none; }
+.tk-btn:focus-visible::before, .btn-primary:focus-visible::before, .btn-secondary:focus-visible::before { inset: -4px; background: var(--focus); }
+
+/* hex icon buttons and chips */
+.tk-ib, .tk-add, .tk-av, .tk-music-btn { min-width: 48px; min-height: 44px; }
+.tk-ib:focus-visible, .tk-add:focus-visible, .tk-av:focus-visible, .tk-music-btn:focus-visible { outline: none; }
+.tk-ib:focus-visible::before, .tk-add:focus-visible::before, .tk-av:focus-visible::before, .tk-music-btn:focus-visible::before { inset: -3px; background: var(--focus); }
+.tk-add { width: 48px; height: 44px; }
+.tk-ib { width: 48px; height: 44px; }
+.tk-shop .tk-chip, .tk-chip { min-height: 44px; position: relative; isolation: isolate; clip-path: none !important; background: transparent !important; padding: 0 20px; }
+.tk-chip::before, .tk-chip::after { content: ''; position: absolute; z-index: -1; clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%); }
+.tk-chip::before { inset: 0; background: var(--b-2); }
+.tk-chip::after { inset: 1px; background: rgb(var(--s-2)); }
+.tk-chip:hover::after { background: rgb(var(--s-3)); }
+.tk-chip.on { color: var(--btn-fg) !important; }
+.tk-chip.on::before { background: rgb(var(--acc-300)); }
+.tk-chip.on::after { background: var(--btn-bg); }
+.tk-chip.on { --chip-on: 1; }
+.tk-shop .tk-chip.on { color: var(--btn-fg); }
+.tk-chip:focus-visible { outline: none; }
+.tk-chip:focus-visible::before { inset: -4px; background: var(--focus); }
+.tk-chip.sm { min-height: 44px; font-size: 13px; }
+
+/* generic links/buttons: focus ring for everything else */
+:where(a, button, input, select, textarea, summary, [tabindex], [role="button"], [role="tab"]):focus-visible {
+  outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 2px;
+}
+.tk-nav a, .tk-nav button, .tk-drawer a, .tk-drawer button, .tk-menu a, .tk-menu button { min-height: 44px; }
+.tk-menu a:focus-visible, .tk-menu button:focus-visible, .tk-nav a:focus-visible, .tk-nav button:focus-visible { outline-offset: -3px; }
+
+/* forms: visible boundaries (>= 3:1) and shared focus */
+.iris-xmas :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]) {
+  border-color: var(--b-2) !important; min-height: 44px; color: rgb(var(--ink));
+}
+.iris-xmas :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus-visible { border-color: var(--focus) !important; outline: 3px solid var(--focus); outline-offset: 2px; }
+.iris-xmas .tk-search input, .iris-xmas .tk-music-vol input { min-height: 0; border: 0 !important; }
+.iris-xmas :is(button, [role="button"], select) { min-height: 44px; }
+.iris-xmas :is(button, [role="button"]):where([class*="h-6"], [class*="h-5"], [class*="h-4"]) { min-height: 0; }
+
+/* ---- motion: calmer by default, none on request ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+::selection { background: rgb(var(--acc-500) / 0.45); color: #fff; }
+
+/* ---- beat the legacy seasonal variants (gradient fills make contrast unverifiable) ---- */
+.iris-xmas .tk-btn, .iris-xmas .tk-btn.festive { --bg: var(--btn-bg); --fg: var(--btn-fg); }
+.iris-xmas .tk-btn.ghost { --bg: rgb(var(--s-2)); --fg: rgb(var(--ink)); --bd: var(--b-2); --bw: 1px; }
+.iris-xmas .tk-btn.gold { --bg: rgb(var(--gold)); --fg: #221405; }
+.tk-season b, .tk-flag.hot, .iris-xmas .tk-season b { background: #a8112b; color: #fff; }
+.tk-pager .num.on { color: var(--btn-fg) !important; }
+.tk-shop .tk-pager .num.on::before { background: var(--btn-bg); }
+
+/* ---- target size (44px) and header controls ---- */
+.tk-ib, .tk-av { width: 51px; height: 44px; min-width: 51px; flex: none; }
+.tk-add { width: 51px; height: 44px; min-width: 51px; flex: none; }
+.tk-wallet { min-height: 44px; height: 44px; flex: none; }
+:is(button, a)[class*="min-w-9"], button[class*="w-9"], button[class*="w-10"] { min-width: 44px; }
+.tk-chip, .tk-christmas-shop .tk-chip, .tk-christmas-shop .tk-chip.sm, .tk-shop .tk-chip.sm { min-height: 44px !important; }
+.tk-shop .tk-pager .num { width: 51px; height: 44px; }
+.tk-shop .tk-pager .num.on::before { background: var(--btn-bg) !important; }
+.tk-shop .tk-pager .num.on { color: var(--btn-fg) !important; }
+
+/* wallet and search keep their hex ends but draw them with pseudo layers so the focus ring is never clipped */
+.tk-wallet, .iris-xmas .tk-wallet { position: relative; isolation: isolate; clip-path: none !important; background: none !important; padding: 0 22px; }
+.tk-wallet::before, .tk-wallet::after, .tk-search::before, .tk-search::after { content: ''; position: absolute; z-index: -1; clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 11px 100%, 0 50%); }
+.tk-wallet::before, .tk-search::before { inset: 0; background: rgb(var(--gold) / 0.55); }
+.tk-wallet::after, .tk-search::after { inset: 1px; background: rgb(var(--s-2)); }
+.tk-search::before { background: var(--b-2); }
+.tk-search, .iris-xmas .tk-search { position: relative; isolation: isolate; clip-path: none !important; background: none !important; box-shadow: none !important; min-height: 44px; height: 44px; padding: 0 20px; }
+.tk-search:focus-within::before, .tk-wallet:focus-visible::before { inset: -3px; background: var(--focus); }
+.tk-wallet:focus-visible { outline: none; }
+.tk-search input, .tk-search input:focus-visible { outline: none !important; }
+
+/* sliders: 44px hit area around a 4px track */
+.tk-music-vol input[type="range"] { height: 44px; background: none !important; appearance: none; -webkit-appearance: none; }
+.tk-music-vol input[type="range"]::-webkit-slider-runnable-track { height: 4px; background: linear-gradient(90deg, rgb(var(--acc-400)) var(--p, 30%), rgb(255 255 255 / 0.28) var(--p, 30%)); }
+.tk-music-vol input[type="range"]::-moz-range-track { height: 4px; background: linear-gradient(90deg, rgb(var(--acc-400)) var(--p, 30%), rgb(255 255 255 / 0.28) var(--p, 30%)); }
+.tk-music-vol input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -8px; width: 20px; height: 20px; background: rgb(var(--acc-300)); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); border: 0; }
+.tk-music-vol input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: rgb(var(--acc-300)); border: 0; border-radius: 0; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
+.tk-music-vol input[type="range"]:focus-visible { outline: 3px solid var(--focus) !important; outline-offset: 2px; }
+
+/* phones: keep every header control at 44px by dropping the brand wordmark, wallet pill and bell (wallet moves into the menu) */
+@media (max-width: 520px) {
+  .tk-brand > span, .tk-top .tk-wallet, .tk-top .tk-bell { display: none !important; }
+  .tk-top-in { gap: 8px; }
+  .tk-hud { gap: 4px; }
+}
+
+/* ---- verifiable backgrounds: flatten decorative gradients behind text ---- */
+.iris-xmas :is(.tk-footer, .tk-top, .tk-winter, .tk-depot-catalog) { background-image: none !important; background-color: rgb(var(--s-0)) !important; }
+.iris-xmas .tk-top { background-color: rgb(var(--s-0) / 0.97) !important; }
+.iris-xmas .tk-footer { background-color: rgb(var(--s-1)) !important; }
+.iris-xmas .tk-depot-catalog { background-color: rgb(var(--s-1)) !important; box-shadow: none !important; }
+.iris-xmas .tk-depot-catalog::before { display: none; }
+.iris-xmas .tk-depot-heading .eyebrow { color: rgb(var(--acc-300)); }
+.iris-xmas .tk-season { background: rgb(var(--s-2)) !important; border-color: var(--b-2); }
+
+/* gradient fills become the one primary-button fill; gradient text becomes solid accent */
+.iris-xmas :is([class*="from-iris-cyan via-blue-500"], [class*="from-iris-cyan to-blue-500"], [class*="from-emerald-500 to-cyan-500"],
+  [class*="from-emerald-600 to-blue-600"], [class*="from-rose-500 to-amber-500"]) {
+  background-image: none !important; background-color: var(--btn-bg) !important; color: var(--btn-fg) !important;
+}
+.iris-xmas :is([class*="from-iris-cyan to-iris-gold"], [class*="from-iris-cyan to-iris-orchid"], [class*="from-iris-cyan via-iris-orchid"]):not([class*="bg-clip-text"]) {
+  background-image: none !important; background-color: rgb(var(--acc-300)) !important;
+}
+.iris-xmas .bg-clip-text { background-image: none !important; -webkit-text-fill-color: rgb(var(--acc-300)) !important; color: rgb(var(--acc-300)) !important; }
+.iris-xmas .tk-shine { background-image: none !important; -webkit-text-fill-color: rgb(var(--ink)) !important; color: rgb(var(--ink)) !important; animation: none !important; filter: none !important; }
+
+/* hero scrims: the text side is dark enough to measure */
+.iris-xmas .tk-home .tk-hero::before {
+  background: linear-gradient(90deg, rgb(var(--s-0) / 0.97) 0%, rgb(var(--s-0) / 0.93) 42%, rgb(var(--s-0) / 0.62) 60%, rgb(var(--s-0) / 0) 82%),
+    linear-gradient(0deg, rgb(var(--s-0)) 0%, transparent 26%) !important;
+}
+.iris-xmas .tk-home .tk-hero h1 .tk-shine { color: rgb(var(--gold)) !important; -webkit-text-fill-color: rgb(var(--gold)) !important; }
+.iris-xmas .tk-shop-scene-shade { background: linear-gradient(90deg, rgb(var(--s-0) / 0.96) 0%, rgb(var(--s-0) / 0.9) 40%, rgb(var(--s-0) / 0.45) 62%, transparent 82%) !important; }
+.iris-xmas .tk-christmas-shop .tk-shop-hero .tk-btn, .iris-xmas .tk-shop-hero .tk-btn { --bg: var(--btn-bg); --fg: var(--btn-fg); --bd: transparent; box-shadow: none !important; }
+.iris-xmas .tk-christmas-shop .tk-shop-hero .tk-btn.ghost, .iris-xmas .tk-shop-hero .tk-btn.ghost { --bg: rgb(var(--s-2)); --fg: rgb(var(--ink)); --bd: var(--b-2); --bw: 1px; }
+.iris-xmas .tk-pager .num { color: rgb(var(--ink)); }
+@media (max-width: 640px) {
+  /* art stays visible above the copy; only the text block gets the dark ground */
+  .iris-xmas .tk-home .tk-hero::before {
+    background: linear-gradient(180deg, transparent 0, transparent 300px, rgb(var(--s-0) / 0.9) 380px, rgb(var(--s-0) / 0.98) 440px, rgb(var(--s-0)) 100%) !important;
+  }
+}
+.iris-xmas :is(.text-gradient-primary, .text-gradient-gold) { background-image: none !important; -webkit-text-fill-color: rgb(var(--acc-300)) !important; color: rgb(var(--acc-300)) !important; }
+.iris-xmas .text-gradient-gold { -webkit-text-fill-color: rgb(var(--gold)) !important; color: rgb(var(--gold)) !important; }
+.tk-crate { position: relative; overflow: hidden; margin-bottom: 18px; }
+.tk-crate::after { content: ''; position: absolute; inset: auto 0 0 0; height: 34%; background: linear-gradient(transparent, rgb(var(--s-1))); pointer-events: none; }
+
+/* snowfall switch inside the ambient (music) panel */
+.tk-snow-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin: 0 6px; padding: 0 12px; background: rgb(var(--s-3)); color: rgb(var(--ink)); border: 1px solid var(--b-2); border-radius: 6px; cursor: pointer; font-size: 13px; }
+.tk-snow-toggle b { font-family: var(--font-iris-display), sans-serif; color: rgb(var(--acc-300)); }
+.tk-snow-toggle[aria-pressed="false"] b { color: rgb(var(--ink-muted)); }
+/* hex gauge digits: plain white on the dark core (no glow filter behind text) */
+.tk-hexnum { filter: none !important; }
+.tk-hexnum b { color: rgb(var(--ink)) !important; }
+.tk-hexnum::after { background: rgb(var(--s-0)) !important; }
+
+/* any solid gradient fill (not a /NN tint) is the one primary fill, with the matching foreground */
+.iris-xmas [class*="bg-gradient-to-"]:is([class*="from-cyan-300 "], [class*="from-cyan-400 "], [class*="from-cyan-500 "], [class*="from-cyan-600 "],
+  [class*="from-sky-400 "], [class*="from-sky-500 "], [class*="from-teal-400 "], [class*="from-teal-500 "], [class*="from-iris-cyan "], [class*="from-emerald-400 "],
+  [class*="from-emerald-500 "], [class*="from-emerald-600 "], [class*="from-amber-400 "], [class*="from-amber-500 "], [class*="from-rose-500 "]):not([class*="bg-clip-text"]):not([class*="from-iris-cyan/"]) {
+  background-image: none !important; background-color: var(--btn-bg) !important; color: var(--btn-fg) !important; border-color: transparent;
+}
+
+/* ---- legacy section tabs (account / market / admin): 44px target, AAA text, visible focus ---- */
+.frozen-section-nav a {
+  display: inline-flex; align-items: center; min-height: 44px;
+  color: rgb(var(--ink-muted)); border-color: var(--b-2);
+  background: rgb(var(--s-2)); backdrop-filter: none;
+}
+.frozen-section-nav a:hover { color: rgb(var(--ink)); background: rgb(var(--s-3)); box-shadow: none; }
+.frozen-section-nav a[aria-current="page"] {
+  color: rgb(var(--ink)); background: rgb(var(--acc-400) / 0.16); border-color: rgb(var(--acc-300)); box-shadow: none;
+}
+.frozen-section-nav a:focus-visible {
+  outline: 3px solid rgb(var(--gold)) !important; outline-offset: 2px; box-shadow: none;
+}
+
+/* ---- chat launcher: Tek hex, clear of the phone tab bar ---- */
+.tk-chat-launch {
+  position: fixed; right: 16px; bottom: 5.5rem; z-index: 50; width: 56px; height: 56px;
+  display: grid; place-items: center; border: 0; background: transparent; color: rgb(var(--s-0)); cursor: pointer;
+}
+@media (min-width: 821px) { .tk-chat-launch { bottom: 16px; } }
+.tk-chat-launch::before {
+  content: ""; position: absolute; inset: 0; background: rgb(var(--acc-300));
+  clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%);
+}
+.tk-chat-launch:hover::before { background: rgb(var(--acc-200)); }
+.tk-chat-launch > svg { position: relative; }
+.tk-chat-launch:focus-visible { outline: 3px solid rgb(var(--gold)); outline-offset: 4px; }
+
+/* shop category list: 44px rows */
+.frozen-category-list button { min-height: 44px; }

@@ -1,27 +1,12 @@
 'use client';
+import { IrisCoin } from '@/components/ui/IrisCoin';
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { paymentApi } from '@/lib/contracts/client';
-import {
-  Coins,
-  ShieldCheck,
-  Clock,
-  CheckCircle,
-  Zap,
-  Building2,
-  QrCode,
-  Upload,
-  FileCheck,
-  Sparkles,
-  ArrowRight,
-  Copy,
-  Check,
-  Trash2,
-  CreditCard,
-  Crown,
-} from 'lucide-react';
+import {  ShieldCheck, Clock, CheckCircle, Zap, Building2, QrCode, Upload, FileCheck, Sparkles, Copy, Check, Trash2, CreditCard, Crown } from 'lucide-react';
+import { ArrowRight } from '@/components/tek/arrows';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
@@ -429,7 +414,7 @@ export function LegacyTopupPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-3 sm:px-5 lg:px-6 py-2 sm:py-3 pb-12 sm:pb-16 space-y-4 animate-slide-up">
       {/* Sleek Compact Header & User HUD Bar */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-700/40 bg-[#102637]/90 px-4 py-3 sm:px-6 sm:py-3.5 shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-700/40 bg-surface-3/90 px-4 py-3 sm:px-6 sm:py-3.5 shadow-lg">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <h1 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-iris-pearl flex items-center gap-2">
@@ -454,7 +439,7 @@ export function LegacyTopupPage() {
           {user ? (
             <div className="shrink-0 flex items-center gap-3 rounded-xl border border-amber-500/30 bg-black/50 px-3.5 py-1.5 shadow-inner">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-400/15 border border-amber-400/30 text-amber-300">
-                <Coins className="h-4 w-4" />
+                <IrisCoin className="h-4 w-4" />
               </div>
               <div>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none">ยอดคงเหลือ</p>
@@ -531,8 +516,8 @@ export function LegacyTopupPage() {
                       <div
                         className={`absolute inset-0 transition-opacity duration-200 pointer-events-none ${
                           isSelected
-                            ? 'bg-gradient-to-r from-[#031322]/85 via-[#0d2235]/75 to-[#1c1404]/75'
-                            : 'bg-gradient-to-r from-[#031322]/90 via-[#0a1c2b]/85 to-[#140e03]/85 group-hover:via-[#0a1c2b]/75'
+                            ? 'bg-gradient-to-r from-surface-1/85 via-surface-3/75 to-surface-1/75'
+                            : 'bg-gradient-to-r from-surface-1/90 via-surface-2/85 to-surface-1/85 group-hover:via-surface-2/75'
                         }`}
                       />
 
@@ -598,14 +583,14 @@ export function LegacyTopupPage() {
                     <div
                       className={`absolute inset-0 transition-opacity duration-200 pointer-events-none ${
                         isSelected
-                          ? 'bg-gradient-to-r from-[#051624]/85 via-[#0a1c2b]/80 to-black/75'
-                          : 'bg-gradient-to-r from-[#051624]/90 via-[#081827]/85 to-black/80 group-hover:via-[#081827]/75'
+                          ? 'bg-gradient-to-r from-surface-1/85 via-surface-2/80 to-black/75'
+                          : 'bg-gradient-to-r from-surface-1/90 via-surface-1/85 to-black/80 group-hover:via-surface-1/75'
                       }`}
                     />
 
                     <div className="relative z-10 flex items-center gap-2 min-w-0">
                       <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${meta.iconBg}`}>
-                        <Coins className="h-4 w-4" />
+                        <IrisCoin className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -686,7 +671,7 @@ export function LegacyTopupPage() {
                 className={`rounded-xl border p-2 text-left transition-all duration-200 relative ${
                   paymentMethod === 'bank_slip'
                     ? 'border-iris-cyan bg-iris-cyan/15 ring-2 ring-iris-cyan/50 shadow-[0_0_15px_rgba(55,229,210,0.3)]'
-                    : 'border-white/10 bg-[#102637]/70 hover:border-white/20 hover:bg-[#153147]'
+                    : 'border-white/10 bg-surface-3/70 hover:border-white/20 hover:bg-surface-3'
                 }`}
                 onClick={() => setPaymentMethod('bank_slip')}
               >
@@ -709,7 +694,7 @@ export function LegacyTopupPage() {
                 className={`rounded-xl border p-2 text-left transition-all duration-200 relative ${
                   paymentMethod === 'stripe'
                     ? 'border-cyan-400 bg-cyan-500/15 ring-2 ring-cyan-400/50 shadow-[0_0_15px_rgba(75,228,255,0.3)]'
-                    : 'border-white/10 bg-[#102637]/70 hover:border-white/20 hover:bg-[#153147]'
+                    : 'border-white/10 bg-surface-3/70 hover:border-white/20 hover:bg-surface-3'
                 }`}
                 onClick={() => setPaymentMethod('stripe')}
               >
@@ -733,7 +718,7 @@ export function LegacyTopupPage() {
                 className={`rounded-xl border p-2 text-left transition-all duration-200 relative ${
                   paymentMethod === 'sandbox'
                     ? 'border-amber-400 bg-amber-500/15 ring-2 ring-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
-                    : 'border-white/10 bg-[#102637]/70 hover:border-white/20 hover:bg-[#153147]'
+                    : 'border-white/10 bg-surface-3/70 hover:border-white/20 hover:bg-surface-3'
                 }`}
                 onClick={() => setPaymentMethod('sandbox')}
               >
@@ -754,7 +739,7 @@ export function LegacyTopupPage() {
           </div>
 
           {/* DYNAMIC PAYMENT METHOD PANEL */}
-          <div className="rounded-2xl border border-slate-700/40 bg-[#102637]/90 p-3 sm:p-3.5 flex-1 flex flex-col justify-center">
+          <div className="rounded-2xl border border-slate-700/40 bg-surface-3/90 p-3 sm:p-3.5 flex-1 flex flex-col justify-center">
             {/* SUBPANEL A: Bank Transfer & Slip */}
             {paymentMethod === 'bank_slip' && (
               <div className="space-y-2.5">
@@ -866,24 +851,24 @@ export function LegacyTopupPage() {
                     {/* PromptPay QR Preview Strip */}
                     <div className="rounded-xl border border-iris-cyan/30 bg-black/60 p-2 flex items-center gap-3">
                       <div className="shrink-0 bg-white p-1 rounded-lg border border-iris-cyan/50 text-center">
-                        <div className="bg-[#113566] text-white text-[8px] font-black uppercase px-1 rounded flex items-center justify-center gap-0.5">
+                        <div className="bg-cyan-800 text-white text-[8px] font-black uppercase px-1 rounded flex items-center justify-center gap-0.5">
                           <QrCode className="h-2.5 w-2.5" />
                           <span>PROMPTPAY</span>
                         </div>
                         <div className="h-12 w-12 bg-white grid place-items-center">
                           <div className="grid grid-cols-4 gap-0.5 p-0.5">
-                            <div className="h-2.5 w-2.5 bg-[#113566] rounded-xs" />
+                            <div className="h-2.5 w-2.5 bg-cyan-800 rounded-xs" />
                             <div className="h-2.5 w-2.5 bg-transparent" />
-                            <div className="h-2.5 w-2.5 bg-[#113566] rounded-xs" />
-                            <div className="h-2.5 w-2.5 bg-[#113566] rounded-xs" />
+                            <div className="h-2.5 w-2.5 bg-cyan-800 rounded-xs" />
+                            <div className="h-2.5 w-2.5 bg-cyan-800 rounded-xs" />
                             <div className="h-2.5 w-2.5 bg-transparent" />
                             <div className="h-2.5 w-2.5 bg-iris-cyan rounded-xs animate-pulse" />
-                            <div className="h-2.5 w-2.5 bg-[#113566] rounded-xs" />
+                            <div className="h-2.5 w-2.5 bg-cyan-800 rounded-xs" />
                             <div className="h-2.5 w-2.5 bg-transparent" />
-                            <div className="h-2.5 w-2.5 bg-[#113566] rounded-xs" />
+                            <div className="h-2.5 w-2.5 bg-cyan-800 rounded-xs" />
                             <div className="h-2.5 w-2.5 bg-transparent" />
-                            <div className="h-2.5 w-2.5 bg-[#113566] rounded-xs" />
-                            <div className="h-2.5 w-2.5 bg-[#113566] rounded-xs" />
+                            <div className="h-2.5 w-2.5 bg-cyan-800 rounded-xs" />
+                            <div className="h-2.5 w-2.5 bg-cyan-800 rounded-xs" />
                           </div>
                         </div>
                       </div>

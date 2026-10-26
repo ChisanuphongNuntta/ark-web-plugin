@@ -1,22 +1,14 @@
 'use client';
+import { IrisCoin } from '@/components/ui/IrisCoin';
+import { T } from '@/components/i18n/LanguageProvider';
+
 
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Check,
-  Coins,
-  Loader2,
-  Minus,
-  Plus,
-  Server,
-  ShieldCheck,
-  ShoppingBag,
-  Trash2,
-} from 'lucide-react';
+import { AlertTriangle, Check,  Loader2, Minus, Plus, Server, ShieldCheck, ShoppingCart, Trash2 } from 'lucide-react';
+import { ArrowLeft } from '@/components/tek/arrows';
 import {
   cartApi,
   checkoutApi,
@@ -181,7 +173,7 @@ export default function CartPage() {
   const handleCheckoutSubmit = () => {
     setCheckoutError(null);
     if (!user) {
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/discord`;
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL || '/api'}/auth/discord`;
       return;
     }
     setCheckoutStep('submitting');
@@ -200,21 +192,17 @@ export default function CartPage() {
           </div>
           <div className="space-y-2">
             <span className="eyebrow text-iris-cyan">Order Placed</span>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-iris-pearl uppercase">
-              ทำรายการสำเร็จ
-            </h1>
-            <p className="text-xs sm:text-sm text-iris-muted">
-              Backend ยืนยันการหักยอดและสร้างคิวจัดส่งสินค้าเข้าเกมแล้ว
-            </p>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-iris-pearl uppercase"><T text={"ทำรายการสำเร็จ"} /></h1>
+            <p className="text-xs sm:text-sm text-iris-muted"><T text={"Backend ยืนยันการหักยอดและสร้างคิวจัดส่งสินค้าเข้าเกมแล้ว"} /></p>
           </div>
 
           <div className="rounded-2xl border border-white/5 bg-black/40 p-5 text-left text-xs space-y-3">
             <div className="flex justify-between gap-4">
-              <span className="text-iris-muted">ยอดที่หักจริง (Backend Total):</span>
+              <span className="text-iris-muted"><T text={"ยอดที่หักจริง (Backend Total):"} /></span>
               <span className="font-mono font-bold text-iris-gold">{authoritativeTotal ?? '—'} IC</span>
             </div>
             <div>
-              <p className="mb-1 text-iris-muted">หมายเลขคำสั่งซื้อ ({orderIds.length} รายการ):</p>
+              <p className="mb-1 text-iris-muted"><T text={"หมายเลขคำสั่งซื้อ ("} />{orderIds.length}<T text={" รายการ):"} /></p>
               <ul className="space-y-1">
                 {orderIds.map((id) => (
                   <li key={id}>
@@ -225,17 +213,15 @@ export default function CartPage() {
                 ))}
               </ul>
             </div>
-            <p className="border-t border-white/5 pt-2 text-[10px] text-iris-muted">
-              เข้าเกมแล้วพิมพ์ <code className="rounded bg-black/40 px-1.5 py-0.5 font-mono font-bold text-iris-cyan">/claim</code> เพื่อรับไอเท็มเมื่อระบบจัดส่งพร้อม
-            </p>
+            <p className="border-t border-white/5 pt-2 text-[10px] text-iris-muted"><T text={"เข้าเกมแล้วพิมพ์"} /><code className="rounded bg-black/40 px-1.5 py-0.5 font-mono font-bold text-iris-cyan">/claim</code><T text={"เพื่อรับไอเท็มเมื่อระบบจัดส่งพร้อม"} /></p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-3">
             <Link className="rounded-full" href="/orders">
-              <Button variant="cyan">ติดตามการจัดส่ง</Button>
+              <Button variant="cyan"><T text={"ติดตามการจัดส่ง"} /></Button>
             </Link>
             <Link className="rounded-full" href="/shop">
-              <Button variant="secondary">ซื้อสินค้าเพิ่ม</Button>
+              <Button variant="secondary"><T text={"ซื้อสินค้าเพิ่ม"} /></Button>
             </Link>
           </div>
         </GlassCard>
@@ -251,7 +237,7 @@ export default function CartPage() {
           description="เลือกสินค้าและเซิร์ฟเวอร์ปลายทางก่อนดำเนินการชำระเงิน"
           actionText="สำรวจร้านค้า IRIS Store"
           onAction={() => router.push('/shop')}
-          icon={<ShoppingBag className="h-8 w-8" />}
+          icon={<ShoppingCart className="h-8 w-8" />}
         />
       </div>
     );
@@ -262,13 +248,9 @@ export default function CartPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-700/30 pb-6">
         <div className="space-y-1">
           <Link href="/shop" className="inline-flex items-center gap-1.5 text-xs font-semibold text-iris-cyan hover:underline uppercase tracking-wider">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            กลับไปเลือกสินค้า
-          </Link>
+            <ArrowLeft className="h-3.5 w-3.5" /><T text={"กลับไปเลือกสินค้า"} /></Link>
           <h1 className="font-serif text-3xl sm:text-4xl font-normal text-iris-pearl mt-2 tracking-tight flex items-center gap-3">
-            <ShoppingBag className="h-7 w-7 text-iris-cyan" />
-            ตะกร้าสินค้าและชำระเงิน
-          </h1>
+            <ShoppingCart className="h-7 w-7 text-iris-cyan" /><T text={"ตะกร้าสินค้าและชำระเงิน"} /></h1>
         </div>
 
         <button
@@ -278,9 +260,7 @@ export default function CartPage() {
             setAuthoritativeTotal(null);
           }}
           className="rounded-full border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-xs font-medium text-rose-300 hover:bg-rose-500/20 transition"
-        >
-          ล้างรายการทั้งหมด
-        </button>
+        ><T text={"ล้างรายการทั้งหมด"} /></button>
       </div>
 
       {isServersError && (
@@ -312,23 +292,21 @@ export default function CartPage() {
                 <GlassCard key={lineKey} className="p-5 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 text-xs text-iris-muted">
                     <AlertTriangle className="h-4 w-4 text-rose-400" />
-                    <span>โหลดข้อมูลสินค้า #{item.productId} ไม่สำเร็จ</span>
+                    <span><T text={"โหลดข้อมูลสินค้า #"} />{item.productId}<T text={" ไม่สำเร็จ"} /></span>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleRemove(item.productId, item.serverId)}
                     className="text-xs font-bold text-rose-400 hover:underline"
-                  >
-                    นำออก
-                  </button>
+                  ><T text={"นำออก"} /></button>
                 </GlassCard>
               );
             }
 
             return (
-              <div key={lineKey} className="p-5 rounded-2xl border border-slate-700/40 bg-[#102637] transition hover:border-cyan-400/30">
+              <div key={lineKey} className="p-5 rounded-2xl border border-slate-700/40 bg-surface-3 transition hover:border-cyan-400/30">
                 <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
-                  <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-700/50 bg-[#0a1b28]">
+                  <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-700/50 bg-surface-2">
                     <ProductArtwork product={product} alt={product.name} className="h-full w-full object-contain p-2" />
                   </div>
 
@@ -338,19 +316,20 @@ export default function CartPage() {
                     </span>
                     <h3 className="mt-2 truncate font-semibold text-base text-iris-pearl">{product.name}</h3>
                     <div className="mt-1.5 flex items-center gap-1.5 font-mono text-xs font-bold text-iris-gold">
-                      <Coins className="h-4 w-4 text-iris-gold" />
+                      <IrisCoin className="h-4 w-4 text-iris-gold" />
                       <span>
-                        <span className="tabular-nums">{product.price.toLocaleString()}</span> IC <span className="font-sans text-[10px] text-iris-muted font-normal">ต่อหน่วย</span>
+                        <span className="tabular-nums">{product.price.toLocaleString()}</span> IC <span className="font-sans text-[10px] text-iris-muted font-normal"><T text={"ต่อหน่วย"} /></span>
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex h-9 shrink-0 items-center rounded-full border border-slate-700/50 bg-[#091b28]">
+                  <div className="flex h-12 shrink-0 items-center rounded-full border border-slate-700/50 bg-surface-2">
                     <button
                       type="button"
                       onClick={() => handleQuantityChange(item.productId, item.serverId, item.quantity - 1)}
-                      className="flex h-full w-9 items-center justify-center text-iris-muted hover:text-white"
-                      aria-label="ลดจำนวน"
+                      className="flex h-full w-11 items-center justify-center rounded-full text-iris-muted hover:bg-white/5 hover:text-white disabled:opacity-30"
+                      disabled={item.quantity <= 1}
+                      aria-label={`ลดจำนวน ${product.name}`}
                     >
                       <Minus className="h-3.5 w-3.5" />
                     </button>
@@ -358,8 +337,8 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => handleQuantityChange(item.productId, item.serverId, item.quantity + 1)}
-                      className="flex h-full w-9 items-center justify-center text-iris-muted hover:text-white"
-                      aria-label="เพิ่มจำนวน"
+                      className="flex h-full w-11 items-center justify-center rounded-full text-iris-muted hover:bg-white/5 hover:text-white"
+                      aria-label={`เพิ่มจำนวน ${product.name}`}
                     >
                       <Plus className="h-3.5 w-3.5" />
                     </button>
@@ -368,8 +347,8 @@ export default function CartPage() {
                   <button
                     type="button"
                     onClick={() => handleRemove(item.productId, item.serverId)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-300 transition hover:bg-rose-500/20"
-                    aria-label="ลบสินค้านี้"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-300 transition hover:bg-rose-500/20"
+                    aria-label={`ลบ ${product.name} ออกจากตะกร้า`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -377,13 +356,11 @@ export default function CartPage() {
 
                 <div className="mt-5 border-t border-white/5 pt-5">
                   <label className="mb-1.5 flex items-center gap-1 text-[10px] font-bold uppercase text-iris-muted">
-                    <Server className="h-3 w-3" />
-                    เซิร์ฟเวอร์ปลายทาง
-                  </label>
+                    <Server className="h-3 w-3" /><T text={"เซิร์ฟเวอร์ปลายทาง"} /></label>
                   {isServersLoading ? (
                     <Skeleton className="h-9 w-full max-w-xs" />
                   ) : servers.length === 0 ? (
-                    <p className="text-[11px] text-iris-muted">ปัจจุบัน: {serverName(item.serverId)}</p>
+                    <p className="text-[11px] text-iris-muted"><T text={"ปัจจุบัน: "} />{serverName(item.serverId)}</p>
                   ) : (
                     <Select
                       value={item.serverId}
@@ -395,7 +372,7 @@ export default function CartPage() {
                     >
                       {servers.map((server) => (
                         <option key={server.id} value={server.id}>
-                          {server.name}{server.map ? ` (${server.map})` : ''}{server.isOnline ? '' : ' — ออฟไลน์'}
+                          {server.name}{server.map ? ` (${server.map})` : ''}<T text={server.isOnline ? '' : ' — ออฟไลน์'} />
                         </option>
                       ))}
                     </Select>
@@ -407,23 +384,21 @@ export default function CartPage() {
         </section>
 
         <aside className="space-y-6 lg:sticky lg:top-28">
-          <div className="p-6 space-y-5 rounded-2xl border border-slate-700/40 bg-[#102637] shadow-xl">
+          <div className="p-6 space-y-5 rounded-2xl border border-slate-700/40 bg-surface-3 shadow-xl">
             <div>
               <span className="text-[10px] font-bold tracking-widest text-cyan-300 uppercase">Checkout Session</span>
-              <h2 className="mt-1 font-serif text-xl font-normal text-iris-pearl">
-                สรุปการชำระเงิน
-              </h2>
+              <h2 className="mt-1 font-serif text-xl font-normal text-iris-pearl"><T text={"สรุปการชำระเงิน"} /></h2>
             </div>
 
             <div className="space-y-3 border-b border-slate-700/40 pb-4 text-xs">
               <div className="flex justify-between gap-4">
-                <span className="text-iris-muted">ประมาณการจาก catalog:</span>
+                <span className="text-iris-muted"><T text={"ประมาณการจาก catalog:"} /></span>
                 <span className="font-mono text-white/70 tabular-nums">
                   {productsLoading ? '…' : `~${estimateSubtotal.toLocaleString()} IC`}
                 </span>
               </div>
               <div className="flex justify-between gap-4 border-t border-slate-700/40 pt-2 text-sm font-bold text-iris-pearl">
-                <span>ยอดสุทธิจากระบบ (Backend Total):</span>
+                <span><T text={"ยอดสุทธิจากระบบ (Backend Total):"} /></span>
                 <span className="font-mono text-lg text-iris-gold tabular-nums">
                   {previewMutation.isPending && authoritativeTotal === null ? (
                     <Loader2 className="inline h-4 w-4 animate-spin" />
@@ -438,16 +413,13 @@ export default function CartPage() {
 
             <div className="flex gap-2 rounded-2xl border border-iris-cyan/10 bg-iris-cyan/[0.04] p-3 text-[10px] leading-relaxed text-iris-muted">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-iris-cyan" />
-              <span>
-                ราคาสุดท้าย สิทธิ์ซื้อ โปรโมชัน สต็อก และการหัก wallet ตรวจที่ Backend เท่านั้น
-                หน้าเว็บนี้ไม่คำนวณ final price เอง
-              </span>
+              <span><T text={"ราคาสุดท้าย สิทธิ์ซื้อ โปรโมชัน สต็อก และการหัก wallet ตรวจที่ Backend เท่านั้น หน้าเว็บนี้ไม่คำนวณ final price เอง"} /></span>
             </div>
 
             {user && (
               <div className="space-y-2 text-[11px]">
                 <div className="flex justify-between gap-4">
-                  <span className="text-iris-muted">ยอดใช้ได้ (Available):</span>
+                  <span className="text-iris-muted"><T text={"ยอดใช้ได้ (Available):"} /></span>
                   <span className="font-mono font-bold text-iris-cyan">
                     {isWalletLoading ? '…' : isWalletError ? 'โหลดไม่สำเร็จ' : `${availableBalance ?? '—'} IC`}
                   </span>
@@ -455,11 +427,9 @@ export default function CartPage() {
 
                 {affordabilityKnown && !isAffordable && (
                   <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-rose-300 space-y-1">
-                    <p className="font-bold">ยอดคงเหลือไม่เพียงพอ</p>
-                    <p>ยอดใช้ได้ {availableBalance} IC ไม่พอกับยอดสุทธิ {authoritativeTotal} IC</p>
-                    <Link href="/topup" className="block pt-1 font-bold text-iris-gold hover:underline">
-                      ไปหน้าเติมเงิน →
-                    </Link>
+                    <p className="font-bold"><T text={"ยอดคงเหลือไม่เพียงพอ"} /></p>
+                    <p><T text={"ยอดใช้ได้ "} />{availableBalance}<T text={" IC ไม่พอกับยอดสุทธิ "} />{authoritativeTotal} IC</p>
+                    <Link href="/topup" className="block pt-1 font-bold text-iris-gold hover:underline"><T text={"ไปหน้าเติมเงิน"} /></Link>
                   </div>
                 )}
               </div>
@@ -484,7 +454,7 @@ export default function CartPage() {
               isLoading={checkoutStep === 'submitting'}
               onClick={handleCheckoutSubmit}
             >
-              {user ? 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' : 'เข้าสู่ระบบเพื่อชำระเงิน'}
+              <T text={user ? 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' : 'เข้าสู่ระบบเพื่อชำระเงิน'} />
             </Button>
           </div>
         </aside>

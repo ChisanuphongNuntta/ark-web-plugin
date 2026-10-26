@@ -128,7 +128,7 @@ interface CartState {
   items: CartLine[];
   isDrawerOpen: boolean;
   /** Add (or increment) the line for the (productId, serverId) pair. */
-  addItem: (productId: number, serverId: number, quantity?: number) => void;
+  addItem: (productId: number, serverId: number, quantity?: number, openDrawer?: boolean) => void;
   /** Remove the line for the (productId, serverId) pair. */
   removeItem: (productId: number, serverId: number) => void;
   /** Set the quantity for a line; quantity <= 0 removes it. */
@@ -144,7 +144,7 @@ export const useCartStore = create<CartState>()(
     (set) => ({
       items: [],
       isDrawerOpen: false,
-      addItem: (productId, serverId, quantity = 1) =>
+      addItem: (productId, serverId, quantity = 1, openDrawer = false) =>
         set((state) => {
           const safeQuantity = Math.max(1, Math.floor(quantity));
           const existing = state.items.find((item) => sameLine(item, productId, serverId));
@@ -158,7 +158,7 @@ export const useCartStore = create<CartState>()(
           } else {
             newItems = [...state.items, { productId, serverId, quantity: safeQuantity }];
           }
-          return { items: newItems, isDrawerOpen: true }; // Auto-open drawer on add
+          return { items: newItems, isDrawerOpen: Boolean(openDrawer) };
         }),
       removeItem: (productId, serverId) =>
         set((state) => ({
@@ -197,6 +197,10 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: 'iris-cart-v1',
+      // Persist the basket, not the transient modal state. Old saved drawers
+      // must also start closed so refresh cannot trap focus behind startup UI.
+      partialize: (state) => ({ items: state.items }),
+      merge: (persisted, current) => ({ ...current, ...(persisted as Partial<CartState>), isDrawerOpen: false }),
       // v2: lines are keyed by (productId, serverId). The v1 shape kept a
       // single global `serverId` and product-only lines. Migrate by stamping
       // each old line with the old global serverId (or dropping it if none).

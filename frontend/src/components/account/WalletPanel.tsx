@@ -3,16 +3,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Coins,
-  Wallet,
-  Clock,
-  ChevronDown,
-  ChevronUp,
-  HelpCircle,
-  PlusCircle,
-  ArrowRight,
-} from 'lucide-react';
+import { Coins, Wallet, Clock, ChevronDown, ChevronUp, HelpCircle, PlusCircle } from 'lucide-react';
+import { ArrowRight } from '@/components/tek/arrows';
 import { walletContractApi } from '@/lib/contracts/client';
 import type { LedgerTransaction } from '@/lib/contracts/types';
 import { GlassCard } from '@/components/ui/GlassCard';

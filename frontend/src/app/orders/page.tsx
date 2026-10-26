@@ -1,14 +1,14 @@
 'use client';
+import { IrisCoin } from '@/components/ui/IrisCoin';
 
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
-  ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Coins,
+  
   Package,
   Server,
   ShieldCheck,
@@ -27,13 +27,13 @@ import { ProductArtwork } from '@/components/ProductArtwork';
 
 const PAGE_SIZE = 20;
 
-const FILTERS: { value: OrderStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'ทั้งหมด' },
-  { value: 'queued', label: 'เตรียมจัดส่ง' },
-  { value: 'delivering', label: 'กำลังจัดส่ง' },
-  { value: 'delivered', label: 'จัดส่งแล้ว' },
-  { value: 'failed', label: 'ล้มเหลว' },
-  { value: 'refunded', label: 'คืนเงิน' },
+const FILTERS: { value: OrderStatus | 'all'; labelTh: string; labelEn: string }[] = [
+  { value: 'all', labelTh: 'ทั้งหมด', labelEn: 'All Orders' },
+  { value: 'queued', labelTh: 'เตรียมจัดส่ง', labelEn: 'Queued' },
+  { value: 'delivering', labelTh: 'กำลังจัดส่ง', labelEn: 'Delivering' },
+  { value: 'delivered', labelTh: 'จัดส่งสำเร็จ', labelEn: 'Delivered' },
+  { value: 'failed', labelTh: 'ล้มเหลว', labelEn: 'Failed' },
+  { value: 'refunded', labelTh: 'คืนเงิน', labelEn: 'Refunded' },
 ];
 
 function formatDate(value?: string | null): string {
@@ -141,13 +141,13 @@ function OrdersContent() {
               role="tab"
               aria-selected={active}
               onClick={() => handleFilter(filter.value)}
-              className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide outline-none transition focus-visible:ring-2 focus-visible:ring-iris-cyan ${
+              className={`rounded-full border px-4 py-2 text-xs font-bold tracking-wide outline-none transition focus-visible:ring-2 focus-visible:ring-iris-cyan ${
                 active
                   ? 'border-iris-cyan bg-iris-cyan text-iris-ink'
                   : 'border-white/10 text-iris-muted hover:border-white/20 hover:text-iris-pearl'
               }`}
             >
-              {filter.label}
+              {filter.labelTh} <span className="text-[10px] opacity-75">({filter.labelEn})</span>
             </button>
           );
         })}
@@ -205,7 +205,7 @@ function OrdersContent() {
       )}
 
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-4">
+        <nav aria-label="หน้ารายการคำสั่งซื้อ" className="flex flex-wrap items-center justify-center gap-2 pt-6">
           <Button
             variant="secondary"
             size="sm"
@@ -214,11 +214,32 @@ function OrdersContent() {
             leftIcon={<ChevronLeft className="h-4 w-4" />}
             aria-label="หน้าก่อนหน้า"
           >
-            ก่อนหน้า
+            ก่อนหน้า · Prev
           </Button>
-          <span className="font-mono text-xs text-iris-muted">
-            หน้า {pagination.page} / {pagination.totalPages}
-          </span>
+
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+              const pNum = i + 1;
+              const isActive = pNum === page;
+              return (
+                <button
+                  key={pNum}
+                  onClick={() => handlePage(pNum)}
+                  className={`h-8 w-8 rounded-lg font-mono text-xs font-semibold transition ${
+                    isActive
+                      ? 'border border-iris-cyan bg-iris-cyan/20 text-white font-bold'
+                      : 'border border-slate-800 bg-surface-1 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {pNum}
+                </button>
+              );
+            })}
+            {pagination.totalPages > 5 && (
+              <span className="px-1 text-slate-500 text-xs">... {pagination.totalPages}</span>
+            )}
+          </div>
+
           <Button
             variant="secondary"
             size="sm"
@@ -227,9 +248,9 @@ function OrdersContent() {
             rightIcon={<ChevronRight className="h-4 w-4" />}
             aria-label="หน้าถัดไป"
           >
-            ถัดไป
+            ถัดไป · Next
           </Button>
-        </div>
+        </nav>
       )}
     </div>
   );
@@ -295,7 +316,7 @@ function OrderListCard({ order }: { order: Order }) {
             </div>
 
             <div className="flex items-center justify-end gap-1.5 font-mono font-bold text-iris-gold">
-              <Coins className="h-4 w-4" />
+              <IrisCoin className="h-4 w-4" />
               <span>{order.totalPrice.toLocaleString()} IC</span>
             </div>
           </div>
@@ -310,11 +331,10 @@ function OrderListCard({ order }: { order: Order }) {
         <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-[11px] text-iris-muted">
           <span className="inline-flex items-center gap-1">
             <ShieldCheck className="h-3.5 w-3.5 text-iris-cyan" />
-            สถานะจากระบบหลังบ้าน
+            สถานะจากระบบหลังบ้าน · Verified Ledger
           </span>
           <span className="inline-flex items-center gap-1 font-bold text-iris-cyan transition-all">
-            ดูไทม์ไลน์การจัดส่ง
-            <ArrowRight className="h-3.5 w-3.5" />
+            ดูไทม์ไลน์การจัดส่ง · View Timeline
           </span>
         </div>
       </GlassCard>

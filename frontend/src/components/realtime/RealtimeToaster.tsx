@@ -35,7 +35,7 @@ function ToastItem({ toast }: { toast: Toast }) {
 
   return (
     <li
-      className={`pointer-events-auto flex w-full items-start gap-3 rounded-2xl border ${tone.border} bg-[#0d2335]/95 p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.45)] backdrop-blur-md`}
+      className={`pointer-events-auto flex w-full items-start gap-3 rounded-2xl border ${tone.border} bg-surface-3/95 p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.45)] backdrop-blur-md`}
       role={toast.tone === 'error' ? 'alert' : 'status'}
     >
       {toast.href ? (

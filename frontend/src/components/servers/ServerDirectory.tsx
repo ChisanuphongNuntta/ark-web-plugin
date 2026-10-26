@@ -1,4 +1,6 @@
 'use client';
+import { T, useLanguage } from '@/components/i18n/LanguageProvider';
+
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -18,7 +20,7 @@ function LiveIndicator() {
   return (
     <span className="status-pill" role="status">
       <span className={`h-2 w-2 rounded-full ${live ? 'bg-emerald-300' : 'bg-amber-300'}`} aria-hidden="true" />
-      {live ? 'อัปเดตสถานะสด' : status === 'offline' ? 'ออฟไลน์ · จะอัปเดตเมื่อกลับมาออนไลน์' : 'กำลังเชื่อมต่อ · อัปเดตทุก 1 นาที'}
+      <T text={live ? 'อัปเดตสถานะสด' : status === 'offline' ? 'ออฟไลน์ · จะอัปเดตเมื่อกลับมาออนไลน์' : 'กำลังเชื่อมต่อ · อัปเดตทุก 1 นาที'} />
     </span>
   );
 }
@@ -41,6 +43,7 @@ interface Section {
 }
 
 export function ServerDirectory() {
+  const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -134,32 +137,26 @@ export function ServerDirectory() {
   return (
     <div className="page-shell pb-16">
       <header className="frozen-intro">
-        <p className="eyebrow">SERVER DIRECTORY</p>
-        <h1 className="text-iris-pearl">เซิร์ฟเวอร์ IRIS Thailand</h1>
-        <p className="max-w-2xl text-sm text-iris-muted">
-          ดูสถานะและรายชื่อผู้เล่นของทุกเซิร์ฟเวอร์แบบสด เลือกโหมดที่ชอบ แล้วกดเข้าเกมผ่าน Steam ได้ทันที
-        </p>
+        <p className="eyebrow"><T text={"SERVER DIRECTORY · ไดเรกทอรีเซิร์ฟเวอร์"} /></p>
+        <h1 className="text-iris-pearl"><T text={"เซิร์ฟเวอร์ IRIS Thailand · Live Servers"} /></h1>
+        <p className="max-w-2xl text-sm text-iris-muted"><T text={"ดูสถานะและรายชื่อผู้เล่นของทุกเซิร์ฟเวอร์แบบสด เลือกโหมดที่ชอบ แล้วกดเข้าเกมผ่าน Steam ได้ทันที"} /></p>
         <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
           <LiveIndicator />
           {directory.data ? (
-            <span className="status-pill tabular-nums">
-              ออนไลน์ {totals.online.toLocaleString('th-TH')}/{totals.servers.toLocaleString('th-TH')} เซิร์ฟเวอร์ · ผู้เล่น{' '}
-              {totals.players.toLocaleString('th-TH')} คน
-            </span>
+            <span className="status-pill tabular-nums"><T text={"ออนไลน์"} />{totals.online.toLocaleString('th-TH')}/{totals.servers.toLocaleString('th-TH')}<T text={" เซิร์ฟเวอร์ · ผู้เล่น"} />{' '}
+              {totals.players.toLocaleString('th-TH')}<T text={"คน"} /></span>
           ) : null}
         </div>
       </header>
 
       <div className="frozen-toolbar" role="search">
-        <label className="search-field">
-          ค้นหาเซิร์ฟเวอร์
-          <span className="relative block">
+        <label className="search-field"><T text={"ค้นหาเซิร์ฟเวอร์"} /><span className="relative block">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-iris-muted" aria-hidden="true" />
             <input
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="ชื่อแผนที่ คลัสเตอร์ หรือที่อยู่"
+              placeholder={t('ชื่อแผนที่ คลัสเตอร์ หรือที่อยู่', 'Map, cluster or address')}
               // `!` beats `.frozen-toolbar input { padding: 10px 14px }` (higher specificity) so
               // the text starts after the search icon.
               className="w-full !pl-10"
@@ -170,7 +167,7 @@ export function ServerDirectory() {
       </div>
 
       <ModeTabs value={mode} onChange={setMode} options={tabOptions} panelId={PANEL_ID} />
-      <p className="mb-5 mt-2 text-xs text-iris-muted">{activeTab.description}</p>
+      <p className="mb-5 mt-2 text-xs text-iris-muted"><T text={activeTab.description} /></p>
 
       <section id={PANEL_ID} role="tabpanel" aria-labelledby={`servers-tab-${mode}`} aria-busy={directory.isLoading}>
         {directory.isLoading ? (
@@ -178,12 +175,9 @@ export function ServerDirectory() {
         ) : directory.isError ? (
           <div className="glass-card flex flex-col items-start gap-3 border border-rose-300/20 p-5 sm:flex-row sm:items-center sm:justify-between" role="alert">
             <p className="flex items-start gap-2 text-sm text-rose-100">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-300" aria-hidden="true" />
-              โหลดรายชื่อเซิร์ฟเวอร์ไม่สำเร็จ โปรดลองใหม่อีกครั้ง
-            </p>
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-300" aria-hidden="true" /><T text={"โหลดรายชื่อเซิร์ฟเวอร์ไม่สำเร็จ โปรดลองใหม่อีกครั้ง"} /></p>
             <button type="button" onClick={() => void directory.refetch()} className="btn-secondary min-h-10 px-4 py-2 text-xs">
-              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> ลองใหม่
-            </button>
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /><T text={"ลองใหม่"} /></button>
           </div>
         ) : sections.length === 0 ? (
           <div className="glass-card flex flex-col items-center gap-3 border border-white/5 p-8 text-center">
@@ -192,15 +186,13 @@ export function ServerDirectory() {
               {search.trim() ? `ไม่พบเซิร์ฟเวอร์ที่ตรงกับ “${search.trim()}” ในโหมดนี้` : 'ยังไม่มีเซิร์ฟเวอร์ในโหมดนี้'}
             </p>
             {search.trim() ? (
-              <button type="button" onClick={() => setSearch('')} className="btn-secondary min-h-10 px-4 py-2 text-xs">
-                ล้างคำค้นหา
-              </button>
+              <button type="button" onClick={() => setSearch('')} className="btn-secondary min-h-10 px-4 py-2 text-xs"><T text={"ล้างคำค้นหา"} /></button>
             ) : null}
           </div>
         ) : (
           <div className="space-y-8">
             {status.isError && !status.data ? (
-              <p className="text-xs text-amber-200">ยังโหลดสถานะสดไม่ได้ ตัวเลขผู้เล่นอาจไม่เป็นปัจจุบัน</p>
+              <p className="text-xs text-amber-200"><T text={"ยังโหลดสถานะสดไม่ได้ ตัวเลขผู้เล่นอาจไม่เป็นปัจจุบัน"} /></p>
             ) : null}
             {sections.map((section) => (
               <section key={section.key} aria-labelledby={`servers-group-${section.key}`}>
@@ -208,8 +200,7 @@ export function ServerDirectory() {
                   <h2 id={`servers-group-${section.key}`} className="font-display text-xl text-iris-pearl">
                     {section.name}
                   </h2>
-                  <span className="text-xs tabular-nums text-iris-muted">
-                    ออนไลน์ {section.views.filter((v) => v.online).length}/{section.views.length}
+                  <span className="text-xs tabular-nums text-iris-muted"><T text={"ออนไลน์"} />{section.views.filter((v) => v.online).length}/{section.views.length}
                   </span>
                 </div>
                 {section.description ? <p className="mb-3 text-xs text-iris-muted">{section.description}</p> : null}
@@ -225,19 +216,14 @@ export function ServerDirectory() {
       </section>
 
       <aside className="mt-10 rounded-2xl border border-white/[0.07] bg-black/20 p-4 text-xs leading-relaxed text-iris-muted sm:p-5">
-        <p className="font-semibold text-iris-pearl">วิธีเข้าเกม</p>
+        <p className="font-semibold text-iris-pearl"><T text={"วิธีเข้าเกม"} /></p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>
-            ปุ่ม “เข้าเกมผ่าน Steam” จะเปิดโปรแกรม Steam แล้วพาเข้าเซิร์ฟเวอร์ทันที ต้องติดตั้ง ARK: Survival Evolved บน Steam ไว้ก่อน
-          </li>
-          <li>หากปุ่มไม่ทำงาน ให้คัดลอกที่อยู่ไปเพิ่มใน Steam &gt; View &gt; Game Servers &gt; Favorites</li>
-          <li>ผู้เล่น Epic Games เข้าได้เฉพาะเซิร์ฟเวอร์ที่เปิด Crossplay โดยค้นหาชื่อเซิร์ฟเวอร์ในเกม</li>
+          <li><T text={"ปุ่ม “เข้าเกมผ่าน Steam” จะเปิดโปรแกรม Steam แล้วพาเข้าเซิร์ฟเวอร์ทันที ต้องติดตั้ง ARK: Survival Evolved บน Steam ไว้ก่อน"} /></li>
+          <li><T text={"หากปุ่มไม่ทำงาน ให้คัดลอกที่อยู่ไปเพิ่มใน Steam > View > Game Servers > Favorites"} /></li>
+          <li><T text={"ผู้เล่น Epic Games เข้าได้เฉพาะเซิร์ฟเวอร์ที่เปิด Crossplay โดยค้นหาชื่อเซิร์ฟเวอร์ในเกม"} /></li>
         </ul>
-        <p className="mt-3">
-          ต้องการรับของจากร้านค้า? เลือกเซิร์ฟเวอร์ปลายทางได้ที่{' '}
-          <Link href="/shop" className="text-iris-cyan underline-offset-4 hover:underline">
-            ร้านค้า
-          </Link>
+        <p className="mt-3"><T text={"ต้องการรับของจากร้านค้า? เลือกเซิร์ฟเวอร์ปลายทางได้ที่"} />{' '}
+          <Link href="/shop" className="text-iris-cyan underline-offset-4 hover:underline"><T text={"ร้านค้า"} /></Link>
         </p>
       </aside>
     </div>

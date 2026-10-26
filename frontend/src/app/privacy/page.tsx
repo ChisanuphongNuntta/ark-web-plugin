@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { pdpaApi } from '@/lib/api';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 import { Loader2, Shield, Lock, FileText } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
@@ -132,7 +133,7 @@ export default function PrivacyPolicyPage() {
             </div>
             <div
               className="mt-4 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: data.policy.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(data.policy.content) }}
             />
           </div>
         )}

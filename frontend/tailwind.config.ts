@@ -1,5 +1,11 @@
 import type { Config } from 'tailwindcss';
 
+const SHADES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
+const scale = (prefix: string) =>
+  Object.fromEntries(SHADES.map((shade) => [shade, `rgb(var(--${prefix}-${shade}) / <alpha-value>)`]));
+const accentScale = () => scale('acc');
+const neutralScale = () => scale('n');
+
 const config: Config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -32,6 +38,25 @@ const config: Config = {
           champagne: 'rgb(var(--iris-gold) / <alpha-value>)',
         },
         'iris-slate': 'rgb(var(--iris-slate) / <alpha-value>)',
+        // Unified UI palette (src/app/iris-ui.css). The decorative accent family (cyan/sky/teal)
+        // follows the active season token; neutrals (slate/gray) follow the warm surface scale.
+        // Semantic status families (emerald, amber, rose, red, green, blue...) are left untouched.
+        cyan: accentScale(),
+        sky: accentScale(),
+        teal: accentScale(),
+        slate: neutralScale(),
+        gray: neutralScale(),
+        surface: {
+          0: 'rgb(var(--s-0) / <alpha-value>)',
+          1: 'rgb(var(--s-1) / <alpha-value>)',
+          2: 'rgb(var(--s-2) / <alpha-value>)',
+          3: 'rgb(var(--s-3) / <alpha-value>)',
+        },
+        ink: {
+          DEFAULT: 'rgb(var(--ink) / <alpha-value>)',
+          muted: 'rgb(var(--ink-muted) / <alpha-value>)',
+          faint: 'rgb(var(--ink-faint) / <alpha-value>)',
+        },
         primary: {
           50: '#ecfdf5',
           100: '#d1fae5',

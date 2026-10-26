@@ -1,10 +1,14 @@
 'use client';
+import { IrisCoin } from '@/components/ui/IrisCoin';
+import { T, useLanguage } from '@/components/i18n/LanguageProvider';
 
-import { ArrowUpRight } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { categoryLabel } from '@/lib/catalogLabels';
 import type { Product } from '@/lib/contracts/types';
 import { ProductArtwork } from '@/components/ProductArtwork';
+import { tekCategory } from '@/components/tek/TekProductCard';
 
+/** Shop grid card (Tek hex slot). Opens the buy modal through onQuickBuy. */
 export function PalworldProductCard({
   product,
   onQuickBuy,
@@ -12,74 +16,43 @@ export function PalworldProductCard({
   product: Product;
   onQuickBuy?: (product: Product) => void;
 }) {
+  const { t } = useLanguage();
   const handleClick = () => {
     if (onQuickBuy) {
       onQuickBuy(product);
     }
   };
+  const flag = product.isFeatured ? 'HOT' : product.isBlueprint ? 'BP' : product.price >= 800 ? 'ELITE' : null;
 
   return (
-    <article
-      onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
-      className="frozen-product group cursor-pointer"
-      aria-label={`ดูรายละเอียดและซื้อ ${product.name}`}
-    >
-      <div className="flex-1">
-        <div className="frozen-product-art relative">
-          <ProductArtwork
-            product={product}
-            alt=""
-            fit="contain"
-            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
-          />
-          {product.isFeatured ? (
-            <span className="absolute top-2 right-2 rounded-md bg-gradient-to-r from-amber-500 to-rose-500 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-lg">
-              HOT 🔥
-            </span>
-          ) : product.isBlueprint ? (
-            <span className="absolute top-2 right-2 rounded-md bg-iris-cyan/20 border border-iris-cyan/40 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-iris-cyan backdrop-blur-md">
-              BP 📜
-            </span>
-          ) : product.price >= 800 ? (
-            <span className="absolute top-2 right-2 rounded-md bg-amber-400/20 border border-amber-400/40 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-300 backdrop-blur-md">
-              ELITE 👑
-            </span>
-          ) : null}
+    <article className={`tk-card tk-panel tk-lift ${tekCategory(product)}`}>
+      <button type="button" onClick={handleClick} className="tk-card-main" aria-label={`ดูรายละเอียดและซื้อ ${product.name}`}>
+        <div className="tk-slot">
+          <ProductArtwork product={product} alt="" fit="contain" className="tk-art" />
+          {flag ? <span className={`tk-flag ${flag.toLowerCase()}`}>{flag}</span> : null}
         </div>
-        <div className="px-4 pt-4 pb-2">
-          <p className="text-[10px] tracking-wider text-iris-muted mb-1.5">
-            {categoryLabel(product.category?.name || 'Items')}
-            {product.isBlueprint ? ' · พิมพ์เขียว' : ''}
-          </p>
-          <h3 className="font-semibold text-iris-pearl">{product.name}</h3>
-        </div>
-      </div>
-      <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-2">
+        <span className="tk-card-cat">
+          {t(categoryLabel(product.category?.name || 'Items'), product.category?.name || 'Items')}
+          <T text={product.isBlueprint ? ' · พิมพ์เขียว' : ''} />
+        </span>
+        <h3>{product.name}</h3>
+      </button>
+      <div className="tk-card-row">
         <div>
-          <span className="sr-only">ราคาต่อหน่วย</span>
-          <span className="text-lg font-semibold tabular-nums text-iris-pearl">
-            {product.price.toLocaleString()}
+          <span className="tk-sr"><T text={"ราคาต่อหน่วย"} /></span>
+          <span className="tk-price tk-mono">
+            <IrisCoin size={22} />{product.price.toLocaleString()}
+            <i>IC</i>
           </span>
-          <span className="ml-1.5 text-xs text-iris-muted">IC</span>
         </div>
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleClick();
-          }}
-          className="frozen-product-buy cursor-pointer"
+          onClick={handleClick}
+          className="tk-add"
           aria-label={`เลือกเซิร์ฟเวอร์และซื้อ ${product.name}`}
+          title="เลือกเซิร์ฟเวอร์และเพิ่มลงตะกร้า"
         >
-          <ArrowUpRight size={18} />
+          <Plus size={18} aria-hidden="true" />
         </button>
       </div>
     </article>

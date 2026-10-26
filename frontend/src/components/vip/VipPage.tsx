@@ -16,19 +16,8 @@ import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertCircle,
-  ArrowRight,
-  Building2,
-  Check,
-  Copy,
-  CreditCard,
-  Crown,
-  ExternalLink,
-  Loader2,
-  ShieldCheck,
-  Terminal,
-} from 'lucide-react';
+import { AlertCircle, Building2, Check, Copy, CreditCard, Crown, Loader2, ShieldCheck, Terminal } from 'lucide-react';
+import { ArrowRight, ExternalLink } from '@/components/tek/arrows';
 import { useAuthStore } from '@/lib/store';
 import { paymentApi } from '@/lib/api';
 import type { PaymentIntent } from '@/lib/contracts/types';
@@ -46,7 +35,7 @@ import {
 import { vipApi, type VipProvider } from '@/lib/vipApi';
 import { VipAvatar } from './VipAvatar';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 /** In-game VIP commands from the legacy system (https://www.iris-th.cloud/Command), enforced via Permissions groups. */
 const VIP_COMMANDS = ['/pod', '/pods', '/hatch', '/raisebaby', '/imprint', '/getbags', '/clear', '/repair', '/mutate'];
@@ -83,7 +72,7 @@ function errorText(error: unknown, fallback: string): string {
   return typeof msg === 'string' && msg ? msg : fallback;
 }
 
-function CopyButton({ value, label }: { value: string; label: string }) {
+export function CopyButton({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -529,7 +518,7 @@ export function VipPage() {
                         <input
                           type="radio"
                           name="vip-bank"
-                          className="h-4 w-4 accent-[#37E5D2]"
+                          className="h-4 w-4 accent-cyan-400"
                           checked={bank === b.code}
                           onChange={() => setBank(b.code)}
                         />
@@ -641,6 +630,14 @@ export function VipPage() {
           ))}
         </ul>
         <p className="mt-3 text-xs text-iris-muted">/mutate ฟรีสำหรับ VIP (ผู้เล่นทั่วไป 500 IC)</p>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-iris-cyan/20 bg-iris-cyan/[0.04] p-4 text-sm">
+          <span className="min-w-0 flex-1 text-iris-muted">
+            สิทธิ์คำสั่งในเกมตรวจจากเว็บแล้ว ดูสิทธิ์ทั้งหมดของ VIP โควตาที่เหลือวันนี้ แพ็กเกจอื่น และ Perk Token แบบจ่ายตามครั้งได้ที่หน้าสิทธิ์พิเศษ
+          </span>
+          <Link href="/perks" className="btn-secondary min-h-9 px-4 py-1.5 text-xs">
+            ไปหน้าสิทธิ์พิเศษ <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
       </section>
 
       {user && (me.data?.memberships.length ?? 0) > 0 && (

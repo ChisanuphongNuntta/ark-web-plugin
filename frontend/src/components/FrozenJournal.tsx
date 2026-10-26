@@ -4,7 +4,8 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { ArrowUpRight, CalendarDays, Gift, Copy, Check, Tag, Sparkles, Clock, Flame } from 'lucide-react';
+import { CalendarDays, Gift, Copy, Check, Tag, Sparkles, Clock, Flame } from 'lucide-react';
+import { ArrowUpRight } from '@/components/tek/arrows';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Skeleton } from '@/components/ui/Skeleton';
 
@@ -200,9 +201,8 @@ export function FrozenJournal({ kind }: { kind: 'event' | 'promotion' }) {
                   <Icon className="text-iris-cyan mb-6" />
                   <h2 className="text-xl mb-3">{p.title}</h2>
                   <p className="text-sm text-iris-muted">{p.description}</p>
-                  <span className="inline-flex mt-6 items-center gap-2 text-sm text-iris-cyan">
+                  <span className="inline-flex mt-6 items-center text-sm font-semibold text-iris-cyan hover:underline">
                     อ่านรายละเอียด
-                    <ArrowUpRight size={16} />
                   </span>
                 </Link>
               ))}
@@ -229,8 +229,8 @@ export function FrozenJournal({ kind }: { kind: 'event' | 'promotion' }) {
             <li>02 · อ่านรายละเอียดและเงื่อนไข</li>
             <li>03 · ตรวจสอบเซิร์ฟเวอร์ที่เข้าร่วม</li>
           </ol>
-          <Link href="/support" className="inline-block mt-7 text-sm text-iris-cyan">
-            ติดต่อทีมงาน ↗
+          <Link href="/support" className="inline-block mt-7 text-sm font-semibold text-iris-cyan hover:underline">
+            ติดต่อทีมงาน
           </Link>
         </aside>
       </div>

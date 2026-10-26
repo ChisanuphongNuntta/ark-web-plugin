@@ -8,7 +8,8 @@
  */
 import * as React from 'react';
 import Link from 'next/link';
-import { ExternalLink, Receipt } from 'lucide-react';
+import { Receipt } from 'lucide-react';
+import { ExternalLink } from '@/components/tek/arrows';
 import {
   AdminButton,
   AdminFilterSelect,

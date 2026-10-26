@@ -1,4 +1,5 @@
 'use client';
+import { IrisCoin } from '@/components/ui/IrisCoin';
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
@@ -6,22 +7,8 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, useCartStore } from '@/lib/store';
 import { orderApi, adminApi, walletApi } from '@/lib/api';
-import {
-  X,
-  Coins,
-  Plus,
-  Minus,
-  ShoppingCart,
-  Zap,
-  Package,
-  Info,
-  Server,
-  Sparkles,
-  ShieldAlert,
-  ArrowRight,
-  Copy,
-  Check,
-} from 'lucide-react';
+import { X,  Plus, Minus, ShoppingCart, Zap, Package, Info, Server, Sparkles, ShieldAlert, Copy, Check } from 'lucide-react';
+import { ArrowRight } from '@/components/tek/arrows';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -329,7 +316,7 @@ export default function ProductDetailPopup({
                 <div className="border-t border-white/5 pt-2 flex justify-between items-center">
                   <span className="font-bold text-iris-pearl">ราคารวมที้งสิ้น:</span>
                   <div className="flex items-center gap-1.5 font-mono text-xl font-bold text-gradient-gold">
-                    <Coins className="h-5 w-5 text-iris-gold" />
+                    <IrisCoin className="h-5 w-5 text-iris-gold" />
                     <span>{totalPrice.toLocaleString()} IC</span>
                   </div>
                 </div>

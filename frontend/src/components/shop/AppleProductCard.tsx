@@ -1,8 +1,10 @@
 'use client';
+import { IrisCoin } from '@/components/ui/IrisCoin';
 
 import * as React from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, Coins, ShoppingCart, Check, Sparkles, PawPrint } from 'lucide-react';
+import {  ShoppingCart, Check, Sparkles, PawPrint } from 'lucide-react';
+import { ArrowUpRight } from '@/components/tek/arrows';
 import type { Product } from '@/lib/contracts/types';
 import { ProductArtwork } from '@/components/ProductArtwork';
 import { useCartStore } from '@/lib/store';
@@ -43,7 +45,7 @@ export function AppleProductCard({ product }: AppleProductCardProps) {
   };
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-[2rem] bg-[#121316] border border-white/[0.08] hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-black/60">
+    <div className="group relative flex flex-col justify-between overflow-hidden rounded-[2rem] bg-surface-1 border border-white/[0.08] hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-black/60">
       
       {/* Clickable Image & Details Wrapper */}
       <Link
@@ -59,7 +61,7 @@ export function AppleProductCard({ product }: AppleProductCardProps) {
             fit="cover"
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#121316] via-transparent to-black/30" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface-1 via-transparent to-black/30" />
 
           {/* Top Badges */}
           <div className="absolute top-3.5 left-3.5 flex items-center gap-1.5">
@@ -93,7 +95,7 @@ export function AppleProductCard({ product }: AppleProductCardProps) {
 
         {/* Content Body */}
         <div className="p-5 sm:p-6 flex flex-col flex-1">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-[#86868b]">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-ink-faint">
             {product.category?.name || 'IRIS OFFICIAL'}
           </span>
 
@@ -102,7 +104,7 @@ export function AppleProductCard({ product }: AppleProductCardProps) {
           </h3>
 
           {product.description && (
-            <p className="mt-1 text-xs text-[#86868b] line-clamp-2 leading-relaxed">
+            <p className="mt-1 text-xs text-ink-faint line-clamp-2 leading-relaxed">
               {product.description}
             </p>
           )}
@@ -112,11 +114,11 @@ export function AppleProductCard({ product }: AppleProductCardProps) {
       {/* Bottom Bar: Price & Action */}
       <div className="px-5 sm:px-6 pb-5 pt-2 flex items-center justify-between gap-3 border-t border-white/[0.06]">
         <div>
-          <span className="text-[9px] uppercase tracking-wider text-[#86868b] block font-medium">
+          <span className="text-[9px] uppercase tracking-wider text-ink-faint block font-medium">
             ราคาต่อหน่วย
           </span>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <Coins className="w-3.5 h-3.5 text-iris-gold" />
+            <IrisCoin className="w-3.5 h-3.5 text-iris-gold" />
             <span className="font-mono text-sm sm:text-base font-semibold text-white">
               {product.price.toLocaleString()} IC
             </span>
@@ -131,7 +133,7 @@ export function AppleProductCard({ product }: AppleProductCardProps) {
             className={`px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 ${
               justAdded
                 ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
-                : 'bg-white text-black hover:bg-[#e8e8ed]'
+                : 'bg-white text-black hover:bg-ink'
             }`}
             aria-label={`ซื้อ ${product.name}`}
           >

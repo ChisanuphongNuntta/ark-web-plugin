@@ -1,4 +1,6 @@
 'use client';
+import { T, useLanguage } from '@/components/i18n/LanguageProvider';
+
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
@@ -6,9 +8,9 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Check,
-  ChevronRight,
   CircleAlert,
   Coins,
+  CreditCard,
   Minus,
   Plus,
   Server,
@@ -54,12 +56,18 @@ interface ProductBuyModalProps {
 }
 
 export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalProps) {
+  const { t } = useLanguage();
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const closeRef = React.useRef(onClose);
+  React.useEffect(() => { closeRef.current = onClose; }, [onClose]);
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+  const setDrawerOpen = useCartStore((state) => state.setDrawerOpen);
 
   const [mounted, setMounted] = React.useState(false);
   const [quantity, setQuantity] = React.useState(1);
   const [selectedServerId, setSelectedServerId] = React.useState<number | null>(null);
+  const [autoSelected, setAutoSelected] = React.useState(false);
   const [modeTab, setModeTab] = React.useState<ModeTab | null>(null);
   const [feedback, setFeedback] = React.useState<'idle' | 'added'>('idle');
 
@@ -84,27 +92,57 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
       setFeedback('idle');
       return;
     }
+    const savedServerId = typeof window !== 'undefined' ? localStorage.getItem('iris_preferred_server') : null;
+    if (savedServerId && servers.some((s) => s.id === Number(savedServerId) && s.isOnline)) {
+      setSelectedServerId(Number(savedServerId));
+      setAutoSelected(true);
+      return;
+    }
     const firstOnline = servers.find((s) => s.isOnline);
     if (firstOnline && selectedServerId === null) {
       setSelectedServerId(firstOnline.id);
+      setAutoSelected(true);
     }
   }, [isOpen, servers, selectedServerId]);
 
+  const selectServer = (id: number) => {
+    setSelectedServerId(id);
+    setAutoSelected(false);
+    try {
+      localStorage.setItem('iris_preferred_server', String(id));
+    } catch {}
+  };
+
   React.useEffect(() => {
+    if (!isOpen || !mounted) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const background = Array.from(document.body.children)
+      .filter((node): node is HTMLElement => node instanceof HTMLElement && node !== modalRef.current && !['SCRIPT','STYLE','NOSCRIPT'].includes(node.tagName))
+      .map((node) => ({ node, inert: node.inert }));
+    background.forEach(({ node }) => { node.inert = true; });
+    const controls = () => Array.from(modalRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled)') ?? []).filter((node) => node.getClientRects().length > 0);
+    const frame = window.requestAnimationFrame(() => controls()[0]?.focus());
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
+      if (e.key === 'Escape') { e.preventDefault(); closeRef.current(); }
+      if (e.key === 'Tab') {
+        const list = controls(), first = list[0], last = list.at(-1);
+        if (!first) { e.preventDefault(); return; }
+        const outside = !modalRef.current?.contains(document.activeElement);
+        if (e.shiftKey && (outside || document.activeElement === first)) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && (outside || document.activeElement === last)) { e.preventDefault(); first.focus(); }
       }
     };
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.body.style.overflow = '';
+      window.cancelAnimationFrame(frame);
+      document.body.style.overflow = previousOverflow;
+      background.forEach(({ node, inert }) => { node.inert = inert; });
       window.removeEventListener('keydown', handleKeyDown);
+      if (opener?.isConnected) opener.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, mounted]);
 
   if (!mounted || !isOpen || !product) return null;
 
@@ -124,21 +162,24 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
 
   const handleAddToCart = () => {
     if (!canAdd || selectedServerId === null) return;
-    addItem(product.id, selectedServerId, quantity);
+    addItem(product.id, selectedServerId, quantity, false);
+    setDrawerOpen(false);
     setFeedback('added');
     window.setTimeout(() => setFeedback('idle'), 2200);
   };
 
   const handleCheckout = () => {
     if (!canAdd || selectedServerId === null) return;
-    addItem(product.id, selectedServerId, quantity);
+    addItem(product.id, selectedServerId, quantity, false);
+    setDrawerOpen(false);
     onClose();
     router.push('/cart');
   };
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[9999] m-0 w-screen h-screen flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] m-0 w-screen h-screen flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+      ref={modalRef}
       role="dialog"
       aria-modal="true"
       aria-label={`สั่งซื้อ ${product.name}`}
@@ -146,20 +187,20 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-700/60 bg-[#0c1c2c] shadow-2xl transition-all">
+      <div className="tek-panel relative flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-cyan-500/40 bg-surface-1 shadow-[0_25px_80px_rgba(0,0,0,0.95)] transition-all">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-700/50 px-6 py-4 bg-[#102637]">
+        <div className="flex items-center justify-between border-b border-slate-700/60 px-6 py-4 bg-surface-2">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-iris-gold" />
             <span className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">
-              {categoryLabel(product.category?.name || 'Items')}
-              {product.isBlueprint ? ' · พิมพ์เขียว' : ''}
+              {t(categoryLabel(product.category?.name || 'Items'), product.category?.name || 'Items')}
+              <T text={product.isBlueprint ? ' · พิมพ์เขียว' : ''} />
             </span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-white/10 hover:text-white"
+            className="grid h-11 w-11 place-items-center rounded-full text-slate-400 transition hover:bg-white/10 hover:text-white"
             aria-label="ปิดหน้าต่างสั่งซื้อ"
           >
             <X size={18} />
@@ -167,10 +208,10 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+        <div className="min-h-0 flex-1 p-6 space-y-6 max-h-[65dvh] overflow-y-auto overscroll-contain">
           <div className="grid gap-6 sm:grid-cols-[180px_1fr]">
             {/* Artwork */}
-            <div className="relative aspect-square overflow-hidden rounded-2xl border border-slate-700/50 bg-[radial-gradient(ellipse_at_50%_40%,#28495a,#102637_75%)] flex items-center justify-center p-3">
+            <div className="relative aspect-square overflow-hidden rounded-2xl border border-slate-700/50 bg-surface-2 flex items-center justify-center p-3">
               <ProductArtwork product={product} fit="contain" className="h-full w-full object-contain" />
               <div className="absolute top-2 left-2">
                 <Badge variant={quality.badge}>{quality.label}</Badge>
@@ -189,7 +230,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
               ) : null}
 
               <div className="pt-2 flex items-baseline gap-2">
-                <span className="text-xs uppercase tracking-wider text-iris-muted">ราคาต่อหน่วย:</span>
+                <span className="text-xs uppercase tracking-wider text-iris-muted"><T text={"ราคาต่อหน่วย:"} /></span>
                 <span className="font-mono text-2xl font-bold tabular-nums text-iris-pearl">
                   {product.price.toLocaleString()}
                 </span>
@@ -202,19 +243,19 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
           <div className="space-y-2 border-t border-slate-700/40 pt-4">
             <div className="flex items-center justify-between text-xs">
               <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-iris-pearl">
-                <Server className="h-3.5 w-3.5 text-iris-cyan" /> เลือกเซิร์ฟเวอร์ปลายทาง
-              </span>
+                <Server className="h-3.5 w-3.5 text-iris-cyan" /><T text={"เลือกเซิร์ฟเวอร์ปลายทาง · Server"} /></span>
               <span className="font-mono text-[10px] text-iris-muted">
                 {servers.filter((s) => s.isOnline).length}/{servers.length} online
               </span>
             </div>
+            <p className="text-[11px] text-slate-400"><T text={"ระบบตรวจจับเซิร์ฟเวอร์ออนไลน์ให้อัตโนมัติ หรือคลิกเพื่อสลับเปลี่ยนเซิร์ฟเวอร์ได้ตามต้องการ"} /></p>
 
             {serversQuery.isLoading ? (
               <div className="h-10 w-full animate-pulse rounded-xl bg-slate-800" />
             ) : serverUnavailable ? (
               <div className="flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-xs text-amber-200">
                 <CircleAlert className="h-4 w-4 shrink-0 text-amber-400" />
-                <span>ไม่พบเซิร์ฟเวอร์ที่พร้อมรับสินค้า กรุณาลองใหม่อีกครั้ง</span>
+                <span><T text={"ไม่พบเซิร์ฟเวอร์ที่พร้อมรับสินค้า กรุณาลองใหม่อีกครั้ง"} /></span>
               </div>
             ) : (
               <div className="space-y-2">
@@ -250,21 +291,26 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
                       key={server.id}
                       type="button"
                       disabled={!server.isOnline}
-                      onClick={() => setSelectedServerId(server.id)}
+                      onClick={() => selectServer(server.id)}
                       className={`flex items-center justify-between rounded-xl border p-3 text-left transition ${
                         isSelected
-                          ? 'border-iris-cyan bg-iris-cyan/10 text-white shadow-[0_0_15px_rgba(160,224,244,0.15)]'
+                          ? 'border-iris-cyan bg-iris-cyan/10 text-white shadow-[0_0_15px_rgba(160,224,244,0.15)] ring-1 ring-iris-cyan/40'
                           : server.isOnline
-                          ? 'border-slate-700/50 bg-[#102637] text-slate-300 hover:border-slate-600 hover:text-white'
+                          ? 'border-slate-700/50 bg-surface-3 text-slate-300 hover:border-slate-600 hover:text-white'
                           : 'border-slate-800 bg-black/20 text-slate-600 cursor-not-allowed opacity-50'
                       }`}
                     >
                       <div className="min-w-0 pr-2">
-                        <p className="text-xs font-semibold truncate">{server.displayName || server.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-semibold truncate">{server.displayName || server.name}</p>
+                          {isSelected && autoSelected && (
+                            <span className="inline-flex items-center rounded bg-cyan-400/20 px-1 py-0.2 text-[9px] font-bold text-cyan-300 uppercase tracking-wider"><T text={"แนะนำ"} /></span>
+                          )}
+                        </div>
                         <p className="text-[10px] text-iris-muted truncate">{server.cluster?.name ?? server.map}</p>
                       </div>
                       <span
-                        className={`h-2 w-2 shrink-0 rounded-full ${
+                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${
                           server.isOnline ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-slate-600'
                         }`}
                       />
@@ -279,9 +325,8 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
           {/* Quantity and Subtotal */}
           <div className="flex items-center justify-between border-t border-slate-700/40 pt-4">
             <div>
-              <p className="text-xs font-bold text-iris-pearl">จำนวนสินค้า</p>
-              <p className="text-[10px] text-iris-muted">
-                ยอดรวม: <span className="font-mono text-sm font-bold text-iris-gold tabular-nums">{totalPrice.toLocaleString()} IC</span>
+              <p className="text-xs font-bold text-iris-pearl"><T text={"จำนวนสินค้า · Quantity"} /></p>
+              <p className="text-[11px] text-iris-muted"><T text={"ยอดรวม:"} /><span className="font-mono text-sm font-bold text-iris-gold tabular-nums">{totalPrice.toLocaleString()} IC</span>
               </p>
             </div>
             <div className="flex items-center rounded-full border border-white/10 bg-black/30 p-1">
@@ -289,7 +334,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
                 type="button"
                 onClick={() => setQuantity((v) => Math.max(1, v - 1))}
                 disabled={quantity <= 1 || isDino}
-                className="grid h-8 w-8 place-items-center rounded-full text-slate-300 transition hover:bg-white/10 disabled:opacity-30"
+                  className="grid h-11 w-11 place-items-center rounded-full text-slate-300 transition hover:bg-white/10 disabled:opacity-30"
                 aria-label="ลดจำนวน"
               >
                 <Minus size={14} />
@@ -301,7 +346,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
                 type="button"
                 onClick={() => setQuantity((v) => Math.min(99, v + 1))}
                 disabled={quantity >= 99 || isDino}
-                className="grid h-8 w-8 place-items-center rounded-full text-slate-300 transition hover:bg-white/10 disabled:opacity-30"
+                  className="grid h-11 w-11 place-items-center rounded-full text-slate-300 transition hover:bg-white/10 disabled:opacity-30"
                 aria-label="เพิ่มจำนวน"
               >
                 <Plus size={14} />
@@ -312,13 +357,12 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
           {/* Feedback */}
           {feedback === 'added' ? (
             <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-2.5 text-xs text-emerald-300 animate-in fade-in">
-              <Check className="h-4 w-4" /> เพิ่มสินค้าลงในตะกร้าเรียบร้อยแล้ว
-            </div>
+              <Check className="h-4 w-4" /><T text={"เพิ่มสินค้าลงในตะกร้าเรียบร้อยแล้ว (คุณสามารถเลือกดูต่อได้ทันที)"} /></div>
           ) : null}
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t border-slate-700/50 bg-[#102637] p-5">
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t border-slate-700/50 bg-surface-3 p-5">
           <Button
             variant="secondary"
             disabled={!canAdd}
@@ -326,16 +370,14 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
             leftIcon={feedback === 'added' ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
             className="w-full sm:w-auto"
           >
-            {feedback === 'added' ? 'เพิ่มแล้ว' : 'เพิ่มในตะกร้า'}
+            <T text={feedback === 'added' ? 'เพิ่มแล้ว' : 'ใส่ตะกร้า · Add to Cart'} />
           </Button>
           <Button
             disabled={!canAdd}
             onClick={handleCheckout}
-            rightIcon={<ChevronRight className="h-4 w-4" />}
-            className="w-full sm:w-auto"
-          >
-            ตรวจยอดและชำระ
-          </Button>
+            leftIcon={<CreditCard className="h-4 w-4" />}
+            className="w-full sm:w-auto bg-gradient-to-r from-iris-cyan to-blue-500 text-slate-950 font-bold"
+          ><T text={"ตรวจยอดและชำระ · Buy Now"} /></Button>
         </div>
       </div>
     </div>

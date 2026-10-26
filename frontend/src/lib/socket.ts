@@ -44,6 +44,8 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderAvatar?: string | null;
+  playerRank?: { name: string; color: string; icon?: string | null } | null;
+  serverStyle?: { chatTag?: string | null; chatColor?: string | null; chatIcon?: string | null } | null;
   /** VIP badge of the sender when the backend includes it (contracts/vip-2026-10.md). */
   vip?: { tierRank?: number; frameStyle?: string; label?: string } | null;
   content: string;
@@ -114,7 +116,7 @@ export function subscribeRoom(
 function socketOrigin(): string {
   const explicit = process.env.NEXT_PUBLIC_SOCKET_URL;
   if (explicit) return explicit;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
   try {
     const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
     return new URL(apiUrl, base).origin;

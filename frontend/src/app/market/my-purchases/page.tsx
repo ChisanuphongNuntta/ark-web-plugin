@@ -6,9 +6,13 @@ import { dinoMarketApi } from '@/lib/api';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { AnimalMetadata } from '@/components/market/AnimalMetadata';
+import { AdminNotice } from '@/components/admin';
+import { apiErrorText } from '@/lib/adminConsoleApi';
+import { marketGender } from '@/lib/market';
 import {
   Loader2,
-  ArrowLeft,
+  ChevronLeft,
   ShoppingBag,
   Clock,
   CheckCircle,
@@ -17,9 +21,10 @@ import {
 } from 'lucide-react';
 
 export default function MyPurchasesPage() {
-  const { data: purchasesData, isLoading } = useQuery({
+  const { data: purchasesData, isLoading, error } = useQuery({
     queryKey: ['myDinoPurchases'],
     queryFn: () => dinoMarketApi.getMyPurchases().then((res) => res.data),
+    refetchInterval: 15_000,
   });
 
   return (
@@ -27,9 +32,9 @@ export default function MyPurchasesPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/market">
-          <Button variant="secondary" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            กลับตลาด
+          <Button variant="secondary" size="sm" className="gap-1.5">
+            <ChevronLeft className="h-4 w-4" />
+            กลับตลาด · Back to Market
           </Button>
         </Link>
         <div>
@@ -45,6 +50,7 @@ export default function MyPurchasesPage() {
         </div>
       </div>
 
+      {error && <AdminNotice tone="danger">{apiErrorText(error, 'โหลดประวัติการซื้อไม่ได้')}</AdminNotice>}
       {/* Purchases */}
       {isLoading ? (
         <div className="flex justify-center py-16">
@@ -63,7 +69,7 @@ export default function MyPurchasesPage() {
       ) : (
         <div className="space-y-4">
           {purchasesData?.purchases?.map((purchase: any) => (
-            <GlassCard key={purchase.id} hoverEffect="lift" className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <GlassCard key={purchase.id} className="p-5 flex flex-col gap-4">
               {/* Dino Info */}
               <div className="flex-1">
                 <div className="flex items-center gap-3">
@@ -74,22 +80,24 @@ export default function MyPurchasesPage() {
                     {purchase.dinoName || purchase.species}
                   </Link>
                   <Badge variant={purchase.deliveryStatus === 'delivered' ? 'cyan' : 'gold'}>
-                    {purchase.deliveryStatus === 'delivered' ? 'ส่งมอบแล้ว' : 'รอรับของในเกม'}
+                    {purchase.deliveryStatus === 'delivered' ? 'ส่งมอบแล้ว' : purchase.deliveryStatus === 'refunded' ? 'คืนเงินแล้ว' : purchase.deliveryStatus === 'return_pending' ? 'กำลังคืนสัตว์' : purchase.deliveryStatus === 'returned' ? 'คืนสัตว์แล้ว' : purchase.deliveryStatus === 'failed' ? 'ส่งมอบไม่สำเร็จ' : 'รอรับของในเกม'}
                   </Badge>
                 </div>
                 <p className="text-xs text-iris-muted mt-1">
-                  {purchase.species} • Lv.{purchase.level} • {purchase.gender === 'Male' ? '♂ ผู้' : '♀ เมีย'}
+                  {purchase.species} • Lv.{purchase.level} • {marketGender(purchase.gender)}
                 </p>
               </div>
+
+              <details><summary className="cursor-pointer text-sm text-iris-cyan">ดูข้อมูลสัตว์ที่ซื้อ</summary><div className="pt-4"><AnimalMetadata animal={purchase} /></div></details>
 
               {/* Stats */}
               <div className="flex gap-6 text-xs border-y md:border-y-0 md:border-x border-white/5 py-2 md:py-0 md:px-6">
                 <div>
-                  <p className="text-[10px] text-iris-muted uppercase">Health</p>
+                  <p className="text-[10px] text-iris-muted uppercase">Health (แต้ม)</p>
                   <p className="font-bold text-rose-400">{purchase.baseHealth}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-iris-muted uppercase">Damage</p>
+                  <p className="text-[10px] text-iris-muted uppercase">Damage (แต้ม)</p>
                   <p className="font-bold text-emerald-400">{purchase.baseDamage}</p>
                 </div>
                 <div>

@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, ArrowLeft, Copy, Image as ImageIcon, Layers, Loader2, Pencil, Plus, Save, Tag } from 'lucide-react';
+import { Archive, Copy, Image as ImageIcon, Layers, Loader2, Pencil, Plus, Save, Tag } from 'lucide-react';
+import { ArrowLeft } from '@/components/tek/arrows';
 import {
   AdminButton,
   AdminDialog,

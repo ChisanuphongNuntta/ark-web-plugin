@@ -9,7 +9,7 @@ import {
   type RawPagination,
 } from '@/components/admin/paginationMath';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -696,6 +696,8 @@ export const dinoMarketApi = {
   getMyPurchases: (params?: { page?: number; limit?: number }) =>
     api.get('/market/my/purchases', { params }),
   cancelListing: (id: string) => api.post(`/market/listings/${id}/cancel`),
+  publishListing: (id: string, input: { price: number; description?: string }) => api.post(`/market/listings/${encodeURIComponent(id)}/publish`, input),
+  publishBatch: (items: { id: string; price: number; description?: string }[]) => api.post('/market/my/publish', { items }),
   buyDino: (id: string, serverId: number) => api.post(`/market/listings/${id}/buy`, { serverId }),
 };
 

@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { contentApi, productApi } from '@/lib/api';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 import { Loader2, FileX, ChevronDown } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
@@ -237,7 +238,7 @@ function HtmlBlock({ content }: { content: { html?: string } }) {
   return (
     <div
       className="prose prose-invert max-w-none text-iris-muted text-sm leading-relaxed"
-      dangerouslySetInnerHTML={{ __html: content.html }}
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.html) }}
     />
   );
 }

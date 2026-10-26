@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link2, UserCheck, ShieldAlert, Info, ExternalLink } from 'lucide-react';
+import { Link2, UserCheck, ShieldAlert, Info } from 'lucide-react';
+import { ExternalLink } from '@/components/tek/arrows';
 import { identityApi } from '@/lib/contracts/client';
 import type { IdentityProvider, LinkedIdentity } from '@/lib/contracts/types';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -37,7 +38,7 @@ const PROVIDER_META: Record<
 };
 
 const IDENTITIES_KEY = ['account', 'identities'];
-const STEAM_AUTH_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/steam`;
+const STEAM_AUTH_URL = `${process.env.NEXT_PUBLIC_API_URL || '/api'}/auth/steam`;
 
 export function LinkedIdentities() {
   const queryClient = useQueryClient();

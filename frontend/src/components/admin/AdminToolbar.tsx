@@ -178,7 +178,7 @@ export function AdminToolbar({
         'flex flex-wrap items-end gap-3',
         variant === 'inset'
           ? 'relative border-b border-white/[0.06] px-5 py-4'
-          : 'rounded-[18px] border border-[color:var(--line)] bg-[rgba(8,22,36,0.6)] p-4',
+          : 'rounded-[18px] border border-[color:var(--line)] bg-surface-1/60 p-4',
         className,
       )}
     >

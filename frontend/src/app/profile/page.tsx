@@ -1,4 +1,7 @@
 'use client';
+import { IrisCoin } from '@/components/ui/IrisCoin';
+import { T } from '@/components/i18n/LanguageProvider';
+
 
 import * as React from 'react';
 import { useAuthStore } from '@/lib/store';
@@ -8,7 +11,7 @@ import { walletContractApi } from '@/lib/contracts/client';
 import { useSearchParams } from 'next/navigation';
 import {
   User,
-  Coins,
+  
   Award,
   Shield,
   Flame,
@@ -87,7 +90,7 @@ function ProfileContent() {
     },
   });
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
   if (!user) {
     return (
@@ -130,7 +133,7 @@ function ProfileContent() {
         {walletBalance && (
           <GlassCard variant="gold" className="px-5 py-3 flex items-center gap-4">
             <div className="h-10 w-10 rounded-full bg-iris-gold/10 border border-iris-gold/25 flex items-center justify-center">
-              <Coins className="h-5 w-5 text-iris-gold" />
+              <IrisCoin className="h-5 w-5 text-iris-gold" />
             </div>
             <div>
               <p className="text-[10px] text-iris-muted uppercase font-bold tracking-wider">Available Balance</p>
@@ -215,9 +218,9 @@ function ProfileContent() {
               </div>
 
               <div className="text-center md:text-right">
-                <p className="text-[10px] text-iris-muted uppercase font-bold tracking-widest">ยอดใช้จ่ายสะสม</p>
-                <p className="font-mono font-bold text-2xl text-gradient-primary">฿{userSpent.toLocaleString()}</p>
-                <p className="text-[9px] text-iris-muted mt-1 uppercase">สะสม XP จากการซื้อสินค้าทางการ</p>
+                <p className="text-[10px] text-iris-muted uppercase font-bold tracking-widest"><T text={"ยอดใช้จ่ายสะสม"} /></p>
+                <p className="font-mono font-bold text-2xl text-gradient-primary"><T text={"฿"} />{userSpent.toLocaleString()}</p>
+                <p className="text-[9px] text-iris-muted mt-1 uppercase"><T text={"สะสม XP จากการซื้อสินค้าทางการ"} /></p>
               </div>
             </div>
 
@@ -245,15 +248,11 @@ function ProfileContent() {
                     <Shield className="h-5 w-5 animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="font-display font-bold text-iris-gold text-sm tracking-wider uppercase">กรุณาเชื่อมโยง Steam Account</h3>
-                    <p className="text-xs text-iris-muted mt-1 leading-relaxed max-w-lg">
-                      เพื่อเปิดการสแกนสถานะสิ่งปลูกสร้าง การป้องกันการโจมตี (Tribe Protection Status) และอนุญาตการดึงข้อมูลตัวละครในเซิร์ฟเวอร์
-                    </p>
+                    <h3 className="font-display font-bold text-iris-gold text-sm tracking-wider uppercase"><T text={"กรุณาเชื่อมโยง Steam Account"} /></h3>
+                    <p className="text-xs text-iris-muted mt-1 leading-relaxed max-w-lg"><T text={"เพื่อเปิดการสแกนสถานะสิ่งปลูกสร้าง การป้องกันการโจมตี (Tribe Protection Status) และอนุญาตการดึงข้อมูลตัวละครในเซิร์ฟเวอร์"} /></p>
                   </div>
                 </div>
-                <Button variant="gold" size="sm" onClick={() => setActiveTab('identity')}>
-                  ไปที่หน้าเชื่อมต่อไอดี
-                </Button>
+                <Button variant="gold" size="sm" onClick={() => setActiveTab('identity')}><T text={"ไปที่หน้าเชื่อมต่อไอดี"} /></Button>
               </div>
             </GlassCard>
           )}
@@ -263,20 +262,16 @@ function ProfileContent() {
               <div className="space-y-1">
                 <h3 className="font-display text-sm font-bold text-iris-pearl uppercase tracking-wider flex items-center gap-2">
                   <Award className="h-5 w-5 text-iris-cyan" />
-                  <span>ระบบเคลมเหรียญเวลาเล่น (Survival Time Claim Vault)</span>
+                  <span><T text={"ระบบเคลมเหรียญเวลาเล่น (Survival Time Claim Vault)"} /></span>
                 </h3>
-                <p className="text-xs text-iris-muted max-w-xl leading-relaxed">
-                  สแกนชั่วโมงออนไลน์สะสมขณะเอาชีวิตรอดบนเซิร์ฟเวอร์พันธมิตรของ IRIS Thailand เพื่อแปลงเวลาเล่นเกมเป็นแต้มพิเศษเข้ากระเป๋าเงินคุณโดยอัตโนมัติ
-                </p>
+                <p className="text-xs text-iris-muted max-w-xl leading-relaxed"><T text={"สแกนชั่วโมงออนไลน์สะสมขณะเอาชีวิตรอดบนเซิร์ฟเวอร์พันธมิตรของ IRIS Thailand เพื่อแปลงเวลาเล่นเกมเป็นแต้มพิเศษเข้ากระเป๋าเงินคุณโดยอัตโนมัติ"} /></p>
               </div>
               <Button
                 variant="cyan"
                 onClick={() => claimMutation.mutate()}
                 isLoading={claimMutation.isPending}
                 leftIcon={<Award className="h-4 w-4" />}
-              >
-                เคลมแต้มเวลาสะสม
-              </Button>
+              ><T text={"เคลมแต้มเวลาสะสม"} /></Button>
             </div>
 
             {claimMessage && (
@@ -309,9 +304,7 @@ function ProfileContent() {
       {activeTab === 'identity' && (
         <div className="space-y-10 animate-slide-up">
           {linkSteamRequested && (
-            <div className="rounded-xl border border-iris-cyan/25 bg-iris-cyan/10 px-4 py-3 text-sm text-iris-pearl">
-              เชื่อมบัญชี Steam โดยกดปุ่มด้านล่าง ระบบจะพาไปยืนยันตัวตนกับ Steam โดยตรง
-            </div>
+            <div className="rounded-xl border border-iris-cyan/25 bg-iris-cyan/10 px-4 py-3 text-sm text-iris-pearl"><T text={"เชื่อมบัญชี Steam โดยกดปุ่มด้านล่าง ระบบจะพาไปยืนยันตัวตนกับ Steam โดยตรง"} /></div>
           )}
           <LinkedIdentities />
           <DeviceSessions />
@@ -323,7 +316,7 @@ function ProfileContent() {
 
 export default function ProfilePage() {
   return (
-    <React.Suspense fallback={<div className="max-w-4xl mx-auto py-20 px-4 text-center text-iris-muted">กำลังโหลดข้อมูล...</div>}>
+    <React.Suspense fallback={<div className="max-w-4xl mx-auto py-20 px-4 text-center text-iris-muted"><T text={"กำลังโหลดข้อมูล..."} /></div>}>
       <ProfileContent />
     </React.Suspense>
   );
