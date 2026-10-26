@@ -33,7 +33,6 @@ const MODE_TABS: { key: ModeTab; label: string }[] = [
 const modeOf = (server: ServerStatus): ModeTab => server.gameMode ?? 'OTHER';
 import { useCartStore } from '@/lib/store';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import { ProductArtwork } from '@/components/ProductArtwork';
 import { categoryLabel } from '@/lib/catalogLabels';
 
@@ -178,7 +177,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[9999] m-0 w-screen h-screen flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] m-0 w-screen h-screen flex items-center justify-center p-4 sm:p-6 bg-black/20 backdrop-blur-xl animate-in fade-in duration-200"
       ref={modalRef}
       role="dialog"
       aria-modal="true"
@@ -187,7 +186,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="tek-panel relative flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-cyan-500/40 bg-surface-1 shadow-[0_25px_80px_rgba(0,0,0,0.95)] transition-all">
+      <div className="tk-modal relative flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden bg-surface-1 transition-all">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-700/60 px-6 py-4 bg-surface-2">
           <div className="flex items-center gap-2">
@@ -200,7 +199,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
           <button
             type="button"
             onClick={onClose}
-            className="grid h-11 w-11 place-items-center rounded-full text-slate-400 transition hover:bg-white/10 hover:text-white"
+            className="grid h-11 w-11 place-items-center rounded text-slate-300 transition hover:bg-white/10 hover:text-white"
             aria-label="ปิดหน้าต่างสั่งซื้อ"
           >
             <X size={18} />
@@ -211,7 +210,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
         <div className="min-h-0 flex-1 p-6 space-y-6 max-h-[65dvh] overflow-y-auto overscroll-contain">
           <div className="grid gap-6 sm:grid-cols-[180px_1fr]">
             {/* Artwork */}
-            <div className="relative aspect-square overflow-hidden rounded-2xl border border-slate-700/50 bg-surface-2 flex items-center justify-center p-3">
+            <div className="relative aspect-square overflow-hidden rounded-md border border-slate-700/50 bg-surface-2 flex items-center justify-center p-3">
               <ProductArtwork product={product} fit="contain" className="h-full w-full object-contain" />
               <div className="absolute top-2 left-2">
                 <Badge variant={quality.badge}>{quality.label}</Badge>
@@ -271,13 +270,9 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
                         role="tab"
                         aria-selected={selected}
                         onClick={() => setModeTab(tab.key)}
-                        className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
-                          selected
-                            ? 'border-iris-cyan bg-iris-cyan/10 text-white'
-                            : 'border-slate-700/50 text-slate-400 hover:border-slate-600 hover:text-white'
-                        }`}
+                        className={`tk-chip sm${selected ? ' on' : ''}`}
                       >
-                        {tab.label} <span className="font-mono text-[10px] text-iris-muted">{count}</span>
+                        {tab.label} <span className="font-mono text-[10px]">{count}</span>
                       </button>
                     );
                   })}
@@ -292,12 +287,12 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
                       type="button"
                       disabled={!server.isOnline}
                       onClick={() => selectServer(server.id)}
-                      className={`flex items-center justify-between rounded-xl border p-3 text-left transition ${
+                      className={`flex min-h-[56px] items-center justify-between rounded-md border p-3 text-left transition ${
                         isSelected
-                          ? 'border-iris-cyan bg-iris-cyan/10 text-white shadow-[0_0_15px_rgba(160,224,244,0.15)] ring-1 ring-iris-cyan/40'
+                          ? 'border-iris-cyan bg-iris-cyan/10 text-white ring-1 ring-iris-cyan/60'
                           : server.isOnline
                           ? 'border-slate-700/50 bg-surface-3 text-slate-300 hover:border-slate-600 hover:text-white'
-                          : 'border-slate-800 bg-black/20 text-slate-600 cursor-not-allowed opacity-50'
+                          : 'border-slate-700/60 bg-surface-2 text-slate-300 cursor-not-allowed'
                       }`}
                     >
                       <div className="min-w-0 pr-2">
@@ -329,12 +324,12 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
               <p className="text-[11px] text-iris-muted"><T text={"ยอดรวม:"} /><span className="font-mono text-sm font-bold text-iris-gold tabular-nums">{totalPrice.toLocaleString()} IC</span>
               </p>
             </div>
-            <div className="flex items-center rounded-full border border-white/10 bg-black/30 p-1">
+            <div className="flex items-center rounded-md border border-white/15 bg-surface-2 p-1">
               <button
                 type="button"
                 onClick={() => setQuantity((v) => Math.max(1, v - 1))}
                 disabled={quantity <= 1 || isDino}
-                  className="grid h-11 w-11 place-items-center rounded-full text-slate-300 transition hover:bg-white/10 disabled:opacity-30"
+                  className="grid h-11 w-11 place-items-center rounded text-slate-200 transition hover:bg-white/10 disabled:opacity-40"
                 aria-label="ลดจำนวน"
               >
                 <Minus size={14} />
@@ -346,7 +341,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
                 type="button"
                 onClick={() => setQuantity((v) => Math.min(99, v + 1))}
                 disabled={quantity >= 99 || isDino}
-                  className="grid h-11 w-11 place-items-center rounded-full text-slate-300 transition hover:bg-white/10 disabled:opacity-30"
+                  className="grid h-11 w-11 place-items-center rounded text-slate-200 transition hover:bg-white/10 disabled:opacity-40"
                 aria-label="เพิ่มจำนวน"
               >
                 <Plus size={14} />
@@ -363,21 +358,14 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
 
         {/* Modal Footer Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t border-slate-700/50 bg-surface-3 p-5">
-          <Button
-            variant="secondary"
-            disabled={!canAdd}
-            onClick={handleAddToCart}
-            leftIcon={feedback === 'added' ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
-            className="w-full sm:w-auto"
-          >
+          <button type="button" disabled={!canAdd} onClick={handleAddToCart} className="tk-btn ghost w-full sm:w-auto">
+            {feedback === 'added' ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
             <T text={feedback === 'added' ? 'เพิ่มแล้ว' : 'ใส่ตะกร้า · Add to Cart'} />
-          </Button>
-          <Button
-            disabled={!canAdd}
-            onClick={handleCheckout}
-            leftIcon={<CreditCard className="h-4 w-4" />}
-            className="w-full sm:w-auto bg-gradient-to-r from-iris-cyan to-blue-500 text-slate-950 font-bold"
-          ><T text={"ตรวจยอดและชำระ · Buy Now"} /></Button>
+          </button>
+          <button type="button" disabled={!canAdd} onClick={handleCheckout} className="tk-btn w-full sm:w-auto">
+            {<CreditCard className="h-4 w-4" />}
+            <T text={"ตรวจยอดและชำระ · Buy Now"} />
+          </button>
         </div>
       </div>
     </div>

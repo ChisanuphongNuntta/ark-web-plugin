@@ -84,14 +84,14 @@ export const Dialog: React.FC<DialogProps> = ({
       aria-labelledby="dialog-title"
     >
       <div
-        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-black/20 backdrop-blur-xl transition-opacity animate-in fade-in duration-200"
         onClick={loading ? undefined : handleClose}
       />
 
       <div
         ref={dialogRef}
         className={cn(
-          'relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-iris-river/95 p-6 shadow-2xl backdrop-blur-xl transition-all max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200',
+          'tk-modal relative z-10 w-full max-w-lg overflow-hidden bg-surface-1 p-6 transition-all max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200',
           className
         )}
       >

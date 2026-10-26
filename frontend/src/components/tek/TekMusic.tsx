@@ -5,7 +5,7 @@ import { useLanguage } from '@/components/i18n/LanguageProvider';
 
 const STORAGE_KEY = 'iris-music-v1';
 const SNOW_KEY = 'iris-snow-v1';
-const SRC = '/audio/ark-iris-happy-xmas-remix-v1.mp3';
+const SRC = '/audio/ark-iris-aurora-v1.mp3';
 const DEFAULT_VOLUME = 0.3;
 
 type Saved = { on: boolean; volume: number };
@@ -35,7 +35,7 @@ function writeSaved(next: Saved) {
 }
 
 /**
- * Original instrumental ("ARK IRIS Happy Xmas Remix"), bottom-left. Browsers block sound until the
+ * Original instrumental ("ARK IRIS Aurora"), bottom-left. Browsers block sound until the
  * visitor interacts, so playback starts on the first tap/click unless they switched it off.
  */
 export function TekMusic() {
@@ -145,7 +145,7 @@ export function TekMusic() {
       </button>
       <div className="tk-music-panel" role="group" aria-label={t('ควบคุมเสียงเพลง', 'Music controls')}>
         <div className="tk-music-title">
-          <b>ARK IRIS Happy Xmas Remix</b>
+          <b>ARK IRIS Aurora</b>
           <small>{playing ? t('กำลังเล่น', 'Now playing') : t('หยุดอยู่', 'Paused')}</small>
         </div>
         <label className="tk-music-vol">

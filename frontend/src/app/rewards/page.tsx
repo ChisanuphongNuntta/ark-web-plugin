@@ -203,7 +203,7 @@ export default function DailyRewardsPage() {
                         ? 'text-emerald-400'
                         : isToday
                         ? 'text-iris-cyan animate-pulse'
-                        : 'text-slate-300'
+                        : 'text-slate-100'
                     }`}
                   >
                     {isClaimed ? 'รับแล้ว · Claimed' : isToday ? 'พร้อมรับวันนี้' : 'รอปลดล็อก'}

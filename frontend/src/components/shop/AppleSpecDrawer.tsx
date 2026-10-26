@@ -49,11 +49,11 @@ export function AppleSpecDrawer({ model, onClose }: AppleSpecDrawerProps) {
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-black/85 backdrop-blur-2xl transition-opacity animate-fade-in"
+        className="fixed inset-0 bg-black/20 backdrop-blur-xl transition-opacity animate-fade-in"
       />
 
       {/* Modal Window */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] bg-surface-1 border border-white/[0.12] shadow-2xl p-6 sm:p-10 z-10 text-white my-auto animate-scale-in">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto tk-modal bg-surface-1 p-6 sm:p-10 z-10 text-white my-auto animate-scale-in">
         {/* Close Button */}
         <button
           onClick={onClose}

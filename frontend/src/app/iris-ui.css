@@ -294,3 +294,72 @@ body, body.iris-xmas {
 
 /* shop category list: 44px rows */
 .frozen-category-list button { min-height: 44px; }
+
+/* ---- popups: blurred (not dark) backdrop, Tek chamfered panel ---- */
+.iris-xmas dialog::backdrop { background: rgb(12 8 14 / 0.22); backdrop-filter: blur(14px) saturate(0.9); }
+.iris-xmas [class*="fixed"][class*="inset-0"]:is([class*="bg-black/"], [class*="bg-surface-0/"], [class*="bg-slate-950/"]) {
+  background-color: rgb(12 8 14 / 0.22) !important; backdrop-filter: blur(14px) saturate(0.9) !important;
+}
+.tk-modal {
+  position: relative; border: 0 !important; border-radius: 0 !important; box-shadow: inset 0 0 0 1px rgb(var(--acc-300) / 0.5) !important;
+  clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 18px, 100% calc(100% - 18px), calc(100% - 18px) 100%, 18px 100%, 0 calc(100% - 18px), 0 18px);
+}
+.tk-modal::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  --ln: rgb(var(--acc-300) / 0.5);
+  background:
+    linear-gradient(135deg, transparent 0 12.1px, var(--ln) 12.1px 13.4px, transparent 13.4px) 0 0 / 24px 24px no-repeat,
+    linear-gradient(225deg, transparent 0 12.1px, var(--ln) 12.1px 13.4px, transparent 13.4px) 100% 0 / 24px 24px no-repeat,
+    linear-gradient(315deg, transparent 0 12.1px, var(--ln) 12.1px 13.4px, transparent 13.4px) 100% 100% / 24px 24px no-repeat,
+    linear-gradient(45deg, transparent 0 12.1px, var(--ln) 12.1px 13.4px, transparent 13.4px) 0 100% / 24px 24px no-repeat;
+}
+/* squared inner cards inside popups so the hex family stays on buttons/chips only */
+.tk-modal .tk-card { border-radius: 6px; }
+
+/* hex controls: only the hex ring shows on focus (no second rectangular outline) */
+:is(.tk-btn, .btn-primary, .btn-secondary, .tk-chip, .tk-ib, .tk-add, .tk-av, .tk-music-btn, .tk-wallet):focus-visible { outline: none !important; }
+
+/* ---- texture kit: antigravity plate renders, flattened + contrast-checked by scripts/art/make_ui_textures.py ---- */
+.iris-xmas {
+  --plate-primary: url('/images/ui/plate-primary.webp');
+  --plate-ghost: url('/images/ui/plate-ghost.webp');
+  --plate-gold: url('/images/ui/plate-gold.webp');
+  --plate-hull: url('/images/ui/plate-hull.webp');
+  --bevel: linear-gradient(180deg, rgb(255 255 255 / 0.13) 0, transparent 30%, transparent 62%, rgb(0 0 0 / 0.28) 100%);
+  --sheen: linear-gradient(105deg, transparent 42%, rgb(255 255 255 / 0.16) 50%, transparent 58%);
+}
+.iris-xmas :is(.tk-btn, .btn-primary, .btn-secondary)::after {
+  background-color: var(--bg);
+  background-image: var(--sheen), var(--bevel), var(--plate, none);
+  background-size: 260% 100%, auto, 170px;
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-position: 170% 0, 0 0, 0 0;
+}
+.iris-xmas :is(.tk-btn, .btn-primary):not(.ghost):not(.gold) { --plate: var(--plate-primary); }
+.iris-xmas :is(.tk-btn.ghost, .btn-secondary) { --plate: var(--plate-ghost); }
+.iris-xmas .tk-btn.gold { --plate: var(--plate-gold); }
+.iris-xmas :is(.tk-btn, .btn-primary, .btn-secondary):active { transform: translateY(1px); filter: brightness(0.92); }
+@media (prefers-reduced-motion: no-preference) {
+  .iris-xmas :is(.tk-btn, .btn-primary, .btn-secondary)::after { transition: background-position 0.7s cubic-bezier(.2,.7,.2,1); }
+  .iris-xmas :is(.tk-btn, .btn-primary, .btn-secondary):hover::after { background-position: -70% 0, 0 0, 0 0; }
+}
+
+/* chips: engraved plate, lit plate when active */
+.iris-xmas .tk-chip::after { background-color: rgb(var(--s-2)); background-image: var(--bevel), var(--plate-ghost); background-size: auto, 170px; }
+.iris-xmas .tk-chip:hover::after { background-color: rgb(var(--s-3)); }
+.iris-xmas .tk-chip.on::after { background-color: var(--btn-bg); background-image: var(--bevel), var(--plate-primary); background-size: auto, 170px; }
+
+/* icon buttons */
+.iris-xmas :is(.tk-ib, .tk-music-btn)::after { background-color: rgb(var(--s-2)); background-image: var(--bevel), var(--plate-ghost); background-size: auto, 170px; }
+.iris-xmas .tk-ib .cnt { font-weight: 700; }
+
+/* tabs and snow toggle */
+.iris-xmas .frozen-section-nav a:not([aria-current="page"]) { background-image: var(--bevel), var(--plate-ghost); background-size: auto, 170px; }
+.iris-xmas .tk-snow-toggle { background-image: var(--bevel), var(--plate-ghost); background-size: auto, 170px; }
+
+/* popups, drawers and menus: hull plating plus a gold latch tab on the top edge */
+.iris-xmas :is(.tk-modal, .tk-drawer, .tk-menu, .tk-music-panel) { background-image: var(--plate-hull); background-size: 220px; }
+.tk-modal::before {
+  content: ''; position: absolute; top: 0; left: 50%; z-index: 6; width: 84px; height: 3px; transform: translateX(-50%); pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(var(--gold)) 22%, rgb(var(--gold)) 78%, transparent);
+}

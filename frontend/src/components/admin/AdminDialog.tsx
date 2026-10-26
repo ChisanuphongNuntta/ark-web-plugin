@@ -157,10 +157,10 @@ export function AdminDialog({
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
         className={cn(
-          'tek-frame relative z-10 flex w-full flex-col overflow-hidden border border-[color:var(--line)] text-iris-pearl shadow-[0_24px_60px_rgba(0,0,0,0.45)] focus:outline-none',
+          'relative z-10 flex w-full flex-col overflow-hidden text-iris-pearl focus:outline-none',
           drawer
-            ? 'h-[100dvh] max-h-[100dvh] rounded-none border-y-0 border-r-0 bg-[var(--surface-2)] sm:rounded-l-[20px]'
-            : 'max-h-[calc(100dvh-2rem)] rounded-[20px] bg-[var(--surface-1)]',
+            ? 'tek-frame h-[100dvh] max-h-[100dvh] rounded-none border border-[color:var(--line)] border-y-0 border-r-0 bg-[var(--surface-2)] shadow-[0_24px_60px_rgba(0,0,0,0.45)] sm:rounded-l-[20px]'
+            : 'tk-modal max-h-[calc(100dvh-2rem)] bg-[var(--surface-1)]',
           drawer ? drawerSizeClass[size] : sizeClass[size],
           className,
         )}

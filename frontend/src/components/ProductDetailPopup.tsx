@@ -197,7 +197,7 @@ export default function ProductDetailPopup({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[9999] m-0 w-screen h-screen flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] m-0 w-screen h-screen flex items-center justify-center p-4 bg-black/20 backdrop-blur-xl animate-in fade-in duration-200"
       onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
       aria-modal="true"
@@ -207,7 +207,7 @@ export default function ProductDetailPopup({
       <GlassCard
         variant={quality.cardVariant === 'flat' ? 'default' : quality.cardVariant}
         hasGrid
-        className="w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-300 relative shadow-[0_24px_80px_rgba(0,0,0,0.5)]"
+        className="tk-modal w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-300 relative"
       >
         {/* Floating Close Button */}
         <button

@@ -83,7 +83,7 @@ export function Footer() {
             © {new Date().getFullYear()} IRIS Thailand · <T text={"ภาพสัตว์และไอเทม:"} />{' '}
             <a style={{ display: 'inline', padding: 0, textDecoration: 'underline' }} href="https://ark.wiki.gg/" target="_blank" rel="noreferrer">ark.wiki.gg</a>{' '}
             (CC BY-NC-SA) · ARK © Studio Wildcard · IRIS Thailand <T text={"ไม่ได้เป็นส่วนหนึ่งของ Studio Wildcard"} />
-            <br /><T text="เพลง ARK IRIS Happy Xmas Remix · เพลงบรรเลงต้นฉบับโดย IRIS Thailand" en="ARK IRIS Happy Xmas Remix · Original instrumental by IRIS Thailand" />
+            <br /><T text="เพลง ARK IRIS Aurora · เพลงบรรเลงต้นฉบับโดย IRIS Thailand" en="ARK IRIS Aurora · Original instrumental by IRIS Thailand" />
           </p>
         </div>
       </div>

@@ -1,5 +1,18 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## Textured controls, blurred popups, new music (Aurora) — 2026-10-27 (DEPLOYED to frontend-1/2)
+
+- Owner (asleep, pre-approved deploy): every button/action needs real game textures, logic that makes sense, popups blurred not dark, hex UI should not fight the rest.
+- Textures: antigravity (agy image-generator) renders of crimson anodized plate, gold panel plate and gunmetal plate (quota ran out before the 4th). Sources in `frontend/scripts/art/ui-texture-sources/`; `frontend/scripts/art/make_ui_textures.py` flattens lighting, remaps to narrow colour ramps, tiles, and ASSERTS >=7:1 text contrast on every pixel (primary 8.0, ghost 11.1, gold 8.0, hull 8.7). Output `public/images/ui/plate-{primary,ghost,gold,hull}.webp` (4-19 KB each).
+- `iris-ui.css` "texture kit": buttons/chips/icon buttons/tabs use the plates plus a bevel; hover = light sheen sweep (disabled under reduced motion), press = 1px sink; popups/drawers/menus use the hull plate, a gold latch tab and chamfered Tek corners (`.tk-modal`).
+- Popups (buy, detail, spec drawer, Dialog, AdminDialog, cookie settings): backdrop is now a 14px blur over a 22% tint (was 85-90% black); buy modal uses hex buttons/chips and squared inner cards.
+- Hex controls: the extra rectangular gold outline from `christmas-shop.css` no longer stacks on the hex focus ring.
+- Music: new original track `public/audio/ark-iris-aurora-v1.mp3` (116 s, 78 bpm, D major; `scripts/audio/compose_ark_iris_aurora.py`, -17.9 LUFS like the old one). Player and footer now say "ARK IRIS Aurora". Old tracks remain in `public/audio/`. NOT auditioned by a human yet.
+- Audit r22 (75 states): text AAA fails 0/11,352, small targets 0, focus gaps 0. The pixel-sampler flags ~38 nodes on textured controls but direct probes of those elements show >=8:1; the sampler misaligns on some tall/fixed layouts. Treat as tooling noise unless a visual check disagrees.
+- DEPLOYED: compose build, image `heart-plugin-frontend:ui-textures-check`, `artifacts/ui-textures-compose.override.json`; both replicas healthy; 8 key pages, plates and audio return 200.
+- ROLLBACK: previous image `heart-plugin-frontend:ui-aaa-check` (`artifacts/ui-textures-previous-image.txt`): `docker compose --env-file .env.prod --profile prod -p heart-plugin -f docker-compose.yml -f artifacts/ui-aaa-compose.override.json up -d --no-deps frontend`.
+- Ideas for next round: more agy art once quota resets (hex icon glyph set, Tek Rex bay, per-category slot frames), animated press/ripple on cart actions, pixel-sampler fix.
+
 ## One theme + AAA pass (all pages, menus, popups) — 2026-10-27 (DEPLOYED to frontend-1/2; uncommitted)
 
 - Owner: unify every page/menu/popup and calm the busy background, target WCAG 2.2 AAA.
