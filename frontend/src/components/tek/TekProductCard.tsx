@@ -33,7 +33,7 @@ export function TekProductCard({ product }: { product: TekProduct }) {
       <div className="tk-card-row">
         <span className="tk-price tk-mono">
           <IrisCoin size={22} />{product.price.toLocaleString()}
-          <i>IC</i>
+          <i className="tk-sr">IC</i>
         </span>
         <Link href={href} className="tk-add" aria-label={`เลือกเซิร์ฟเวอร์และซื้อ ${product.name}`}>
           <Plus size={18} aria-hidden="true" />

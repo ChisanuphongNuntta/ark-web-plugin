@@ -185,8 +185,7 @@ export default function OrderDetailPage() {
               <p className="text-[10px] uppercase tracking-[0.3em] text-iris-gold">Backend charged amount</p>
               <div className="mt-3 flex items-center gap-2 font-mono text-3xl font-black text-iris-gold">
                 <IrisCoin className="h-7 w-7" />
-                {order.totalPrice.toLocaleString()} IC
-              </div>
+                {order.totalPrice.toLocaleString()}<span className="tk-sr">IC</span>\1              </div>
               <p className="mt-2 text-[11px] leading-relaxed text-iris-muted">
                 ยอดนี้เป็นค่าที่ Backend ส่งกลับมา หน้าเว็บไม่คำนวณราคาสุดท้ายเอง
               </p>

@@ -92,7 +92,7 @@ export function StripeTopup() {
               {packages.data.map(pkg => <button key={pkg.id} type="button" aria-pressed={chosen?.id === pkg.id} onClick={() => setSelected(pkg.id)} disabled={busy || pending}
                 className={`relative min-h-48 rounded-2xl border p-6 text-left transition-colors disabled:opacity-60 ${chosen?.id === pkg.id ? 'border-iris-gold bg-iris-gold/[0.08]' : 'border-white/10 bg-iris-river/40 hover:border-white/30'}`}>
                 <div className="flex items-center justify-between"><IrisCoin className="text-iris-gold" size={23} />{chosen?.id === pkg.id ? <Check size={18} className="text-iris-gold" /> : <span className="text-xs text-iris-muted">IRIS COIN</span>}</div>
-                <div className="mt-7 text-3xl font-semibold tabular-nums">{count(pkg.totalPoints)} <span className="text-xs font-normal text-iris-muted">IC</span></div>
+                <div className="mt-7 text-3xl font-semibold tabular-nums">{count(pkg.totalPoints)}<IrisCoin size={24} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span></div>
                 <div className="mt-2 flex items-center justify-between gap-2 text-sm"><span className="text-iris-gold">฿{pkg.priceThb}</span><span className="text-xs text-iris-muted">{pkg.bonusPoints !== '0' ? `รวมโบนัส ${count(pkg.bonusPoints)} IC` : pkg.name}</span></div>
               </button>)}
             </div>}

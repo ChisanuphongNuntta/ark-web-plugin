@@ -42,7 +42,7 @@ export function PalworldProductCard({
           <span className="tk-sr"><T text={"ราคาต่อหน่วย"} /></span>
           <span className="tk-price tk-mono">
             <IrisCoin size={22} />{product.price.toLocaleString()}
-            <i>IC</i>
+            <i className="tk-sr">IC</i>
           </span>
         </div>
         <button

@@ -27,6 +27,7 @@ import { marketArtwork } from '@/lib/marketArtwork';
 import { VipBadgePill } from '@/components/vip/VipAvatar';
 import { useVipBadges } from '@/hooks/useVipBadges';
 import { toVipBadge, type VipBadge } from '@/lib/vip';
+import { IrisCoin } from '@/components/ui/IrisCoin';
 
 // Sleek SVG gender glyphs (no emojis)
 const MaleGlyph = ({ className = 'h-3 w-3' }: { className?: string }) => (
@@ -138,7 +139,7 @@ function DinoCard({ listing, sellerVip }: { listing: any; sellerVip?: VipBadge |
             <span className="text-base font-bold text-iris-gold font-mono tabular-nums">
               {listing.price.toLocaleString()}
             </span>
-            <span className="text-[10px] text-iris-gold/80 font-bold">IC</span>
+            <span className="tk-sr">IC</span>
           </div>
         </div>
       </div>
@@ -275,7 +276,7 @@ function MarketplaceContent() {
           <div className="px-4 py-2.5 bg-surface-2 rounded-2xl border border-slate-700/60 shadow-lg text-center">
             <span className="text-[10px] text-iris-muted font-semibold uppercase block"><T text={"มูลค่าการเทรดสะสม · Volume"} /></span>
             <span className="text-base font-bold text-iris-gold font-mono tabular-nums">
-              {(statsData?.stats?.totalVolume || 0).toLocaleString()} IC
+              {(statsData?.stats?.totalVolume || 0).toLocaleString()}<IrisCoin size={16} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span>
             </span>
           </div>
           <div className="flex items-center gap-2">

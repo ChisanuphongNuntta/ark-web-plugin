@@ -231,7 +231,7 @@ export function Navbar() {
             {user ? (
               <Link href="/topup" onClick={() => setMobileOpen(false)}>
                 <span><T text="กระเป๋า IC" /></span>
-                <span className="tk-mono">{user.pointsBalance.toLocaleString()} IC</span>
+                <span className="tk-mono inline-flex items-center gap-1">{user.pointsBalance.toLocaleString()}<IrisCoin size={20} /><span className="tk-sr">IC</span></span>
               </Link>
             ) : null}
             <Link href="/" className={pathname === '/' ? 'active' : undefined} onClick={() => setMobileOpen(false)}>{t('หน้าแรก', 'Home')}</Link>

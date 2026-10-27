@@ -227,7 +227,7 @@ export function CartDrawer() {
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap font-mono text-lg font-bold text-iris-gold">
                     <IrisCoin className="h-5 w-5 text-iris-gold" />
-                    <span>~{estimateSubtotal.toLocaleString()} IC</span>
+                    <span>~{estimateSubtotal.toLocaleString()}</span><span className="tk-sr">IC</span>
                   </div>
                 </div>
 

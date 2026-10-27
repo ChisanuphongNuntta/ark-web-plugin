@@ -199,7 +199,7 @@ export default function CartPage() {
           <div className="rounded-2xl border border-white/5 bg-black/40 p-5 text-left text-xs space-y-3">
             <div className="flex justify-between gap-4">
               <span className="text-iris-muted"><T text={"ยอดที่หักจริง (Backend Total):"} /></span>
-              <span className="font-mono font-bold text-iris-gold">{authoritativeTotal ?? '—'} IC</span>
+              <span className="font-mono font-bold text-iris-gold">{authoritativeTotal ?? '—'}<IrisCoin size={16} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span></span>
             </div>
             <div>
               <p className="mb-1 text-iris-muted"><T text={"หมายเลขคำสั่งซื้อ ("} />{orderIds.length}<T text={" รายการ):"} /></p>
@@ -318,7 +318,7 @@ export default function CartPage() {
                     <div className="mt-1.5 flex items-center gap-1.5 font-mono text-xs font-bold text-iris-gold">
                       <IrisCoin className="h-4 w-4 text-iris-gold" />
                       <span>
-                        <span className="tabular-nums">{product.price.toLocaleString()}</span> IC <span className="font-sans text-[10px] text-iris-muted font-normal"><T text={"ต่อหน่วย"} /></span>
+                        <span className="tabular-nums">{product.price.toLocaleString()}</span><span className="tk-sr">IC</span> <span className="font-sans text-[10px] text-iris-muted font-normal"><T text={"ต่อหน่วย"} /></span>
                       </span>
                     </div>
                   </div>
@@ -394,7 +394,7 @@ export default function CartPage() {
               <div className="flex justify-between gap-4">
                 <span className="text-iris-muted"><T text={"ประมาณการจาก catalog:"} /></span>
                 <span className="font-mono text-white/70 tabular-nums">
-                  {productsLoading ? '…' : `~${estimateSubtotal.toLocaleString()} IC`}
+                  {productsLoading ? '…' : <>{`~${estimateSubtotal.toLocaleString()}`}<IrisCoin size={16} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span></>}
                 </span>
               </div>
               <div className="flex justify-between gap-4 border-t border-slate-700/40 pt-2 text-sm font-bold text-iris-pearl">
@@ -403,7 +403,7 @@ export default function CartPage() {
                   {previewMutation.isPending && authoritativeTotal === null ? (
                     <Loader2 className="inline h-4 w-4 animate-spin" />
                   ) : authoritativeTotal !== null ? (
-                    `${authoritativeTotal} IC`
+                    <>{authoritativeTotal}<IrisCoin size={18} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span></>
                   ) : (
                     '—'
                   )}
@@ -421,7 +421,7 @@ export default function CartPage() {
                 <div className="flex justify-between gap-4">
                   <span className="text-iris-muted"><T text={"ยอดใช้ได้ (Available):"} /></span>
                   <span className="font-mono font-bold text-iris-cyan">
-                    {isWalletLoading ? '…' : isWalletError ? 'โหลดไม่สำเร็จ' : `${availableBalance ?? '—'} IC`}
+                    {isWalletLoading ? '…' : isWalletError ? 'โหลดไม่สำเร็จ' : <>{availableBalance ?? '—'}<IrisCoin size={16} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span></>}
                   </span>
                 </div>
 

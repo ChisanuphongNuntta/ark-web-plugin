@@ -462,7 +462,7 @@ export function HomeExperience() {
                       ? Number(walletData.accounts?.available ?? 0).toLocaleString()
                       : Number(user.pointsBalance ?? 0).toLocaleString()}
                   </span>
-                  <span className="text-xs text-iris-gold/80 font-bold uppercase">IC</span>
+                  <IrisCoin size={22} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span>
                 </div>
 
                 {walletData && (
@@ -470,13 +470,13 @@ export function HomeExperience() {
                     <div>
                       <p><T text={"เงินประกัน P2P:"} /></p>
                       <p className="font-mono font-bold text-white mt-0.5">
-                        {Number(walletData.accounts?.held ?? 0).toLocaleString()} IC
+                        {Number(walletData.accounts?.held ?? 0).toLocaleString()}<IrisCoin size={14} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span>
                       </p>
                     </div>
                     <div>
                       <p><T text={"โบนัสเครดิต:"} /></p>
                       <p className="font-mono font-bold text-white mt-0.5">
-                        {Number(walletData.accounts?.promotional ?? 0).toLocaleString()} IC
+                        {Number(walletData.accounts?.promotional ?? 0).toLocaleString()}<IrisCoin size={14} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span>
                       </p>
                     </div>
                   </div>

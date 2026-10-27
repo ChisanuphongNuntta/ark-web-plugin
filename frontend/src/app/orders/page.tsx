@@ -317,7 +317,7 @@ function OrderListCard({ order }: { order: Order }) {
 
             <div className="flex items-center justify-end gap-1.5 font-mono font-bold text-iris-gold">
               <IrisCoin className="h-4 w-4" />
-              <span>{order.totalPrice.toLocaleString()} IC</span>
+              <span>{order.totalPrice.toLocaleString()}</span><span className="tk-sr">IC</span>
             </div>
           </div>
         </div>

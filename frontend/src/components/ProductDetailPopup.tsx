@@ -307,7 +307,7 @@ export default function ProductDetailPopup({
               <div className="p-4 rounded-2xl bg-black/40 border border-white/5 text-xs space-y-2">
                 <div className="flex justify-between">
                   <span className="text-iris-muted">ราคาต่อชิ้น:</span>
-                  <span className="font-mono font-bold text-iris-pearl">{product.price.toLocaleString()} IC</span>
+                  <span className="inline-flex items-center gap-1 font-mono font-bold text-iris-pearl">{product.price.toLocaleString()}<IrisCoin size={16} /><span className="tk-sr">IC</span></span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-iris-muted">จำนวน:</span>
@@ -317,7 +317,7 @@ export default function ProductDetailPopup({
                   <span className="font-bold text-iris-pearl">ราคารวมที้งสิ้น:</span>
                   <div className="flex items-center gap-1.5 font-mono text-xl font-bold text-gradient-gold">
                     <IrisCoin className="h-5 w-5 text-iris-gold" />
-                    <span>{totalPrice.toLocaleString()} IC</span>
+                    <span>{totalPrice.toLocaleString()}</span><span className="tk-sr">IC</span>
                   </div>
                 </div>
               </div>

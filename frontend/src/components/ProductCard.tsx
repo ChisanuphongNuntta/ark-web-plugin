@@ -87,7 +87,7 @@ export function ProductCard({ product }: { product: ProductCardProduct }) {
             <span className="text-lg font-semibold tabular-nums text-iris-pearl">
               {product.price.toLocaleString()}
             </span>
-            <span className="text-xs text-iris-muted">IC</span>
+            <span className="tk-sr">IC</span>
           </div>
         </div>
         <Link

@@ -246,7 +246,7 @@ export function LegacyTopupPage() {
             <div className="space-y-2 rounded-xl border border-white/5 bg-black/40 p-4 text-xs">
               <div className="flex justify-between">
                 <span className="text-iris-muted">แพ็คเกจเหรียญ:</span>
-                <span className="font-bold text-iris-pearl">{totalCoinsToReceive.toLocaleString()} IC</span>
+                <span className="font-bold text-iris-pearl">{totalCoinsToReceive.toLocaleString()}<IrisCoin size={16} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span></span>
               </div>
               <div className="flex justify-between">
                 <span className="text-iris-muted">ยอดเงินที่โอน:</span>
@@ -444,8 +444,7 @@ export function LegacyTopupPage() {
               <div>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none">ยอดคงเหลือ</p>
                 <p className="text-base font-black text-amber-300 leading-tight">
-                  {user.pointsBalance?.toLocaleString() || 0}{' '}
-                  <span className="text-[10px] font-bold text-amber-400/80">IC</span>
+                  {user.pointsBalance?.toLocaleString() || 0}<IrisCoin size={18} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span>
                 </p>
               </div>
               <Link href="/orders" className="ml-1">
@@ -1006,7 +1005,7 @@ export function LegacyTopupPage() {
                   แพ็คเกจที่เลือก: <span className="text-white">{currentTierMeta.name} PACK</span>
                 </p>
                 <p className="text-xs font-black text-amber-300">
-                  {totalCoinsToReceive.toLocaleString()} IC{' '}
+                  {totalCoinsToReceive.toLocaleString()}<IrisCoin size={16} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span>{' '}
                   <span className="text-[10px] font-medium text-emerald-400">
                     ({currentPkg.coins.toLocaleString()} + {currentPkg.bonus.toLocaleString()} โบนัส)
                   </span>

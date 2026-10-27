@@ -87,7 +87,7 @@ body.iris-xmas {
 .iris-xmas .iris-loading-screen { background: radial-gradient(ellipse at center,#47142b,#080508 65%); }
 .iris-xmas .iris-loading-track > span { background: linear-gradient(90deg,transparent,#ffd18c,transparent); }
 .iris-xmas :is(button,a,input,select,textarea):focus-visible { outline-color: #ffcf70; }
-@media(max-width:1599px) {
+@media(max-width:1399px) {
   .iris-xmas .tk-nav { display: none; }
   .iris-xmas .tk-burger { display: grid; }
   .iris-xmas .tk-top-in { justify-content: space-between; }

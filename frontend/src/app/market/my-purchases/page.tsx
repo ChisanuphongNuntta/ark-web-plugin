@@ -10,6 +10,7 @@ import { AnimalMetadata } from '@/components/market/AnimalMetadata';
 import { AdminNotice } from '@/components/admin';
 import { apiErrorText } from '@/lib/adminConsoleApi';
 import { marketGender } from '@/lib/market';
+import { IrisCoin } from '@/components/ui/IrisCoin';
 import {
   Loader2,
   ChevronLeft,
@@ -111,8 +112,7 @@ export default function MyPurchasesPage() {
               {/* Price & Delivery Details */}
               <div className="text-right">
                 <p className="text-xl font-black text-iris-gold">
-                  {purchase.price.toLocaleString()}{' '}
-                  <span className="text-xs font-bold text-iris-gold/70">IC</span>
+                  {purchase.price.toLocaleString()}<IrisCoin size={18} className="ml-1 inline-block align-text-bottom" /><span className="tk-sr">IC</span>
                 </p>
                 <p className="text-[11px] text-iris-muted mt-0.5">
                   ซื้อเมื่อ {new Date(purchase.soldAt || purchase.createdAt).toLocaleDateString('th-TH')}

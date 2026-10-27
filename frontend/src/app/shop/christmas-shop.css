@@ -89,7 +89,7 @@ body:has(.tk-christmas-shop) .tk-top > .tk-wrap { width: min(1460px, calc(100% -
 .iris-coin { filter: drop-shadow(0 1px 2px #0009); }
 .tk-christmas-shop :is(button,a,input):focus-visible { outline: 2px solid #ffd27b; outline-offset: 4px; }
 @media(min-width:1600px) { .tk-christmas-shop .tk-shop-hero { min-height: 510px; } }
-@media(max-width:1599px) {
+@media(max-width:1399px) {
   body:has(.tk-christmas-shop) .tk-nav { display: none; }
   body:has(.tk-christmas-shop) .tk-burger { display: grid; }
   body:has(.tk-christmas-shop) .tk-top-in { justify-content: space-between; }

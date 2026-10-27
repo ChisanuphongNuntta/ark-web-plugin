@@ -363,3 +363,11 @@ body, body.iris-xmas {
   content: ''; position: absolute; top: 0; left: 50%; z-index: 6; width: 84px; height: 3px; transform: translateX(-50%); pointer-events: none;
   background: linear-gradient(90deg, transparent, rgb(var(--gold)) 22%, rgb(var(--gold)) 78%, transparent);
 }
+
+/* Header proportions: the main menu now stays visible from 1400px (it used to collapse into the burger below 1600px,
+   leaving a wide empty bar). Between 1400 and 1599px the search folds into its icon button so a signed-in header
+   (wallet, cart, bell, avatar) still fits; the full 210px search field returns from 1600px. */
+@media (min-width: 1400px) and (max-width: 1599px) {
+  .tk-top .tk-search { display: none; }
+  .tk-top .tk-ib[data-mobile-search] { display: grid !important; }
+}

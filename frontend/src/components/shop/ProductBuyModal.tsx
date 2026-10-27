@@ -35,6 +35,7 @@ import { useCartStore } from '@/lib/store';
 import { Badge } from '@/components/ui/Badge';
 import { ProductArtwork } from '@/components/ProductArtwork';
 import { categoryLabel } from '@/lib/catalogLabels';
+import { IrisCoin } from '@/components/ui/IrisCoin';
 
 const qualityConfig: Record<
   number,
@@ -233,7 +234,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
                 <span className="font-mono text-2xl font-bold tabular-nums text-iris-pearl">
                   {product.price.toLocaleString()}
                 </span>
-                <span className="text-xs font-semibold text-iris-gold">IC</span>
+                <IrisCoin size={22} /><span className="tk-sr">IC</span>
               </div>
             </div>
           </div>
@@ -321,7 +322,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
           <div className="flex items-center justify-between border-t border-slate-700/40 pt-4">
             <div>
               <p className="text-xs font-bold text-iris-pearl"><T text={"จำนวนสินค้า · Quantity"} /></p>
-              <p className="text-[11px] text-iris-muted"><T text={"ยอดรวม:"} /><span className="font-mono text-sm font-bold text-iris-gold tabular-nums">{totalPrice.toLocaleString()} IC</span>
+              <p className="text-[11px] text-iris-muted"><T text={"ยอดรวม:"} /><span className="inline-flex items-center gap-1 font-mono text-sm font-bold text-iris-gold tabular-nums">{totalPrice.toLocaleString()}<IrisCoin size={18} /><span className="tk-sr">IC</span></span>
               </p>
             </div>
             <div className="flex items-center rounded-md border border-white/15 bg-surface-2 p-1">
