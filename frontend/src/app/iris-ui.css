@@ -371,3 +371,8 @@ body, body.iris-xmas {
   .tk-top .tk-search { display: none; }
   .tk-top .tk-ib[data-mobile-search] { display: grid !important; }
 }
+
+/* hex controls draw their own rim; legacy rectangular inset lines (top edge) must not show */
+:is(.tk-chip, .tk-btn, .btn-primary, .btn-secondary, .tk-ib, .tk-add, .tk-av, .tk-music-btn, .tk-wallet),
+.tk-christmas-shop :is(.tk-chip, .tk-chip.on, .tk-chip.sm, .tk-shop-hero .tk-btn.ghost),
+.tk-depot-search .tk-chip.sm { box-shadow: none !important; }

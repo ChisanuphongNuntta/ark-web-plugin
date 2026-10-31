@@ -1,5 +1,11 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## Chip top line + search-query label removed — 2026-10-31 (DEPLOYED)
+
+- Hex chips/buttons showed a straight 1px line across the top: legacy `box-shadow: inset 0 1px` rules (christmas-shop.css) ignore the hex clip. `iris-ui.css` now sets `box-shadow: none !important` on hex controls.
+- Shop: removed the "Search query: ..." label next to the result count (it also leaked a raw `&ldquo;` entity through `<T>`). The "found N items" line stays.
+- DEPLOYED: image `heart-plugin-frontend:ui-chips-check`, `artifacts/ui-chips-compose.override.json`. ROLLBACK: `ui-timeline-check` (`artifacts/ui-chips-previous-image.txt`).
+
 ## Event timeline fix + stack recovery — 2026-10-31 (DEPLOYED)
 
 - Event page: the timeline icon dot was 3-5px off the line, and my gradient-flatten rule in `iris-ui.css` matched `before:bg-gradient-to-b` and painted the whole card gutter solid red. The rule now matches only real `bg-gradient-to-*` tokens; dot offsets are `-left-[25px] sm:-left-[31px]`. Audit r23: 0 text/target/focus failures.

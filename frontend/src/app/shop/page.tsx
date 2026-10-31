@@ -533,10 +533,6 @@ function Catalog() {
                     ? 'ยังโหลดรายการไม่ได้'
                     : `พบ ${filteredProducts.length.toLocaleString()} รายการ (จากทั้งหมด ${data?.pagination.total.toLocaleString() ?? 0})`}
                 </span>
-                {searchParam && (
-                  <span className="text-iris-cyan"><T text={"คำค้นหา: &ldquo;"} />{searchParam}&rdquo;
-                  </span>
-                )}
               </div>
 
               {/* Product Grid / States */}
