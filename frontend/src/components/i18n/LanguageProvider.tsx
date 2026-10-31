@@ -1,13 +1,12 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
-import english from '@/lib/i18n/en.json';
+import { translateText } from '@/lib/i18n/translate';
+import { LanguageDomTranslator } from './LanguageDomTranslator';
 
 export type Language = 'th' | 'en';
 const KEY = 'iris-language';
 const EVENT = 'iris-language-change';
-const dictionary = english as Record<string, string>;
-const normalize = (text: string) => text.replace(/\s+/g, ' ').trim();
 
 function readLanguage(): Language {
   if (memoryOnly) return memoryLanguage;
@@ -34,14 +33,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(() => ({
     language,
     setLanguage: chooseLanguage,
-    t: (text: string, fallback?: string) => {
-      if (language === 'th') return text;
-      const translated = dictionary[normalize(text)] ?? fallback;
-      if (!translated) return text;
-      return `${/^\s/.test(text) ? ' ' : ''}${translated}${/\s$/.test(text) ? ' ' : ''}`;
-    },
+    t: (text: string, fallback?: string) => (language === 'th' ? text : translateText(text, fallback)),
   }), [language]);
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+  return <LanguageContext.Provider value={value}><LanguageDomTranslator language={language} />{children}</LanguageContext.Provider>;
 }
 
 export function useLanguage() { return useContext(LanguageContext); }

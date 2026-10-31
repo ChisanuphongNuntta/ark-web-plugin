@@ -1,0 +1,15 @@
+[
+  { "re": "^พบ ([\\d,]+) รายการ \\(จากทั้งหมด ([\\d,]+)\\)$", "en": "Found $1 items (of $2 total)" },
+  { "re": "^รายการกิจกรรมวันที่ (\\d+) (.+)$", "en": "Events on $2 $1" },
+  { "re": "^ดูรายละเอียดและซื้อ (.+)$", "en": "View details and buy $1" },
+  { "re": "^เลือกเซิร์ฟเวอร์และซื้อ (.+)$", "en": "Choose a server and buy $1" },
+  { "re": "^ดูรายละเอียดสินค้า (.+)$", "en": "View details of $1" },
+  { "re": "^สั่งซื้อแพ็กเกจ (.+)$", "en": "Order the $1 package" },
+  { "re": "^คัดลอกที่อยู่ (.+)$", "en": "Copy address $1" },
+  { "re": "^เข้าเกม (.+) ผ่าน Steam$", "en": "Join $1 via Steam" },
+  { "re": "^ระดับ (\\d+)$", "en": "Level $1" },
+  { "re": "^ทดลองรับรางวัล (Free|Premium) ระดับ (\\d+)$", "en": "Try claiming the $1 reward at level $2" },
+  { "re": "^([\\d,]+) ชม\\.$", "en": "$1 h" },
+  { "re": "^กระเป๋า (.+) Iris Coin$", "en": "Wallet $1 Iris Coin" },
+  { "re": "^ตะกร้า (\\d+) รายการ$", "en": "Cart, $1 items" }
+]

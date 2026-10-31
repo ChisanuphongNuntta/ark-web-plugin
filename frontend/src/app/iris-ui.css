@@ -376,3 +376,11 @@ body, body.iris-xmas {
 :is(.tk-chip, .tk-btn, .btn-primary, .btn-secondary, .tk-ib, .tk-add, .tk-av, .tk-music-btn, .tk-wallet),
 .tk-christmas-shop :is(.tk-chip, .tk-chip.on, .tk-chip.sm, .tk-shop-hero .tk-btn.ghost),
 .tk-depot-search .tk-chip.sm { box-shadow: none !important; }
+
+
+/* search and wallet get the same plating as chips and icon buttons, and share the wallet's gold rim */
+.iris-xmas .tk-search:not(:focus-within)::before { background: rgb(var(--gold) / 0.55); }
+.iris-xmas :is(.tk-search, .tk-wallet)::after { background-color: rgb(var(--s-2)); background-image: var(--bevel), var(--plate-ghost); background-size: auto, 170px; }
+.iris-xmas .tk-search { color: rgb(var(--gold)); }
+.iris-xmas .tk-search input { color: rgb(var(--ink)); }
+.iris-xmas .tk-search input::placeholder { color: rgb(var(--ink)); opacity: 1; }

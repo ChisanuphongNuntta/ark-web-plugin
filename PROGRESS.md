@@ -1,5 +1,15 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## Language switch coverage + search box plating — 2026-11-01 (PREVIEW ONLY, NOT DEPLOYED)
+
+- Owner: switching to English left page content Thai. Cause: translation was a hand-curated dictionary (`lib/i18n/en.json`, 457 entries) applied only where text was wrapped in `<T>`/`t()`; a crawl in English mode found 372 unique Thai strings across 12 pages (17-71 per page), mostly unwrapped literals, aria-labels and placeholders.
+- Fix: `lib/i18n/translate.ts` (shared lookup: dictionary, then templates in `patterns.json`), `components/i18n/LanguageDomTranslator.tsx` (English mode only: translates text nodes and placeholder/aria-label/title/alt that match the dictionary or a template, watches DOM changes, restores Thai originals on switch back; user content and product names are untouched because only exact matches change), 353 new dictionary entries (en.json now 809) and 13 templates (counts, levels, "view details and buy X").
+- Result (preview, mocked signed-in user): 20 user pages show 0 Thai strings in English mode (was 372 unique); only the "ภาษาไทย" language-name label stays Thai on purpose. TH -> EN -> TH round trip restores the text, 0 page/hydration errors. `/design-system` (internal) still has about 64 Thai strings, not translated.
+- Search box (`iris-ui.css`): now uses the same plate texture and gold rim as the wallet/chips (it was flat with a lavender rim). Owner's wording "UI ค้นหาเลย" was ambiguous; no overlap/overflow could be reproduced (10 px gap to the language switch at 1150-1920 px), so this treats it as a style mismatch.
+- AAA audit on the preview: 11,389 texts, 0 failures, 0 small targets, 0 errors.
+- Known: dynamic API text (product names, event titles from the DB) stays in its stored language; page `<title>`/metadata is not translated; `/support` shows an internal dev note to users ("Frontend uses mock state...") which should be removed from the page.
+- Image `heart-plugin-frontend:i18n-preview`; deploy needs owner approval.
+
 ## Performance pass 1 (baseline + first fixes) — 2026-10-31 (DEPLOYED)
 
 - Baseline (Playwright, mobile 390px, slow-4G 1.6 Mbps/150 ms + 4x CPU; `scratchpad/audit/weight-slow.cjs`): home LCP ~5.2 s, FCP ~3.2 s; other pages LCP ~1-3 s. Transfer per page: JS ~1.2 MB raw (about 400 KB gzip), CSS 233 KB raw, images only 100-900 KB. nginx already gzips and sets immutable cache on `/_next/static`.
