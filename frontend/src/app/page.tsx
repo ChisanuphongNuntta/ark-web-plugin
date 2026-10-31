@@ -18,6 +18,9 @@ const organizationSchema = {
 export default function HomePage() {
   return (
     <>
+      {/* The hero is a CSS background, so the browser would only find it after the stylesheet; hint it early. */}
+      <link rel="preload" as="image" href="/images/seasonal/christmas-depot-v2-mobile.webp" media="(max-width: 640px)" fetchPriority="high" />
+      <link rel="preload" as="image" href="/images/seasonal/christmas-depot-v2.webp" media="(min-width: 641px)" fetchPriority="high" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
       <TekHome />
     </>

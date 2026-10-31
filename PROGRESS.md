@@ -1,5 +1,13 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## Performance pass 1 (baseline + first fixes) — 2026-10-31 (DEPLOYED)
+
+- Baseline (Playwright, mobile 390px, slow-4G 1.6 Mbps/150 ms + 4x CPU; `scratchpad/audit/weight-slow.cjs`): home LCP ~5.2 s, FCP ~3.2 s; other pages LCP ~1-3 s. Transfer per page: JS ~1.2 MB raw (about 400 KB gzip), CSS 233 KB raw, images only 100-900 KB. nginx already gzips and sets immutable cache on `/_next/static`.
+- Correction: the 481 MB in `public/images` is 3,382 small catalog files (mostly < 100 KB, already WebP) and is NOT page weight. The real cost is JS parse + the late-discovered hero background.
+- Changes: hero `christmas-depot-v2(-mobile).webp` re-encoded q76 (407 -> 263 KB, 242 -> 169 KB); home preloads the hero (`app/page.tsx`); `CartDrawer` (the only global framer-motion user) loads on first open via `components/CartDrawerLazy.tsx`.
+- Result in preview (same conditions, single run): home LCP 5.2 -> 4.6 s, JS 1252 -> 1110 KB. Cart drawer verified with a mocked signed-in user (opens, focus inside dialog, Esc closes, reopens, 0 page errors).
+- DEPLOYED: image `heart-plugin-frontend:perf-check`, `artifacts/perf-compose.override.json`. ROLLBACK: `ui-chips-check` (`artifacts/perf-previous-image.txt`). Next levers: the Thai string tables shipped in several chunks, axios (63 KB), render-blocking CSS (8 files), AppleDuoHero's framer-motion on /shop. `lib/socket.ts` lazy-loading judged too risky for the gain (43 KB).
+
 ## Chip top line + search-query label removed — 2026-10-31 (DEPLOYED)
 
 - Hex chips/buttons showed a straight 1px line across the top: legacy `box-shadow: inset 0 1px` rules (christmas-shop.css) ignore the hex clip. `iris-ui.css` now sets `box-shadow: none !important` on hex controls.

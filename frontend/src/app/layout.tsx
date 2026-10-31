@@ -16,7 +16,7 @@ import { TekMusic } from '@/components/tek/TekMusic';
 import { CookieConsent } from '@/components/CookieConsent';
 import { Footer } from '@/components/Footer';
 import ChatWidget from '@/components/ChatWidget';
-import { CartDrawer } from '@/components/CartDrawer';
+import { CartDrawerLazy } from '@/components/CartDrawerLazy';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
 import { SITE_URL } from '@/lib/site';
 
@@ -80,7 +80,7 @@ export default function RootLayout({
           <TekMusic />
           <CookieConsent />
           <ChatWidget />
-          <CartDrawer />
+          <CartDrawerLazy />
         </Providers>
       </body>
     </html>
