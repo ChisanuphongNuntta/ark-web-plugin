@@ -13,6 +13,8 @@ import { canTransition } from '../services/orderState.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
 import serverQueryService from '../services/serverQuery.service.js';
 import { releaseBackoffMs, releaseStreaks } from '../services/deliveryRelease.service.js';
+import { ACTIVE_CREDENTIAL_INCLUDE, ANY_SERVER_FLAG, canRetarget, type DeliveryServer } from '../services/deliveryTarget.service.js';
+import { recordLogin } from '../services/playerPresence.service.js';
 import vipService, {
   PERMISSIONS_CAPABILITY,
   PERMISSION_DELIVERY_TYPES,
@@ -368,6 +370,56 @@ export class PluginController {
     }
   }
 
+  // "Auto" deliveries follow the buyer: when they log into a server, any still-pending order delivery of theirs
+  // that was bought as auto (payload.anyServer) and sits on another server moves here, provided this server can
+  // deliver it (capabilities, ready). Jobs already leased or finished are never touched. The Order, OrderItem and
+  // Fulfillment rows move with the job so every screen shows the same server. Never throws; returns the number moved.
+  async retargetAnyServerJobs(serverId: number, steamId: string): Promise<number> {
+    try {
+      const candidates = await prisma.deliveryJob.findMany({
+        where: {
+          playerSteamId: steamId,
+          status: 'pending',
+          serverId: { not: serverId },
+          deliveryType: { in: [...ORDER_BACKED_DELIVERY_TYPES] },
+          payload: { path: [ANY_SERVER_FLAG], equals: true },
+        },
+        select: { id: true, referenceId: true },
+        take: 100,
+      });
+      if (candidates.length === 0) return 0;
+      const target = await prisma.server.findUnique({ where: { id: serverId }, include: ACTIVE_CREDENTIAL_INCLUDE });
+      if (!target) return 0;
+      const orders = await prisma.order.findMany({
+        where: { id: { in: candidates.map((job) => job.referenceId) } },
+        select: { id: true, product: { select: { requiredCapabilities: true } } },
+      });
+      const capabilities = new Map(orders.map((order) => [order.id, order.product?.requiredCapabilities ?? []]));
+      const movable = candidates.filter((job) => canRetarget(capabilities.get(job.referenceId) ?? [], target as DeliveryServer));
+      if (movable.length === 0) return 0;
+      const ids = movable.map((job) => job.id);
+      const moved = await prisma.$transaction(async (tx) => {
+        await tx.deliveryJob.updateMany({
+          where: { id: { in: ids }, status: 'pending', serverId: { not: serverId } },
+          data: { serverId, nextRetryAt: null },
+        });
+        const now = await tx.deliveryJob.findMany({ where: { id: { in: ids }, serverId }, select: { id: true, referenceId: true } });
+        const orderIds = now.map((job) => job.referenceId);
+        if (orderIds.length > 0) {
+          await tx.order.updateMany({ where: { id: { in: orderIds } }, data: { serverId } });
+          await tx.orderItem.updateMany({ where: { legacyOrderId: { in: orderIds } }, data: { serverId } });
+          await tx.fulfillment.updateMany({ where: { orderId: { in: orderIds } }, data: { serverId } });
+        }
+        return now.map((job) => job.id);
+      });
+      if (moved.length > 0) await releaseStreaks.clear(moved);
+      return moved.length;
+    } catch (error) {
+      console.error('[delivery] auto retarget failed:', error);
+      return 0;
+    }
+  }
+
   // Get player by Steam ID
   getPlayerBySteamId = async (req: PluginRequest, res: Response, next: NextFunction) => {
     try {
@@ -389,7 +441,11 @@ export class PluginController {
 
       // The plugin calls this on player login: deliveries released while they were offline
       // become claimable now instead of waiting out their release backoff.
-      if (req.serverId) await this.resetOfflineBackoff(req.serverId, steamId);
+      if (req.serverId) {
+        await recordLogin(steamId, req.serverId);
+        await this.retargetAnyServerJobs(req.serverId, steamId);
+        await this.resetOfflineBackoff(req.serverId, steamId);
+      }
 
       // Get pending orders for this player on this server
       const pendingOrders = await prisma.order.count({
@@ -717,6 +773,9 @@ export class PluginController {
             where: { orderId: job.referenceId },
             data: { status: 'delivered', deliveredAt: now, receiptId: localJournalReceiptId, lastError: null },
           });
+        } else if (job.deliveryType === 'dino_return') {
+          const returned = await tx.dinoListing.updateMany({ where: { id: job.referenceId, status: 'cancelled', deliveryStatus: 'return_pending' }, data: { deliveryStatus: 'returned', deliveredAt: now } });
+          if (returned.count !== 1) throw new AppError('Dino return state changed',409);
         } else if (job.deliveryType === 'dino_marketplace') {
           const listing = await tx.dinoListing.findUniqueOrThrow({ where: { id: job.referenceId } });
           if (!listing.buyerId || listing.deliveryStatus !== 'pending' || listing.status !== 'sold') {
@@ -1033,7 +1092,7 @@ export class PluginController {
       if (process.env.ENABLE_DINO_TRADING !== 'true') {
         throw new AppError('Dino trading is disabled', 503);
       }
-      const { species, level, sellerSteamId } = req.body;
+      const { species, level, sellerSteamId, idempotencyKey, dinoDataSha256 } = req.body;
 
       if (
         typeof species !== 'string' || species.length < 1 || species.length > 200 ||
@@ -1041,6 +1100,19 @@ export class PluginController {
         typeof sellerSteamId !== 'string' || !/^\d{17}$/.test(sellerSteamId)
       ) {
         throw new AppError('Species, level, and seller Steam ID are required', 400);
+      }
+      const seller = await prisma.user.findUnique({ where: { steamId: sellerSteamId } });
+      const cleanSpecies = (species || '').replace(/['"]/g, '').trim();
+      if (!seller || seller.isBanned) throw new AppError('Link an active web account before uploading dinos', 403);
+      if (idempotencyKey !== undefined && (typeof idempotencyKey !== 'string' || !/^[A-Za-z0-9:._-]{8,128}$/.test(idempotencyKey))) throw new AppError('Invalid upload idempotency key', 400);
+      if (dinoDataSha256 !== undefined && (typeof dinoDataSha256 !== 'string' || !/^[a-f0-9]{64}$/.test(dinoDataSha256))) throw new AppError('Invalid snapshot digest', 400);
+      const prepareKey = idempotencyKey ? `${req.serverId}:${sellerSteamId}:${idempotencyKey}` : null;
+      if (prepareKey) {
+        const prior = await prisma.dinoAssetLock.findUnique({ where: { prepareKey } });
+        if (prior) {
+          if (prior.species !== cleanSpecies || prior.level !== Number(level) || prior.snapshotSha256 !== (dinoDataSha256 ?? null)) throw new AppError('Upload idempotency key conflict',409);
+          return res.json({ assetLockId: prior.id, expiresAt: prior.expiresAt.toISOString() });
+        }
       }
       const originServer = await prisma.server.findUnique({ where: { id: req.serverId! } });
       if (
@@ -1053,7 +1125,8 @@ export class PluginController {
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes lock
       const lock = await prisma.dinoAssetLock.create({
         data: {
-          species,
+          species: cleanSpecies,
+          prepareKey, snapshotSha256: dinoDataSha256 ?? null,
           level: Number(level),
           sellerSteamId,
           originServerId: req.serverId!,
@@ -1080,6 +1153,7 @@ export class PluginController {
         assetLockId,
         assetFingerprint,
         price,
+        listingMode, uploadBatchId, batchId,
         blueprintPath,
         dinoName,
         gender,
@@ -1096,10 +1170,17 @@ export class PluginController {
         dinoDataSize,
       } = req.body;
 
+      const draft = listingMode === 'draft' || price === undefined || price === null || price === 0;
+      const listingPrice = draft ? 0 : Number(price);
+      const batch = uploadBatchId ?? batchId ?? null;
+      if (listingMode !== undefined && !['draft','listed'].includes(listingMode)) throw new AppError('Invalid listing mode',400);
+      if (batch !== null && (typeof batch !== 'string' || !/^[A-Za-z0-9:._-]{1,64}$/.test(batch))) throw new AppError('Invalid uploadBatchId',400);
+      const canonical = (v: any): string => Array.isArray(v) ? `[${v.map(canonical).join(',')}]` : v && typeof v === 'object' ? `{${Object.keys(v).sort().map(k => `${JSON.stringify(k)}:${canonical(v[k])}`).join(',')}}` : JSON.stringify(v);
+      const requestHash = crypto.createHash('sha256').update(canonical(req.body)).digest('hex');
       if (
         typeof assetLockId !== 'string' ||
         typeof assetFingerprint !== 'string' || !/^[a-f0-9]{16,128}$/i.test(assetFingerprint) ||
-        !Number.isSafeInteger(Number(price)) || Number(price) < 1 || Number(price) > 2_000_000_000
+        !Number.isSafeInteger(listingPrice) || listingPrice < 0 || listingPrice > 2_000_000_000
       ) {
         throw new AppError('Asset lock ID, fingerprint, and price are required', 400);
       }
@@ -1113,6 +1194,14 @@ export class PluginController {
         throw new AppError('A bounded native dino snapshot with SHA-256 is required', 400);
       }
 
+      for (const field of ['baseHealth','baseStamina','baseOxygen','baseFood','baseWeight','baseDamage','baseSpeed','addedHealth','addedStamina','addedOxygen','addedFood','addedWeight','addedDamage','addedSpeed','maternalMutations','paternalMutations']) {
+        const value = req.body[field];
+        if (value !== undefined && (!Number.isSafeInteger(value) || value < 0 || value > 2000000000)) throw new AppError(`Invalid ${field}`,400);
+      }
+      for (let i=0;i<6;i++) { const value=req.body[`colorRegion${i}`]; if(value!==undefined&&(!Number.isInteger(value)||value < -1||value>255))throw new AppError('Invalid color region',400); }
+      if (imprintQuality!==undefined && (typeof imprintQuality!=='number'||!Number.isFinite(imprintQuality)||imprintQuality<0||imprintQuality>1))throw new AppError('Invalid imprintQuality',400);
+      for (const field of ['blueprintPath','dinoName','imprinterName','motherName','fatherName'])if(req.body[field]!==undefined&&req.body[field]!==null&&(typeof req.body[field]!=='string'||req.body[field].length>1000))throw new AppError(`Invalid ${field}`,400);
+      if(gender!==undefined&&!['Male','Female','Unknown'].includes(gender))throw new AppError('Invalid gender',400);
       const cryopodBuffer = Buffer.from(cryopodData, 'base64');
       const canonicalBase64 = cryopodBuffer.toString('base64');
       const actualSha256 = crypto.createHash('sha256').update(cryopodBuffer).digest('hex');
@@ -1135,8 +1224,9 @@ export class PluginController {
       if (lock.originServerId !== req.serverId) {
         throw new AppError('Asset lock belongs to another server', 403);
       }
+      if (lock.snapshotSha256 && lock.snapshotSha256 !== dinoDataSha256) throw new AppError('Snapshot differs from prepared upload',409);
       if (lock.status === 'confirmed' && lock.listingId) {
-        if (lock.assetFingerprint !== assetFingerprint || lock.price !== Number(price)) {
+        if (lock.assetFingerprint !== assetFingerprint || lock.price !== listingPrice || (lock.confirmRequestHash && lock.confirmRequestHash !== requestHash)) {
           throw new AppError('Confirmed asset lock payload does not match', 409);
         }
         return res.json({ success: true, listingId: lock.listingId, duplicate: true });
@@ -1145,7 +1235,7 @@ export class PluginController {
         throw new AppError(`Asset lock already ${lock.status}`, 409);
       }
 
-      if (lock.expiresAt < new Date()) {
+      if (lock.expiresAt < new Date() && !lock.snapshotSha256) {
         await prisma.dinoAssetLock.update({
           where: { id: assetLockId },
           data: { status: 'expired' },
@@ -1158,14 +1248,14 @@ export class PluginController {
         where: { steamId: lock.sellerSteamId },
       });
 
-      if (!seller) {
+      if (!seller || seller.isBanned) {
         throw new AppError(`Seller with Steam ID ${lock.sellerSteamId} not found`, 404);
       }
 
       const listing = await prisma.$transaction(async (tx) => {
         const claimed = await tx.dinoAssetLock.updateMany({
           where: { id: assetLockId, status: 'prepared', originServerId: req.serverId! },
-          data: { status: 'confirming', assetFingerprint, price: Number(price) },
+          data: { status: 'confirming', assetFingerprint, price: listingPrice, confirmRequestHash: requestHash },
         });
         if (claimed.count !== 1) throw new AppError('Asset lock is no longer confirmable', 409);
 
@@ -1175,7 +1265,9 @@ export class PluginController {
             originServerId: req.serverId!,
             assetLockId,
             assetFingerprint,
-            species: lock.species,
+            uploadBatchId: batch,
+            status: draft ? 'draft' : 'listed',
+            species: (lock.species || '').replace(/['"]/g, '').trim(),
             blueprintPath: blueprintPath || `Blueprint_${lock.species}`,
             dinoName: dinoName || `${lock.species} for Sale`,
             level: lock.level,
@@ -1207,8 +1299,8 @@ export class PluginController {
             motherName: motherName || null,
             fatherName: fatherName || null,
             cryopodData: cryopodBuffer,
-            price: Number(price),
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            price: listingPrice,
+            expiresAt: draft ? null : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           },
         });
 

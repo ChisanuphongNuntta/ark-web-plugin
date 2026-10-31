@@ -7,7 +7,7 @@ import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wall
 import { afterCommit } from '../realtime/afterCommit.js';
 import { emitCatalogUpdated, emitOrdersUpdated } from '../realtime/emit.js';
 import promotionService from '../services/promotion.service.js';
-import { isServerDeliverable } from '../services/serverDirectory.service.js';
+import { ACTIVE_CREDENTIAL_INCLUDE, ANY_SERVER_FLAG, serverDeliveryBlock } from '../services/deliveryTarget.service.js';
 import { resolveDinoCatalogDelivery } from '../services/dinoCatalogDelivery.js';
 import { resolveItemDelivery } from '../services/itemCatalogDelivery.js';
 
@@ -69,41 +69,10 @@ function buildCheckoutDelivery(item: any, orderId: string, serverCapabilities: r
   }, orderId, item.quantity, serverCapabilities);
 }
 
-/**
- * Only an active credential lets a plugin lease delivery jobs for a server, so
- * checkout must load it to apply the same deliverability rule as the public
- * server directory (`isServerDeliverable`) and the storefront ServerPicker.
- */
-const ACTIVE_CREDENTIAL_INCLUDE = {
-  credentials: { where: { status: 'active' }, select: { id: true }, take: 1 },
-} as const;
-
-/**
- * Why a cart line's server cannot take a delivery right now (null = OK).
- * Mirrors frontend `deliveryBlockReason`: closed (isAvailable=false), inactive,
- * drained, or no active plugin credential. Without this a direct API caller
- * could pay for a DeliveryJob that no plugin can ever lease.
- */
-function serverDeliveryBlock(server: {
-  name: string;
-  isActive: boolean;
-  drainMode?: boolean | null;
-  isAvailable?: boolean | null;
-  credentials?: Array<{ id: string }> | null;
-}): { message: string; status: number } | null {
-  if (!server.isActive) return { message: `Server "${server.name}" is inactive`, status: 400 };
-  if (server.isAvailable === false) return { message: `Server "${server.name}" is closed`, status: 409 };
-  if (server.drainMode) return { message: `Server "${server.name}" is temporarily draining deliveries`, status: 409 };
-  if (!isServerDeliverable(server)) {
-    return { message: `Server "${server.name}" is not connected for delivery yet`, status: 409 };
-  }
-  return null;
-}
-
 export class CheckoutController {
   createCheckoutSession = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const { idempotencyKey, voucherCode, voucherCodes = [] } = req.body;
+      const { idempotencyKey, voucherCode, voucherCodes = [], autoServer = false } = req.body;
 
       if (!idempotencyKey?.trim()) {
         throw new AppError('Idempotency key is required', 400);
@@ -187,6 +156,8 @@ export class CheckoutController {
           lineNo: lineIndex + 1,
           productId: item.productId,
           serverId: item.serverId,
+          // "auto" checkout: the delivery may follow the buyer to the server they log into (plugin.controller retarget)
+          anyServer: autoServer === true,
           categoryId: item.product.categoryId ?? null,
           quantity: item.quantity,
           price: item.product.price,
@@ -496,7 +467,8 @@ export class CheckoutController {
             order.id,
             serverCapabilitiesById.get(item.serverId) ?? [],
           );
-          const payloadHash = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+          const jobPayload = item.anyServer === true ? { ...(payload as Record<string, unknown>), [ANY_SERVER_FLAG]: true } : payload;
+          const payloadHash = crypto.createHash('sha256').update(JSON.stringify(jobPayload)).digest('hex');
 
           await tx.deliveryJob.create({
             data: {
@@ -505,7 +477,7 @@ export class CheckoutController {
               playerSteamId: user.steamId,
               deliveryType,
               referenceId: order.id,
-              payload,
+              payload: jobPayload,
               payloadHash,
               status: 'pending',
             },

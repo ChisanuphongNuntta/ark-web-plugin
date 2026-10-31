@@ -829,5 +829,13 @@
   "เลือกเซิร์ฟเวอร์ปลายทางเพื่อตรวจยอดและชำระเงิน": "Choose a destination server to check the total and pay",
   "ไดโนเสาร์ในตะกร้าจะถูกส่งไปที่": "Dinosaurs in your basket will be delivered to",
   "และย้ายภายหลังไม่ได้ ตรวจชื่อเซิร์ฟเวอร์ก่อนกดยืนยัน": "and cannot be moved afterwards. Check the server name before you confirm.",
-  "เพิ่มลงตะกร้า": "Add to cart"
+  "เพิ่มลงตะกร้า": "Add to cart",
+  "ส่งของเข้าเกม": "Delivery to the game",
+  "วิธีส่งของ": "Delivery method",
+  "อัตโนมัติ (แนะนำ)": "Automatic (recommended)",
+  "เลือกเซิร์ฟเวอร์เอง": "Choose a server myself",
+  "ถ้าคุณออนไลน์ในเกมอยู่ ระบบส่งเข้าเซิร์ฟเวอร์ที่คุณอยู่ทันที ไม่ต้องเลือกเซิร์ฟเวอร์": "If you are online in the game, your items are sent straight to the server you are on. No need to choose a server.",
+  "ถ้ายังไม่ได้ออนไลน์ ของจะเก็บไว้ในกระเป๋า แล้วส่งให้อัตโนมัติเมื่อคุณล็อกอินเข้าเกม หรือพิมพ์ /claim เพื่อรับเอง": "If you are not online yet, your items are kept in your bag and delivered automatically when you log in to the game, or you can type /claim to collect them yourself.",
+  "ไดโนเสาร์ในตะกร้าจะลงที่เซิร์ฟเวอร์ที่คุณล็อกอินเข้าไป และย้ายภายหลังไม่ได้": "Dinosaurs in your basket land on the server you log in to and cannot be moved afterwards.",
+  "ส่งเข้าเกมอัตโนมัติ หรือเลือกเซิร์ฟเวอร์เองตอนชำระเงิน": "Delivered to the game automatically, or choose your own server at checkout"
 }

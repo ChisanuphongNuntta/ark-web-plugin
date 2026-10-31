@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Check, Plus } from 'lucide-react';
+import { Check, ShoppingCart } from 'lucide-react';
 import { useLanguage } from '@/components/i18n/LanguageProvider';
 import { useCartStore } from '@/lib/store';
 import type { Product } from '@/lib/contracts/types';
@@ -30,7 +30,7 @@ export function QuickAddButton({ product }: { product: Pick<Product, 'id' | 'nam
   return (
     <>
       <button type="button" onClick={handleAdd} className="tk-add" aria-label={`เพิ่ม ${product.name} ลงตะกร้า`} title="เพิ่มลงตะกร้า">
-        {flash === 'idle' ? <Plus size={18} aria-hidden="true" /> : <Check size={18} aria-hidden="true" />}
+        {flash === 'idle' ? <ShoppingCart size={17} aria-hidden="true" /> : <Check size={18} aria-hidden="true" />}
       </button>
       <span className="tk-sr" role="status" aria-live="polite">
         {flash === 'added' ? t('เพิ่มลงตะกร้าแล้ว', 'Added to cart') : flash === 'already' ? t('มีในตะกร้าแล้ว', 'Already in cart') : ''}

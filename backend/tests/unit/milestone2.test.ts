@@ -147,6 +147,7 @@ describe('Milestone 2 - IRIS ID & Signed Plugin Verification', () => {
       const steamId = '76561198000000001';
       const lock = { id: 'lock-1', species: 'Rex', level: 100, sellerSteamId: steamId, expiresAt: new Date() };
       db.dinoAssetLock.create.mockResolvedValueOnce(lock);
+      db.user.findUnique.mockResolvedValueOnce({id:'seller',isBanned:false});
       db.server.findUnique.mockResolvedValueOnce({
         id: 1,
         capabilities: ['marketplace.asset-lock.v1', 'marketplace.dino-native.v2'],

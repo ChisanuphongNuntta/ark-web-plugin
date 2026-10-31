@@ -155,7 +155,7 @@ describe('Wallet ledger migration — controllers post to the double-entry ledge
       expect(tx.pointTransaction.create).not.toHaveBeenCalled();
       // Conditional listed -> sold transition prevents double-buy.
       expect(tx.dinoListing.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: 'list-1', status: 'listed' },
+        where: expect.objectContaining({ id: 'list-1', status: 'listed', price: 200 }),
       }));
       expect(post).toHaveBeenCalledTimes(1);
       const [input] = post.mock.calls[0];

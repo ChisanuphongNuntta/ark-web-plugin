@@ -44,6 +44,8 @@ router.get('/my/listings', authenticate as any, dinoMarketController.getMyListin
 router.get('/my/purchases', authenticate as any, dinoMarketController.getMyPurchases as any);
 
 // ยกเลิก listing
+router.post('/listings/:id/publish', authenticate as any, requireDinoTradingEnabled as any, dinoMarketController.publishListing as any);
+router.post('/my/publish', authenticate as any, requireDinoTradingEnabled as any, dinoMarketController.publishBatch as any);
 router.post('/listings/:id/cancel', authenticate as any, dinoMarketController.cancelListing as any);
 
 // ซื้อไดโน
@@ -57,7 +59,7 @@ router.post('/listings/:id/buy', authenticate as any, requireDinoTradingEnabled 
 router.post('/plugin/listings', authenticatePluginFlexible, requireDinoTradingEnabled, dinoMarketController.createListing);
 
 // ดู pending deliveries (สำหรับ plugin poll)
-router.get('/plugin/deliveries', authenticatePluginFlexible, dinoMarketController.getPendingDeliveries);
+router.get('/plugin/deliveries', authenticatePluginFlexible, (_req,res) => {res.status(410).json({error:'Use signed delivery claim/complete protocol'});});
 
 // Mark delivery complete
 router.post('/plugin/deliveries/:id/delivered', authenticatePluginFlexible, dinoMarketController.markDelivered);

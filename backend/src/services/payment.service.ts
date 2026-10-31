@@ -4,8 +4,11 @@ import { PaymentIntentStatus, Prisma } from '@prisma/client';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService from './wallet.service.js';
+import { postTokens } from './perkTokens.service.js';
 import vipService, { formatThb, isSellablePrice } from './vip.service.js';
 import { getPaymentProvider } from './payment-provider.service.js';
+import { emitPerksUpdated, emitAdminPerks } from '../realtime/emit.js';
+import { afterCommit } from '../realtime/afterCommit.js';
 import { emitAdminSlipCreated } from '../realtime/emit.js';
 
 const asCents = (value: string | number | Prisma.Decimal) => {
@@ -17,7 +20,7 @@ const asCents = (value: string | number | Prisma.Decimal) => {
 
 const serializeIntent = (intent: any) => ({
   ...intent,
-  kind: intent.vipPackageId ? 'vip' : 'topup',
+  kind: intent.vipPackageId ? 'vip' : intent.perkTokenPackId ? 'tokens' : 'topup',
   amountThb: String(intent.amountThb),
   pointsAmount: intent.pointsAmount.toString(),
 });
@@ -26,6 +29,7 @@ export type PaidIntent = {
   id: string;
   userId: string;
   vipPackageId?: string | null;
+  perkTokenPackId?: string | null;
   pointsAmount: bigint;
   metadata?: unknown;
   provider?: string;
@@ -33,6 +37,7 @@ export type PaidIntent = {
 };
 
 export type FulfillmentResult =
+  | { kind: 'tokens'; tokens: number }
   | { kind: 'topup'; points: string }
   | { kind: 'vip'; membershipId: string; duplicate: boolean };
 
@@ -53,6 +58,13 @@ export async function fulfillPaidIntent(
     approvedBy?: string | null;
   },
 ): Promise<FulfillmentResult> {
+  if (intent.perkTokenPackId) {
+    const snapshot = (intent.metadata as any)?.tokenPackSnapshot;
+    if (!snapshot || !Number.isInteger(snapshot.tokens) || snapshot.tokens < 1 || snapshot.tokens > 100000) throw new AppError('Invalid token pack payment snapshot', 409);
+    const tokens = await postTokens(tx, { userId: intent.userId, delta: snapshot.tokens, type: 'purchase_thb', idempotencyKey: `payment:${intent.id}:tokens`, packId: intent.perkTokenPackId, paymentIntentId: intent.id, amountThb: String(intent.amountThb) });
+    afterCommit(() => { emitPerksUpdated(intent.userId, {reason: 'purchase', tokens: tokens.balance}); emitAdminPerks({action: 'purchase', userId: intent.userId, id: intent.id}); });
+    return { kind: 'tokens', tokens: snapshot.tokens };
+  }
   if (intent.vipPackageId) {
     const granted = await vipService.grantFromPaymentIntent(tx, {
       id: intent.id,
@@ -203,7 +215,7 @@ export class PaymentService {
    *   - bank_slip: pending until an admin approves the slip (POST /admin/payments/approve/:id)
    * Idempotent per (user, Idempotency-Key) exactly like POST /payments/intents.
    */
-  async createVipIntent(userId: string, vipPackageId: string, idempotencyKey: string, providerName: string, slip: VipSlipInput = {}) {
+  async createVipIntent(userId: string, vipPackageId: string, idempotencyKey: string, providerName: string, slip: VipSlipInput = {}, returnPath: "/vip" | "/perks" = "/vip") {
     if (providerName !== 'stripe' && providerName !== 'bank_slip') {
       throw new AppError('provider must be stripe or bank_slip', 400);
     }
@@ -223,7 +235,7 @@ export class PaymentService {
 
     const pkg = await prisma.vipPackage.findUnique({ where: { id: vipPackageId } });
     if (!pkg || !pkg.isActive) throw new AppError('VIP package not found', 404);
-    if (!isSellablePrice(pkg.priceThb)) throw new AppError('VIP package is not priced yet', 409);
+    if (pkg.priceThb === null || !isSellablePrice(pkg.priceThb)) throw new AppError('VIP package is not priced yet', 409);
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { steamId: true } });
     if (!user?.steamId) {
       throw new AppError('Link your Steam account before buying VIP (VIP is applied to your Steam ID in game)', 409);
@@ -261,7 +273,7 @@ export class PaymentService {
         reference,
         amountThb: String(pkg.priceThb),
         expiresAt,
-        returnPath: '/vip',
+        returnPath,
         productName: `IRIS VIP — ${pkg.name}`,
       });
       providerIntentId = created.providerIntentId;
@@ -318,6 +330,108 @@ export class PaymentService {
     }
   }
 
+  async createTokenIntent(userId: string, perkTokenPackId: string, idempotencyKey: string, providerName: string, slip: VipSlipInput = {}) {
+    if (providerName !== 'stripe' && providerName !== 'bank_slip') {
+      throw new AppError('provider must be stripe or bank_slip', 400);
+    }
+    if (!idempotencyKey?.trim()) throw new AppError('Idempotency-Key header is required', 400);
+    if (idempotencyKey.length > 255) throw new AppError('Idempotency-Key must not exceed 255 characters', 400);
+    if (typeof perkTokenPackId !== 'string' || !perkTokenPackId.trim()) throw new AppError('packageId is required', 400);
+
+    const existing = await prisma.paymentIntent.findUnique({
+      where: { userId_idempotencyKey: { userId, idempotencyKey } },
+    });
+    if (existing) {
+      if (existing.perkTokenPackId !== perkTokenPackId || existing.provider !== providerName) {
+        throw new AppError('Idempotency key was already used for a different payment', 409);
+      }
+      return { intent: serializeIntent(existing), replayed: true };
+    }
+
+    const pkg = await prisma.perkTokenPack.findUnique({ where: { id: perkTokenPackId } });
+    if (!pkg || !pkg.isActive) throw new AppError('Token pack not found', 404);
+    if (pkg.priceThb === null || !isSellablePrice(pkg.priceThb)) throw new AppError('Token pack is not priced for THB', 409);
+    const slipImageUrl = optionalText(slip.slipImageUrl, 1024, 'slipImageUrl');
+    const transferRef = optionalText(slip.transferRef, 120, 'transferRef');
+    const transferBank = optionalText(slip.transferBank, 60, 'transferBank');
+    const notes = optionalText(slip.notes, 500, 'notes');
+    if (providerName === 'bank_slip') {
+      if (!slipImageUrl && !transferRef) throw new AppError('slipImageUrl or transferRef is required for bank_slip', 400);
+      if (slipImageUrl && !SLIP_URL_PATTERN.test(slipImageUrl)) throw new AppError('slipImageUrl must be an https:// URL or a /path', 400);
+    }
+
+    const stableKey = `${userId}:${idempotencyKey}`;
+    const reference = `IRIS-TOKENS-${crypto.createHash('sha256').update(stableKey).digest('hex').slice(0, 28).toUpperCase()}`;
+    const tokenPackSnapshot = { key: pkg.key, name: pkg.name, tokens: pkg.tokens, priceThb: formatThb(pkg.priceThb!) };
+
+    let providerIntentId: string | null = null;
+    let paymentUrl: string | null = null;
+    let qrPayload: string | null = null;
+    let expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    if (providerName === 'stripe') {
+      const provider = getPaymentProvider('stripe');
+      const created = await provider.createIntent({
+        idempotencyKey: stableKey,
+        reference,
+        amountThb: String(pkg.priceThb),
+        expiresAt,
+        returnPath: '/perks',
+        productName: `IRIS Perk Tokens — ${pkg.name}`,
+      });
+      providerIntentId = created.providerIntentId;
+      paymentUrl = created.paymentUrl;
+      qrPayload = created.qrPayload || null;
+      expiresAt = created.expiresAt || expiresAt;
+    } else {
+      expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      paymentUrl = slipImageUrl ?? null;
+    }
+
+    try {
+      const intent = await prisma.paymentIntent.create({
+        data: {
+          userId,
+          packageId: null,
+          perkTokenPackId: pkg.id,
+          provider: providerName,
+          providerIntentId,
+          reference,
+          idempotencyKey,
+          amountThb: pkg.priceThb!,
+          pointsAmount: 0n,
+          paymentUrl,
+          qrPayload,
+          expiresAt,
+          metadata: {
+            kind: 'tokens',
+            tokenPackSnapshot,
+            packageName: pkg.name,
+            ...(providerName === 'bank_slip'
+              ? {
+                  slipImageUrl: slipImageUrl ?? null,
+                  transferBank: transferBank ?? null,
+                  transferRef: transferRef ?? null,
+                  notes: notes ?? '',
+                  submittedAt: new Date().toISOString(),
+                }
+              : {}),
+          },
+        },
+      });
+      if (providerName === 'bank_slip') emitAdminSlipCreated(intent.id);
+      return { intent: serializeIntent(intent), replayed: false };
+    } catch (error: any) {
+      if (error?.code !== 'P2002') throw error;
+      const raced = await prisma.paymentIntent.findUnique({
+        where: { userId_idempotencyKey: { userId, idempotencyKey } },
+      });
+      if (!raced || raced.perkTokenPackId !== perkTokenPackId || raced.provider !== providerName) {
+        throw new AppError('Idempotency key conflict', 409);
+      }
+      return { intent: serializeIntent(raced), replayed: true };
+    }
+  }
+
   /**
    * POST /payments/slips — a bank-transfer slip for an IC top-up, pending admin approval.
    * Price, IC amount and package name come ONLY from the server-side PaymentPackage; any
@@ -329,7 +443,7 @@ export class PaymentService {
     const pkg = (await prisma.paymentPackage.findUnique({ where: { id: packageId } }))
       ?? (await prisma.paymentPackage.findUnique({ where: { slug: packageId } }));
     if (!pkg || !pkg.isActive) throw new AppError('Payment package not found', 404);
-    if (!isSellablePrice(pkg.priceThb)) throw new AppError('Payment package is not priced', 409);
+    if (pkg.priceThb === null || !isSellablePrice(pkg.priceThb)) throw new AppError('Payment package is not priced', 409);
 
     const slipImageUrl = optionalText(slip.slipImageUrl, 1024, 'slipImageUrl');
     const transferRef = optionalText(slip.transferRef, 120, 'transferRef');
@@ -408,9 +522,9 @@ export class PaymentService {
       throw new AppError('Invalid Stripe payment details', 400);
     }
 
-    const kind = intent.vipPackageId ? 'vip' : 'topup';
+    const kind = intent.vipPackageId ? 'vip' : intent.perkTokenPackId ? 'tokens' : 'topup';
     // VIP intents never report IC: points is '0' and `kind` tells the client what was granted.
-    const points = kind === 'vip' ? '0' : intent.pointsAmount.toString();
+    const points = kind !== 'topup' ? '0' : intent.pointsAmount.toString();
     if (intent.status === PaymentIntentStatus.completed) {
       return { success: true, alreadyCredited: true, kind, points, intentId: intent.id };
     }

@@ -44,7 +44,8 @@ export const VIP_MEMBERSHIP_STATUSES = ['active', 'expired', 'revoked'] as const
 export const VIP_MEMBERSHIP_SOURCES = ['purchase', 'admin', 'legacy'] as const;
 export const VIP_MEMBERSHIP_STATES = ['scheduled', 'active', 'expired', 'revoked'] as const;
 // unqueued = the change could not be queued (no server row available); the scheduler re-queues it.
-export const VIP_SYNC_STATUSES = ['pending', 'synced', 'failed', 'no_steam', 'unqueued'] as const;
+// not_required = a plan without a Permissions group (entitlements 2026-10): nothing to sync.
+export const VIP_SYNC_STATUSES = ['pending', 'synced', 'failed', 'no_steam', 'unqueued', 'not_required'] as const;
 /** Frame keys the frontend ships CSS for (frontend/src/app/vip-frames.css). Others fall back to gold there. */
 export const VIP_FRAME_STYLES = ['vip-gold', 'vip-silver', 'vip-diamond', 'vip-emerald', 'vip-ruby', 'vip-amethyst'] as const;
 
@@ -126,11 +127,14 @@ export function computeChainedPeriod(
  * upgrade to a higher tier starts now (better frame immediately); a lower tier bought while a
  * higher one runs starts after it.
  */
-export function chainRowsFor<T extends MembershipPeriodRow & { permissionGroup: string; package?: { tierRank: number } | null }>(
+export function chainRowsFor<T extends MembershipPeriodRow & { permissionGroup: string | null; packageId?: string; package?: { tierRank: number } | null }>(
   rows: T[],
-  group: string,
+  group: string | null,
   tierRank: number,
+  packageId?: string,
 ): T[] {
+  // A plan without a Permissions group (entitlements 2026-10) chains per package instead.
+  if (group === null) return rows.filter((row) => packageId !== undefined && row.packageId === packageId);
   return rows.filter((row) => row.permissionGroup === group && (row.package?.tierRank ?? 0) >= tierRank);
 }
 
@@ -138,7 +142,7 @@ export function chainRowsFor<T extends MembershipPeriodRow & { permissionGroup: 
  * When does the user's hold on `group` end? undefined = not held at all, null = permanent,
  * Date = latest expiry over live rows of that group.
  */
-export function groupHoldUntil(rows: Array<MembershipPeriodRow & { permissionGroup: string }>, group: string, now: Date): Date | null | undefined {
+export function groupHoldUntil(rows: Array<MembershipPeriodRow & { permissionGroup: string | null }>, group: string, now: Date): Date | null | undefined {
   let until: Date | null | undefined;
   for (const row of rows) {
     if (row.permissionGroup !== group || !isLive(row, now)) continue;
@@ -148,14 +152,17 @@ export function groupHoldUntil(rows: Array<MembershipPeriodRow & { permissionGro
   return until;
 }
 
-/** Best badge among EFFECTIVE rows: highest tierRank; ties keep the longer (permanent first). */
+/**
+ * Best badge among EFFECTIVE rows: highest tierRank; ties keep the longer (permanent first).
+ * Rows of a plan with showBadge=false (perks-only plans, entitlements 2026-10) never give a badge.
+ */
 export function pickBadge(
-  rows: Array<MembershipPeriodRow & { package: { tierRank: number; frameStyle: string; badgeLabel?: string | null } | null }>,
+  rows: Array<MembershipPeriodRow & { package: { tierRank: number; frameStyle: string; badgeLabel?: string | null; showBadge?: boolean | null } | null }>,
   now: Date,
 ): VipBadge | null {
   let best: (typeof rows)[number] | null = null;
   for (const row of rows) {
-    if (!row.package || !isEffective(row, now)) continue;
+    if (!row.package || row.package.showBadge === false || !isEffective(row, now)) continue;
     if (!best || !best.package) { best = row; continue; }
     const rank = row.package.tierRank;
     const bestRank = best.package.tierRank;
@@ -184,7 +191,7 @@ export function buildPermissionPayload(input: { steamId: string; group: string; 
 export const permissionDeliveryType = (action: PermissionAction) =>
   (action === 'add' ? PERMISSION_GRANT_TYPE : PERMISSION_REVOKE_TYPE);
 
-export const permissionReferenceId = (userId: string, group: string) => `vip:${userId}:${group}`;
+export const permissionReferenceId = (userId: string, group: string | null) => `vip:${userId}:${group ?? ""}`;
 
 export function parsePermissionReferenceId(referenceId: string): { userId: string; group: string } | null {
   const match = /^vip:([^:]+):([A-Za-z0-9_-]{1,64})$/.exec(referenceId);
@@ -207,6 +214,14 @@ export function isSellablePrice(price: Prisma.Decimal | string | number): boolea
 /** Built-in ArkApi Permissions groups the plugin refuses to change (case-insensitive). */
 export const RESERVED_PERMISSION_GROUPS: ReadonlySet<string> = new Set(['admins', 'default']);
 
+/** An ArkApi Permissions group HeartShop may manage (never the built-in Admins / Default). */
+export const permissionGroupSchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9_-]{1,64}$/, 'letters, digits, _ and - (1-64 chars)')
+  // HeartShop never touches the Permissions plugin's built-in groups (PermissionSync.cpp).
+  .refine((value) => !RESERVED_PERMISSION_GROUPS.has(value.toLowerCase()), 'Admins / Default are reserved Permissions groups');
+
 const priceSchema = z
   .union([z.string(), z.number()])
   .transform((value) => String(value).trim())
@@ -217,16 +232,14 @@ export const vipPackageCreateSchema = z
     key: z.string().trim().regex(/^[a-z0-9][a-z0-9-]{1,63}$/, 'lowercase letters, digits and dashes (2-64 chars)'),
     name: z.string().trim().min(1).max(120),
     description: z.string().trim().max(2000).nullable().optional(),
-    permissionGroup: z
-      .string()
-      .trim()
-      .regex(/^[A-Za-z0-9_-]{1,64}$/, 'letters, digits, _ and - (1-64 chars)')
-      // HeartShop never touches the Permissions plugin's built-in groups (PermissionSync.cpp).
-      .refine((value) => !RESERVED_PERMISSION_GROUPS.has(value.toLowerCase()), 'Admins / Default are reserved Permissions groups')
+    permissionGroup: permissionGroupSchema
+      // null = a plan without a Permissions group (entitlements 2026-10).
+      .nullable()
       .optional(),
     tierRank: z.number().int().min(1).max(1000).optional(),
     frameStyle: z.string().trim().regex(/^vip-[a-z0-9-]{1,40}$/, 'frame key like vip-gold').optional(),
     badgeLabel: z.string().trim().min(1).max(16).optional(),
+    showBadge: z.boolean().optional(),
     priceThb: priceSchema.optional(),
     durationDays: z.number().int().min(1).max(MAX_GRANT_DAYS).nullable().optional(),
     isActive: z.boolean().optional(),
@@ -285,10 +298,11 @@ export function serializeVipPackage(pkg: any, extra: Record<string, unknown> = {
     key: pkg.key,
     name: pkg.name,
     description: pkg.description ?? null,
-    permissionGroup: pkg.permissionGroup,
+    permissionGroup: pkg.permissionGroup ?? null,
     tierRank: pkg.tierRank,
     frameStyle: pkg.frameStyle,
     badgeLabel: pkg.badgeLabel ?? 'VIP',
+    showBadge: pkg.showBadge !== false,
     priceThb: formatThb(pkg.priceThb),
     durationDays: pkg.durationDays ?? null,
     isActive: Boolean(pkg.isActive),
@@ -534,13 +548,16 @@ export class VipService {
     const user = await db.user.findUnique({ where: { id: input.userId }, select: { id: true, steamId: true } });
     if (!user) throw new AppError('User not found', 404);
 
-    const group = input.snapshot?.permissionGroup || pkg.permissionGroup;
+    // Snapshot group: a string, or null for a plan without a Permissions group (entitlements
+    // 2026-10). An absent snapshot value falls back to the package.
+    const snapshotGroup = input.snapshot?.permissionGroup;
+    const group: string | null = snapshotGroup !== undefined ? (snapshotGroup || null) : (pkg.permissionGroup ?? null);
     const durationDays = input.durationDays !== undefined
       ? input.durationDays
       : (input.snapshot && input.snapshot.durationDays !== undefined ? input.snapshot.durationDays : pkg.durationDays);
 
     const live = await this.liveRowsForUser(db, input.userId);
-    const period = computeChainedPeriod(now, durationDays ?? null, chainRowsFor(live, group, pkg.tierRank));
+    const period = computeChainedPeriod(now, durationDays ?? null, chainRowsFor(live, group, pkg.tierRank, pkg.id));
 
     const membership = await db.vipMembership.create({
       data: {
@@ -554,19 +571,96 @@ export class VipService {
         paymentIntentId: input.paymentIntentId ?? null,
         grantedBy: input.grantedBy ?? null,
         reason: input.reason ?? null,
-        syncStatus: user.steamId ? 'pending' : 'no_steam',
+        syncStatus: group === null ? 'not_required' : (user.steamId ? 'pending' : 'no_steam'),
       },
     });
 
-    const holdUntil = groupHoldUntil([...live, { ...membership }], group, now);
-    const job = await this.enqueuePermissionJob(db, {
-      userId: input.userId,
-      steamId: user.steamId,
-      group,
-      action: 'add',
-      expiresAt: holdUntil ?? null,
-    });
+    let job: EnqueueResult = { queued: false, jobId: null };
+    if (group !== null) {
+      const holdUntil = groupHoldUntil([...live, { ...membership }], group, now);
+      job = await this.enqueuePermissionJob(db, {
+        userId: input.userId,
+        steamId: user.steamId,
+        group,
+        action: 'add',
+        expiresAt: holdUntil ?? null,
+      });
+    }
+    await this.reconcileFeatureGroups(db, input.userId, user.steamId, now);
     return { membership, package: pkg, job };
+  }
+
+  // ---------------- Feature Permissions groups (entitlements 2026-10) ----------------
+
+  /**
+   * Feature-level Permissions groups (PerkFeature.permissionGroup): a group is held while ANY
+   * live membership's plan grants a feature carrying it. Desired state per group is compared with
+   * the newest permission job for `vip:<userId>:<group>` and a job is queued only when it differs,
+   * so calling this after every grant / extend / revoke / expiry / resync is idempotent. A no-op
+   * (one cheap query) while no feature has a permissionGroup.
+   */
+  async reconcileFeatureGroups(
+    db: Db,
+    userId: string,
+    knownSteamId: string | null | undefined,
+    now: Date = new Date(),
+    options: { force?: boolean } = {},
+  ): Promise<Array<{ group: string; action: PermissionAction } & EnqueueResult>> {
+    const grants = await db.planGrant.findMany({
+      where: { feature: { permissionGroup: { not: null } } },
+      select: { packageId: true, feature: { select: { permissionGroup: true } } },
+    });
+    if (!grants || grants.length === 0) return [];
+    // undefined = not looked up yet by the caller (only needed when feature groups exist at all).
+    const steamId = knownSteamId === undefined
+      ? (await db.user.findUnique({ where: { id: userId }, select: { steamId: true } }))?.steamId
+      : knownSteamId;
+    if (!steamId) return [];
+    const groupsByPackage = new Map<string, Set<string>>();
+    for (const grant of grants) {
+      const group = grant.feature?.permissionGroup;
+      if (!group) continue;
+      const set = groupsByPackage.get(grant.packageId) ?? new Set<string>();
+      set.add(group);
+      groupsByPackage.set(grant.packageId, set);
+    }
+    if (groupsByPackage.size === 0) return [];
+    const rows = (await db.vipMembership.findMany({
+      where: { userId, packageId: { in: [...groupsByPackage.keys()] } },
+      select: { packageId: true, status: true, startsAt: true, expiresAt: true },
+    })) ?? [];
+    const groups = new Set<string>();
+    for (const row of rows) for (const group of groupsByPackage.get(row.packageId) ?? []) groups.add(group);
+    const results: Array<{ group: string; action: PermissionAction } & EnqueueResult> = [];
+    for (const group of [...groups].sort()) {
+      const holding = rows
+        .filter((row) => groupsByPackage.get(row.packageId)?.has(group))
+        .map((row) => ({ ...row, permissionGroup: group }));
+      const until = groupHoldUntil(holding, group, now);
+      const action: PermissionAction = until === undefined ? 'remove' : 'add';
+      const desired = buildPermissionPayload({ steamId, group, action, expiresAt: until ?? null });
+      const latest = await db.deliveryJob.findFirst({
+        where: { referenceId: permissionReferenceId(userId, group), playerSteamId: steamId, deliveryType: { in: [...PERMISSION_DELIVERY_TYPE_LIST] } },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        select: { payloadHash: true, status: true },
+      });
+      if (!options.force) {
+        if (latest && latest.payloadHash === payloadHashOf(desired) && latest.status !== 'dead_letter') continue;
+        if (!latest && action === 'remove') continue;
+      }
+      const job = await this.enqueuePermissionJob(db, { userId, steamId, group, action, expiresAt: until ?? null });
+      results.push({ group, action, ...job });
+    }
+    return results;
+  }
+
+  /** Every feature-level Permissions group any of the user's plans ever granted. */
+  async featureGroupsForUser(db: Db, userId: string): Promise<string[]> {
+    const grants = await db.planGrant.findMany({
+      where: { feature: { permissionGroup: { not: null } }, package: { memberships: { some: { userId } } } },
+      select: { feature: { select: { permissionGroup: true } } },
+    });
+    return [...new Set((grants ?? []).map((grant) => grant.feature?.permissionGroup).filter((group): group is string => Boolean(group)))];
   }
 
   /**
@@ -593,7 +687,8 @@ export class VipService {
       snapshot: snapshot
         ? {
             durationDays: snapshot.durationDays === null ? null : (Number.isSafeInteger(snapshot.durationDays) ? snapshot.durationDays : undefined),
-            permissionGroup: typeof snapshot.permissionGroup === 'string' ? snapshot.permissionGroup : undefined,
+            // null in the snapshot = the plan had no Permissions group when it was bought.
+            permissionGroup: typeof snapshot.permissionGroup === 'string' ? snapshot.permissionGroup : (snapshot.permissionGroup === null ? '' : undefined),
           }
         : null,
     });
@@ -669,13 +764,20 @@ export class VipService {
       if (row.expiresAt === null) throw new AppError('Membership is permanent', 409);
       const shiftMs = days * DAY_MS;
       const oldExpiry = row.expiresAt;
+      const group = row.permissionGroup ?? null;
+      const syncStatus = group === null ? 'not_required' : 'pending';
       const later = await tx.vipMembership.findMany({
-        where: { userId: row.userId, permissionGroup: row.permissionGroup, status: 'active', id: { not: row.id }, startsAt: { gte: oldExpiry } },
+        where: {
+          userId: row.userId,
+          // A plan without a Permissions group chains per package (entitlements 2026-10).
+          ...(group === null ? { permissionGroup: null, packageId: row.packageId } : { permissionGroup: group }),
+          status: 'active', id: { not: row.id }, startsAt: { gte: oldExpiry },
+        },
         select: { id: true, startsAt: true, expiresAt: true },
       });
       const updated = await tx.vipMembership.update({
         where: { id: row.id },
-        data: { expiresAt: new Date(oldExpiry.getTime() + shiftMs), syncStatus: 'pending' },
+        data: { expiresAt: new Date(oldExpiry.getTime() + shiftMs), syncStatus },
       });
       for (const next of later) {
         await tx.vipMembership.update({
@@ -683,20 +785,24 @@ export class VipService {
           data: {
             startsAt: new Date(next.startsAt.getTime() + shiftMs),
             expiresAt: next.expiresAt ? new Date(next.expiresAt.getTime() + shiftMs) : null,
-            syncStatus: 'pending',
+            syncStatus,
           },
         });
       }
       const user = await tx.user.findUnique({ where: { id: row.userId }, select: { steamId: true } });
-      const live = await this.liveRowsForUser(tx, row.userId);
-      const job = await this.enqueuePermissionJob(tx, {
-        userId: row.userId,
-        steamId: user?.steamId,
-        group: row.permissionGroup,
-        action: 'add',
-        expiresAt: groupHoldUntil(live, row.permissionGroup, now) ?? null,
-      });
-      if (!user?.steamId) await tx.vipMembership.update({ where: { id: row.id }, data: { syncStatus: 'no_steam' } });
+      let job: EnqueueResult = { queued: false, jobId: null };
+      if (group !== null) {
+        const live = await this.liveRowsForUser(tx, row.userId);
+        job = await this.enqueuePermissionJob(tx, {
+          userId: row.userId,
+          steamId: user?.steamId,
+          group,
+          action: 'add',
+          expiresAt: groupHoldUntil(live, group, now) ?? null,
+        });
+        if (!user?.steamId) await tx.vipMembership.update({ where: { id: row.id }, data: { syncStatus: 'no_steam' } });
+      }
+      await this.reconcileFeatureGroups(tx, row.userId, user?.steamId, now);
       return { before: row, membership: updated, shifted: later.length, job };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
@@ -725,10 +831,11 @@ export class VipService {
       const row = await tx.vipMembership.findUnique({ where: { id: membershipId } });
       if (!row) throw new AppError('VIP membership not found', 404);
       if (row.status !== 'active') throw new AppError(`Membership is already ${row.status}`, 409);
-      const before = groupHoldUntil((await this.liveRowsForUser(tx, row.userId)) ?? [row], row.permissionGroup, now);
+      const group = row.permissionGroup ?? null;
+      const before = group === null ? undefined : groupHoldUntil((await this.liveRowsForUser(tx, row.userId)) ?? [row], group, now);
       const changed = await tx.vipMembership.updateMany({
         where: { id: row.id, status: 'active' },
-        data: { status: 'revoked', revokedAt: now, revokedBy: actorId, reason, syncStatus: 'pending' },
+        data: { status: 'revoked', revokedAt: now, revokedBy: actorId, reason, syncStatus: group === null ? 'not_required' : 'pending' },
       });
       if (changed.count !== 1) throw new AppError('Membership changed concurrently; refresh and try again', 409);
 
@@ -738,7 +845,11 @@ export class VipService {
         const spanMs = row.expiresAt.getTime() - from.getTime();
         if (spanMs > 0) {
           const later = await tx.vipMembership.findMany({
-            where: { userId: row.userId, permissionGroup: row.permissionGroup, status: 'active', id: { not: row.id }, startsAt: { gte: row.expiresAt } },
+            where: {
+              userId: row.userId,
+              ...(group === null ? { permissionGroup: null, packageId: row.packageId } : { permissionGroup: group }),
+              status: 'active', id: { not: row.id }, startsAt: { gte: row.expiresAt },
+            },
             select: { id: true, startsAt: true, expiresAt: true },
           });
           for (const next of later ?? []) {
@@ -747,7 +858,7 @@ export class VipService {
               data: {
                 startsAt: new Date(next.startsAt.getTime() - spanMs),
                 expiresAt: next.expiresAt ? new Date(next.expiresAt.getTime() - spanMs) : null,
-                syncStatus: 'pending',
+                syncStatus: group === null ? 'not_required' : 'pending',
               },
             });
             shifted += 1;
@@ -755,14 +866,19 @@ export class VipService {
         }
       }
 
-      const removal = await this.removeGroupIfUnheld(tx, row.userId, row.permissionGroup, [row.id], now);
+      if (group === null) {
+        await this.reconcileFeatureGroups(tx, row.userId, undefined, now);
+        return { before: row, job: { queued: false, jobId: null } as EnqueueResult, shifted };
+      }
+
+      const removal = await this.removeGroupIfUnheld(tx, row.userId, group, [row.id], now);
       let job: EnqueueResult = removal;
       if (removal.stillHeld) {
         // HeartShop applies `add` as a TIMED Permissions group ending at payload.expiresAt, so
         // when revoking this row shortens the hold (a chained row was revoked / the chain moved
         // earlier) the in-game group must be re-asserted with the new end.
         const live = await this.liveRowsForUser(tx, row.userId);
-        const after = groupHoldUntil(live, row.permissionGroup, now);
+        const after = groupHoldUntil(live, group, now);
         const changed = after !== undefined && (before === undefined || before === null
           ? after !== before
           : after === null || after.getTime() !== before.getTime());
@@ -771,12 +887,13 @@ export class VipService {
           job = await this.enqueuePermissionJob(tx, {
             userId: row.userId,
             steamId: user?.steamId,
-            group: row.permissionGroup,
+            group,
             action: 'add',
             expiresAt: after ?? null,
           });
         }
       }
+      await this.reconcileFeatureGroups(tx, row.userId, undefined, now);
       return { before: row, job, shifted };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
@@ -837,7 +954,12 @@ export class VipService {
             data: { status: 'expired' },
           });
           if (changed.count !== 1) return null;
-          return this.removeGroupIfUnheld(tx, row.userId, row.permissionGroup, [row.id], now);
+          // A plan without a Permissions group has nothing to remove (entitlements 2026-10).
+          const removal: EnqueueResult & { stillHeld: boolean } = row.permissionGroup
+            ? await this.removeGroupIfUnheld(tx, row.userId, row.permissionGroup, [row.id], now)
+            : { queued: false, jobId: null, stillHeld: false };
+          await this.reconcileFeatureGroups(tx, row.userId, undefined, now);
+          return removal;
         }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
         if (!outcome) continue;
         expired += 1;
@@ -872,7 +994,7 @@ export class VipService {
         where: { userId },
         select: { id: true, permissionGroup: true, status: true, startsAt: true, expiresAt: true },
       });
-      const groups = [...new Set(rows.map((row) => row.permissionGroup))].sort();
+      const groups = [...new Set(rows.map((row) => row.permissionGroup).filter((group): group is string => Boolean(group)))].sort();
       const jobs: Array<{ group: string; action: PermissionAction } & EnqueueResult> = [];
       for (const group of groups) {
         const until = groupHoldUntil(rows, group, now);
@@ -889,6 +1011,8 @@ export class VipService {
         }
         jobs.push({ group, action, ...job });
       }
+      // Feature-level groups (entitlements 2026-10): re-assert them too.
+      jobs.push(...await this.reconcileFeatureGroups(tx, userId, user.steamId, now, { force: true }));
       return { steamId: user.steamId, jobs };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
@@ -945,7 +1069,10 @@ export class VipService {
       });
       if (rows.length === 0) return;
       if (oldSteamId) {
-        const groups = [...new Set(rows.map((row) => row.permissionGroup))];
+        const groups = [...new Set([
+          ...rows.map((row) => row.permissionGroup).filter((group): group is string => Boolean(group)),
+          ...await this.featureGroupsForUser(prisma, userId),
+        ])];
         await prisma.$transaction(async (tx) => {
           for (const group of groups) {
             await this.enqueuePermissionJob(tx, { userId, steamId: oldSteamId, group, action: 'remove' });
@@ -983,7 +1110,7 @@ export class VipService {
     // A badge is decoration: a lookup failure must never break the list/chat/market it decorates.
     let rows: Array<{
       userId: string; status: string; startsAt: Date; expiresAt: Date | null;
-      package: { tierRank: number; frameStyle: string; badgeLabel: string } | null;
+      package: { tierRank: number; frameStyle: string; badgeLabel: string; showBadge?: boolean } | null;
     }>;
     try {
       rows = (await prisma.vipMembership.findMany({
@@ -998,7 +1125,7 @@ export class VipService {
         status: true,
         startsAt: true,
         expiresAt: true,
-        package: { select: { tierRank: true, frameStyle: true, badgeLabel: true } },
+        package: { select: { tierRank: true, frameStyle: true, badgeLabel: true, showBadge: true } },
       },
       })) ?? [];
     } catch (error) {
@@ -1038,16 +1165,23 @@ export class VipService {
 
   /**
    * Badge resolver for chat messages: game players are keyed by Steam ID (senderType "player"),
-   * web users by IRIS user id (senderType "web_user"). Discord senders never carry a badge.
+   * web users by IRIS user id and Discord senders by their linked Discord id.
    */
   async chatBadgeResolver(messages: Array<{ senderType: string; senderId: string }>, now: Date = new Date()) {
     try {
       const steamIds = messages.filter((m) => m.senderType === 'player').map((m) => m.senderId);
       const userIds = messages.filter((m) => m.senderType === 'web_user').map((m) => m.senderId);
+      const discordIds = [...new Set(messages.filter(m => m.senderType === 'discord_user').map(m => m.senderId))];
+      const discordUsers = discordIds.length ? await prisma.user.findMany({ where: { discordId: { in: discordIds } }, select: { id: true, discordId: true } }) : [];
+      userIds.push(...discordUsers.map(u => u.id));
       const [bySteam, byUser] = await Promise.all([this.badgesForSteamIds(steamIds, now), this.badgesForUserIds(userIds, now)]);
       return (message: { senderType: string; senderId: string }): VipBadge | null => {
         if (message.senderType === 'player') return bySteam.get(message.senderId) ?? null;
         if (message.senderType === 'web_user') return byUser.get(message.senderId) ?? null;
+        if (message.senderType === 'discord_user') {
+          const linked = discordUsers.find(u => u.discordId === message.senderId);
+          return linked ? byUser.get(linked.id) ?? null : null;
+        }
         return null;
       };
     } catch (error) {
@@ -1065,7 +1199,7 @@ export class VipService {
       where: { userId: user.id, status: 'active', startsAt: { lte: now }, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
       select: { permissionGroup: true },
     });
-    return [...new Set(rows.map((row) => row.permissionGroup))];
+    return [...new Set(rows.map((row) => row.permissionGroup).filter((group): group is string => Boolean(group)))];
   }
 
   /** Latest permission job per (user, group) reference id. */
@@ -1095,14 +1229,14 @@ export class VipService {
     ]);
     const jobs = await this.latestPermissionJobs(rows.map((row) => permissionReferenceId(row.userId, row.permissionGroup)));
     const badge = pickBadge(rows, now);
-    const effective = rows.filter((row) => isEffective(row, now));
+    const effective = rows.filter((row) => isEffective(row, now) && row.package?.showBadge !== false);
     // "active" = the effective row that ends last (permanent first), as the frontend expects.
     const active = effective.sort((a, b) => {
       if (a.expiresAt === null) return -1;
       if (b.expiresAt === null) return 1;
       return b.expiresAt.getTime() - a.expiresAt.getTime();
     })[0] ?? null;
-    const groups = [...new Set(rows.map((row) => row.permissionGroup))]
+    const groups = [...new Set(rows.map((row) => row.permissionGroup).filter((group): group is string => Boolean(group)))]
       .map((group) => {
         const until = groupHoldUntil(rows, group, now);
         return until === undefined ? null : { group, expiresAt: until === null ? null : until.toISOString() };
@@ -1130,16 +1264,16 @@ export class VipService {
     if (!user) return { linked: false, steamLinked: false, isVip: false, vip: null, active: null, groups: [] };
     const rows = await prisma.vipMembership.findMany({
       where: { userId: user.id, status: 'active', OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-      include: { package: { select: { name: true, tierRank: true, frameStyle: true, badgeLabel: true } } },
+      include: { package: { select: { name: true, tierRank: true, frameStyle: true, badgeLabel: true, showBadge: true } } },
     });
     const badge = pickBadge(rows, now);
-    const effective = rows.filter((row) => isEffective(row, now)).sort((a, b) => {
+    const effective = rows.filter((row) => isEffective(row, now) && row.package?.showBadge !== false).sort((a, b) => {
       if (a.expiresAt === null) return -1;
       if (b.expiresAt === null) return 1;
       return b.expiresAt.getTime() - a.expiresAt.getTime();
     });
     const top = effective[0] ?? null;
-    const groups = [...new Set(rows.map((row) => row.permissionGroup))]
+    const groups = [...new Set(rows.map((row) => row.permissionGroup).filter((group): group is string => Boolean(group)))]
       .map((group) => {
         const until = groupHoldUntil(rows, group, now);
         return until === undefined ? null : { group, expiresAt: until === null ? null : until.toISOString() };
@@ -1175,7 +1309,7 @@ export class VipService {
           startsAt: true,
           expiresAt: true,
           permissionGroup: true,
-          package: { select: { tierRank: true, frameStyle: true, badgeLabel: true } },
+          package: { select: { tierRank: true, frameStyle: true, badgeLabel: true, showBadge: true } },
         },
       });
       const badge = pickBadge(rows, now);
@@ -1198,7 +1332,8 @@ export class VipService {
   // ---------------- Packages (admin) ----------------
 
   /** Reuse the Chat Ranks system: make sure the group has a global rank (never overwrites one). */
-  async ensureChatRankForGroup(db: Db, group: string, label: string) {
+  async ensureChatRankForGroup(db: Db, group: string | null, label: string) {
+    if (!group) return false;
     const existing = await db.chatRank.findFirst({ where: { groupKey: group, serverId: null } });
     if (existing) return false;
     await db.chatRank.create({

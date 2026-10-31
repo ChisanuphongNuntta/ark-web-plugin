@@ -42,7 +42,9 @@ export default function CartPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { items, serverId, setServerId, removeItem, setQuantity, clear } = useCartStore();
+  const { items, deliveryMode, setDeliveryMode, serverId, setServerId, removeItem, setQuantity, clear } = useCartStore();
+  // Automatic delivery (default): the backend picks the server and the delivery follows the player into the game.
+  const autoMode = deliveryMode === 'auto';
   const [serverAutoSelected, setServerAutoSelected] = React.useState(false);
   const [checkoutStep, setCheckoutStep] = React.useState<CheckoutStep>('cart');
   const [orderIds, setOrderIds] = React.useState<string[]>([]);
@@ -90,14 +92,16 @@ export default function CartPage() {
   const activeServerId = serverConfirmed ? serverId : null;
   const syncLines = React.useMemo(
     () =>
-      activeServerId === null
+      autoMode
+        ? items.map((item) => ({ productId: item.productId, quantity: item.quantity }))
+        : activeServerId === null
         ? []
         : items.map((item) => ({
             productId: item.productId,
             serverId: activeServerId,
             quantity: item.quantity,
           })),
-    [items, activeServerId]
+    [items, activeServerId, autoMode]
   );
   const syncSignature = React.useMemo(() => JSON.stringify(syncLines), [syncLines]);
 
@@ -116,7 +120,7 @@ export default function CartPage() {
   const previewMutation = useMutation({
     mutationFn: async () => {
       await cartApi.syncCart(syncLines);
-      return checkoutApi.createSession(makeIdempotencyKey());
+      return checkoutApi.createSession(makeIdempotencyKey(), { autoServer: autoMode });
     },
     onSuccess: (session) => {
       setAuthoritativeTotal(session.totalAmount);
@@ -136,7 +140,7 @@ export default function CartPage() {
   const commitMutation = useMutation({
     mutationFn: async () => {
       await cartApi.syncCart(syncLines);
-      const session = await checkoutApi.createSession(makeIdempotencyKey());
+      const session = await checkoutApi.createSession(makeIdempotencyKey(), { autoServer: autoMode });
       setAuthoritativeTotal(session.totalAmount);
       return checkoutApi.commitSession(session.id);
     },
@@ -172,7 +176,7 @@ export default function CartPage() {
   // must choose, because a dino sent to the wrong server cannot be moved.
   const onlineServers = servers.filter((server) => server.isOnline);
   React.useEffect(() => {
-    if (isServersLoading || servers.length === 0) return;
+    if (autoMode || isServersLoading || servers.length === 0) return;
     if (serverId !== null && servers.some((server) => server.id === serverId && server.isOnline)) return;
     const preferred = readPreferredServerId(servers);
     if (preferred !== null) {
@@ -185,7 +189,7 @@ export default function CartPage() {
       setServerId(null); // the saved server went offline: ask again
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [servers, isServersLoading]);
+  }, [servers, isServersLoading, autoMode]);
 
   const handleServerSelect = (id: number) => {
     setServerId(id);
@@ -306,28 +310,53 @@ export default function CartPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <section className="lg:col-span-2 space-y-4" aria-label="รายการสินค้าในตะกร้า">
           <div className="space-y-3 rounded-2xl border border-slate-700/40 bg-surface-3 p-5">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-iris-pearl">
-                <Server className="h-3.5 w-3.5 text-iris-cyan" /><T text={"เซิร์ฟเวอร์ปลายทางของทั้งตะกร้า"} />
+                <Server className="h-3.5 w-3.5 text-iris-cyan" /><T text={"ส่งของเข้าเกม"} />
               </span>
-              <span className="font-mono text-[10px] text-iris-muted">{onlineServers.length}/{servers.length} online</span>
+              <div role="group" aria-label="วิธีส่งของ" className="flex flex-wrap gap-2">
+                <button type="button" aria-pressed={autoMode} onClick={() => setDeliveryMode('auto')} className={`ark-chip text-xs font-bold${autoMode ? ' on' : ''}`}>
+                  <T text={"อัตโนมัติ (แนะนำ)"} />
+                </button>
+                <button type="button" aria-pressed={!autoMode} onClick={() => setDeliveryMode('server')} className={`ark-chip text-xs font-bold${!autoMode ? ' on' : ''}`}>
+                  <T text={"เลือกเซิร์ฟเวอร์เอง"} />
+                </button>
+              </div>
             </div>
-            <ServerPicker
-              servers={servers}
-              isLoading={isServersLoading}
-              isError={isServersError}
-              selectedServerId={serverId}
-              autoSelected={serverAutoSelected}
-              onSelect={handleServerSelect}
-            />
-            {serverId === null && !isServersLoading && servers.length > 0 && (
-              <p className="text-[11px] text-amber-200" role="status"><T text={"เลือกเซิร์ฟเวอร์ปลายทางเพื่อตรวจยอดและชำระเงิน"} /></p>
-            )}
-            {activeServerId !== null && hasDino && (
-              <p className="flex items-start gap-1.5 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-[11px] text-amber-200">
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span><T text={"ไดโนเสาร์ในตะกร้าจะถูกส่งไปที่ "} /><strong>{serverName(activeServerId)}</strong><T text={" และย้ายภายหลังไม่ได้ ตรวจชื่อเซิร์ฟเวอร์ก่อนกดยืนยัน"} /></span>
-              </p>
+            {autoMode ? (
+              <div className="space-y-2 text-[12px] leading-relaxed text-iris-muted">
+                <p><T text={"ถ้าคุณออนไลน์ในเกมอยู่ ระบบส่งเข้าเซิร์ฟเวอร์ที่คุณอยู่ทันที ไม่ต้องเลือกเซิร์ฟเวอร์"} /></p>
+                <p><T text={"ถ้ายังไม่ได้ออนไลน์ ของจะเก็บไว้ในกระเป๋า แล้วส่งให้อัตโนมัติเมื่อคุณล็อกอินเข้าเกม หรือพิมพ์ /claim เพื่อรับเอง"} /></p>
+                {hasDino && (
+                  <p className="flex items-start gap-1.5 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-amber-200">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span><T text={"ไดโนเสาร์ในตะกร้าจะลงที่เซิร์ฟเวอร์ที่คุณล็อกอินเข้าไป และย้ายภายหลังไม่ได้"} /></span>
+                  </p>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-end">
+                  <span className="font-mono text-[10px] text-iris-muted">{onlineServers.length}/{servers.length} online</span>
+                </div>
+                <ServerPicker
+                  servers={servers}
+                  isLoading={isServersLoading}
+                  isError={isServersError}
+                  selectedServerId={serverId}
+                  autoSelected={serverAutoSelected}
+                  onSelect={handleServerSelect}
+                />
+                {serverId === null && !isServersLoading && servers.length > 0 && (
+                  <p className="text-[11px] text-amber-200" role="status"><T text={"เลือกเซิร์ฟเวอร์ปลายทางเพื่อตรวจยอดและชำระเงิน"} /></p>
+                )}
+                {activeServerId !== null && hasDino && (
+                  <p className="flex items-start gap-1.5 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-[11px] text-amber-200">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span><T text={"ไดโนเสาร์ในตะกร้าจะถูกส่งไปที่ "} /><strong>{serverName(activeServerId)}</strong><T text={" และย้ายภายหลังไม่ได้ ตรวจชื่อเซิร์ฟเวอร์ก่อนกดยืนยัน"} /></span>
+                  </p>
+                )}
+              </>
             )}
           </div>
 
@@ -483,7 +512,7 @@ export default function CartPage() {
                 checkoutStep === 'submitting' ||
                 productsLoading ||
                 productsError ||
-                (!!user && activeServerId === null) ||
+                (!!user && !autoMode && activeServerId === null) ||
                 (!!user && affordabilityKnown && !isAffordable)
               }
               isLoading={checkoutStep === 'submitting'}

@@ -883,7 +883,7 @@ export class AdminController {
       res.json({
         items: result[1].map((row: any) => ({
           id: row.id,
-          kind: row.vipPackageId ? 'vip' : 'topup',
+          kind: row.vipPackageId ? 'vip' : row.perkTokenPackId ? 'tokens' : 'topup',
           provider: row.provider,
           status: row.status,
           reference: row.reference,
@@ -1766,7 +1766,7 @@ export class AdminController {
       const mapped = dbSlips.map((item) => ({
         id: item.id,
         // 'vip' slips grant VIP on approval and never credit IC (contracts/vip-2026-10.md).
-        kind: item.vipPackageId ? 'vip' as const : 'topup' as const,
+        kind: item.vipPackageId ? 'vip' as const : item.perkTokenPackId ? 'tokens' as const : 'topup' as const,
         vipPackageId: item.vipPackageId ?? null,
         userId: item.userId,
         userName: item.user?.discordUsername || 'Survivor',
@@ -1853,7 +1853,7 @@ export class AdminController {
         if (intent.userId === req.user!.id) {
           throw new AppError('You cannot approve your own payment slip', 403);
         }
-        const kind = intent.vipPackageId ? 'vip' : 'topup';
+        const kind = intent.vipPackageId ? 'vip' : intent.perkTokenPackId ? 'tokens' : 'topup';
         if (intent.status === 'completed') {
           return res.json({
             success: true,

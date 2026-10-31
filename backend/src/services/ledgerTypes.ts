@@ -46,6 +46,7 @@ export const LEDGER_TYPES: Record<string, LedgerTypeInfo> = {
   order_purchase: { labelTh: 'ซื้อสินค้า', category: 'purchase' },
   checkout_purchase: { labelTh: 'ซื้อสินค้า (ตะกร้า)', category: 'purchase' },
   game_purchase: { labelTh: 'ซื้อสินค้าในเกม', category: 'purchase' },
+  perk_token_purchase: { labelTh: 'ซื้อ Perk Token', category: 'purchase' },
   order_refund: { labelTh: 'คืนเงินคำสั่งซื้อ', category: 'refund' },
   dino_escrow_refund: { labelTh: 'คืนเงินไดโน P2P (ส่งไม่สำเร็จ)', category: 'refund' },
   admin_adjustment: { labelTh: 'แอดมินปรับยอด', category: 'admin' },
@@ -67,6 +68,7 @@ const LEDGER_TYPE_LABEL_EN: Record<string, string> = {
   order_purchase: 'Purchase',
   checkout_purchase: 'Purchase',
   game_purchase: 'Purchase',
+  perk_token_purchase: 'Perk Token purchase',
   order_refund: 'Order refund',
   dino_escrow_refund: 'Marketplace refund',
   admin_adjustment: 'Admin adjustment',
@@ -120,6 +122,7 @@ export const REFERENCE_TYPES = [
   'legacy_balance_claim',
   'delivery',
   'user',
+  'perk_token_pack',
 ] as const;
 
 export type ReferenceType = (typeof REFERENCE_TYPES)[number];

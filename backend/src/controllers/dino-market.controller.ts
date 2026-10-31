@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import { cancelMarketListing, publishMarketDrafts } from '../services/marketDrafts.service.js';
 import prisma from '../config/database.js';
 import { AppError } from '../middlewares/errorHandler.js';
 import walletService, { userAccountKey, SYSTEM_ACCOUNTS } from '../services/wallet.service.js';
@@ -49,6 +50,7 @@ export class DinoMarketController {
 
       const where: any = {
         status: 'listed',
+        AND: [{ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }],
       };
 
       if (species) {
@@ -89,6 +91,7 @@ export class DinoMarketController {
         prisma.dinoListing.findMany({
           where,
           include: {
+            originServer: { select: {id:true,name:true,map:true} },
             seller: {
               select: {
                 id: true,
@@ -128,6 +131,7 @@ export class DinoMarketController {
       const listing = await prisma.dinoListing.findUnique({
         where: { id },
         include: {
+          originServer: { select: {id:true,name:true,map:true} },
           seller: {
             select: {
               id: true,
@@ -138,7 +142,7 @@ export class DinoMarketController {
         },
       });
 
-      if (!listing) {
+      if (!listing || listing.status === 'draft') {
         return res.status(404).json({ error: 'Listing not found' });
       }
 
@@ -186,6 +190,7 @@ export class DinoMarketController {
       const [listings, total] = await Promise.all([
         prisma.dinoListing.findMany({
           where,
+          include: { originServer: { select: {id:true,name:true,map:true} } },
           orderBy: { createdAt: 'desc' },
           skip,
           take: parseInt(limit as string),
@@ -219,6 +224,7 @@ export class DinoMarketController {
         prisma.dinoListing.findMany({
           where: { buyerId: userId, status: 'sold' },
           include: {
+            originServer: { select: {id:true,name:true,map:true} },
             seller: {
               select: {
                 id: true,
@@ -384,39 +390,13 @@ export class DinoMarketController {
 
   // Cancel listing
   cancelListing = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      const userId = (req as any).user.id;
-
-      const listing = await prisma.dinoListing.findUnique({
-        where: { id },
-      });
-
-      if (!listing) {
-        return res.status(404).json({ error: 'Listing not found' });
-      }
-
-      if (listing.sellerId !== userId) {
-        return res.status(403).json({ error: 'You can only cancel your own listings' });
-      }
-
-      if (listing.status !== 'listed') {
-        return res.status(400).json({ error: 'This listing cannot be cancelled' });
-      }
-
-      await prisma.dinoListing.update({
-        where: { id },
-        data: { status: 'cancelled' },
-      });
-
-      res.json({
-        success: true,
-        message: 'Listing cancelled. Your dino will be returned when you log in.',
-        returnCryopod: true,
-      });
-    } catch (error) {
-      next(error);
-    }
+    try { res.json(await cancelMarketListing((req as any).user.id, req.params.id)); } catch(error) { next(error); }
+  };
+  publishListing = async (req: Request, res: Response, next: NextFunction) => {
+    try { const listings = await publishMarketDrafts((req as any).user.id, [{...req.body,id:req.params.id}]); res.json({success:true,listing:listings[0]}); } catch(error) {next(error);}
+  };
+  publishBatch = async (req: Request, res: Response, next: NextFunction) => {
+    try {res.json({success:true,listings:await publishMarketDrafts((req as any).user.id,req.body.items)});}catch(error){next(error);}
   };
 
   // Buy dino
@@ -482,15 +462,37 @@ export class DinoMarketController {
         throw new AppError('Listing does not contain a valid native dino snapshot', 409);
       }
       const nativeDinoSha256 = crypto.createHash('sha256').update(listing.cryopodData).digest('hex');
+
+      // Extract native object name in map (e.g. Tiktaalik_Character_BP_C_0) from ARK's binary header
+      let extractedNameInMap = '';
+      if (listing.cryopodData.length > 40) {
+        const classLen = listing.cryopodData.readInt32LE(20);
+        if (classLen > 0 && classLen < 500) {
+          const nameOffset = 24 + classLen + 8;
+          if (nameOffset + 4 < listing.cryopodData.length) {
+            const nameLen = listing.cryopodData.readInt32LE(nameOffset);
+            if (nameLen > 0 && nameOffset + 4 + nameLen <= listing.cryopodData.length) {
+              extractedNameInMap = listing.cryopodData.subarray(nameOffset + 4, nameOffset + 4 + nameLen - 1).toString('ascii');
+            }
+          }
+        }
+      }
+
+      const cleanSpecies = (listing.species || '').replace(/['"]/g, '').trim();
+      const cleanDinoName = (listing.dinoName || cleanSpecies).replace(/['"]/g, '').trim();
+      const finalNameInMap = (extractedNameInMap || cleanSpecies).replace(/['"]/g, '').trim();
+
       const deliveryPayload = {
         schemaVersion: 2,
         dinoDataVersion: 1,
         dinoDataSha256: nativeDinoSha256,
         dinoDataSize: listing.cryopodData.length,
         listingId: listing.id,
-        species: listing.species,
+        species: cleanSpecies,
+        nativeDinoName: cleanDinoName,
+        nativeDinoNameInMap: finalNameInMap,
         blueprintPath: listing.blueprintPath,
-        dinoName: listing.dinoName,
+        dinoName: cleanDinoName,
         level: listing.level,
         gender: listing.gender,
         baseStats: {
@@ -519,7 +521,7 @@ export class DinoMarketController {
         // Conditional state transition (listed -> sold) under Serializable isolation
         // prevents a double-buy race: only the first buyer flips the listing.
         const claimed = await tx.dinoListing.updateMany({
-          where: { id, status: 'listed' },
+          where: { id, status: 'listed', price: listing.price, OR: [{expiresAt:null},{expiresAt:{gt:new Date()}}] },
           data: {
             status: 'sold',
             buyerId: userId,
@@ -619,9 +621,9 @@ export class DinoMarketController {
           id: d.id,
           steamId: d.buyer?.steamId,
           buyerSteamId: d.buyer?.steamId, // Alias for plugin compatibility
-          species: d.species,
+          species: (d.species || '').replace(/['"]/g, '').trim(),
           blueprintPath: d.blueprintPath,
-          dinoName: d.dinoName,
+          dinoName: (d.dinoName || '').replace(/['"]/g, '').trim(),
           level: d.level,
           gender: d.gender,
           baseStats: {
@@ -726,60 +728,8 @@ export class DinoMarketController {
   };
 
   // Get cancelled listings for return (called from plugin)
-  getCancelledForReturn = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { steamId } = req.query;
-
-      if (!steamId) {
-        return res.status(400).json({ error: 'steamId is required' });
-      }
-
-      const user = await prisma.user.findUnique({
-        where: { steamId: steamId as string },
-      });
-
-      if (!user) {
-        return res.json({ returns: [] });
-      }
-
-      const returns = await prisma.dinoListing.findMany({
-        where: {
-          sellerId: user.id,
-          status: 'cancelled',
-          deliveryStatus: null, // Not yet returned
-        },
-      });
-
-      res.json({
-        returns: returns.map((r) => ({
-          id: r.id,
-          species: r.species,
-          blueprintPath: r.blueprintPath,
-          cryopodData: r.cryopodData ? r.cryopodData.toString('base64') : null,
-        })),
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Mark return complete
-  markReturned = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-
-      await prisma.dinoListing.update({
-        where: { id },
-        data: {
-          deliveryStatus: 'returned',
-        },
-      });
-
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  };
+  getCancelledForReturn = async (_req: Request, res: Response) => {res.status(409).json({error:'Use signed delivery claim/complete for exact dino returns'});};
+  markReturned = async (_req: Request, res: Response) => {res.status(409).json({error:'Use signed delivery claim/complete for exact dino returns'});};
 
   // Get trade statistics
   getTradeStats = async (req: Request, res: Response, next: NextFunction) => {

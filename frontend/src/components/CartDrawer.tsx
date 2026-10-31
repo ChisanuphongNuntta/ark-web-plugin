@@ -229,7 +229,7 @@ export function CartDrawer() {
                   </div>
                 </div>
 
-                <p className="text-[11px] text-iris-muted"><T text={"เลือกเซิร์ฟเวอร์ปลายทางตอนชำระเงิน ครั้งเดียวสำหรับทั้งตะกร้า"} /></p>
+                <p className="text-[11px] text-iris-muted"><T text={"ส่งเข้าเกมอัตโนมัติ หรือเลือกเซิร์ฟเวอร์เองตอนชำระเงิน"} /></p>
 
                 <Link href="/cart" className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-iris-cyan px-5 py-3 text-sm font-semibold text-iris-ink transition hover:bg-iris-pearl" onClick={() => setDrawerOpen(false)}>
                   <span><T text={"ไปที่ตะกร้าและชำระเงิน"} /></span>

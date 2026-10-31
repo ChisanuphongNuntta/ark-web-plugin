@@ -240,7 +240,7 @@ export const cartApi = {
    * condition, and the user must see it. Only a genuine transport failure (no
    * status) falls back to the fixture cart in auto mode.
    */
-  syncCart: (lines: CartItemInput[]): Promise<Cart> => {
+  syncCart: (lines: Array<Omit<CartItemInput, 'serverId'> & { serverId?: number }>): Promise<Cart> => {
     const mode = fixtureMode();
     if (mode === 'always') return Promise.resolve(cartFixture);
     return api
@@ -265,11 +265,11 @@ export const checkoutApi = {
    * POST /checkout/session { idempotencyKey } -> CheckoutSession.
    * totalAmount is a backend-computed decimal string; never recompute it.
    */
-  createSession: (idempotencyKey: string): Promise<CheckoutSession> =>
+  createSession: (idempotencyKey: string, options: { autoServer?: boolean } = {}): Promise<CheckoutSession> =>
     withFixture(
       () =>
         api
-          .post('/checkout/session', { idempotencyKey })
+          .post('/checkout/session', { idempotencyKey, ...(options.autoServer ? { autoServer: true } : {}) })
           .then((r) => r.data),
       checkoutSessionFixture
     ),

@@ -3,14 +3,12 @@ import {
   getMessagesForPlugin,
   createMessageFromPlugin,
   getChatHistory,
-  getChatChannels,
-  upsertChatChannel,
-  deleteChatChannel,
   getServersForChat,
   getChatConfig,
 } from '../controllers/chat.controller.js';
-import { authenticate, authenticatePluginFlexible, requireAdmin } from '../middlewares/auth.js';
+import { authenticate, authenticatePluginFlexible, requireWebsiteAdmin } from '../middlewares/auth.js';
 
+import { listChannels, createChannel, deleteChannel } from '../controllers/adminChat.controller.js';
 const router = Router();
 
 // Plugin endpoints (CR-PLUGIN-006: hmacAuth + X-API-Key backward-compat during overlap)
@@ -23,8 +21,8 @@ router.get('/servers', getServersForChat as any);
 router.get('/history', getChatHistory as any);
 
 // Admin endpoints (JWT + Admin auth)
-router.get('/channels', authenticate as any, requireAdmin as any, getChatChannels as any);
-router.post('/channels', authenticate as any, requireAdmin as any, upsertChatChannel as any);
-router.delete('/channels/:id', authenticate as any, requireAdmin as any, deleteChatChannel as any);
+router.get('/channels', authenticate as any, requireWebsiteAdmin as any, listChannels as any);
+router.post('/channels', authenticate as any, requireWebsiteAdmin as any, createChannel as any);
+router.delete('/channels/:id', authenticate as any, requireWebsiteAdmin as any, deleteChannel as any);
 
 export default router;

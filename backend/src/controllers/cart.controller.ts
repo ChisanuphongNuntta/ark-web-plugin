@@ -1,6 +1,8 @@
 import { Response, NextFunction } from 'express';
 import prisma from '../config/database.js';
 import { AuthRequest } from '../middlewares/auth.js';
+import { ACTIVE_CREDENTIAL_INCLUDE, pickAutoServer, type DeliveryServer } from '../services/deliveryTarget.service.js';
+import { lastLoginServer } from '../services/playerPresence.service.js';
 import { AppError } from '../middlewares/errorHandler.js';
 
 async function fetchFullCart(userId: string) {
@@ -218,24 +220,26 @@ export class CartController {
       }
 
       // Normalize + merge duplicate (productId, serverId) lines by summing quantity, and
-      // drop non-positive quantities (a quantity <= 0 means "not in cart").
-      const merged = new Map<string, { productId: number; serverId: number; quantity: number }>();
+      // drop non-positive quantities (a quantity <= 0 means "not in cart"). A line without a
+      // serverId is an "auto" line: the backend picks the delivery server below.
+      const merged = new Map<string, { productId: number; serverId: number | null; quantity: number }>();
       for (const raw of lines) {
         const productId = Number(raw?.productId);
-        const serverId = Number(raw?.serverId);
+        const serverId = raw?.serverId === undefined || raw?.serverId === null ? null : Number(raw.serverId);
         const quantity = Number(raw?.quantity);
-        if (!Number.isInteger(productId) || !Number.isInteger(serverId)) {
-          throw new AppError('Each line requires integer productId and serverId', 400);
+        if (!Number.isInteger(productId) || (serverId !== null && !Number.isInteger(serverId))) {
+          throw new AppError('Each line requires an integer productId and either an integer serverId or none (auto)', 400);
         }
         if (!Number.isInteger(quantity)) {
           throw new AppError('Each line requires an integer quantity', 400);
         }
         if (quantity <= 0) continue;
-        const key = `${productId}:${serverId}`;
+        const key = `${productId}:${serverId ?? 'auto'}`;
         const existing = merged.get(key);
         merged.set(key, { productId, serverId, quantity: (existing?.quantity || 0) + quantity });
       }
-      const desired = [...merged.values()];
+      let desired = [...merged.values()];
+      const autoCapabilities: Array<string[] | null | undefined> = [];
 
       // Validate every line BEFORE touching the cart so we never half-apply a sync.
       for (const line of desired) {
@@ -243,9 +247,13 @@ export class CartController {
         if (!product || !product.isActive) {
           throw new AppError(`Product ${line.productId} not found or unavailable`, 404);
         }
-        const server = await prisma.server.findUnique({ where: { id: line.serverId } });
-        if (!server || !server.isActive) {
-          throw new AppError(`Server ${line.serverId} not found or inactive`, 404);
+        if (line.serverId === null) {
+          autoCapabilities.push(product.requiredCapabilities);
+        } else {
+          const server = await prisma.server.findUnique({ where: { id: line.serverId } });
+          if (!server || !server.isActive) {
+            throw new AppError(`Server ${line.serverId} not found or inactive`, 404);
+          }
         }
         if (product.stock !== null && product.stock < line.quantity) {
           throw new AppError(`Not enough stock for "${product.name}"`, 400);
@@ -261,6 +269,22 @@ export class CartController {
         }
       }
 
+      // Auto lines: one server that can deliver every auto line, preferring where the buyer last logged in.
+      if (autoCapabilities.length > 0) {
+        const servers = await prisma.server.findMany({ where: { isActive: true }, include: ACTIVE_CREDENTIAL_INCLUDE });
+        const picked = pickAutoServer(servers as DeliveryServer[], autoCapabilities, await lastLoginServer(req.user!.steamId));
+        if (!picked) {
+          throw new AppError('No server can deliver everything in your cart right now. Remove an item or choose a server yourself.', 409);
+        }
+        const regrouped = new Map<string, { productId: number; serverId: number | null; quantity: number }>();
+        for (const line of desired) {
+          const serverId = line.serverId ?? picked.id;
+          const key = `${line.productId}:${serverId}`;
+          regrouped.set(key, { productId: line.productId, serverId, quantity: (regrouped.get(key)?.quantity ?? 0) + line.quantity });
+        }
+        desired = [...regrouped.values()];
+      }
+
       // Atomically replace the cart contents.
       await prisma.$transaction(async (tx) => {
         const cart = await tx.cart.upsert({
@@ -274,7 +298,7 @@ export class CartController {
             data: desired.map((line) => ({
               cartId: cart.id,
               productId: line.productId,
-              serverId: line.serverId,
+              serverId: line.serverId as number,
               quantity: line.quantity,
             })),
           });

@@ -10,6 +10,9 @@ import {
   type AdminSlipCreatedEvent,
   type AdminVipEvent,
   type VipUpdatedEvent,
+  type PerksUpdatedEvent,
+  type AdminPerksEvent,
+  type ChatDeletedEvent,
   type CatalogUpdatedEvent,
   type DeliveryUpdatedEvent,
   type OrderUpdatedEvent,
@@ -220,4 +223,26 @@ export function emitVipUpdated(userId: string, payload: Omit<VipUpdatedEvent, 'a
 /** admin:vip -> room admin. Ids only; admins refetch the list/detail. */
 export function emitAdminVip(payload: Omit<AdminVipEvent, 'at'>): void {
   emitTo(RealtimeRooms.admin, RealtimeEvents.adminVip, { ...payload, at: now() } satisfies AdminVipEvent);
+}
+
+/** perks:updated -> user:<id> (contracts/entitlements-2026-10.md). */
+export function emitPerksUpdated(userId: string, payload: Omit<PerksUpdatedEvent, 'at'>): void {
+  emitTo(RealtimeRooms.user(userId), RealtimeEvents.perksUpdated, { ...payload, at: now() } satisfies PerksUpdatedEvent);
+}
+
+/** admin:perks -> room admin. Ids only. */
+export function emitAdminPerks(payload: Omit<AdminPerksEvent, 'at'>): void {
+  emitTo(RealtimeRooms.admin, RealtimeEvents.adminPerks, { ...payload, at: now() } satisfies AdminPerksEvent);
+}
+
+/** chat:deleted -> the chat rooms the message was shown in. */
+export function emitChatDeleted(id: string, serverId: number | null): void {
+  const io = getRealtimeServer();
+  if (!io) return;
+  try {
+    const rooms = serverId ? ['chat:global', `chat:server:${serverId}`] : ['chat:global'];
+    io.to(rooms).emit(RealtimeEvents.chatDeleted, { id, serverId, at: now() } satisfies ChatDeletedEvent);
+  } catch (error) {
+    console.error('[realtime] chat:deleted failed:', error);
+  }
 }

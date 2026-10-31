@@ -94,7 +94,7 @@ async function primePersistedAuthAndCart(page: import('@playwright/test').Page) 
 
 async function primeBasket(
   page: import('@playwright/test').Page,
-  basket: { items: Array<{ productId: number; serverId?: number; quantity: number }>; serverId?: number | null },
+  basket: { items: Array<{ productId: number; serverId?: number; quantity: number }>; serverId?: number | null; deliveryMode?: 'auto' | 'server' },
   version: number
 ) {
   await page.evaluate(
@@ -116,6 +116,7 @@ async function mockCartContracts(
   options?: { available?: string; sessionTotal?: string; servers?: unknown[] }
 ) {
   const syncedLines: unknown[] = [];
+  const sessionBodies: Array<Record<string, unknown>> = [];
   let committed = false;
 
   await page.route(/\/api\/products\/1(?:\?.*)?$/, async (route) => {
@@ -214,6 +215,7 @@ async function mockCartContracts(
       await route.fulfill({ status: 204, headers: corsHeaders });
       return;
     }
+    sessionBodies.push(route.request().postDataJSON() ?? {});
     await route.fulfill({
       status: 200,
       headers: corsHeaders,
@@ -251,6 +253,7 @@ async function mockCartContracts(
 
   return {
     syncedLines,
+    sessionBodies,
     wasCommitted: () => committed,
   };
 }
@@ -310,7 +313,7 @@ test.describe('IRIS Cart and backend-priced checkout', () => {
     const contracts = await mockCartContracts(page, { servers: twoOnlineServers });
 
     await page.goto('/cart', { waitUntil: 'domcontentloaded' });
-    await primeBasket(page, { items: [{ productId: 1, quantity: 2 }], serverId: null }, 3);
+    await primeBasket(page, { items: [{ productId: 1, quantity: 2 }], serverId: null, deliveryMode: 'server' }, 4);
     await page.evaluate(() => window.localStorage.removeItem('iris_preferred_server'));
     await page.reload({ waitUntil: 'domcontentloaded' });
 
@@ -355,11 +358,49 @@ test.describe('IRIS Cart and backend-priced checkout', () => {
     });
 
     await page.goto('/cart', { waitUntil: 'domcontentloaded' });
-    await primeBasket(page, { items: [{ productId: 1, quantity: 1 }], serverId: 1 }, 3);
+    await primeBasket(page, { items: [{ productId: 1, quantity: 1 }], serverId: 1, deliveryMode: 'server' }, 4);
     await page.evaluate(() => window.localStorage.removeItem('iris_preferred_server'));
     await page.reload({ waitUntil: 'domcontentloaded' });
 
     await expect(page.getByText('เลือกเซิร์ฟเวอร์ปลายทางเพื่อตรวจยอดและชำระเงิน')).toBeVisible({ timeout: 15000 });
     expect(contracts.syncedLines).toHaveLength(0);
+  });
+  test('automatic delivery (default): no server is chosen, lines go to the backend without one and the session is flagged auto', async ({ page }) => {
+    await seedAuthAndCart(page, { cart: false });
+    const contracts = await mockCartContracts(page, { servers: twoOnlineServers });
+
+    await page.goto('/cart', { waitUntil: 'domcontentloaded' });
+    await primeBasket(page, { items: [{ productId: 1, quantity: 2 }], serverId: null, deliveryMode: 'auto' }, 4);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText('ถ้าคุณออนไลน์ในเกมอยู่ ระบบส่งเข้าเซิร์ฟเวอร์ที่คุณอยู่ทันที ไม่ต้องเลือกเซิร์ฟเวอร์')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/^1000\s*IC$/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' })).toBeEnabled();
+    expect(contracts.syncedLines.at(-1)).toEqual([{ productId: 1, quantity: 2 }]);
+    expect(contracts.sessionBodies.at(-1)).toMatchObject({ autoServer: true });
+
+    await page.getByRole('button', { name: 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' }).click();
+    await expect(page.getByRole('heading', { name: 'ทำรายการสำเร็จ' })).toBeVisible();
+    expect(contracts.wasCommitted()).toBe(true);
+  });
+
+  test('switching to "choose a server myself" asks for a server and sends it without the auto flag', async ({ page }) => {
+    await seedAuthAndCart(page, { cart: false });
+    const contracts = await mockCartContracts(page, { servers: twoOnlineServers });
+
+    await page.goto('/cart', { waitUntil: 'domcontentloaded' });
+    await primeBasket(page, { items: [{ productId: 1, quantity: 1 }], serverId: null, deliveryMode: 'auto' }, 4);
+    await page.evaluate(() => window.localStorage.removeItem('iris_preferred_server'));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    await page.getByRole('button', { name: 'เลือกเซิร์ฟเวอร์เอง' }).click();
+    await expect(page.getByText('เลือกเซิร์ฟเวอร์ปลายทางเพื่อตรวจยอดและชำระเงิน')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' })).toBeDisabled();
+
+    await page.getByRole('button', { name: /IRIS-PVE-Ragnarok-02/ }).click();
+    await expect(page.getByRole('button', { name: 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' })).toBeEnabled();
+    await expect(page.getByText(/^1000\s*IC$/)).toBeVisible();
+    expect(contracts.syncedLines.at(-1)).toEqual([{ productId: 1, serverId: 2, quantity: 1 }]);
+    expect(contracts.sessionBodies.at(-1)).not.toHaveProperty('autoServer');
   });
 });

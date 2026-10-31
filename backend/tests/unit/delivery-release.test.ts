@@ -410,7 +410,9 @@ describe('player comes online', () => {
 
   it('GET /plugin/player/:steamId triggers the reset and never fails the lookup on reset errors', async () => {
     db.user.findUnique.mockResolvedValueOnce({ id: 'u1', discordUsername: 'Heart', pointsBalance: 10n, steamId: '76561198000000001' });
-    db.deliveryJob.findMany.mockRejectedValueOnce(new Error('db hiccup'));
+    // The login hook looks up delivery jobs twice (auto-retarget candidates, then the offline backoff reset);
+    // both are best-effort and must never fail the lookup.
+    db.deliveryJob.findMany.mockRejectedValueOnce(new Error('db hiccup')).mockRejectedValueOnce(new Error('db hiccup'));
     db.order.count.mockResolvedValueOnce(0);
 
     const res = resMock();
@@ -418,7 +420,7 @@ describe('player comes online', () => {
     await plugin.getPlayerBySteamId({ params: { steamId: '76561198000000001' }, serverId: 1 } as any, res, next);
 
     expect(next).not.toHaveBeenCalled();
-    expect(db.deliveryJob.findMany).toHaveBeenCalledTimes(1);
+    expect(db.deliveryJob.findMany).toHaveBeenCalledTimes(2);
     expect(res.json).toHaveBeenCalledWith({ player: expect.objectContaining({ id: 'u1', pointsBalance: 10 }) });
   });
 });

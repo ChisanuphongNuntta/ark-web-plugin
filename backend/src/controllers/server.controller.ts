@@ -55,6 +55,7 @@ export class ServerController {
             chatIcon: server.chatIcon ?? null,
             drainMode: Boolean(server.drainMode),
             supportsDinoDelivery: (server.capabilities ?? []).includes('delivery.dino.v2'),
+            supportsNativeDinoDelivery: (server.capabilities ?? []).includes('delivery.dino.v2'),
             // ServerSummary (UI redesign 2026-10)
             ...summary,
           };

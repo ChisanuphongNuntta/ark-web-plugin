@@ -5,21 +5,17 @@ import { T, useLanguage } from '@/components/i18n/LanguageProvider';
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
 import {
   Check,
   Coins,
   CreditCard,
   Minus,
   Plus,
-  Server,
   ShoppingCart,
   Sparkles,
   X,
 } from 'lucide-react';
-import { serverApi } from '@/lib/contracts/client';
 import type { Product } from '@/lib/contracts/types';
-import { ServerPicker, readPreferredServerId, rememberPreferredServer } from '@/components/shop/ServerPicker';
 import { useCartStore } from '@/lib/store';
 import { Badge } from '@/components/ui/Badge';
 import { ProductArtwork } from '@/components/ProductArtwork';
@@ -52,27 +48,15 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const setDrawerOpen = useCartStore((state) => state.setDrawerOpen);
-  const basketServerId = useCartStore((state) => state.serverId);
-  const setBasketServerId = useCartStore((state) => state.setServerId);
 
   const [mounted, setMounted] = React.useState(false);
   const [quantity, setQuantity] = React.useState(1);
-  const [selectedServerId, setSelectedServerId] = React.useState<number | null>(null);
-  const [autoSelected, setAutoSelected] = React.useState(false);
   const [feedback, setFeedback] = React.useState<'idle' | 'added'>('idle');
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  const serversQuery = useQuery({
-    queryKey: ['contract', 'servers'],
-    queryFn: () => serverApi.listServers(),
-    staleTime: 30_000,
-    enabled: isOpen && !!product,
-  });
-
-  const servers = serversQuery.data?.servers ?? [];
   const quality = qualityConfig[product?.quality ?? 0] ?? qualityConfig[0];
   const isDino = product?.productType === 'dino';
 
@@ -82,27 +66,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
       setFeedback('idle');
       return;
     }
-    if (selectedServerId === null) {
-      const basket = basketServerId !== null && servers.some((s) => s.id === basketServerId && s.isOnline) ? basketServerId : null;
-      const preferred = basket ?? readPreferredServerId(servers);
-      if (preferred !== null) {
-        setSelectedServerId(preferred);
-        setAutoSelected(true);
-        return;
-      }
-    }
-    const firstOnline = servers.find((s) => s.isOnline);
-    if (firstOnline && selectedServerId === null) {
-      setSelectedServerId(firstOnline.id);
-      setAutoSelected(true);
-    }
-  }, [isOpen, servers, selectedServerId, basketServerId]);
-
-  const selectServer = (id: number) => {
-    setSelectedServerId(id);
-    setAutoSelected(false);
-    rememberPreferredServer(id);
-  };
+  }, [isOpen]);
 
   React.useEffect(() => {
     if (!isOpen || !mounted) return;
@@ -137,10 +101,6 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
 
   if (!mounted || !isOpen || !product) return null;
 
-  const serverUnavailable = serversQuery.isError || (!serversQuery.isLoading && servers.length === 0);
-  // Adding to the basket never needs a server (it is picked once at checkout); paying right now does.
-  const canAdd = true;
-  const canBuyNow = selectedServerId !== null && !serversQuery.isLoading && !serverUnavailable;
   const totalPrice = product.price * quantity;
 
   const handleAddToCart = () => {
@@ -150,10 +110,9 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
     window.setTimeout(() => setFeedback('idle'), 2200);
   };
 
+  // Buy now = put it in the basket and go to the payment page, where delivery is set (automatic by default).
   const handleCheckout = () => {
-    if (!canBuyNow || selectedServerId === null) return;
     addItem(product.id, quantity, false);
-    setBasketServerId(selectedServerId);
     setDrawerOpen(false);
     onClose();
     router.push('/cart');
@@ -222,27 +181,6 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
             </div>
           </div>
 
-          {/* Server Selection */}
-          <div className="space-y-2 border-t border-slate-700/40 pt-4">
-            <div className="flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-iris-pearl">
-                <Server className="h-3.5 w-3.5 text-iris-cyan" /><T text={"เลือกเซิร์ฟเวอร์ปลายทาง · Server"} /></span>
-              <span className="font-mono text-[10px] text-iris-muted">
-                {servers.filter((s) => s.isOnline).length}/{servers.length} online
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400"><T text={"ใช้เมื่อกดชำระทันที ถ้าใส่ตะกร้า จะเลือกเซิร์ฟเวอร์ตอนชำระเงินครั้งเดียวสำหรับทั้งตะกร้า"} /></p>
-
-            <ServerPicker
-              servers={servers}
-              isLoading={serversQuery.isLoading}
-              isError={serversQuery.isError}
-              selectedServerId={selectedServerId}
-              autoSelected={autoSelected}
-              onSelect={selectServer}
-            />
-          </div>
-
           {/* Quantity and Subtotal */}
           <div className="flex items-center justify-between border-t border-slate-700/40 pt-4">
             <div>
@@ -284,11 +222,11 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
 
         {/* Modal Footer Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 border-t border-slate-700/50 bg-surface-3 p-5">
-          <button type="button" disabled={!canAdd} onClick={handleAddToCart} className="tk-btn ghost w-full sm:w-auto">
+          <button type="button" onClick={handleAddToCart} className="tk-btn ghost w-full sm:w-auto">
             {feedback === 'added' ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
             <T text={feedback === 'added' ? 'เพิ่มแล้ว' : 'ใส่ตะกร้า · Add to Cart'} />
           </button>
-          <button type="button" disabled={!canBuyNow} onClick={handleCheckout} className="tk-btn w-full sm:w-auto">
+          <button type="button" onClick={handleCheckout} className="tk-btn w-full sm:w-auto">
             {<CreditCard className="h-4 w-4" />}
             <T text={"ตรวจยอดและชำระ · Buy Now"} />
           </button>

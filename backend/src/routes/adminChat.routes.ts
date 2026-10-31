@@ -1,0 +1,18 @@
+import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import { authenticate, requireWebsiteAdmin } from '../middlewares/auth.js';
+import * as c from '../controllers/adminChat.controller.js';
+const router = Router();
+router.use(authenticate as any, requireWebsiteAdmin as any);
+router.get('/bot-status', c.botStatus as any);
+router.get('/channels', c.listChannels as any);
+router.post('/channels', c.createChannel as any);
+router.put('/channels/:id', c.updateChannel as any);
+router.delete('/channels/:id', c.deleteChannel as any);
+router.post('/channels/:id/test', rateLimit({ windowMs: 60000, max: 5, keyGenerator: (req: any) => req.user.id, standardHeaders: true, legacyHeaders: false }), c.testChannel as any);
+router.get('/messages', c.listMessages as any);
+router.delete('/messages/:id', c.deleteMessage as any);
+router.get('/mutes', c.listMutes as any);
+router.post('/mutes', c.createMute as any);
+router.delete('/mutes/:id', c.revokeMute as any);
+export default router;

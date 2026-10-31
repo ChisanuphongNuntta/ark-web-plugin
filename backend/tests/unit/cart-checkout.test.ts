@@ -476,3 +476,74 @@ async function commitDinoCheckout(capabilities: string[]) {
   expect(job).toEqual(expect.objectContaining({ serverId: 3, deliveryType: 'dino_catalog' }));
   return job.payload;
 }
+
+describe('Auto delivery flag (buyer did not pick a server)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('createCheckoutSession marks every snapshot line anyServer only when autoServer is true', async () => {
+    const cart = () => ({
+      id: 'c1',
+      items: [{
+        productId: 1, serverId: 1, quantity: 1,
+        product: { id: 1, name: 'Rifle', price: 100, isActive: true, stock: 10, maxPerUser: null, itemBlueprint: 'bp', quality: 1, isBlueprint: false },
+        server: { id: 1, name: 'PVE', isActive: true, drainMode: false, isAvailable: true, credentials: [{ id: 'cred-1' }] },
+      }],
+    });
+    const balance = { currency: 'IC', accounts: { available: '500', held: '0', promotional: '0', refundable: '0' }, total: '500' };
+    const session = { id: 'cs1', userId: 'u1', cartSnapshot: [], totalAmount: 100n, status: 'pending', idempotencyKey: 'k', expiresAt: new Date() };
+
+    for (const [autoServer, expected] of [[true, true], [false, false], [undefined, false]] as const) {
+      db.cart.findUnique.mockResolvedValueOnce(cart());
+      db.checkoutSession.findUnique.mockResolvedValueOnce(null);
+      vi.mocked(walletService.getBalance).mockResolvedValueOnce(balance as any);
+      db.checkoutSession.create.mockResolvedValueOnce(session);
+
+      await checkoutController.createCheckoutSession(
+        { user: { id: 'u1' }, body: { idempotencyKey: `k-${String(autoServer)}`, ...(autoServer === undefined ? {} : { autoServer }) } } as any,
+        { json: vi.fn() } as any,
+        vi.fn(),
+      );
+
+      const data = db.checkoutSession.create.mock.calls.at(-1)[0].data;
+      const lines = data.cartSnapshot.lines ?? data.cartSnapshot;
+      expect(lines).toHaveLength(1);
+      expect(lines[0].anyServer).toBe(expected);
+    }
+  });
+
+  it('commit puts anyServer into the delivery job payload (and its hash) for auto lines only', async () => {
+    const crypto = await import('crypto');
+    for (const anyServer of [true, false]) {
+      const snapshotLine = { productId: 1, serverId: 1, quantity: 1, price: 100, name: 'Rifle', productType: 'item', itemBlueprint: 'bp', quality: 1, isBlueprint: false, anyServer };
+      const mockSession = { id: 'cs1', userId: 'u1', totalAmount: 100n, status: 'pending', expiresAt: new Date(Date.now() + 100000), cartSnapshot: [snapshotLine] };
+      db.checkoutSession.findUnique.mockResolvedValueOnce(mockSession);
+      const mockTx: any = {
+        user: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'u1', steamId: 'steam-123' }) },
+        product: {
+          findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'Rifle', price: 100, categoryId: null, isActive: true, stock: 10, maxPerUser: null, productType: 'item', itemBlueprint: 'bp', quality: 1, isBlueprint: false, requiredCapabilities: [] }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        server: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 1, name: 'PVE', isActive: true, drainMode: false, isAvailable: true, capabilities: [], credentials: [{ id: 'cred-1' }] }) },
+        order: { create: vi.fn().mockResolvedValue({ id: 'o1' }) },
+        orderGroup: { create: vi.fn().mockResolvedValue({ id: 'og1' }) },
+        orderItem: { create: vi.fn().mockResolvedValue({ id: 'oi1' }) },
+        pointTransaction: { create: vi.fn().mockResolvedValue({}) },
+        deliveryJob: { create: vi.fn().mockResolvedValue({}) },
+        fulfillment: { create: vi.fn().mockResolvedValue({}) },
+        cartItem: { deleteMany: vi.fn().mockResolvedValue({}) },
+        checkoutSession: { findUniqueOrThrow: vi.fn().mockResolvedValue(mockSession), update: vi.fn().mockResolvedValue({}) },
+        $queryRaw: vi.fn().mockResolvedValue([]),
+      };
+      db.$transaction.mockImplementationOnce((callback: any) => callback(mockTx));
+
+      await checkoutController.commitCheckoutSession({ user: { id: 'u1' }, params: { id: 'cs1' } } as any, { json: vi.fn() } as any, vi.fn());
+
+      const job = mockTx.deliveryJob.create.mock.calls[0][0].data;
+      if (anyServer) expect(job.payload.anyServer).toBe(true);
+      else expect(job.payload).not.toHaveProperty('anyServer');
+      expect(job.payloadHash).toBe(crypto.createHash('sha256').update(JSON.stringify(job.payload)).digest('hex'));
+    }
+  });
+});

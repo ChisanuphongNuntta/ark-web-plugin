@@ -20,6 +20,9 @@ export const RealtimeEvents = {
   adminLedgerMismatch: 'admin:ledger:mismatch',
   vipUpdated: 'vip:updated',
   adminVip: 'admin:vip',
+  perksUpdated: 'perks:updated',
+  adminPerks: 'admin:perks',
+  chatDeleted: 'chat:deleted',
 } as const;
 
 // Client -> server
@@ -137,6 +140,29 @@ export interface AdminVipEvent {
   membershipId: string | null;
   /** For action=sync: synced | failed. */
   status?: string | null;
+  at: string;
+}
+
+/** perks:updated -> user:<id> (contracts/entitlements-2026-10.md). Refetch GET /perks/me. */
+export interface PerksUpdatedEvent {
+  reason: 'consume' | 'purchase' | 'admin_grant' | 'admin_tokens' | 'expired' | (string & {});
+  /** Perk Token balance after the change (null when unknown / not loaded). */
+  tokens: number | null;
+  at: string;
+}
+
+/** admin:perks -> room admin. Ids only; admins refetch. */
+export interface AdminPerksEvent {
+  action: 'feature' | 'plan' | 'token_pack' | 'promotion' | 'tokens' | 'purchase' | 'subscription' | (string & {});
+  userId: string | null;
+  id: string | null;
+  at: string;
+}
+
+/** chat:deleted -> chat rooms. An admin removed a message. */
+export interface ChatDeletedEvent {
+  id: string;
+  serverId: number | null;
   at: string;
 }
 

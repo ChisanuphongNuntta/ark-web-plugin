@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toVipBadge, type VipBadge } from '@/lib/vip';
-import { mergeCartLines, migrateCartState, type CartLine } from '@/lib/cartLines';
+import { mergeCartLines, migrateCartState, type CartLine, type DeliveryMode } from '@/lib/cartLines';
 
-export { mergeCartLines, type CartLine };
+export { mergeCartLines, type CartLine, type DeliveryMode };
 
 // User role types
 export type UserRole = 'user' | 'admin' | 'server_admin' | 'root';
@@ -121,7 +121,12 @@ export function cartLineKey(productId: number): string {
 
 interface CartState {
   items: CartLine[];
-  /** Delivery server for the whole basket; null until the player picks one. Survives checkout as a default. */
+  /**
+   * 'auto' (default): the backend picks the server and the delivery follows the player into the game (see
+   * services/deliveryTarget.service.ts). 'server': the player chose `serverId` for the whole basket.
+   */
+  deliveryMode: DeliveryMode;
+  /** Chosen server for 'server' mode; null until picked. Kept as the next default after checkout. */
   serverId: number | null;
   isDrawerOpen: boolean;
   /** Add (or increment) the line for a product. */
@@ -132,6 +137,7 @@ interface CartState {
   setQuantity: (productId: number, quantity: number) => void;
   /** Choose the delivery server for the whole basket. */
   setServerId: (serverId: number | null) => void;
+  setDeliveryMode: (mode: DeliveryMode) => void;
   setDrawerOpen: (open: boolean) => void;
   /** Empty the basket (the chosen server is kept as the next default). */
   clear: () => void;
@@ -141,6 +147,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set) => ({
       items: [],
+      deliveryMode: 'auto',
       serverId: null,
       isDrawerOpen: false,
       addItem: (productId, quantity = 1, openDrawer = false) =>
@@ -166,6 +173,7 @@ export const useCartStore = create<CartState>()(
                 ),
         })),
       setServerId: (serverId) => set({ serverId }),
+      setDeliveryMode: (deliveryMode) => set({ deliveryMode }),
       setDrawerOpen: (isDrawerOpen) => set({ isDrawerOpen }),
       clear: () => set({ items: [] }),
     }),
@@ -173,12 +181,12 @@ export const useCartStore = create<CartState>()(
       name: 'iris-cart-v1',
       // Persist the basket and the chosen server, not the transient modal state. Old saved drawers
       // must also start closed so refresh cannot trap focus behind startup UI.
-      partialize: (state) => ({ items: state.items, serverId: state.serverId }),
+      partialize: (state) => ({ items: state.items, serverId: state.serverId, deliveryMode: state.deliveryMode }),
       merge: (persisted, current) => ({ ...current, ...(persisted as Partial<CartState>), isDrawerOpen: false }),
-      // v3: one delivery server per basket. v2 lines carried a serverId each; merge duplicates of the same
+      // v4 adds deliveryMode; v3: one delivery server per basket. v2 lines carried a serverId each; merge duplicates of the same
       // product (summing quantity) and keep the server of the most recently added line as the basket server.
       // v1 had a single global serverId and product-only lines, which already fits the v3 shape.
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => migrateCartState(persisted, version) as unknown as CartState,
     }
   )

@@ -29,7 +29,7 @@ export class StripePaymentProvider implements PaymentProvider {
     const cents = BigInt(whole) * 100n + BigInt((fraction + '00').slice(0, 2));
     if (cents < 1n || cents > 99_999_999n) throw new AppError('Payment amount is out of range', 400);
     // Only fixed same-site return pages; never a caller-supplied URL.
-    const returnPath = request.returnPath === '/vip' ? '/vip' : '/topup';
+    const returnPath = request.returnPath === '/vip' ? '/vip' : request.returnPath === '/perks' ? '/perks' : '/topup';
     const session = await this.stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],

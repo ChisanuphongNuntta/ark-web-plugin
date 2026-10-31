@@ -17,12 +17,17 @@ export function mergeCartLines(lines: Array<{ productId: number; quantity: numbe
 }
 
 /**
- * Upgrade a persisted cart to the current shape (v3: one delivery server per basket).
+ * Upgrade a persisted cart to the current shape (v4: one delivery server per basket, or automatic delivery).
  * v2 lines carried a serverId each: duplicates of a product are merged (quantities summed) and the server of the most
  * recently added line becomes the basket server. v1 had one global serverId and product-only lines, which already fits.
  */
-export function migrateCartState(persisted: unknown, version: number): { items: CartLine[]; serverId: number | null } {
-  if (!persisted || typeof persisted !== 'object') return { items: [], serverId: null };
+export type DeliveryMode = 'auto' | 'server';
+
+export function migrateCartState(
+  persisted: unknown,
+  version: number,
+): { items: CartLine[]; serverId: number | null; deliveryMode: DeliveryMode } {
+  if (!persisted || typeof persisted !== 'object') return { items: [], serverId: null, deliveryMode: 'auto' };
   const old = persisted as {
     items?: Array<{ productId: number; serverId?: number; quantity: number }>;
     serverId?: number | null;
@@ -34,5 +39,8 @@ export function migrateCartState(persisted: unknown, version: number): { items: 
       if (typeof lines[i]?.serverId === 'number') { serverId = lines[i].serverId as number; break; }
     }
   }
-  return { items: mergeCartLines(lines), serverId };
+  // A basket that already carries a chosen server keeps choosing it; everything else uses the automatic delivery.
+  const saved = (persisted as { deliveryMode?: unknown }).deliveryMode;
+  const deliveryMode: DeliveryMode = saved === 'auto' || saved === 'server' ? saved : serverId !== null ? 'server' : 'auto';
+  return { items: mergeCartLines(lines), serverId, deliveryMode };
 }
