@@ -77,7 +77,7 @@ function DinoCard({ listing, sellerVip }: { listing: any; sellerVip?: VipBadge |
 
   return (
     <Link href={`/market/${listing.id}`} className="block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris-cyan focus-visible:ring-offset-4 focus-visible:ring-offset-iris-ink">
-      <div className="h-full rounded-2xl border border-slate-700/40 bg-surface-3 transition-all duration-300 hover:border-cyan-400/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.15)] flex flex-col justify-between overflow-hidden group">
+      <div className="ark-panel ark-card h-full flex flex-col justify-between overflow-hidden group">
         <div className="p-4 space-y-3 relative">
           {/* 3D Creature Image Frame */}
           <div className="relative h-40 w-full overflow-hidden rounded-xl bg-surface-1 border border-slate-700/40">
@@ -293,10 +293,10 @@ function MarketplaceContent() {
       </div>
 
       {/* SECTION 2: Advanced Filters & Search Bar (Unified Dark Glass Theme) */}
-      <div className="p-5 space-y-4 rounded-2xl border border-slate-700/80 bg-surface-1 shadow-2xl">
+      <div className="ark-panel p-2 space-y-4">
         <div className="flex flex-col md:flex-row items-center gap-3">
           {/* Live Search Input */}
-          <div className="flex-1 w-full relative">
+          <div className="ark-field flex-1 w-full relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-iris-cyan" />
             <input
               type="text"
@@ -304,7 +304,7 @@ function MarketplaceContent() {
               placeholder={t('ค้นหาไดโนเสาร์ เช่น Rex, Giga, Spino, Shadowmane...', 'Search Rex, Giga, Spino, Shadowmane...')}
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full h-11 pl-10 pr-4 bg-surface-1 border border-slate-700/60 rounded-xl text-xs text-iris-pearl placeholder:text-slate-500 focus:border-iris-cyan focus:outline-none focus:ring-1 focus:ring-iris-cyan/30 transition-all"
+              className="ark-input w-full text-xs"
             />
           </div>
 
@@ -314,7 +314,7 @@ function MarketplaceContent() {
               value={selectedSpecies}
               onChange={(e) => handleSpeciesChange(e.target.value)}
               aria-label="เลือกสายพันธุ์ไดโนเสาร์"
-              className="w-full h-11 px-3 bg-surface-1 border border-slate-700/60 rounded-xl text-xs font-semibold text-iris-pearl focus:border-iris-cyan focus:outline-none transition-all"
+              className="ark-input w-full text-xs font-semibold"
             >
               <option value=""><T text={"ทุกสายพันธุ์ · All Species"} /></option>
               {speciesData?.species?.map((s: any) => (
@@ -331,7 +331,7 @@ function MarketplaceContent() {
               value={gender}
               onChange={(e) => handleGenderChange(e.target.value)}
               aria-label="เลือกเพศไดโนเสาร์"
-              className="w-full h-11 px-3 bg-surface-1 border border-slate-700/60 rounded-xl text-xs font-semibold text-iris-pearl focus:border-iris-cyan focus:outline-none transition-all"
+              className="ark-input w-full text-xs font-semibold"
             >
               <option value=""><T text={"ทุกเพศ · All Genders"} /></option>
               <option value="Male"><T text={"เพศผู้ · Male"} /></option>
@@ -350,11 +350,7 @@ function MarketplaceContent() {
                 key={sort.id}
                 type="button"
                 onClick={() => toggleSort(sort.id)}
-                className={`px-3.5 h-11 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 justify-center ${
-                  sortBy === sort.id
-                    ? 'border-iris-cyan bg-iris-cyan/20 text-iris-cyan shadow-[0_0_12px_rgba(160,224,244,0.15)]'
-                    : 'border-slate-700/50 bg-surface-1 text-slate-400 hover:border-slate-600 hover:text-white'
-                }`}
+                className={`ark-chip text-xs font-bold${sortBy === sort.id ? ' on' : ''}`}
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
                 <span>{sort.labelTh}</span>
@@ -379,11 +375,7 @@ function MarketplaceContent() {
               key={tag.label}
               type="button"
               onClick={() => handleSearchChange(tag.value)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
-                search === tag.value
-                  ? 'bg-iris-cyan/20 text-iris-cyan border border-iris-cyan/40 font-bold'
-                  : 'bg-surface-1 text-slate-400 hover:text-white hover:border-slate-700 border border-slate-800'
-              }`}
+              className={`ark-chip sm font-semibold${search === tag.value ? ' on' : ''}`}
             >
               {tag.label}
             </button>

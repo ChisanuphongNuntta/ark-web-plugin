@@ -234,7 +234,7 @@ export default function PacksPage() {
 
       {/* 2. Filter Pills & Category Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {[
             { id: 'all', label: 'ทั้งหมด (All Packs)' },
             { id: 'starter', label: 'ชุดเริ่มต้น (Starter)' },
@@ -245,11 +245,7 @@ export default function PacksPage() {
               key={tab.id}
               type="button"
               onClick={() => setActiveFilter(tab.id as any)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
-                activeFilter === tab.id
-                  ? 'bg-gradient-to-r from-cyan-500 to-sky-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/50'
-                  : 'bg-slate-900/60 border border-slate-700/50 text-slate-400 hover:text-white hover:border-slate-600'
-              }`}
+              className={`ark-chip text-xs font-bold uppercase tracking-wider${activeFilter === tab.id ? ' on' : ''}`}
             >
               {tab.label}
             </button>
@@ -306,7 +302,7 @@ export default function PacksPage() {
             return (
               <div
                 key={p.id}
-                className={`group relative flex flex-col justify-between overflow-hidden rounded-3xl border transition-all duration-500 hover:-translate-y-1.5 ${
+                className={`ark-panel ark-card${isHero ? ' ark-hero' : ''} group relative flex flex-col justify-between overflow-hidden transition-all duration-500 hover:-translate-y-1.5 ${
                   isHero
                     ? 'border-amber-400/60 bg-surface-2 shadow-[0_0_35px_rgba(251,191,36,0.2)] md:col-span-2 lg:col-span-2'
                     : 'border-slate-700/60 bg-surface-2 hover:border-cyan-400/60 hover:shadow-[0_0_30px_rgba(6,182,212,0.2)]'
@@ -391,7 +387,7 @@ export default function PacksPage() {
                       type="button"
                       onClick={() => setBuyingProduct(p)}
                       aria-label={`สั่งซื้อแพ็กเกจ ${p.name}`}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-sky-600 px-6 py-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-[0_0_20px_rgba(6,182,212,0.35)] transition-all duration-200 hover:brightness-110 active:scale-95"
+                      className="ark-btn w-full sm:w-auto gap-2 text-xs font-extrabold uppercase tracking-wider"
                     >
                       <Sparkles className="h-4 w-4 text-cyan-200" />
                       <span>สั่งซื้อชุดนี้</span>
@@ -405,7 +401,7 @@ export default function PacksPage() {
       )}
 
       {/* 4. Trust & Delivery Guarantee Cockpit */}
-      <section className="rounded-3xl border border-slate-700/50 bg-surface-1/80 backdrop-blur-md p-6 sm:p-8 space-y-6">
+      <section className="ark-panel space-y-6">
         <div className="flex items-center gap-3">
           <ShieldCheck className="h-6 w-6 text-emerald-400" />
           <h3 className="font-display text-lg sm:text-xl font-bold text-white">

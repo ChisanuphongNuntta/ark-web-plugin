@@ -163,6 +163,103 @@ for (r0, r1) in rows:
         i += 1
 kit['slot'] = {'w': 200, 'names': names}
 
+# ---------------------------------------------------------------- shared helpers for the codex sheets
+def segments(flags, gap=8):
+    """Runs of True in a 1-D array, merging runs closer than `gap`."""
+    idx = np.where(flags)[0]
+    runs, start, prev = [], idx[0], idx[0]
+    for i in idx[1:]:
+        if i - prev > gap:
+            runs.append((int(start), int(prev) + 1))
+            start = i
+        prev = i
+    runs.append((int(start), int(prev) + 1))
+    return runs
+
+
+def remove_centre_tabs(rgba, half=80, frac=0.24):
+    """Blend the columns either side of the middle across it, in the top and bottom band, so a centre tab
+    on the frame does not stretch when the art is widened."""
+    h, w = rgba.shape[:2]
+    cx = w // 2
+    x0, x1 = cx - half, cx + half
+    t = np.linspace(0, 1, x1 - x0, dtype=np.float32)[None, :, None]
+    band = int(h * frac)
+    for rows in (slice(0, band), slice(h - band, h)):
+        left = rgba[rows, x0 - 1].astype(np.float32)
+        right = rgba[rows, x1].astype(np.float32)
+        rgba[rows, x0:x1] = (left[:, None, :] * (1 - t) + right[:, None, :] * t).astype(np.uint8)
+    return rgba
+
+
+def cut_states(fname, names, prefix, h_out=96, tabs=False, cap_src=150, darken_state=None, ink_assert=None):
+    """A sheet of identical horizontal pieces in several states -> one transparent WebP per state.
+    The silhouette comes from the first state, so glows are dropped (CSS drop-shadow draws them)."""
+    rgb = load(fname)
+    runs = segments((rgb.max(axis=2) > 40).any(axis=1))
+    if len(runs) != len(names):
+        sys.exit(f'{fname}: expected {len(names)} pieces, found {len(runs)}')
+    y0, y1 = runs[0]
+    out0 = outside_mask(rgb[y0:y1], thr=22)
+    ys, xs = np.where(~out0)
+    by0, by1, bx0, bx1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    h, w = by1 - by0, bx1 - bx0
+    mask = ndi.binary_erosion(~out0[by0:by1, bx0:bx1], iterations=1)
+    info = {}
+    for name, (r0, r1) in zip(names, runs):
+        yc = (r0 + r1) // 2
+        top = yc - h // 2
+        crop = rgb[top:top + h, y0 * 0 + bx0:bx1].copy()
+        rgba = np.dstack([crop, mask.astype(np.float32) * 255]).clip(0, 255).astype(np.uint8)
+        if tabs:
+            rgba = remove_centre_tabs(rgba)
+        yy, xx = np.mgrid[0:h, 0:w]
+        inner = (xx > w * 0.14) & (xx < w * 0.86) & (yy > h * 0.30) & (yy < h * 0.70)
+        if darken_state == name:
+            feather = ndi.gaussian_filter(ndi.binary_dilation(inner, iterations=10).astype(np.float32), 3)
+            base = rgba[..., :3].astype(np.float32)
+            gain = 1.0
+            while True:
+                trial = base * (1 - feather[..., None] * (1 - gain))
+                worst_try = float(contrast_with_ink(trial[inner].reshape(-1, 1, 3)).min())
+                if worst_try >= 7.1 or gain < 0.2:
+                    break
+                gain -= 0.02
+            rgba[..., :3] = trial.clip(0, 255).astype(np.uint8)
+        worst = float(contrast_with_ink(rgba[..., :3][inner].astype(np.float32).reshape(-1, 1, 3)).min())
+        print(f'  {prefix}-{name:9s} worst ink contrast {worst:.2f}')
+        if ink_assert and name in ink_assert and worst < 7.0:
+            sys.exit(f'{prefix}-{name}: centre contrast {worst:.2f} < 7.0')
+        sz = save(rgba, f'{prefix}-{name}.webp', width=round(w * h_out / h))
+        info[name] = {'w': sz[0], 'h': sz[1], 'cap': round(cap_src * sz[1] / h)}
+    return info
+
+
+kit['input'] = cut_states('ark-inputs.jpg', ['normal', 'focus', 'error', 'disabled'], 'input', tabs=True, cap_src=170,
+                          ink_assert=['normal', 'focus', 'error'])
+kit['chip'] = cut_states('ark-chips.jpg', ['normal', 'hover', 'selected'], 'chip', cap_src=125,
+                         darken_state='selected', ink_assert=['normal', 'hover', 'selected'])
+
+kit['hexbtn'] = cut_states('ark-hexbtn.jpg', ['normal', 'hover', 'pressed'], 'hexbtn', cap_src=190)
+
+# ---------------------------------------------------------------- hex medallion icons (4 x 2 grid)
+rgb = load('ark-icons.jpg')
+icon_names = ['sword', 'dino', 'block', 'saddle', 'gift', 'coin', 'shield', 'crown']
+row_runs = segments((rgb.max(axis=2) > 40).any(axis=1))
+if len(row_runs) != 2:
+    sys.exit(f'ark-icons.jpg: expected 2 rows, found {len(row_runs)}')
+i = 0
+for (r0, r1) in row_runs:
+    col_runs = segments((rgb[r0:r1].max(axis=2) > 40).any(axis=0))
+    if len(col_runs) != 4:
+        sys.exit(f'ark-icons.jpg: expected 4 columns, found {len(col_runs)}')
+    for (c0, c1) in col_runs:
+        sub = rgb[r0:r1, c0:c1]
+        rgba = crop_alpha(to_rgba(sub, outside_mask(sub, thr=22)))
+        save(rgba, f'icon-{icon_names[i]}.webp', width=128)
+        i += 1
+kit['icons'] = icon_names
+
 with open(os.path.join(OUT, 'ark-kit.json'), 'w') as f:
     json.dump(kit, f, indent=1)
 print('kit:', json.dumps(kit))

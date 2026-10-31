@@ -36,5 +36,71 @@
    "violet",
    "amber"
   ]
- }
+ },
+ "input": {
+  "normal": {
+   "w": 615,
+   "h": 96,
+   "cap": 90
+  },
+  "focus": {
+   "w": 615,
+   "h": 96,
+   "cap": 90
+  },
+  "error": {
+   "w": 615,
+   "h": 96,
+   "cap": 90
+  },
+  "disabled": {
+   "w": 615,
+   "h": 96,
+   "cap": 90
+  }
+ },
+ "chip": {
+  "normal": {
+   "w": 601,
+   "h": 96,
+   "cap": 60
+  },
+  "hover": {
+   "w": 601,
+   "h": 96,
+   "cap": 60
+  },
+  "selected": {
+   "w": 601,
+   "h": 96,
+   "cap": 60
+  }
+ },
+ "hexbtn": {
+  "normal": {
+   "w": 182,
+   "h": 96,
+   "cap": 49
+  },
+  "hover": {
+   "w": 182,
+   "h": 96,
+   "cap": 49
+  },
+  "pressed": {
+   "w": 182,
+   "h": 96,
+   "cap": 49
+  }
+ },
+ "icons": [
+  "sword",
+  "dino",
+  "block",
+  "saddle",
+  "gift",
+  "coin",
+  "shield",
+  "crown"
+ ]
 }

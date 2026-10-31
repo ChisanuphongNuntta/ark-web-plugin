@@ -46,6 +46,8 @@ export function GlassCard({
       className={cn(
         baseCardStyles,
         variants[variant],
+        // generated metal frame (ark-kit.css); the danger card keeps its rose border so it still reads as a warning
+        variant !== 'danger' && 'ark-panel ark-card',
         hovers[effectiveHover],
         className
       )}

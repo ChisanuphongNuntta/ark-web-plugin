@@ -1,4 +1,4 @@
-/* ARK kit pilot: generated frame, button and slot art on the Shop page only.
+/* ARK kit: generated frame, button, chip, field and slot art (started as a Shop-only pilot; button, chip, slot and + rules are now site-wide).
    Assets come from scripts/art/make_ark_kit.py (public/images/ui/ark). Text never sits on texture: the frame is a
    border and the button centres are darkened by the script until ink text reaches 7:1. */
 
@@ -14,30 +14,193 @@
 
 /* ---- item slots: square inventory-style frame over the artwork, tinted by product category.
    The old hex medallion (tek-theme.css ::before/::after) is replaced by a recessed plate plus the frame. */
-.iris-xmas .tk-christmas-shop .tk-slot { position: relative; isolation: isolate; }
-.iris-xmas .tk-christmas-shop .tk-slot::before { inset: 11px; z-index: -1; background: radial-gradient(circle at 50% 42%, rgb(var(--s-3)), rgb(var(--s-0)) 80%); }
-.iris-xmas .tk-christmas-shop .tk-slot::after {
+.iris-xmas .tk-slot { position: relative; isolation: isolate; }
+.iris-xmas .tk-slot::before { inset: 11px; z-index: -1; background: radial-gradient(circle at 50% 42%, rgb(var(--s-3)), rgb(var(--s-0)) 80%); }
+.iris-xmas .tk-slot::after {
   inset: 0; z-index: 2; clip-path: none; pointer-events: none; background: none;
   border: 16px solid transparent; border-image: url('/images/ui/ark/slot-amber.webp') 58 / 16px stretch;
 }
-.iris-xmas .tk-christmas-shop .tk-slot .tk-art { width: 74%; height: 78%; clip-path: none; }
-.iris-xmas .tk-christmas-shop .tk-cat-weapon .tk-slot::after { border-image-source: url('/images/ui/ark/slot-cyan.webp'); }
-.iris-xmas .tk-christmas-shop .tk-cat-structure .tk-slot::after { border-image-source: url('/images/ui/ark/slot-violet.webp'); }
-.iris-xmas .tk-christmas-shop .tk-cat-dino .tk-slot::after { border-image-source: url('/images/ui/ark/slot-green.webp'); }
-.iris-xmas .tk-christmas-shop .tk-cat-resource .tk-slot::after { border-image-source: url('/images/ui/ark/slot-red.webp'); }
-.iris-xmas .tk-christmas-shop .tk-cat-saddle .tk-slot::after { border-image-source: url('/images/ui/ark/slot-gold.webp'); }
+.iris-xmas .tk-slot .tk-art { width: 74%; height: 78%; clip-path: none; }
+.iris-xmas .tk-cat-weapon .tk-slot::after { border-image-source: url('/images/ui/ark/slot-cyan.webp'); }
+.iris-xmas .tk-cat-structure .tk-slot::after { border-image-source: url('/images/ui/ark/slot-violet.webp'); }
+.iris-xmas .tk-cat-dino .tk-slot::after { border-image-source: url('/images/ui/ark/slot-green.webp'); }
+.iris-xmas .tk-cat-resource .tk-slot::after { border-image-source: url('/images/ui/ark/slot-red.webp'); }
+.iris-xmas .tk-cat-saddle .tk-slot::after { border-image-source: url('/images/ui/ark/slot-gold.webp'); }
 
 /* ---- primary buttons: 3-slice plate, same hex ends at every width (cap = 0.854 x height keeps the art undistorted) */
-.iris-xmas .tk-christmas-shop .tk-btn:not(.ghost):not(.gold) {
+.iris-xmas .tk-btn:not(.ghost):not(.gold) {
   --cap: 41px; padding: 0 6px;
   /* the base .tk-btn rule sets border: 0 !important (which also resets border-image), so these must be !important too */
   border: 0 solid transparent !important; border-width: 0 var(--cap) !important; color: rgb(var(--ink)) !important;
   border-image: url('/images/ui/ark/btn-normal.webp') 0 82 fill / 0 var(--cap) / 0 stretch !important; background: none !important;
 }
-.iris-xmas .tk-christmas-shop .tk-btn.sm:not(.ghost):not(.gold) { --cap: 38px; }
-.iris-xmas .tk-christmas-shop .tk-btn:not(.ghost):not(.gold)::before,
-.iris-xmas .tk-christmas-shop .tk-btn:not(.ghost):not(.gold)::after { display: none; }
-.iris-xmas .tk-christmas-shop .tk-btn:not(.ghost):not(.gold):focus-visible::before { display: block; }
-.iris-xmas .tk-christmas-shop .tk-btn:not(.ghost):not(.gold):hover { border-image-source: url('/images/ui/ark/btn-hover.webp') !important; filter: drop-shadow(0 0 7px rgb(var(--gold) / 0.55)); }
-.iris-xmas .tk-christmas-shop .tk-btn:not(.ghost):not(.gold):active { border-image-source: url('/images/ui/ark/btn-pressed.webp') !important; filter: none; transform: translateY(1px); }
-.iris-xmas .tk-christmas-shop .tk-btn:not(.ghost):not(.gold):is(:disabled, [aria-disabled="true"]) { border-image-source: url('/images/ui/ark/btn-disabled.webp') !important; filter: none; opacity: 1; }
+.iris-xmas .tk-btn.sm:not(.ghost):not(.gold) { --cap: 30px; }
+.iris-xmas .tk-btn.sm.ghost { --cap: 24px; }
+.iris-xmas .tk-btn:not(.ghost):not(.gold)::before,
+.iris-xmas .tk-btn:not(.ghost):not(.gold)::after { display: none; }
+.iris-xmas .tk-btn:not(.ghost):not(.gold):focus-visible::before { display: block; }
+.iris-xmas .tk-btn:not(.ghost):not(.gold):hover { border-image-source: url('/images/ui/ark/btn-hover.webp') !important; filter: drop-shadow(0 0 7px rgb(var(--gold) / 0.55)); }
+.iris-xmas .tk-btn:not(.ghost):not(.gold):active { border-image-source: url('/images/ui/ark/btn-pressed.webp') !important; filter: none; transform: translateY(1px); }
+.iris-xmas .tk-btn:not(.ghost):not(.gold):is(:disabled, [aria-disabled="true"]) { border-image-source: url('/images/ui/ark/btn-disabled.webp') !important; filter: none; opacity: 1; }
+
+/* ---- chips: 3-slice hex-ended plate (normal, hover, selected); the selected plate is darkened by the script for 7:1 ink text */
+.iris-xmas .tk-chip {
+  --cap: 27px; padding: 0 4px; gap: 8px;
+  border: 0 solid transparent !important; border-width: 0 var(--cap) !important; color: rgb(var(--ink)) !important;
+  border-image: url('/images/ui/ark/chip-normal.webp') 0 60 fill / 0 var(--cap) / 0 stretch !important; background: none !important;
+}
+.iris-xmas .tk-chip::before,
+.iris-xmas .tk-chip::after { display: none; }
+.iris-xmas .tk-chip:focus-visible::before { display: block; }
+.iris-xmas .tk-chip:hover:not(:disabled) { border-image-source: url('/images/ui/ark/chip-hover.webp') !important; filter: drop-shadow(0 0 5px rgb(var(--gold) / 0.4)); }
+.iris-xmas .tk-chip.on { border-image-source: url('/images/ui/ark/chip-selected.webp') !important; color: rgb(var(--ink)) !important; filter: drop-shadow(0 0 6px rgb(var(--gold) / 0.45)); }
+.iris-xmas .tk-chip:disabled { opacity: 0.55; }
+.tk-medal { width: 26px; height: 24px; flex: none; }
+
+/* ---- text fields: 3-slice frame with a flat plum interior (ink text 16:1); focus swaps to the gold-lit frame and keeps a real outline */
+.iris-xmas .tk-christmas-shop .tk-depot-search .tk-input {
+  --cap: 45px; height: 48px; padding: 0 26px 0 26px !important; color: rgb(var(--ink)); border-radius: 0 !important; box-shadow: none !important;
+  border: 0 solid transparent !important; border-width: 0 var(--cap) !important;
+  border-image: url('/images/ui/ark/input-normal.webp') 0 90 fill / 0 var(--cap) / 0 stretch !important; background: none !important;
+}
+.iris-xmas .tk-christmas-shop .tk-depot-search .tk-input.plain { --cap: 30px; height: 44px; min-width: 140px; padding: 0 6px !important; }
+.iris-xmas .tk-christmas-shop .tk-depot-search .tk-input::placeholder { color: rgb(var(--ink-muted)); opacity: 1; }
+.iris-xmas .tk-christmas-shop .tk-depot-search .tk-input:focus,
+.iris-xmas .tk-christmas-shop .tk-depot-search .tk-input:focus-visible {
+  border-image-source: url('/images/ui/ark/input-focus.webp') !important; outline: 2px solid var(--focus) !important; outline-offset: 3px; filter: drop-shadow(0 0 6px rgb(var(--gold) / 0.45));
+}
+.iris-xmas .tk-christmas-shop .tk-depot-search .tk-input:disabled { border-image-source: url('/images/ui/ark/input-disabled.webp') !important; }
+/* the magnifier and the clear button sat on the old flat field; move them inside the new frame */
+.iris-xmas .tk-christmas-shop .tk-depot-search svg.lucide-search { left: 34px; }
+.iris-xmas .tk-christmas-shop .tk-depot-search .tk-input ~ button { right: 32px; }
+.iris-xmas .tk-christmas-shop .tk-depot-search svg.lucide-search + .tk-input { padding-left: 34px !important; }
+@media (max-width: 640px) {
+  .iris-xmas .tk-christmas-shop .tk-depot-search .tk-input { --cap: 34px; border-image-width: 0 34px !important; }
+}
+
+/* =====================================================================================================================
+   Reusable kit classes for pages that are not wrapped in .tk-christmas-shop (Market, Packs, and later pages).
+   Add the class in the markup; the Tailwind utilities on the same element (rounded, border, shadow, gradient) are
+   overridden here. Same assets and the same text-safety rules as the Shop pilot above.
+   ===================================================================================================================== */
+
+/* panel: 9-slice metal frame around a flat plate; .ark-card is the thinner frame for grid cards */
+.iris-xmas .ark-panel {
+  border: 22px solid transparent !important; border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important;
+  border-image: url('/images/ui/ark/panel-frame.webp') 69 / 22px stretch !important;
+  background-clip: padding-box !important; background-image: none !important; background-color: rgb(var(--s-1)) !important;
+}
+.iris-xmas .ark-panel.ark-card { border-width: 16px !important; border-image-width: 16px !important; } /* same flat plate as .ark-panel (s-1): translucent badges on it keep 7:1 */
+.iris-xmas .ark-panel.ark-hero { filter: drop-shadow(0 0 14px rgb(var(--gold) / 0.4)); }
+@media (max-width: 640px) { .iris-xmas .ark-panel { border-width: 16px !important; border-image-width: 16px !important; } }
+
+/* button: 3-slice enamel plate, 48px tall */
+.iris-xmas .ark-btn {
+  --cap: 41px; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 4px; cursor: pointer;
+  border: 0 solid transparent !important; border-width: 0 var(--cap) !important; border-radius: 0 !important; box-shadow: none !important;
+  border-image: url('/images/ui/ark/btn-normal.webp') 0 82 fill / 0 var(--cap) / 0 stretch !important; background: none !important; color: rgb(var(--ink)) !important; font-weight: 700;
+}
+.iris-xmas .ark-btn:hover:not(:disabled) { border-image-source: url('/images/ui/ark/btn-hover.webp') !important; filter: drop-shadow(0 0 7px rgb(var(--gold) / 0.55)); }
+.iris-xmas .ark-btn:active:not(:disabled) { border-image-source: url('/images/ui/ark/btn-pressed.webp') !important; filter: none; transform: translateY(1px); }
+.iris-xmas .ark-btn:disabled { border-image-source: url('/images/ui/ark/btn-disabled.webp') !important; cursor: not-allowed; }
+.iris-xmas .ark-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+/* chip: 3-slice hex-ended tag, 44px tall; add .on when selected */
+.iris-xmas .ark-chip {
+  --cap: 27px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 4px; cursor: pointer;
+  border: 0 solid transparent !important; border-width: 0 var(--cap) !important; border-radius: 0 !important; box-shadow: none !important;
+  border-image: url('/images/ui/ark/chip-normal.webp') 0 60 fill / 0 var(--cap) / 0 stretch !important; background: none !important; color: rgb(var(--ink)) !important;
+}
+.iris-xmas .ark-chip:hover:not(:disabled) { border-image-source: url('/images/ui/ark/chip-hover.webp') !important; filter: drop-shadow(0 0 5px rgb(var(--gold) / 0.4)); }
+.iris-xmas .ark-chip.on { border-image-source: url('/images/ui/ark/chip-selected.webp') !important; filter: drop-shadow(0 0 6px rgb(var(--gold) / 0.45)); }
+.iris-xmas .ark-chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+/* field: input or select, 44px tall; an .ark-field wrapper moves its first svg (a magnifier) inside the frame */
+.iris-xmas .ark-input {
+  --cap: 30px; height: 44px; padding: 0 4px !important; text-overflow: ellipsis; color: rgb(var(--ink)); border-radius: 0 !important; box-shadow: none !important;
+  border: 0 solid transparent !important; border-width: 0 var(--cap) !important;
+  border-image: url('/images/ui/ark/input-normal.webp') 0 90 fill / 0 var(--cap) / 0 stretch !important; background: none !important;
+}
+.iris-xmas .ark-input::placeholder { color: rgb(var(--ink-muted)); opacity: 1; }
+.iris-xmas .ark-input:focus, .iris-xmas .ark-input:focus-visible {
+  border-image-source: url('/images/ui/ark/input-focus.webp') !important; outline: 2px solid var(--focus) !important; outline-offset: 3px; filter: drop-shadow(0 0 6px rgb(var(--gold) / 0.45));
+}
+.iris-xmas .ark-input:disabled { border-image-source: url('/images/ui/ark/input-disabled.webp') !important; }
+.iris-xmas .ark-field > svg:first-child { left: 24px !important; z-index: 1; }
+.iris-xmas .ark-field > svg:first-child + .ark-input { padding-left: 24px !important; }
+.iris-xmas .ark-input option { background: rgb(var(--s-1)); color: rgb(var(--ink)); }
+
+/* ---- "+" add button on product cards: 3-slice hex plate, 64 x 44 (cap 22 = 49 x 44/96) */
+.iris-xmas .tk-add {
+  --cap: 22px; width: 64px; min-width: 64px; height: 44px; padding: 0; display: grid; place-items: center; box-sizing: border-box;
+  border: 0 solid transparent !important; border-width: 0 var(--cap) !important; color: rgb(var(--gold)) !important;
+  border-image: url('/images/ui/ark/hexbtn-normal.webp') 0 49 fill / 0 var(--cap) / 0 stretch !important; background: none !important;
+}
+.iris-xmas .tk-add::before,
+.iris-xmas .tk-add::after { display: none; }
+.iris-xmas .tk-add:focus-visible::before { display: block; }
+.iris-xmas .tk-add:hover { border-image-source: url('/images/ui/ark/hexbtn-hover.webp') !important; filter: drop-shadow(0 0 6px rgb(var(--gold) / 0.5)); color: rgb(var(--ink)) !important; }
+.iris-xmas .tk-add:active { border-image-source: url('/images/ui/ark/hexbtn-pressed.webp') !important; filter: none; transform: translateY(1px); }
+
+/* ---- category list rows on the left of the catalogue: the chip plate, label left and count right */
+.iris-xmas .frozen-category-list button {
+  --cap: 27px; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; padding: 0 2px; text-align: left;
+  border: 0 solid transparent !important; border-width: 0 var(--cap) !important; border-radius: 0 !important; box-shadow: none !important;
+  border-image: url('/images/ui/ark/chip-normal.webp') 0 60 fill / 0 var(--cap) / 0 stretch !important; background: none !important; color: rgb(var(--ink)) !important;
+}
+.iris-xmas .frozen-category-list button::before,
+.iris-xmas .frozen-category-list button::after { display: none; }
+.iris-xmas .frozen-category-list button:hover { border-image-source: url('/images/ui/ark/chip-hover.webp') !important; }
+.iris-xmas .frozen-category-list button[aria-pressed="true"] { border-image-source: url('/images/ui/ark/chip-selected.webp') !important; filter: drop-shadow(0 0 5px rgb(var(--gold) / 0.4)); }
+.iris-xmas .frozen-category-list button:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.iris-xmas .frozen-category-list li, .iris-xmas .frozen-category-list > * { margin-bottom: 4px; }
+
+/* small chip variant (Market quick tags): keeps the 44 px AAA target size */
+.iris-xmas .ark-chip.sm { font-size: 11px; } /* same 44 px target as every chip; only the type is smaller */
+
+.iris-xmas .ark-btn:disabled { opacity: 1; }
+
+/* ---- navigation icon buttons (search, cart, bell, menu): the same hex plate as the + button, 60 x 44 */
+.iris-xmas .tk-ib {
+  --cap: 22px; width: 60px; min-width: 60px; height: 44px; padding: 0; box-sizing: border-box; color: rgb(var(--gold)) !important;
+  border: 0 solid transparent !important; border-width: 0 var(--cap) !important;
+  border-image: url('/images/ui/ark/hexbtn-normal.webp') 0 49 fill / 0 var(--cap) / 0 stretch !important; background: none !important;
+}
+.iris-xmas .tk-ib::before, .iris-xmas .tk-ib::after { display: none; }
+.iris-xmas .tk-ib:focus-visible::before { display: block; }
+.iris-xmas .tk-ib:hover { border-image-source: url('/images/ui/ark/hexbtn-hover.webp') !important; filter: drop-shadow(0 0 6px rgb(var(--gold) / 0.5)); color: rgb(var(--ink)) !important; }
+.iris-xmas .tk-ib:active { border-image-source: url('/images/ui/ark/hexbtn-pressed.webp') !important; filter: none; transform: translateY(1px); }
+.iris-xmas .tk-ib .cnt { z-index: 2; }
+
+
+/* ---- ghost buttons use the plum chip plate (the filled variants already use the enamel plate above) */
+.iris-xmas .tk-btn.ghost {
+  --cap: 28px; padding: 0 4px; border: 0 solid transparent !important; border-width: 0 var(--cap) !important; color: rgb(var(--ink)) !important;
+  border-image: url('/images/ui/ark/chip-normal.webp') 0 60 fill / 0 var(--cap) / 0 stretch !important; background: none !important;
+}
+.iris-xmas .tk-btn.ghost::before, .iris-xmas .tk-btn.ghost::after { display: none; }
+.iris-xmas .tk-btn.ghost:focus-visible::before { display: block; }
+.iris-xmas .tk-btn.ghost:hover:not(:disabled) { border-image-source: url('/images/ui/ark/chip-hover.webp') !important; filter: drop-shadow(0 0 5px rgb(var(--gold) / 0.4)); }
+.iris-xmas .tk-btn.ghost:active:not(:disabled) { filter: none; transform: translateY(1px); }
+
+/* ---- account/section tab links (บัญชีของฉัน, เติมเหรียญ, VIP ...): chip plates, the current page uses the selected plate */
+.iris-xmas .frozen-section-nav a {
+  --cap: 27px; padding: 0 4px; border: 0 solid transparent !important; border-width: 0 var(--cap) !important; border-radius: 0 !important; box-shadow: none !important;
+  border-image: url('/images/ui/ark/chip-normal.webp') 0 60 fill / 0 var(--cap) / 0 stretch !important; background: none !important; color: rgb(var(--ink)) !important;
+}
+.iris-xmas .frozen-section-nav a:hover { border-image-source: url('/images/ui/ark/chip-hover.webp') !important; }
+.iris-xmas .frozen-section-nav a[aria-current="page"] { border-image-source: url('/images/ui/ark/chip-selected.webp') !important; filter: drop-shadow(0 0 5px rgb(var(--gold) / 0.4)); }
+
+/* ---- catch-all: any large rounded bordered surface in page content that is not already a kit part gets the thin metal frame.
+   Elements with an explicit width and height (icon tiles, avatars) are left alone. */
+.iris-xmas main :is([class*="rounded-2xl"], [class*="rounded-3xl"], [class*="rounded-[1.65rem]"]):is([class*="border"]):is([class*="bg-surface"], [class*="bg-black"]):not([class*="h-"][class*="w-"]):not(.ark-panel):not(.ark-chip):not(.ark-btn):not(.ark-input):not(.tk-modal) {
+  border: 10px solid transparent !important; border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important;
+  border-image: url('/images/ui/ark/panel-frame.webp') 69 / 10px stretch !important; background-clip: padding-box !important;
+}
+
+/* ---- the shared CSS panel classes get the same thin frame: .glass-card (VIP, Support ...), .tk-panel (home tiles and clusters;
+   product cards keep their slot frame, panels that already draw brackets or are popups are left alone), .frozen-toolbar */
+.iris-xmas main :is(.glass-card, .tk-panel:not(.tk-card):not(.tk-brackets):not(.tk-modal), .frozen-toolbar):not(.ark-panel) {
+  border: 12px solid transparent !important; border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important;
+  border-image: url('/images/ui/ark/panel-frame.webp') 69 / 12px stretch !important; background-clip: padding-box !important;
+}

@@ -24,6 +24,7 @@ import './tek-shop.css';
 import './christmas-shop.css';
 import { TekShopHero } from '@/components/tek/TekShopHero';
 import { PalworldProductCard } from '@/components/shop/PalworldProductCard';
+import { Medal } from '@/components/shop/Medal';
 import { ProductBuyModal } from '@/components/shop/ProductBuyModal';
 import type { Product } from '@/lib/contracts/types';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -255,12 +256,11 @@ function Catalog() {
           {/* Primary Type Switcher */}
           <div className="tk-depot-tabs flex flex-wrap gap-2 mb-6" aria-label="ประเภทสินค้า">
             {[
-              { id: null, labelTh: 'ทั้งหมด', labelEn: 'All Items', icon: Package },
-              { id: 'dino', labelTh: 'สัตว์ ARK', labelEn: 'ARK Creatures', icon: PawPrint },
-              { id: 'item', labelTh: 'ไอเทม & อุปกรณ์', labelEn: 'Gear & Resources', icon: Layers },
+              { id: null, labelTh: 'ทั้งหมด', labelEn: 'All Items', medal: 'crown' as const },
+              { id: 'dino', labelTh: 'สัตว์ ARK', labelEn: 'ARK Creatures', medal: 'dino' as const },
+              { id: 'item', labelTh: 'ไอเทม & อุปกรณ์', labelEn: 'Gear & Resources', medal: 'block' as const },
             ].map((tab) => {
               const isActive = type === tab.id && !searchParam;
-              const IconComponent = tab.icon;
               return (
                 <button
                   key={t(tab.labelTh, tab.labelEn)}
@@ -280,18 +280,18 @@ function Catalog() {
                   aria-pressed={isActive}
                   className={`tk-chip${isActive ? ' on' : ''}`}
                 >
-                  <IconComponent size={16} aria-hidden="true" />
+                  <Medal name={tab.medal} />
                   <span>{t(tab.labelTh, tab.labelEn)}</span>
                 </button>
               );
             })}
             {[
-              { query: 'Rex', th: 'Rex', en: 'Rex', Icon: PawPrint },
-              { query: 'Skin', th: 'สกิน & ตกแต่ง', en: 'Skins & cosmetics', Icon: Sparkles },
-              { query: 'Tek', th: 'อุปกรณ์ TEK', en: 'TEK equipment', Icon: Shield },
-            ].map(({ query, th, en, Icon }) => (
+              { query: 'Rex', th: 'Rex', en: 'Rex', medal: 'dino' as const },
+              { query: 'Skin', th: 'สกิน & ตกแต่ง', en: 'Skins & cosmetics', medal: 'gift' as const },
+              { query: 'Tek', th: 'อุปกรณ์ TEK', en: 'TEK equipment', medal: 'shield' as const },
+            ].map(({ query, th, en, medal }) => (
               <button key={query} type="button" className={`tk-chip${searchParam === query ? ' on' : ''}`} aria-pressed={searchParam === query} onClick={() => { setSearchInput(query); update({ type: null, category: null, search: query, page: null }); }}>
-                <Icon size={16} aria-hidden="true" />{t(th, en)}
+                <Medal name={medal} />{t(th, en)}
               </button>
             ))}
           </div>
@@ -411,7 +411,7 @@ function Catalog() {
 
                 {/* Autocomplete Dropdown - 100% Solid Opaque Background, High Z-Index, Deep Elevation */}
                 {isAutocompleteOpen && (
-                  <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-cyan-500/50 bg-surface-1 p-2.5 shadow-[0_25px_60px_rgba(0,0,0,0.95)] animate-in fade-in">
+                  <div className="ark-panel ark-card absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto p-1 shadow-[0_25px_60px_rgba(0,0,0,0.95)] animate-in fade-in">
                     <div className="flex items-center justify-between px-2.5 py-1.5 mb-1.5 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-iris-cyan">
                       <span><T text={"คำค้นหายอดนิยม & แนะนำ · Suggestions"} /></span>
                       <span className="text-slate-400 font-normal"><T text={"กดเพื่อเลือก"} /></span>

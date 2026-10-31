@@ -42,6 +42,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Base styles implementing visual alignment, scale-up animations and typography rules
     const baseStyles = 'inline-flex items-center justify-center font-bold tracking-wide transition-all duration-200 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-iris-ink active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40';
 
+    // The generated ARK plates (ark-kit.css) take over primary-style variants (enamel plate) and secondary/outline
+    // (plum chip plate); ghost and danger stay plain on purpose, and success/error keep their own colour.
+    const arkPlate = !isSuccess && !isError;
+    const arkClass: Record<string, string> = {
+      primary: 'ark-btn', cyan: 'ark-btn', gold: 'ark-btn', orchid: 'ark-btn', magenta: 'ark-btn', pink: 'ark-btn',
+      secondary: 'ark-chip', outline: 'ark-chip',
+    };
+
     const variants = {
       primary: 'bg-iris-pearl text-iris-ink hover:bg-white hover:shadow-[0_0_20px_rgba(245,241,232,0.4)]',
       secondary: 'border border-white/10 bg-white/[0.035] text-iris-pearl hover:border-iris-cyan/40 hover:bg-iris-cyan/10 hover:shadow-[0_0_15px_rgba(55,229,210,0.15)]',
@@ -78,6 +86,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           baseStyles,
           variants[variant],
           sizes[size],
+          arkPlate && arkClass[variant],
           isSuccess && statusStyles.success,
           isError && statusStyles.error,
           className
