@@ -2,13 +2,13 @@
 import { IrisCoin } from '@/components/ui/IrisCoin';
 import { T, useLanguage } from '@/components/i18n/LanguageProvider';
 
-import { Plus } from 'lucide-react';
+import { QuickAddButton } from '@/components/shop/QuickAddButton';
 import { categoryLabel } from '@/lib/catalogLabels';
 import type { Product } from '@/lib/contracts/types';
 import { ProductArtwork } from '@/components/ProductArtwork';
 import { tekCategory } from '@/components/tek/TekProductCard';
 
-/** Shop grid card (Tek hex slot). Opens the buy modal through onQuickBuy. */
+/** Shop grid card. The card opens the buy modal through onQuickBuy; the + button adds straight to the basket. */
 export function PalworldProductCard({
   product,
   onQuickBuy,
@@ -45,15 +45,7 @@ export function PalworldProductCard({
             <i className="tk-sr">IC</i>
           </span>
         </div>
-        <button
-          type="button"
-          onClick={handleClick}
-          className="tk-add"
-          aria-label={`เลือกเซิร์ฟเวอร์และซื้อ ${product.name}`}
-          title="เลือกเซิร์ฟเวอร์และเพิ่มลงตะกร้า"
-        >
-          <Plus size={18} aria-hidden="true" />
-        </button>
+        <QuickAddButton product={product} />
       </div>
     </article>
   );

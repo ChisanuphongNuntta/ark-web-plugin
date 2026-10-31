@@ -26,7 +26,7 @@ export function CartDrawer() {
 
   const productQueries = useQueries({
     queries: items.map((item) => ({
-      queryKey: ['product-drawer-contract', item.productId, item.serverId],
+      queryKey: ['product-drawer-contract', item.productId],
       queryFn: () => shopApi.getProduct(item.productId).then((response) => response.product),
       staleTime: 5 * 60 * 1000,
     })),
@@ -133,7 +133,7 @@ export function CartDrawer() {
                 items.map((item, index) => {
                   const query = productQueries[index];
                   const product = query?.data as Product | undefined;
-                  const lineKey = cartLineKey(item.productId, item.serverId);
+                  const lineKey = cartLineKey(item.productId);
 
                   if (query?.isLoading) {
                     return (
@@ -151,7 +151,7 @@ export function CartDrawer() {
                         <button
                           type="button"
                           className="font-bold text-rose-300 hover:underline"
-                          onClick={() => removeItem(item.productId, item.serverId)}
+                          onClick={() => removeItem(item.productId)}
                         ><T text={"นำออก"} /></button>
                       </div>
                     );
@@ -175,14 +175,12 @@ export function CartDrawer() {
                           <IrisCoin className="h-3.5 w-3.5" />
                           <span>{product.price.toLocaleString()}<T text={" IC / หน่วย"} /></span>
                         </div>
-                        <p className="mt-1 font-mono text-[9px] text-iris-muted"><T text={"เซิร์ฟเวอร์ #"} />{item.serverId}
-                        </p>
                       </div>
 
                       <div className="col-span-2 flex items-center justify-between gap-3 border-t border-white/5 pt-2">
                         <button
                           type="button"
-                          onClick={() => removeItem(item.productId, item.serverId)}
+                          onClick={() => removeItem(item.productId)}
                           className="grid h-11 w-11 place-items-center rounded-full text-iris-muted transition hover:bg-rose-500/10 hover:text-rose-300"
                           aria-label={`ลบ ${product.name} ออกจากตะกร้า`}
                         >
@@ -192,7 +190,7 @@ export function CartDrawer() {
                         <div className="flex h-12 items-center rounded-full border border-white/10 bg-black/40">
                           <button
                             type="button"
-                            onClick={() => setQuantity(item.productId, item.serverId, item.quantity - 1)}
+                            onClick={() => setQuantity(item.productId, item.quantity - 1)}
                             className="flex h-full w-11 items-center justify-center rounded-full text-iris-muted hover:bg-white/5 hover:text-white disabled:opacity-30"
                             disabled={item.quantity <= 1}
                             aria-label={`ลดจำนวน ${product.name}`}
@@ -204,7 +202,7 @@ export function CartDrawer() {
                           </span>
                           <button
                             type="button"
-                            onClick={() => setQuantity(item.productId, item.serverId, item.quantity + 1)}
+                            onClick={() => setQuantity(item.productId, item.quantity + 1)}
                             className="flex h-full w-11 items-center justify-center rounded-full text-iris-muted hover:bg-white/5 hover:text-white"
                             aria-label={`เพิ่มจำนวน ${product.name}`}
                           >
@@ -230,6 +228,8 @@ export function CartDrawer() {
                     <span>~{estimateSubtotal.toLocaleString()}</span><span className="tk-sr">IC</span>
                   </div>
                 </div>
+
+                <p className="text-[11px] text-iris-muted"><T text={"เลือกเซิร์ฟเวอร์ปลายทางตอนชำระเงิน ครั้งเดียวสำหรับทั้งตะกร้า"} /></p>
 
                 <Link href="/cart" className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-iris-cyan px-5 py-3 text-sm font-semibold text-iris-ink transition hover:bg-iris-pearl" onClick={() => setDrawerOpen(false)}>
                   <span><T text={"ไปที่ตะกร้าและชำระเงิน"} /></span>

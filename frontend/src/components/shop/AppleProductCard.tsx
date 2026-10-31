@@ -39,7 +39,7 @@ export function AppleProductCard({ product }: AppleProductCardProps) {
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addItem(product.id, 1, 1);
+    addItem(product.id, 1);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1800);
   };

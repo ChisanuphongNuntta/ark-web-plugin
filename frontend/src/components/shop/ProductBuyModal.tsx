@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Check,
-  CircleAlert,
   Coins,
   CreditCard,
   Minus,
@@ -19,18 +18,8 @@ import {
   X,
 } from 'lucide-react';
 import { serverApi } from '@/lib/contracts/client';
-import type { GameMode, Product, ServerStatus } from '@/lib/contracts/types';
-
-type ModeTab = GameMode | 'OTHER';
-
-const MODE_TABS: { key: ModeTab; label: string }[] = [
-  { key: 'PVE', label: 'PvE' },
-  { key: 'PVE_MOD', label: 'PvE Mod' },
-  { key: 'PVPVE', label: 'PvPvE' },
-  { key: 'OTHER', label: 'อื่นๆ' },
-];
-
-const modeOf = (server: ServerStatus): ModeTab => server.gameMode ?? 'OTHER';
+import type { Product } from '@/lib/contracts/types';
+import { ServerPicker, readPreferredServerId, rememberPreferredServer } from '@/components/shop/ServerPicker';
 import { useCartStore } from '@/lib/store';
 import { Badge } from '@/components/ui/Badge';
 import { ProductArtwork } from '@/components/ProductArtwork';
@@ -63,12 +52,13 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const setDrawerOpen = useCartStore((state) => state.setDrawerOpen);
+  const basketServerId = useCartStore((state) => state.serverId);
+  const setBasketServerId = useCartStore((state) => state.setServerId);
 
   const [mounted, setMounted] = React.useState(false);
   const [quantity, setQuantity] = React.useState(1);
   const [selectedServerId, setSelectedServerId] = React.useState<number | null>(null);
   const [autoSelected, setAutoSelected] = React.useState(false);
-  const [modeTab, setModeTab] = React.useState<ModeTab | null>(null);
   const [feedback, setFeedback] = React.useState<'idle' | 'added'>('idle');
 
   React.useEffect(() => {
@@ -92,25 +82,26 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
       setFeedback('idle');
       return;
     }
-    const savedServerId = typeof window !== 'undefined' ? localStorage.getItem('iris_preferred_server') : null;
-    if (savedServerId && servers.some((s) => s.id === Number(savedServerId) && s.isOnline)) {
-      setSelectedServerId(Number(savedServerId));
-      setAutoSelected(true);
-      return;
+    if (selectedServerId === null) {
+      const basket = basketServerId !== null && servers.some((s) => s.id === basketServerId && s.isOnline) ? basketServerId : null;
+      const preferred = basket ?? readPreferredServerId(servers);
+      if (preferred !== null) {
+        setSelectedServerId(preferred);
+        setAutoSelected(true);
+        return;
+      }
     }
     const firstOnline = servers.find((s) => s.isOnline);
     if (firstOnline && selectedServerId === null) {
       setSelectedServerId(firstOnline.id);
       setAutoSelected(true);
     }
-  }, [isOpen, servers, selectedServerId]);
+  }, [isOpen, servers, selectedServerId, basketServerId]);
 
   const selectServer = (id: number) => {
     setSelectedServerId(id);
     setAutoSelected(false);
-    try {
-      localStorage.setItem('iris_preferred_server', String(id));
-    } catch {}
+    rememberPreferredServer(id);
   };
 
   React.useEffect(() => {
@@ -146,31 +137,23 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
 
   if (!mounted || !isOpen || !product) return null;
 
-  const modeTabs = MODE_TABS.filter((tab) => servers.some((s) => modeOf(s) === tab.key));
-  const selectedServer = servers.find((s) => s.id === selectedServerId);
-  const activeTab =
-    modeTab && modeTabs.some((t) => t.key === modeTab)
-      ? modeTab
-      : selectedServer
-      ? modeOf(selectedServer)
-      : modeTabs[0]?.key ?? null;
-  const visibleServers = activeTab ? servers.filter((s) => modeOf(s) === activeTab) : servers;
-
   const serverUnavailable = serversQuery.isError || (!serversQuery.isLoading && servers.length === 0);
-  const canAdd = selectedServerId !== null && !serversQuery.isLoading && !serverUnavailable;
+  // Adding to the basket never needs a server (it is picked once at checkout); paying right now does.
+  const canAdd = true;
+  const canBuyNow = selectedServerId !== null && !serversQuery.isLoading && !serverUnavailable;
   const totalPrice = product.price * quantity;
 
   const handleAddToCart = () => {
-    if (!canAdd || selectedServerId === null) return;
-    addItem(product.id, selectedServerId, quantity, false);
+    addItem(product.id, quantity, false);
     setDrawerOpen(false);
     setFeedback('added');
     window.setTimeout(() => setFeedback('idle'), 2200);
   };
 
   const handleCheckout = () => {
-    if (!canAdd || selectedServerId === null) return;
-    addItem(product.id, selectedServerId, quantity, false);
+    if (!canBuyNow || selectedServerId === null) return;
+    addItem(product.id, quantity, false);
+    setBasketServerId(selectedServerId);
     setDrawerOpen(false);
     onClose();
     router.push('/cart');
@@ -248,74 +231,16 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
                 {servers.filter((s) => s.isOnline).length}/{servers.length} online
               </span>
             </div>
-            <p className="text-[11px] text-slate-400"><T text={"ระบบตรวจจับเซิร์ฟเวอร์ออนไลน์ให้อัตโนมัติ หรือคลิกเพื่อสลับเปลี่ยนเซิร์ฟเวอร์ได้ตามต้องการ"} /></p>
+            <p className="text-[11px] text-slate-400"><T text={"ใช้เมื่อกดชำระทันที ถ้าใส่ตะกร้า จะเลือกเซิร์ฟเวอร์ตอนชำระเงินครั้งเดียวสำหรับทั้งตะกร้า"} /></p>
 
-            {serversQuery.isLoading ? (
-              <div className="h-10 w-full animate-pulse rounded-xl bg-slate-800" />
-            ) : serverUnavailable ? (
-              <div className="flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-xs text-amber-200">
-                <CircleAlert className="h-4 w-4 shrink-0 text-amber-400" />
-                <span><T text={"ไม่พบเซิร์ฟเวอร์ที่พร้อมรับสินค้า กรุณาลองใหม่อีกครั้ง"} /></span>
-              </div>
-            ) : (
-              <div className="space-y-2">
-              {modeTabs.length > 1 && (
-                <div role="tablist" aria-label="โหมดเซิร์ฟเวอร์" className="flex flex-wrap gap-1.5">
-                  {modeTabs.map((tab) => {
-                    const count = servers.filter((s) => modeOf(s) === tab.key).length;
-                    const selected = activeTab === tab.key;
-                    return (
-                      <button
-                        key={tab.key}
-                        type="button"
-                        role="tab"
-                        aria-selected={selected}
-                        onClick={() => setModeTab(tab.key)}
-                        className={`tk-chip sm${selected ? ' on' : ''}`}
-                      >
-                        {tab.label} <span className="font-mono text-[10px]">{count}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              <div className="grid max-h-64 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
-                {visibleServers.map((server: ServerStatus) => {
-                  const isSelected = selectedServerId === server.id;
-                  return (
-                    <button
-                      key={server.id}
-                      type="button"
-                      disabled={!server.isOnline}
-                      onClick={() => selectServer(server.id)}
-                      className={`flex min-h-[56px] items-center justify-between rounded-md border p-3 text-left transition ${
-                        isSelected
-                          ? 'border-iris-cyan bg-iris-cyan/10 text-white ring-1 ring-iris-cyan/60'
-                          : server.isOnline
-                          ? 'border-slate-700/50 bg-surface-3 text-slate-300 hover:border-slate-600 hover:text-white'
-                          : 'border-slate-700/60 bg-surface-2 text-slate-300 cursor-not-allowed'
-                      }`}
-                    >
-                      <div className="min-w-0 pr-2">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-semibold truncate">{server.displayName || server.name}</p>
-                          {isSelected && autoSelected && (
-                            <span className="inline-flex items-center rounded bg-cyan-400/20 px-1 py-0.2 text-[9px] font-bold text-cyan-300 uppercase tracking-wider"><T text={"แนะนำ"} /></span>
-                          )}
-                        </div>
-                        <p className="text-[10px] text-iris-muted truncate">{server.cluster?.name ?? server.map}</p>
-                      </div>
-                      <span
-                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                          server.isOnline ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-slate-600'
-                        }`}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-              </div>
-            )}
+            <ServerPicker
+              servers={servers}
+              isLoading={serversQuery.isLoading}
+              isError={serversQuery.isError}
+              selectedServerId={selectedServerId}
+              autoSelected={autoSelected}
+              onSelect={selectServer}
+            />
           </div>
 
           {/* Quantity and Subtotal */}
@@ -363,7 +288,7 @@ export function ProductBuyModal({ product, isOpen, onClose }: ProductBuyModalPro
             {feedback === 'added' ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
             <T text={feedback === 'added' ? 'เพิ่มแล้ว' : 'ใส่ตะกร้า · Add to Cart'} />
           </button>
-          <button type="button" disabled={!canAdd} onClick={handleCheckout} className="tk-btn w-full sm:w-auto">
+          <button type="button" disabled={!canBuyNow} onClick={handleCheckout} className="tk-btn w-full sm:w-auto">
             {<CreditCard className="h-4 w-4" />}
             <T text={"ตรวจยอดและชำระ · Buy Now"} />
           </button>

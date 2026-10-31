@@ -36,7 +36,7 @@ export function AppleSpecDrawer({ model, onClose }: AppleSpecDrawerProps) {
   if (!mounted || !model) return null;
 
   const handleAddToCart = () => {
-    addItem(model.productId, 1, 1);
+    addItem(model.productId, 1);
     setAdded(true);
     setTimeout(() => {
       setAdded(false);

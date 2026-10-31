@@ -8,6 +8,7 @@ import './vip-frames.css';
 import './christmas-theme.css';
 import './iris-ui.css';
 import './iris-contrast.css';
+import './ark-kit.css';
 import { FrozenPageFrame } from '@/components/FrozenPageFrame';
 import { Providers } from '@/components/Providers';
 import { Navbar } from '@/components/Navbar';

@@ -25,8 +25,9 @@ const product = {
   category: { id: 2, name: 'Weapons', icon: '⚔️' },
 };
 
-async function seedAuthAndCart(page: import('@playwright/test').Page) {
-  await page.addInitScript((user) => {
+async function seedAuthAndCart(page: import('@playwright/test').Page, options?: { cart?: boolean }) {
+  // The init script runs on every navigation, so a test that primes its own basket must turn the default cart off.
+  await page.addInitScript(({ user, withCart }) => {
     window.localStorage.setItem(
       'auth-storage',
       JSON.stringify({
@@ -34,17 +35,19 @@ async function seedAuthAndCart(page: import('@playwright/test').Page) {
         version: 0,
       })
     );
-    window.localStorage.setItem(
-      'iris-cart-v1',
-      JSON.stringify({
-        state: {
-          items: [{ productId: 1, serverId: 1, quantity: 2 }],
-          isDrawerOpen: false,
-        },
-        version: 2,
-      })
-    );
-  }, authUser);
+    if (withCart) {
+      window.localStorage.setItem(
+        'iris-cart-v1',
+        JSON.stringify({
+          state: {
+            items: [{ productId: 1, serverId: 1, quantity: 2 }],
+            isDrawerOpen: false,
+          },
+          version: 2,
+        })
+      );
+    }
+  }, { user: authUser, withCart: options?.cart !== false });
 
   const corsHeaders = {
     'access-control-allow-origin': process.env.E2E_BASE_URL || 'https://localhost',
@@ -89,9 +92,28 @@ async function primePersistedAuthAndCart(page: import('@playwright/test').Page) 
   }, authUser);
 }
 
+async function primeBasket(
+  page: import('@playwright/test').Page,
+  basket: { items: Array<{ productId: number; serverId?: number; quantity: number }>; serverId?: number | null },
+  version: number
+) {
+  await page.evaluate(
+    ({ user, state, version }) => {
+      window.localStorage.setItem('auth-storage', JSON.stringify({ state: { user }, version: 0 }));
+      window.localStorage.setItem('iris-cart-v1', JSON.stringify({ state: { ...state, isDrawerOpen: false }, version }));
+    },
+    { user: authUser, state: basket, version }
+  );
+}
+
+const twoOnlineServers = [
+  { id: 1, name: 'IRIS-PVE-TheIsland-01', map: 'TheIsland', isActive: true, isOnline: true, lastHeartbeat: '2026-06-20T03:10:00.000Z' },
+  { id: 2, name: 'IRIS-PVE-Ragnarok-02', map: 'Ragnarok', isActive: true, isOnline: true, lastHeartbeat: '2026-06-20T03:10:00.000Z' },
+];
+
 async function mockCartContracts(
   page: import('@playwright/test').Page,
-  options?: { available?: string; sessionTotal?: string }
+  options?: { available?: string; sessionTotal?: string; servers?: unknown[] }
 ) {
   const syncedLines: unknown[] = [];
   let committed = false;
@@ -126,7 +148,7 @@ async function mockCartContracts(
       headers: corsHeaders,
       contentType: 'application/json',
       body: JSON.stringify({
-        servers: [
+        servers: options?.servers ?? [
           {
             id: 1,
             name: 'IRIS-PVE-TheIsland-01',
@@ -261,7 +283,7 @@ test.describe('IRIS Cart and backend-priced checkout', () => {
     await expect(page.getByRole('heading', { name: /ตะกร้าสินค้าและชำระเงิน/ })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('Ascendant Longneck Rifle')).toBeVisible();
     await expect(page.getByText('ยอดสุทธิจากระบบ (Backend Total):')).toBeVisible();
-    await expect(page.getByText('1000 IC')).toBeVisible();
+    await expect(page.getByText(/^1000\s*IC$/)).toBeVisible();
     await expect(page.getByText('Checkout Session')).toBeVisible();
 
     await page.getByRole('button', { name: 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' }).click();
@@ -282,5 +304,62 @@ test.describe('IRIS Cart and backend-priced checkout', () => {
 
     await expect(page.getByText('ยอดคงเหลือไม่เพียงพอ')).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('button', { name: 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' })).toBeDisabled();
+  });
+  test('with several online servers and no saved choice, checkout waits for a server and then syncs every line with it', async ({ page }) => {
+    await seedAuthAndCart(page, { cart: false });
+    const contracts = await mockCartContracts(page, { servers: twoOnlineServers });
+
+    await page.goto('/cart', { waitUntil: 'domcontentloaded' });
+    await primeBasket(page, { items: [{ productId: 1, quantity: 2 }], serverId: null }, 3);
+    await page.evaluate(() => window.localStorage.removeItem('iris_preferred_server'));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText('เลือกเซิร์ฟเวอร์ปลายทางเพื่อตรวจยอดและชำระเงิน')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' })).toBeDisabled();
+    expect(contracts.syncedLines).toHaveLength(0);
+
+    await page.getByRole('button', { name: /IRIS-PVE-Ragnarok-02/ }).click();
+    await expect(page.getByText(/^1000\s*IC$/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' })).toBeEnabled();
+
+    await page.getByRole('button', { name: 'ยืนยันคำสั่งซื้อและจัดส่งเข้าเกม' }).click();
+    await expect(page.getByRole('heading', { name: 'ทำรายการสำเร็จ' })).toBeVisible();
+    expect(contracts.wasCommitted()).toBe(true);
+    expect(contracts.syncedLines.at(-1)).toEqual([{ productId: 1, serverId: 2, quantity: 2 }]);
+  });
+
+  test('a basket saved by the older per-line-server cart is merged and keeps its last server', async ({ page }) => {
+    await seedAuthAndCart(page, { cart: false });
+    const contracts = await mockCartContracts(page, { servers: twoOnlineServers });
+
+    await page.goto('/cart', { waitUntil: 'domcontentloaded' });
+    await primeBasket(
+      page,
+      { items: [{ productId: 1, serverId: 1, quantity: 1 }, { productId: 1, serverId: 2, quantity: 2 }] },
+      2
+    );
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText(/^1000\s*IC$/)).toBeVisible({ timeout: 15000 });
+    expect(contracts.syncedLines.at(-1)).toEqual([{ productId: 1, serverId: 2, quantity: 3 }]);
+  });
+
+  test('a saved server that went offline is dropped and the player is asked again', async ({ page }) => {
+    await seedAuthAndCart(page, { cart: false });
+    const contracts = await mockCartContracts(page, {
+      servers: [
+        { id: 1, name: 'IRIS-PVE-TheIsland-01', map: 'TheIsland', isActive: true, isOnline: false, lastHeartbeat: '2026-06-20T01:00:00.000Z' },
+        { id: 2, name: 'IRIS-PVE-Ragnarok-02', map: 'Ragnarok', isActive: true, isOnline: true, lastHeartbeat: '2026-06-20T03:10:00.000Z' },
+        { id: 3, name: 'IRIS-PVE-Aberration-03', map: 'Aberration', isActive: true, isOnline: true, lastHeartbeat: '2026-06-20T03:10:00.000Z' },
+      ],
+    });
+
+    await page.goto('/cart', { waitUntil: 'domcontentloaded' });
+    await primeBasket(page, { items: [{ productId: 1, quantity: 1 }], serverId: 1 }, 3);
+    await page.evaluate(() => window.localStorage.removeItem('iris_preferred_server'));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText('เลือกเซิร์ฟเวอร์ปลายทางเพื่อตรวจยอดและชำระเงิน')).toBeVisible({ timeout: 15000 });
+    expect(contracts.syncedLines).toHaveLength(0);
   });
 });

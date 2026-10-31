@@ -179,14 +179,9 @@ export default function ProductDetailPopup({
   };
 
   const handleAddToCart = () => {
-    if (!selectedServer) {
-      setIsBuyError(true);
-      setBuyErrorText('กรุณาเลือกเซิร์ฟเวอร์ปลายทางก่อนเพิ่มลงตะกร้า');
-      return;
-    }
     setIsBuyError(false);
-    // Cart lines are keyed by (productId, serverId) — pass the chosen server.
-    addItem(product.id, selectedServer, quantity);
+    // The basket has one delivery server, picked at checkout; adding to it never needs a server.
+    addItem(product.id, quantity);
     setIsCartSuccess(true);
     setTimeout(() => {
       setIsCartSuccess(false);

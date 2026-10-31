@@ -11,5 +11,6 @@
   { "re": "^ทดลองรับรางวัล (Free|Premium) ระดับ (\\d+)$", "en": "Try claiming the $1 reward at level $2" },
   { "re": "^([\\d,]+) ชม\\.$", "en": "$1 h" },
   { "re": "^กระเป๋า (.+) Iris Coin$", "en": "Wallet $1 Iris Coin" },
-  { "re": "^ตะกร้า (\\d+) รายการ$", "en": "Cart, $1 items" }
+  { "re": "^ตะกร้า (\\d+) รายการ$", "en": "Cart, $1 items" },
+  { "re": "^เพิ่ม (.+) ลงตะกร้า$", "en": "Add $1 to cart" }
 ]

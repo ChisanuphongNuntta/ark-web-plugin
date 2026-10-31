@@ -1,0 +1,40 @@
+{
+ "panel": {
+  "w": 640,
+  "h": 353,
+  "slice": 69
+ },
+ "btn": {
+  "normal": {
+   "w": 560,
+   "h": 96,
+   "cap": 82
+  },
+  "hover": {
+   "w": 560,
+   "h": 96,
+   "cap": 82
+  },
+  "pressed": {
+   "w": 560,
+   "h": 96,
+   "cap": 82
+  },
+  "disabled": {
+   "w": 560,
+   "h": 96,
+   "cap": 82
+  }
+ },
+ "slot": {
+  "w": 200,
+  "names": [
+   "red",
+   "gold",
+   "cyan",
+   "green",
+   "violet",
+   "amber"
+  ]
+ }
+}

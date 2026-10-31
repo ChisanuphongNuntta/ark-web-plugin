@@ -117,7 +117,7 @@ export function AppleDuoHero({ onOpenSpecs }: AppleDuoHeroProps) {
   };
 
   const handleAddToCart = () => {
-    addItem(activeModel.productId, 1, 1);
+    addItem(activeModel.productId, 1);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 2200);
   };

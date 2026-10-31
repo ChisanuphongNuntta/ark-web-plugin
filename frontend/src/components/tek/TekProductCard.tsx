@@ -1,6 +1,6 @@
 import { IrisCoin } from '@/components/ui/IrisCoin';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { QuickAddButton } from '@/components/shop/QuickAddButton';
 import type { Product } from '@/lib/contracts/types';
 import { ProductArtwork } from '@/components/ProductArtwork';
 
@@ -35,9 +35,7 @@ export function TekProductCard({ product }: { product: TekProduct }) {
           <IrisCoin size={22} />{product.price.toLocaleString()}
           <i className="tk-sr">IC</i>
         </span>
-        <Link href={href} className="tk-add" aria-label={`เลือกเซิร์ฟเวอร์และซื้อ ${product.name}`}>
-          <Plus size={18} aria-hidden="true" />
-        </Link>
+        <QuickAddButton product={product} />
       </div>
     </article>
   );

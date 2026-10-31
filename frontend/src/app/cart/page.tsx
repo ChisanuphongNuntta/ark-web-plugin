@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Select } from '@/components/ui/Select';
+import { ServerPicker, readPreferredServerId, rememberPreferredServer } from '@/components/shop/ServerPicker';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ProductArtwork } from '@/components/ProductArtwork';
 import { syncWalletNow } from '@/lib/realtime/walletSync';
@@ -42,7 +42,8 @@ export default function CartPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { items, removeItem, setQuantity, setLineServer, clear } = useCartStore();
+  const { items, serverId, setServerId, removeItem, setQuantity, clear } = useCartStore();
+  const [serverAutoSelected, setServerAutoSelected] = React.useState(false);
   const [checkoutStep, setCheckoutStep] = React.useState<CheckoutStep>('cart');
   const [orderIds, setOrderIds] = React.useState<string[]>([]);
   const [authoritativeTotal, setAuthoritativeTotal] = React.useState<string | null>(null);
@@ -50,7 +51,7 @@ export default function CartPage() {
 
   const productQueries = useQueries({
     queries: items.map((item) => ({
-      queryKey: ['cart-product-contract', item.productId, item.serverId],
+      queryKey: ['cart-product-contract', item.productId],
       queryFn: () => shopApi.getProduct(item.productId).then((response) => response.product),
       staleTime: 5 * 60 * 1000,
     })),
@@ -81,14 +82,22 @@ export default function CartPage() {
   const productsError = productQueries.some((query) => query.isError);
   const availableBalance = wallet?.accounts.available ?? null;
 
+  // One delivery server for the whole basket; the backend contract still wants it on every line. A saved choice only
+  // counts once the server list confirms it is still online (or the list failed to load, and the backend decides),
+  // so a stale server is never sent to checkout.
+  const serverConfirmed =
+    serverId !== null && !isServersLoading && (isServersError || servers.some((server) => server.id === serverId && server.isOnline));
+  const activeServerId = serverConfirmed ? serverId : null;
   const syncLines = React.useMemo(
     () =>
-      items.map((item) => ({
-        productId: item.productId,
-        serverId: item.serverId,
-        quantity: item.quantity,
-      })),
-    [items]
+      activeServerId === null
+        ? []
+        : items.map((item) => ({
+            productId: item.productId,
+            serverId: activeServerId,
+            quantity: item.quantity,
+          })),
+    [items, activeServerId]
   );
   const syncSignature = React.useMemo(() => JSON.stringify(syncLines), [syncLines]);
 
@@ -158,16 +167,38 @@ export default function CartPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, syncSignature]);
 
-  const handleQuantityChange = (productId: number, serverId: number, quantity: number) => {
-    setQuantity(productId, serverId, quantity);
+  // Pre-select a server so most players never have to: the basket's server if it is still online, else the one
+  // they used last time, else the only online server. With several online servers and no history the player
+  // must choose, because a dino sent to the wrong server cannot be moved.
+  const onlineServers = servers.filter((server) => server.isOnline);
+  React.useEffect(() => {
+    if (isServersLoading || servers.length === 0) return;
+    if (serverId !== null && servers.some((server) => server.id === serverId && server.isOnline)) return;
+    const preferred = readPreferredServerId(servers);
+    if (preferred !== null) {
+      setServerId(preferred);
+      setServerAutoSelected(true);
+    } else if (onlineServers.length === 1) {
+      setServerId(onlineServers[0].id);
+      setServerAutoSelected(true);
+    } else if (serverId !== null) {
+      setServerId(null); // the saved server went offline: ask again
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servers, isServersLoading]);
+
+  const handleServerSelect = (id: number) => {
+    setServerId(id);
+    setServerAutoSelected(false);
+    rememberPreferredServer(id);
   };
 
-  const handleServerChange = (productId: number, fromServerId: number, toServerId: number) => {
-    setLineServer(productId, fromServerId, toServerId);
+  const handleQuantityChange = (productId: number, quantity: number) => {
+    setQuantity(productId, quantity);
   };
 
-  const handleRemove = (productId: number, serverId: number) => {
-    removeItem(productId, serverId);
+  const handleRemove = (productId: number) => {
+    removeItem(productId);
   };
 
   const handleCheckoutSubmit = () => {
@@ -180,8 +211,9 @@ export default function CartPage() {
     commitMutation.mutate();
   };
 
-  const serverName = (serverId: number) =>
-    servers.find((server) => server.id === serverId)?.name ?? `เซิร์ฟเวอร์ #${serverId}`;
+  const serverName = (id: number) =>
+    servers.find((server) => server.id === id)?.name ?? `เซิร์ฟเวอร์ #${id}`;
+  const hasDino = productQueries.some((query) => (query.data as Product | undefined)?.productType === 'dino');
 
   if (checkoutStep === 'success') {
     return (
@@ -273,10 +305,36 @@ export default function CartPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <section className="lg:col-span-2 space-y-4" aria-label="รายการสินค้าในตะกร้า">
+          <div className="space-y-3 rounded-2xl border border-slate-700/40 bg-surface-3 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-iris-pearl">
+                <Server className="h-3.5 w-3.5 text-iris-cyan" /><T text={"เซิร์ฟเวอร์ปลายทางของทั้งตะกร้า"} />
+              </span>
+              <span className="font-mono text-[10px] text-iris-muted">{onlineServers.length}/{servers.length} online</span>
+            </div>
+            <ServerPicker
+              servers={servers}
+              isLoading={isServersLoading}
+              isError={isServersError}
+              selectedServerId={serverId}
+              autoSelected={serverAutoSelected}
+              onSelect={handleServerSelect}
+            />
+            {serverId === null && !isServersLoading && servers.length > 0 && (
+              <p className="text-[11px] text-amber-200" role="status"><T text={"เลือกเซิร์ฟเวอร์ปลายทางเพื่อตรวจยอดและชำระเงิน"} /></p>
+            )}
+            {activeServerId !== null && hasDino && (
+              <p className="flex items-start gap-1.5 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-[11px] text-amber-200">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span><T text={"ไดโนเสาร์ในตะกร้าจะถูกส่งไปที่ "} /><strong>{serverName(activeServerId)}</strong><T text={" และย้ายภายหลังไม่ได้ ตรวจชื่อเซิร์ฟเวอร์ก่อนกดยืนยัน"} /></span>
+              </p>
+            )}
+          </div>
+
           {items.map((item, index) => {
             const productQuery = productQueries[index];
             const product = productQuery?.data as Product | undefined;
-            const lineKey = cartLineKey(item.productId, item.serverId);
+            const lineKey = cartLineKey(item.productId);
 
             if (productQuery?.isLoading) {
               return (
@@ -296,7 +354,7 @@ export default function CartPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleRemove(item.productId, item.serverId)}
+                    onClick={() => handleRemove(item.productId)}
                     className="text-xs font-bold text-rose-400 hover:underline"
                   ><T text={"นำออก"} /></button>
                 </GlassCard>
@@ -326,7 +384,7 @@ export default function CartPage() {
                   <div className="flex h-12 shrink-0 items-center rounded-full border border-slate-700/50 bg-surface-2">
                     <button
                       type="button"
-                      onClick={() => handleQuantityChange(item.productId, item.serverId, item.quantity - 1)}
+                      onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
                       className="flex h-full w-11 items-center justify-center rounded-full text-iris-muted hover:bg-white/5 hover:text-white disabled:opacity-30"
                       disabled={item.quantity <= 1}
                       aria-label={`ลดจำนวน ${product.name}`}
@@ -336,7 +394,7 @@ export default function CartPage() {
                     <span className="min-w-8 text-center font-mono text-sm font-bold text-iris-pearl tabular-nums">{item.quantity}</span>
                     <button
                       type="button"
-                      onClick={() => handleQuantityChange(item.productId, item.serverId, item.quantity + 1)}
+                      onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
                       className="flex h-full w-11 items-center justify-center rounded-full text-iris-muted hover:bg-white/5 hover:text-white"
                       aria-label={`เพิ่มจำนวน ${product.name}`}
                     >
@@ -346,7 +404,7 @@ export default function CartPage() {
 
                   <button
                     type="button"
-                    onClick={() => handleRemove(item.productId, item.serverId)}
+                    onClick={() => handleRemove(item.productId)}
                     className="flex h-11 w-11 items-center justify-center rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-300 transition hover:bg-rose-500/20"
                     aria-label={`ลบ ${product.name} ออกจากตะกร้า`}
                   >
@@ -354,30 +412,6 @@ export default function CartPage() {
                   </button>
                 </div>
 
-                <div className="mt-5 border-t border-white/5 pt-5">
-                  <label className="mb-1.5 flex items-center gap-1 text-[10px] font-bold uppercase text-iris-muted">
-                    <Server className="h-3 w-3" /><T text={"เซิร์ฟเวอร์ปลายทาง"} /></label>
-                  {isServersLoading ? (
-                    <Skeleton className="h-9 w-full max-w-xs" />
-                  ) : servers.length === 0 ? (
-                    <p className="text-[11px] text-iris-muted"><T text={"ปัจจุบัน: "} />{serverName(item.serverId)}</p>
-                  ) : (
-                    <Select
-                      value={item.serverId}
-                      onChange={(event) =>
-                        handleServerChange(item.productId, item.serverId, Number(event.target.value))
-                      }
-                      className="max-w-xs py-2 px-3 text-xs bg-black/30"
-                      aria-label="เลือกเซิร์ฟเวอร์ปลายทาง"
-                    >
-                      {servers.map((server) => (
-                        <option key={server.id} value={server.id}>
-                          {server.name}{server.map ? ` (${server.map})` : ''}<T text={server.isOnline ? '' : ' — ออฟไลน์'} />
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                </div>
               </div>
             );
           })}
@@ -449,6 +483,7 @@ export default function CartPage() {
                 checkoutStep === 'submitting' ||
                 productsLoading ||
                 productsError ||
+                (!!user && activeServerId === null) ||
                 (!!user && affordabilityKnown && !isAffordable)
               }
               isLoading={checkoutStep === 'submitting'}
