@@ -258,7 +258,7 @@ body, body.iris-xmas {
 .tk-hexnum::after { background: rgb(var(--s-0)) !important; }
 
 /* any solid gradient fill (not a /NN tint) is the one primary fill, with the matching foreground */
-.iris-xmas [class*="bg-gradient-to-"]:is([class*="from-cyan-300 "], [class*="from-cyan-400 "], [class*="from-cyan-500 "], [class*="from-cyan-600 "],
+.iris-xmas :is([class^="bg-gradient-to-"], [class*=" bg-gradient-to-"]):is([class*="from-cyan-300 "], [class*="from-cyan-400 "], [class*="from-cyan-500 "], [class*="from-cyan-600 "],
   [class*="from-sky-400 "], [class*="from-sky-500 "], [class*="from-teal-400 "], [class*="from-teal-500 "], [class*="from-iris-cyan "], [class*="from-emerald-400 "],
   [class*="from-emerald-500 "], [class*="from-emerald-600 "], [class*="from-amber-400 "], [class*="from-amber-500 "], [class*="from-rose-500 "]):not([class*="bg-clip-text"]):not([class*="from-iris-cyan/"]) {
   background-image: none !important; background-color: var(--btn-bg) !important; color: var(--btn-fg) !important; border-color: transparent;

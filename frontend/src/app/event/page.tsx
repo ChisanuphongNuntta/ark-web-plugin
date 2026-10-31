@@ -361,7 +361,7 @@ export default function EventPage() {
               return (
                 <div key={evt.id} className="relative group">
                   {/* Timeline Bullet Dot */}
-                  <div className="absolute -left-[30px] sm:-left-[34px] top-4 flex h-6 w-6 items-center justify-center rounded-full border border-iris-cyan bg-surface-1 text-iris-cyan shadow-[0_0_12px_rgba(160,224,244,0.4)]">
+                  <div className="absolute -left-[25px] sm:-left-[31px] top-4 flex h-6 w-6 items-center justify-center rounded-full border border-iris-cyan bg-surface-1 text-iris-cyan shadow-[0_0_12px_rgba(160,224,244,0.4)]">
                     <IconComponent size={12} />
                   </div>
 

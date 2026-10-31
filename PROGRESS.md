@@ -1,5 +1,11 @@
 # IRIS Enterprise Commerce — Progress & Handoff
 
+## Event timeline fix + stack recovery — 2026-10-31 (DEPLOYED)
+
+- Event page: the timeline icon dot was 3-5px off the line, and my gradient-flatten rule in `iris-ui.css` matched `before:bg-gradient-to-b` and painted the whole card gutter solid red. The rule now matches only real `bg-gradient-to-*` tokens; dot offsets are `-left-[25px] sm:-left-[31px]`. Audit r23: 0 text/target/focus failures.
+- DEPLOYED: image `heart-plugin-frontend:ui-timeline-check`, `artifacts/ui-timeline-compose.override.json`. ROLLBACK: `ui-textures-check` (`artifacts/ui-timeline-previous-image.txt`).
+- Outage 2026-10-31 ~20:27 (+07): the USB drive F: (WD My Passport) logged a disk controller error; nginx, postgres-primary and redis-primary exited 127 because Docker could no longer bind-mount their config files from F:. Fixed by `docker desktop restart`. DB/Redis data live in Docker volumes, not on F:. F: still reports Dirty: back up `docker/certs` and `.env.prod`, run `chkdsk F: /scan`. Optional hardening: move bind-mounted configs/certs to an internal drive (needs compose edit; not done).
+
 ## Textured controls, blurred popups, new music (Aurora) — 2026-10-27 (DEPLOYED to frontend-1/2)
 
 - Owner (asleep, pre-approved deploy): every button/action needs real game textures, logic that makes sense, popups blurred not dark, hex UI should not fight the rest.
